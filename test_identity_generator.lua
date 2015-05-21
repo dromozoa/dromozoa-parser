@@ -15,9 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local indices = require "dromozoa.parser.indices"
+local identity_generator = require "dromozoa.parser.identity_generator"
 
-local tokens = indices()
+local tokens = identity_generator()
 assert(tokens.TK_NUMBER == 1)
 assert(tokens.TK_STRING == 2)
 assert(tokens.TK_BOOLEAN == 3)
