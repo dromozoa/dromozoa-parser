@@ -41,7 +41,13 @@ actions[tk.COMMENT] = scanner.SKIP
 actions[tk.WHITESPACE] = scanner.SKIP
 
 local text = io.read("*a")
-local tokens, begins, ends = scan({ re:compile() }, actions, text)
+local a, b = text:find("%%", 1, true)
+if b then
+  b = b + 1
+else
+  b = 1
+end
+local tokens, begins, ends = scan({ re:compile() }, actions, text, b)
 
 for i = 1, #tokens do
   print(tokens[i], text:sub(begins[i], ends[i]))
@@ -123,6 +129,10 @@ local function parser()
 
   return self
 end
+
+
+
+
 
 local p = parser()
 print(json.encode(p:parse()))
