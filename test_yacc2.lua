@@ -158,6 +158,8 @@ for i = 2, #tree do
   end
 end
 
+local id = identity_generator()
+
 local terms = {}
 
 for k, v in pairs(rules) do
@@ -165,11 +167,22 @@ for k, v in pairs(rules) do
     for j = 1, #v[i] do
       local u = v[i][j]
       if not rules[u] then
-        terms[#terms + 1] = u
+        terms[u] = id[u]
       end
     end
   end
 end
+
+local nonterms = {}
+
+for k, v in pairs(rules) do
+  nonterms[k] = id[k]
+end
+
+for i = 1, #id do
+  io.write("local ", id[i], " = ", i, "\n")
+end
+
 
 print(json.encode(rules))
 print(json.encode(terms))
