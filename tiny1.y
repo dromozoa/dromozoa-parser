@@ -14,10 +14,8 @@ array
   | ARRAY_BEGIN array_item_list ARRAY_END
   ;
 
-array_item_list
-  : array_item
-  | array_item SEPARATOR array_item_list
-  ;
+array_item_list : array_item;
+array_item_list : array_item SEPARATOR array_item_list;
 
 array_item
   : value

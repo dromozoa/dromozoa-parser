@@ -49,9 +49,9 @@ else
 end
 local tokens, begins, ends = scan({ re:compile() }, actions, text, b)
 
-for i = 1, #tokens do
-  print(tokens[i], text:sub(begins[i], ends[i]))
-end
+-- for i = 1, #tokens do
+--   print(tokens[i], text:sub(begins[i], ends[i]))
+-- end
 
 local function parser()
   local _i = 1
@@ -130,9 +130,46 @@ local function parser()
   return self
 end
 
+local tree = parser():parse()
 
+print(json.encode(tree))
 
+local start
+local rules = {}
 
+for i = 2, #tree do
+  local rule = tree[i]
+  local rule_name = rule[2]
+  if not start then
+    start = rule_name
+  end
+  local t = rules[rule_name]
+  if not t then
+    t = {}
+    rules[rule_name] = t
+  end
+  for j = 3, #rule do
+    local rule_body = rule[j]
+    local u = {}
+    t[#t + 1] = u
+    for k = 2, #rule_body do
+      u[#u + 1] = rule_body[k]
+    end
+  end
+end
 
-local p = parser()
-print(json.encode(p:parse()))
+local terms = {}
+
+for k, v in pairs(rules) do
+  for i = 1, #v do
+    for j = 1, #v[i] do
+      local u = v[i][j]
+      if not rules[u] then
+        terms[#terms + 1] = u
+      end
+    end
+  end
+end
+
+print(json.encode(rules))
+print(json.encode(terms))
