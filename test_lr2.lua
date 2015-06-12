@@ -2,6 +2,8 @@ local clone = require "dromozoa.commons.clone"
 local json = require "dromozoa.json"
 local identity_generator = require "dromozoa.parser.identity_generator"
 
+local symbols = identity_generator()
+
 local function equal(a, b)
   local t = type(a)
   if t == type(b) then
@@ -78,14 +80,13 @@ end
 
 local function closure(grammar, itemset)
   local itemset = clone(itemset)
+  -- io.write("<<<< closure <<<<\n", unparse_grammar(symbols, itemset))
   local added = {}
-  for _, item in ipairs(itemset) do
-    added[item.head] = true
-  end
   local done
   repeat
     done = true
-    for _, item in ipairs(itemset) do
+    for i = 1, #itemset do
+      local item = itemset[i]
       assert(item.dot)
       local sym = item.body[item.dot]
       if sym then
@@ -103,6 +104,7 @@ local function closure(grammar, itemset)
       end
     end
   until done
+  -- io.write(">>>> closure >>>>\n", unparse_grammar(symbols, itemset))
   return itemset
 end
 
@@ -111,7 +113,8 @@ local function items(grammar, start)
   local done
   repeat
     done = true
-    for _, itemset in ipairs(itemsets) do
+    for i = 1, #itemsets do
+      local itemset = itemsets[i]
       local syms = {}
       local added = {}
       for _, item in ipairs(itemset) do
@@ -151,21 +154,19 @@ local function items(grammar, start)
   return itemsets
 end
 
-local symbols = identity_generator()
-
 local grammar = parse_grammar(symbols, [[
 E' -> E
-E -> E + T
-E -> T
-T -> T * F
-T -> F
-F -> ( E )
-F -> id
-# E -> E * B
-# E -> E + B
-# E -> B
-# B -> 0
-# B -> 1
+# E -> E + T
+# E -> T
+# T -> T * F
+# T -> F
+# F -> ( E )
+# F -> id
+E -> E * B
+E -> E + B
+E -> B
+B -> 0
+B -> 1
 ]])
 
 local itemsets = items(grammar, { parse_rule(symbols, "E' -> . E") })
@@ -173,6 +174,4 @@ for i, itemset in ipairs(itemsets) do
   io.write("==== ", i, " ====\n")
   io.write(unparse_grammar(symbols, itemset))
 end
-
-
 
