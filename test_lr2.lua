@@ -2,6 +2,29 @@ local clone = require "dromozoa.commons.clone"
 local json = require "dromozoa.json"
 local identity_generator = require "dromozoa.parser.identity_generator"
 
+local function equal(a, b)
+  local t = type(a)
+  if t == type(b) then
+    if t == "table" then
+      for k, v in next, a do
+        if not equal(v, b[k]) then
+          return false
+        end
+      end
+      for k, v in next, b do
+        if not equal(v, a[k]) then
+          return false
+        end
+      end
+      return true
+    else
+      return a == b
+    end
+  else
+    return false
+  end
+end
+
 local function parse_rule(symbols, line)
   local head, body = line:match("^%s*(.-)%s*%->(.*)")
   if head then
@@ -53,32 +76,79 @@ local function unparse_grammar(symbols, grammar)
   return text
 end
 
-local function closure(grammar, items)
-  local items = clone(items)
+local function closure(grammar, itemset)
+  local itemset = clone(itemset)
   local added = {}
-  for _, item in ipairs(items) do
+  for _, item in ipairs(itemset) do
     added[item.head] = true
   end
   local done
   repeat
     done = true
-    for _, item in ipairs(items) do
+    for _, item in ipairs(itemset) do
       assert(item.dot)
       local sym = item.body[item.dot]
-      if not added[sym] then
-        for _, rule in ipairs(grammar) do
-          if rule.head == sym then
-            local item = clone(rule)
-            item.dot = 1
-            table.insert(items, item)
-            done = false
+      if sym then
+        if not added[sym] then
+          for _, rule in ipairs(grammar) do
+            if rule.head == sym then
+              local item = clone(rule)
+              item.dot = 1
+              table.insert(itemset, item)
+              done = false
+            end
           end
+          added[sym] = true
         end
-        added[sym] = true
       end
     end
   until done
-  return items
+  return itemset
+end
+
+local function items(grammar, start)
+  local itemsets = { closure(grammar, start) }
+  local done
+  repeat
+    done = true
+    for _, itemset in ipairs(itemsets) do
+      local syms = {}
+      local added = {}
+      for _, item in ipairs(itemset) do
+        assert(item.dot)
+        local sym = item.body[item.dot]
+        if sym then
+          if not added[sym] then
+            table.insert(syms, sym)
+            added[sym] = true
+          end
+        end
+      end
+      for _, sym in ipairs(syms) do
+        local goto_itemset = {}
+        for _, item in ipairs(itemset) do
+          assert(item.dot)
+          if sym == item.body[item.dot] then
+            local item = clone(item)
+            item.dot = item.dot + 1
+            table.insert(goto_itemset, item)
+          end
+        end
+        local goto_itemset = closure(grammar, goto_itemset)
+        local found
+        for _, itemset in ipairs(itemsets) do
+          if equal(itemset, goto_itemset) then
+            found = true
+          end
+        end
+        if not found then
+          table.insert(itemsets, goto_itemset)
+          done = false
+        end
+      end
+    end
+  until done
+  return itemsets
 end
 
 local symbols = identity_generator()
@@ -98,6 +168,11 @@ F -> id
 # B -> 1
 ]])
 
-local clos = closure(grammar, { parse_rule(symbols, "E' -> . E") })
-io.write(unparse_grammar(symbols, clos))
+local itemsets = items(grammar, { parse_rule(symbols, "E' -> . E") })
+for i, itemset in ipairs(itemsets) do
+  io.write("==== ", i, " ====\n")
+  io.write(unparse_grammar(symbols, itemset))
+end
+
+
 
