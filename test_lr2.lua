@@ -5,47 +5,32 @@ local identity_generator = require "dromozoa.parser.identity_generator"
 local function parse_rule(symbols, line)
   local head, body = line:match("^%s*(.-)%s*%->(.*)")
   if head then
-    local rule = { symbols[head] }
+    local dot
+    local rule = {
+      head = symbols[head];
+      body = {};
+    }
     for v in body:gmatch("[^%s]+") do
-      rule[#rule + 1] = symbols[v]
+      if v == "." then
+        rule.dot = #rule.body + 1
+      else
+        table.insert(rule.body, symbols[v])
+      end
     end
     return rule
   end
 end
 
 local function unparse_rule(symbols, rule)
-  local line = symbols[rule[1]] .. " ->"
-  for i = 2, #rule do
-    line = line .. " " .. symbols[rule[i]]
-  end
-  return line
-end
-
-local function parse_item(symbols, line)
-  local head, body = line:match("^%s*(.-)%s*%->(.*)")
-  if head then
-    local dot
-    local rule = { symbols[head] }
-    for v in body:gmatch("[^%s]+") do
-      if v == "." then
-        dot = #rule + 1
-      else
-        rule[#rule + 1] = symbols[v]
-      end
-    end
-    return { dot, rule }
-  end
-end
-
-local function unparse_item(symbols, item)
-  local dot = item[1] + 1
-  local rule = item[2]
-  local line = symbols[rule[1]] .. " ->"
-  for i = 2, #rule do
-    if i == dot then
+  local line = symbols[rule.head] .. " ->"
+  for i, v in ipairs(rule.body) do
+    if rule.dot == i then
       line = line .. " ."
     end
-    line = line .. " " .. symbols[rule[i]]
+    line = line .. " " .. symbols[v]
+  end
+  if rule.dot == #rule.body + 1 then
+    line = line .. " ."
   end
   return line
 end
@@ -60,11 +45,40 @@ local function parse_grammar(symbols, text)
   return grammar
 end
 
-local function closure(symbols, grammar, items)
-  local items = clone(items)
-  for i = 1, #items do
-    print(unparse_item(symbols, items[i]))
+local function unparse_grammar(symbols, grammar)
+  local text = ""
+  for _, v in ipairs(grammar) do
+    text = text .. unparse_rule(symbols, v) .. "\n"
   end
+  return text
+end
+
+local function closure(grammar, items)
+  local items = clone(items)
+  local added = {}
+  for _, item in ipairs(items) do
+    added[item.head] = true
+  end
+  local done
+  repeat
+    done = true
+    for _, item in ipairs(items) do
+      assert(item.dot)
+      local sym = item.body[item.dot]
+      if not added[sym] then
+        for _, rule in ipairs(grammar) do
+          if rule.head == sym then
+            local item = clone(rule)
+            item.dot = 1
+            table.insert(items, item)
+            done = false
+          end
+        end
+        added[sym] = true
+      end
+    end
+  until done
+  return items
 end
 
 local symbols = identity_generator()
@@ -84,11 +98,6 @@ F -> id
 # B -> 1
 ]])
 
-for i = 1, #grammar do
-  print(unparse_rule(symbols, grammar[i]))
-end
-
-closure(symbols, grammar, { parse_item(symbols, "E' -> E .") })
-
-
+local clos = closure(grammar, { parse_rule(symbols, "E' -> . E") })
+io.write(unparse_grammar(symbols, clos))
 
