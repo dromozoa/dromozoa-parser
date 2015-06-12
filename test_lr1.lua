@@ -76,6 +76,36 @@ local function unparse_grammar(symbols, grammar)
   return text
 end
 
+local function is_terminal_symbol(grammar, sym)
+  for _, rule in ipairs(grammar) do
+    if rule.head == sym then
+      return false
+    end
+  end
+  return true
+end
+
+local function remove_left_recursion(symbols, grammar)
+  local nonterminal_symbols = {}
+  for i = 1, #symbols do
+    if not is_terminal_symbol(grammar, i) then
+      table.insert(nonterminal_symbols, i)
+    end
+  end
+  for i = 1, #nonterminal_symbols do
+    for j = 1, i - 1 do
+    end
+  end
+
+end
+
+local function construct_first(grammar, sym)
+  if is_terminal_symbol(grammar, sym) then
+    return { sym }
+  else
+  end
+end
+
 local function construct_closure(grammar, items)
   local items = clone(items)
   local added = {}
@@ -150,22 +180,34 @@ end
 local symbols = identity_generator()
 
 local grammar = parse_grammar(symbols, [[
-E' -> E
+# E' -> E
 # E -> E + T
 # E -> T
 # T -> T * F
 # T -> F
 # F -> ( E )
 # F -> id
-E -> E * B
-E -> E + B
-E -> B
-B -> 0
-B -> 1
+
+# E' -> E
+# E -> E * B
+# E -> E + B
+# E -> B
+# B -> 0
+# B -> 1
+
+S -> A a
+S -> b
+A -> A c
+A -> S d
+A ->
 ]])
 
-local itemsets = construct_items(grammar, { parse_rule(symbols, "E' -> . E") })
-for i, items in ipairs(itemsets) do
-  io.write("==== ", i, " ====\n")
-  io.write(unparse_grammar(symbols, items))
-end
+remove_left_recursion(symbols, grammar)
+-- print(json.encode(grammar))
+-- io.write(unparse_grammar(symbols, grammar))
+
+-- local itemsets = construct_items(grammar, { parse_rule(symbols, "E' -> . E") })
+-- for i, items in ipairs(itemsets) do
+--   io.write("==== ", i, " ====\n")
+--   io.write(unparse_grammar(symbols, items))
+-- end
