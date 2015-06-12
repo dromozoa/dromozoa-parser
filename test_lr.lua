@@ -101,6 +101,18 @@ local function construct_closure(grammar, items)
   return items
 end
 
+local function construct_goto(grammar, items, sym)
+  local goto_items = {}
+  for _, item in ipairs(items) do
+    if sym == item.body[item.dot] then
+      local item = clone(item)
+      item.dot = item.dot + 1
+      table.insert(goto_items, item)
+    end
+  end
+  return construct_closure(grammar, goto_items)
+end
+
 local function construct_items(grammar, start)
   local itemsets = { construct_closure(grammar, start) }
   local done
@@ -118,15 +130,7 @@ local function construct_items(grammar, start)
         end
       end
       for _, sym in ipairs(syms) do
-        local goto_items = {}
-        for _, item in ipairs(items) do
-          if sym == item.body[item.dot] then
-            local item = clone(item)
-            item.dot = item.dot + 1
-            table.insert(goto_items, item)
-          end
-        end
-        local goto_items = construct_closure(grammar, goto_items)
+        local goto_items = construct_goto(grammar, items, sym)
         local found
         for _, items in ipairs(itemsets) do
           if equal(items, goto_items) then
