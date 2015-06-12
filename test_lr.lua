@@ -2,8 +2,6 @@ local clone = require "dromozoa.commons.clone"
 local json = require "dromozoa.json"
 local identity_generator = require "dromozoa.parser.identity_generator"
 
-local symbols = identity_generator()
-
 local function equal(a, b)
   local t = type(a)
   if t == type(b) then
@@ -153,6 +151,8 @@ local function items(grammar, start)
   until done
   return itemsets
 end
+
+local symbols = identity_generator()
 
 local grammar = parse_grammar(symbols, [[
 E' -> E
