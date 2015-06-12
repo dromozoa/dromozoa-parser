@@ -85,6 +85,16 @@ local function is_terminal_symbol(grammar, sym)
   return true
 end
 
+local function construct_rules(grammar, sym)
+  local rules = {}
+  for _, rule in ipairs(grammar) do
+    if rule.head == sym then
+      table.insert(rules, rule)
+    end
+  end
+  return rules
+end
+
 local function remove_left_recursion(symbols, grammar)
   local nonterminal_symbols = {}
   for i = 1, #symbols do
@@ -93,10 +103,62 @@ local function remove_left_recursion(symbols, grammar)
     end
   end
   for i = 1, #nonterminal_symbols do
+    local sym_i = nonterminal_symbols[i]
     for j = 1, i - 1 do
+      local sym_j = nonterminal_symbols[j]
+      local rules_j = construct_rules(grammar, sym_j)
+      for k = #grammar, 1, -1 do
+        local rule = grammar[k]
+        if rule.head == sym_i and rule.body[1] == sym_j then
+          table.remove(grammar, k)
+          for _, rule_j in ipairs(rules_j) do
+            local rule = clone(rule)
+            table.remove(rule.body, 1)
+            for i, v in ipairs(rule_j.body) do
+              table.insert(rule.body, i, v)
+            end
+            table.insert(grammar, k, rule)
+          end
+        end
+      end
+    end
+    local A = {}
+    local B = {}
+    for j = #grammar, 1, -1 do
+      local rule = grammar[j]
+      if rule.head == sym_i then
+        if rule.body[1] == sym_i then
+          table.insert(A, rule)
+        else
+          table.insert(B, rule)
+        end
+      end
+    end
+    if #A > 0 then
+      for j = #grammar, 1, -1 do
+        local rule = grammar[j]
+        if rule.head == sym_i then
+          table.remove(grammar, j)
+        end
+      end
+      local dash = symbols[sym_i] .. "'"
+      local sym = symbols[dash]
+      for _, rule in ipairs(B) do
+        table.insert(rule.body, sym)
+        table.insert(grammar, rule)
+      end
+      for _, rule in ipairs(A) do
+        rule.head = sym
+        table.remove(rule.body, 1)
+        table.insert(rule.body, sym)
+        table.insert(grammar, rule)
+      end
+      table.insert(grammar, {
+        head = sym;
+        body = {};
+      })
     end
   end
-
 end
 
 local function construct_first(grammar, sym)
@@ -202,9 +264,13 @@ A -> S d
 A ->
 ]])
 
+io.write(unparse_grammar(symbols, grammar))
+io.write("--\n")
+
 remove_left_recursion(symbols, grammar)
 -- print(json.encode(grammar))
--- io.write(unparse_grammar(symbols, grammar))
+io.write(unparse_grammar(symbols, grammar))
+-- io.write(unparse_grammar(symbols, construct_rules(grammar, symbols.A)))
 
 -- local itemsets = construct_items(grammar, { parse_rule(symbols, "E' -> . E") })
 -- for i, items in ipairs(itemsets) do
