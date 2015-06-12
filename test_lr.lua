@@ -76,15 +76,14 @@ local function unparse_grammar(symbols, grammar)
   return text
 end
 
-local function closure(grammar, itemset)
-  local itemset = clone(itemset)
-  -- io.write("<<<< closure <<<<\n", unparse_grammar(symbols, itemset))
+local function construct_closure(grammar, items)
+  local items = clone(items)
   local added = {}
   local done
   repeat
     done = true
-    for i = 1, #itemset do
-      local item = itemset[i]
+    for i = 1, #items do
+      local item = items[i]
       assert(item.dot)
       local sym = item.body[item.dot]
       if sym then
@@ -93,7 +92,7 @@ local function closure(grammar, itemset)
             if rule.head == sym then
               local item = clone(rule)
               item.dot = 1
-              table.insert(itemset, item)
+              table.insert(items, item)
               done = false
             end
           end
@@ -102,20 +101,19 @@ local function closure(grammar, itemset)
       end
     end
   until done
-  -- io.write(">>>> closure >>>>\n", unparse_grammar(symbols, itemset))
-  return itemset
+  return items
 end
 
-local function items(grammar, start)
-  local itemsets = { closure(grammar, start) }
+local function construct_items(grammar, start)
+  local itemsets = { construct_closure(grammar, start) }
   local done
   repeat
     done = true
     for i = 1, #itemsets do
-      local itemset = itemsets[i]
+      local items = itemsets[i]
       local syms = {}
       local added = {}
-      for _, item in ipairs(itemset) do
+      for _, item in ipairs(items) do
         assert(item.dot)
         local sym = item.body[item.dot]
         if sym then
@@ -127,7 +125,7 @@ local function items(grammar, start)
       end
       for _, sym in ipairs(syms) do
         local goto_itemset = {}
-        for _, item in ipairs(itemset) do
+        for _, item in ipairs(items) do
           assert(item.dot)
           if sym == item.body[item.dot] then
             local item = clone(item)
@@ -135,10 +133,10 @@ local function items(grammar, start)
             table.insert(goto_itemset, item)
           end
         end
-        local goto_itemset = closure(grammar, goto_itemset)
+        local goto_itemset = construct_closure(grammar, goto_itemset)
         local found
-        for _, itemset in ipairs(itemsets) do
-          if equal(itemset, goto_itemset) then
+        for _, items in ipairs(itemsets) do
+          if equal(items, goto_itemset) then
             found = true
           end
         end
@@ -169,8 +167,8 @@ B -> 0
 B -> 1
 ]])
 
-local itemsets = items(grammar, { parse_rule(symbols, "E' -> . E") })
-for i, itemset in ipairs(itemsets) do
+local itemsets = construct_items(grammar, { parse_rule(symbols, "E' -> . E") })
+for i, items in ipairs(itemsets) do
   io.write("==== ", i, " ====\n")
-  io.write(unparse_grammar(symbols, itemset))
+  io.write(unparse_grammar(symbols, items))
 end
