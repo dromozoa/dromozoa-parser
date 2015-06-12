@@ -84,20 +84,17 @@ local function construct_closure(grammar, items)
     done = true
     for i = 1, #items do
       local item = items[i]
-      assert(item.dot)
       local sym = item.body[item.dot]
-      if sym then
-        if not added[sym] then
-          for _, rule in ipairs(grammar) do
-            if rule.head == sym then
-              local item = clone(rule)
-              item.dot = 1
-              table.insert(items, item)
-              done = false
-            end
+      if sym and not added[sym] then
+        for _, rule in ipairs(grammar) do
+          if rule.head == sym then
+            local item = clone(rule)
+            item.dot = 1
+            table.insert(items, item)
+            done = false
           end
-          added[sym] = true
         end
+        added[sym] = true
       end
     end
   until done
@@ -114,34 +111,30 @@ local function construct_items(grammar, start)
       local syms = {}
       local added = {}
       for _, item in ipairs(items) do
-        assert(item.dot)
         local sym = item.body[item.dot]
-        if sym then
-          if not added[sym] then
-            table.insert(syms, sym)
-            added[sym] = true
-          end
+        if sym and not added[sym] then
+          table.insert(syms, sym)
+          added[sym] = true
         end
       end
       for _, sym in ipairs(syms) do
-        local goto_itemset = {}
+        local goto_items = {}
         for _, item in ipairs(items) do
-          assert(item.dot)
           if sym == item.body[item.dot] then
             local item = clone(item)
             item.dot = item.dot + 1
-            table.insert(goto_itemset, item)
+            table.insert(goto_items, item)
           end
         end
-        local goto_itemset = construct_closure(grammar, goto_itemset)
+        local goto_items = construct_closure(grammar, goto_items)
         local found
         for _, items in ipairs(itemsets) do
-          if equal(items, goto_itemset) then
+          if equal(items, goto_items) then
             found = true
           end
         end
         if not found then
-          table.insert(itemsets, goto_itemset)
+          table.insert(itemsets, goto_items)
           done = false
         end
       end
