@@ -242,26 +242,26 @@ end
 local symbols = identity_generator()
 
 local grammar = parse_grammar(symbols, [[
-# E' -> E
-# E -> E + T
-# E -> T
-# T -> T * F
-# T -> F
-# F -> ( E )
-# F -> id
+S -> E
+E -> E + T
+E -> T
+T -> T * F
+T -> F
+F -> ( E )
+F -> id
 
-# E' -> E
+# S -> E
 # E -> E * B
 # E -> E + B
 # E -> B
 # B -> 0
 # B -> 1
 
-S -> A a
-S -> b
-A -> A c
-A -> S d
-A ->
+# S -> A a
+# S -> b
+# A -> A c
+# A -> S d
+# A ->
 ]])
 
 io.write(unparse_grammar(symbols, grammar))
