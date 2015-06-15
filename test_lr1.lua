@@ -239,6 +239,40 @@ local function construct_items(grammar, start)
   return itemsets
 end
 
+local function construct_first_sets(symbols, grammar)
+  local first_sets = {}
+
+  for i = 1, #symbols do
+    first_sets[i] = {}
+  end
+
+  local done
+  repeat
+    done = true
+    for i = 1, #symbols do
+      for _, rule in ipairs(grammar) do
+        if grammar.head == i then
+          local sym = grammar.body[1]
+          if sym == nil then
+            first_sets[i] = { 0 }
+          elseif is_terminal_symbol(sym) then
+            first_sets[i] = { sym }
+          end
+        end
+      end
+
+      if is_terminal_symbol(grammar, i) then
+        
+
+        print(i, symbols[i])
+      else
+      end
+    end
+  until done
+
+  return first_sets
+end
+
 local symbols = identity_generator()
 
 local grammar = parse_grammar(symbols, [[
@@ -267,9 +301,11 @@ F -> id
 io.write(unparse_grammar(symbols, grammar))
 io.write("--\n")
 
-remove_left_recursion(symbols, grammar)
+construct_first_sets(symbols, grammar)
+
+-- remove_left_recursion(symbols, grammar)
 -- print(json.encode(grammar))
-io.write(unparse_grammar(symbols, grammar))
+-- io.write(unparse_grammar(symbols, grammar))
 -- io.write(unparse_grammar(symbols, construct_rules(grammar, symbols.A)))
 
 -- local itemsets = construct_items(grammar, { parse_rule(symbols, "E' -> . E") })
