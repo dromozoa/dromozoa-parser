@@ -44,16 +44,20 @@ local function find(this, value)
   end
 end
 
-local function push(this, that)
-  local n = #this
-  for i = 1, #that do
-    this[n + i] = that[i]
+local function join_impl(this, that, ...)
+  if that then
+    local n = #this
+    for i = 1, #that do
+      this[n + i] = that[i]
+    end
+    return join_impl(this, ...)
+  else
+    return this
   end
-  return this
 end
 
-local function join(this, that)
-  return push(clone(this), that)
+local function join(...)
+  return join_impl({}, ...)
 end
 
 -- map
@@ -94,6 +98,26 @@ local function set_index(this, id)
   end
   return map, set
 end
+
+local function set_join_impl(this, that, ...)
+  if that then
+    for i = 1, #that do
+      set_insert(this, that[i])
+    end
+    return set_join_impl(this, ...)
+  else
+    return this
+  end
+end
+
+local function set_join(...)
+  return set_join_impl({}, ...)
+end
+
+-- grammar
+
+local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
+local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
 
 local function construct_grammar(_grammar)
   if not _grammar then
@@ -137,9 +161,9 @@ local function construct_grammar(_grammar)
             table.remove(rule_i, 1)
             table.remove(rule_i, 1)
             for _, rule_j in ipairs(map[symbol_j]) do
-              local rule_j = clone(rule_j)
-              rule_j[1] = symbol_i
-              set_insert(_grammar, push(rule_j, rule_i))
+              local rule = join(rule_j, rule_i)
+              rule[1] = symbol_i
+              set_insert(_grammar, rule)
             end
             map = set_index(_grammar, 1)
           end
@@ -165,9 +189,99 @@ local function construct_grammar(_grammar)
           rule[#rule + 1] = symbol_j
         end
         set_insert(_grammar, { symbol_j })
-        map = set_index(_grammar, 1)
       end
     end
+  end
+
+  function self:first(symbol)
+    local map, set = set_index(_grammar, 1)
+    if map[symbol] then
+      local firsts = {}
+      for _, rule in ipairs(map[symbol]) do
+        if #rule > 1 then
+          local stopped = false
+          for i = 2, #rule do
+            local first = self:first(rule[i])
+            local removed = set_remove(first, EPSILON)
+            firsts = set_join(firsts, first)
+            if removed then
+              if i == #rule then
+                set_insert(firsts, EPSILON)
+              end
+            else
+              break
+            end
+          end
+        else
+          set_insert(firsts, EPSILON)
+        end
+      end
+      return firsts
+    else
+      return { symbol }
+    end
+  end
+
+  function self:lr0_closure(items)
+    local map, set = set_index(_grammar, 1)
+    local items = clone(items)
+    local done
+    repeat
+      done = true
+      for _, item in ipairs(items) do
+        local dot = find(item, DOT)
+        local symbol = item[dot + 1]
+        if symbol and map[symbol] then
+          for _, rule in ipairs(map[symbol]) do
+            local item = clone(rule)
+            table.insert(item, 2, DOT)
+            if set_insert(items, item) then
+              done = false
+            end
+          end
+        end
+      end
+    until done
+    return items
+  end
+
+  function self:lr0_goto(items, symbol)
+    local goto_items = {}
+    for _, item in ipairs(items) do
+      local dot = find(item, DOT)
+      if symbol == item[dot + 1] then
+        local item = clone(item)
+        item[dot], item[dot + 1] = item[dot + 1], item[dot]
+        set_insert(goto_items, item)
+      end
+    end
+    return self:lr0_closure(goto_items)
+  end
+
+  function self:lr0_items(start)
+    local map, set = set_index(_grammar, 1)
+    local itemsets = { self:lr0_closure(start) }
+    local done
+    repeat
+      done = true
+      for i = 1, #itemsets do
+        local items = itemsets[i]
+        local symbols = {}
+        for _, item in ipairs(items) do
+          local symbol = item[find(item, DOT) + 1]
+          if symbol then
+            set_insert(symbols, symbol)
+          end
+        end
+        for _, symbol in ipairs(symbols) do
+          local goto_items = self:lr0_goto(items, symbol)
+          if set_insert(itemsets, goto_items) then
+            done = false
+          end
+        end
+      end
+    until done
+    return itemsets
   end
 
   return self
@@ -181,18 +295,47 @@ local grammar = construct_grammar():parse([[
 # F -> ( E )
 # F -> id
 
-S -> A a
-S -> b
-A -> A c
-A -> S d
-A ->
+# S -> A a
+# S -> b
+# A -> A c
+# A -> S d
+# A ->
+
+# S -> A B
+# A -> a
+# A ->
+# B -> b
+# B ->
+
+S -> E
+E -> E * B
+E -> E + B
+E -> B
+B -> 0
+B -> 1
 ]])
 
 io.write("--\n")
 grammar:unparse(io.stdout)
-grammar:eliminate_left_recursion()
+-- grammar:eliminate_left_recursion()
+-- io.write("--\n")
+-- grammar:unparse(io.stdout)
+-- io.write("--\n")
+-- print(json.encode(grammar:first("a")))
+-- print(json.encode(grammar:first("b")))
+-- print(json.encode(grammar:first("A")))
+-- print(json.encode(grammar:first("B")))
+-- print(json.encode(grammar:first("S")))
 io.write("--\n")
-grammar:unparse(io.stdout)
+-- print(json.encode(grammar:lr0_closure({ { "S", DOT, "E" } })))
+local itemsets = grammar:lr0_items({ { "S", DOT, "E" } })
+
+for i, items in ipairs(itemsets) do
+  io.write("==== ", i, " ====\n")
+  construct_grammar(items):unparse(io.stdout)
+end
+
+
 -- grammar:unparse(io.stdout)
 
 -- for head, rules in pairs(grammar:rules()) do
