@@ -36,9 +36,9 @@ end
 
 -- list
 
-local function find(list, value)
-  for i = 1, #list do
-    if equal(list[i], value) then
+local function find(this, value)
+  for i = 1, #this do
+    if equal(this[i], value) then
       return i
     end
   end
@@ -58,48 +58,42 @@ end
 
 -- map
 
-local function map_insert(map, key, value)
-  local list = map[key]
-  if list then
-    list[#list + 1] = value
+local function map_insert(this, key, value)
+  local values = this[key]
+  if values then
+    values[#values + 1] = value
   else
-    map[key] = { value }
+    this[key] = { value }
   end
 end
 
 -- set
 
-local function set_insert(set, value)
-  if not find(set, value) then
-    set[#set + 1] = value
+local function set_insert(this, value)
+  if not find(this, value) then
+    this[#this + 1] = value
+    return true
   end
 end
 
-local function set_index(set, id)
-  local index_set = {}
-  local index_map = {}
-  for i = 1, #set do
-    local value = set[i]
-    set_insert(index_set, value[id])
-    map_insert(index_map, value[id], value)
+local function set_remove(this, value)
+  local id = find(this, value)
+  if id then
+    table.remove(this, id)
+    return true
   end
-  return index_set, index_map
 end
 
-local set = {}
-set_insert(set, { "foo", "foo", "bar" })
-set_insert(set, { "foo", "bar", "bar" })
-set_insert(set, { "foo", "foo", "bar" })
-set_insert(set, { "bar", "bar", "foo" })
-local k, m = set_index(set, 3)
-print(json.encode(k))
-print(json.encode(m))
-
-
-
-os.exit()
-
-
+local function set_index(this, id)
+  local map = {}
+  local set = {}
+  for i = 1, #this do
+    local value = this[i]
+    map_insert(map, value[id], value)
+    set_insert(set, value[id])
+  end
+  return map, set
+end
 
 local function construct_grammar(_grammar)
   if not _grammar then
@@ -111,10 +105,9 @@ local function construct_grammar(_grammar)
   function self:parse(text)
     for line in text:gmatch("[^\n]+") do
       if not line:match("^%s*#") then
-        local symbols = tokenize(line)
-        local head = table.remove(symbols, 1)
-        if table.remove(symbols, 1) == "->" then
-          map_insert(_grammar, head, symbols)
+        local rule = tokenize(line)
+        if table.remove(rule, 2) == "->" then
+          set_insert(_grammar, rule)
         end
       end
     end
@@ -122,61 +115,57 @@ local function construct_grammar(_grammar)
   end
 
   function self:unparse(out)
-    for head, alternatives in pairs(_grammar) do
-      for _, body in ipairs(alternatives) do
-        out:write(head, " ->")
-        for _, symbol in ipairs(body) do
-          out:write(" ", symbol)
-        end
-        out:write("\n")
+    for _, rule in ipairs(_grammar) do
+      out:write(rule[1], " ->")
+      for i = 2, #rule do
+        out:write(" ", rule[i])
       end
+      out:write("\n")
     end
     return out
   end
 
-  function self:is_terminal_symbol(symbol)
-    return not _grammar[symbol]
-  end
-
   function self:eliminate_left_recursion()
-    local nonterminal_symbols = map_keyset(_grammar)
-    print(json.encode(nonterminal_symbols))
-    for i = 1, #nonterminal_symbols do
-      local head = nonterminal_symbols[i]
+    local map, set = set_index(_grammar, 1)
+    for i = 1, #set do
+      local symbol_i = set[i]
       for j = 1, i - 1 do
-        local symbol = nonterminal_symbols[j]
-        local alternatives = {}
-        for _, body in ipairs(_grammar[head]) do
-          if body[1] == symbol then
-            local body = clone(body)
-            table.remove(body, 1)
-            for _, body2 in ipairs(_grammar[symbol]) do
-              table.insert(alternatives, list_join(body2, body))
+        local symbol_j = set[j]
+        for _, rule_i in ipairs(map[symbol_i]) do
+          if rule_i[2] == symbol_j then
+            set_remove(_grammar, rule_i)
+            table.remove(rule_i, 1)
+            table.remove(rule_i, 1)
+            for _, rule_j in ipairs(map[symbol_j]) do
+              local rule_j = clone(rule_j)
+              rule_j[1] = symbol_i
+              set_insert(_grammar, push(rule_j, rule_i))
             end
-          else
-            table.insert(alternatives, body)
+            map = set_index(_grammar, 1)
           end
         end
-        _grammar[head] = alternatives
       end
-      local a1 = {}
-      local a2 = {}
-      local head2 = head .. "'"
-      for _, body in ipairs(_grammar[head]) do
-        if body[1] == head then
-          local body = clone(body)
-          table.remove(body, 1)
-          table.insert(a2, list_join(body, { head2 }))
+      local a = {}
+      local b = {}
+      for _, rule in ipairs(map[symbol_i]) do
+        if rule[2] == symbol_i then
+          a[#a + 1] = rule
         else
-          local body = clone(body)
-          table.insert(a1, list_join(body, { head2 }))
+          b[#b + 1] = rule
         end
       end
-      print(#a1, #a2)
-      if #a2 > 0 then
-        table.insert(a2, {})
-        _grammar[head] = a1
-        _grammar[head2] = a2
+      if #a > 0 then
+        local symbol_j = symbol_i .. "'"
+        for _, rule in ipairs(b) do
+          rule[#rule + 1] = symbol_j
+        end
+        for _, rule in ipairs(a) do
+          rule[1] = symbol_j
+          table.remove(rule, 2)
+          rule[#rule + 1] = symbol_j
+        end
+        set_insert(_grammar, { symbol_j })
+        map = set_index(_grammar, 1)
       end
     end
   end
@@ -199,10 +188,12 @@ A -> S d
 A ->
 ]])
 
-grammar:unparse(io.stdout)
 io.write("--\n")
-grammar:eliminate_left_recursion()
 grammar:unparse(io.stdout)
+grammar:eliminate_left_recursion()
+io.write("--\n")
+grammar:unparse(io.stdout)
+-- grammar:unparse(io.stdout)
 
 -- for head, rules in pairs(grammar:rules()) do
 --   print(head, #rules)
