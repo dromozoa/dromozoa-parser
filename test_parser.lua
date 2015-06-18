@@ -193,15 +193,14 @@ local function construct_grammar(_grammar)
     end
   end
 
-  function self:first(symbol)
+  function self:first_symbol(symbol)
     local map, set = set_index(_grammar, 1)
     if map[symbol] then
       local firsts = {}
       for _, rule in ipairs(map[symbol]) do
         if #rule > 1 then
-          local stopped = false
           for i = 2, #rule do
-            local first = self:first(rule[i])
+            local first = self:first_symbol(rule[i])
             local removed = set_remove(first, EPSILON)
             firsts = set_join(firsts, first)
             if removed then
@@ -220,6 +219,23 @@ local function construct_grammar(_grammar)
     else
       return { symbol }
     end
+  end
+
+  function self:first_symbols(symbols)
+    local firsts = {}
+    for i, symbol in ipairs(symbols) do
+      local first = self:first_symbol(symbol)
+      local removed = set_remove(first, EPSILON)
+      firsts = set_join(firsts, first)
+      if removed then
+        if i == #symbols then
+          set_insert(firsts, EPSILON)
+        end
+      else
+        break
+      end
+    end
+    return firsts
   end
 
   function self:lr0_closure(items)
@@ -288,6 +304,7 @@ local function construct_grammar(_grammar)
 end
 
 local grammar = construct_grammar():parse([[
+# S -> E
 # E -> E + T
 # E -> T
 # T -> T * F
@@ -301,39 +318,42 @@ local grammar = construct_grammar():parse([[
 # A -> S d
 # A ->
 
-# S -> A B
-# A -> a
-# A ->
-# B -> b
-# B ->
+S -> A B
+A -> a
+A ->
+B -> b
+B ->
 
-S -> E
-E -> E * B
-E -> E + B
-E -> B
-B -> 0
-B -> 1
+# S -> E
+# E -> E * B
+# E -> E + B
+# E -> B
+# B -> 0
+# B -> 1
 ]])
 
 io.write("--\n")
 grammar:unparse(io.stdout)
--- grammar:eliminate_left_recursion()
--- io.write("--\n")
--- grammar:unparse(io.stdout)
--- io.write("--\n")
--- print(json.encode(grammar:first("a")))
--- print(json.encode(grammar:first("b")))
--- print(json.encode(grammar:first("A")))
--- print(json.encode(grammar:first("B")))
--- print(json.encode(grammar:first("S")))
+grammar:eliminate_left_recursion()
+io.write("--\n")
+grammar:unparse(io.stdout)
+io.write("--\n")
+print(json.encode(grammar:first_symbol("S")))
+print(json.encode(grammar:first_symbols({ "A", "B" })))
+-- print(json.encode(grammar:first_symbol("F")))
+-- print(json.encode(grammar:first_symbol("T")))
+-- print(json.encode(grammar:first_symbol("E")))
+-- print(json.encode(grammar:first_symbol("E'")))
+-- print(json.encode(grammar:first_symbol("T'")))
 io.write("--\n")
 -- print(json.encode(grammar:lr0_closure({ { "S", DOT, "E" } })))
-local itemsets = grammar:lr0_items({ { "S", DOT, "E" } })
+-- local itemsets = grammar:lr0_items({ { "S", DOT, "E" } })
+-- local itemsets = grammar:lr0_items({ { "E'", DOT, "E" } })
 
-for i, items in ipairs(itemsets) do
-  io.write("==== ", i, " ====\n")
-  construct_grammar(items):unparse(io.stdout)
-end
+-- for i, items in ipairs(itemsets) do
+--   io.write("==== ", i, " ====\n")
+--   construct_grammar(items):unparse(io.stdout)
+-- end
 
 
 -- grammar:unparse(io.stdout)
