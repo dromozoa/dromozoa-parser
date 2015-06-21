@@ -199,18 +199,9 @@ local function construct_grammar(_grammar)
       local firsts = {}
       for _, rule in ipairs(map[symbol]) do
         if #rule > 1 then
-          for i = 2, #rule do
-            local first = self:first_symbol(rule[i])
-            local removed = set_remove(first, EPSILON)
-            firsts = set_join(firsts, first)
-            if removed then
-              if i == #rule then
-                set_insert(firsts, EPSILON)
-              end
-            else
-              break
-            end
-          end
+          local symbols = clone(rule)
+          table.remove(symbols, 1)
+          firsts = set_join(firsts, self:first_symbols(symbols))
         else
           set_insert(firsts, EPSILON)
         end
@@ -236,6 +227,15 @@ local function construct_grammar(_grammar)
       end
     end
     return firsts
+  end
+
+  function self:follow_symbol(start)
+    local followsets = {}
+    local done = false
+    while not done do
+      for _, rule in ipairs(_grammar) do
+      end
+    end
   end
 
   function self:lr0_closure(items)
