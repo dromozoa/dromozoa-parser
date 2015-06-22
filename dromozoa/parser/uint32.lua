@@ -15,119 +15,138 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local function add(a, b)
+  local c = a + b
+  return c % 0x100000000
+end
+
+local function mul(a, b)
+  local a1 = a % 0x10000
+  local a2 = (a - a1) / 0x10000
+  local c1 = a1 * b
+  local c2 = a2 * b % 0x10000
+  local c = c1 + c2 * 0x10000
+  return c % 0x100000000
+end
+
 if _VERSION >= "Lua 5.3" then
-  return load([[
+  return assert(load([[
     return {
-      add = function (x, y)
-        return (x + y) & 0xFFFFFFFF
+      add = function (a, b)
+        local c = a + b
+        return c & 0xFFFFFFFF
       end;
-      mul = function (x, y)
-        return (x * y) & 0xFFFFFFFF
+      mul = function (a, b)
+        local c = a * b
+        return c & 0xFFFFFFFF
       end;
-      rotl = function (x, y)
-        return (x << y | x >> (32 - y)) & 0xFFFFFFFF
+      bxor = function (a, b)
+        local c = a ~ b
+        return c
       end;
-      bxor = function (x, y)
-        return x ~ y
+      shl = function (a, b)
+        local c = a << b
+        return c & 0xFFFFFFFF
       end;
-      shr = function (x, y)
-        return x >> y
-      end
+      shr = function (a, b)
+        local c = a >> b
+        return c
+      end;
+      rotl = function (a, b)
+        local c1 = a << b
+        local c2 = a >> (32 - b)
+        local c = c1 | c2
+        return c & 0xFFFFFFFF
+      end;
+      rotr = function (a, b)
+        local c1 = a >> b
+        local c2 = a << (32 - b)
+        local c = c1 | c2
+        return c & 0xFFFFFFFF
+      end;
     }
-  ]])()
+  ]]))()
 elseif bit32 then
-  local band = bit32.band
-  local shl = bit32.lshift
-  local shr = bit32.rshift
   return {
-    add = function (x, y)
-      return band(x + y, 0xFFFFFFFF)
-    end;
-    mul = function (x, y)
-      local a = shr(x, 16)
-      local b = band(x, 0xFFFF)
-      a = shl(band(a * y, 0xFFFF), 16)
-      b = b * y
-      return band(a + b, 0xFFFFFFFF)
-    end;
-    rotl = bit32.lrotate;
+    add = add;
+    mul = mul;
     bxor = bit32.bxor;
-    shr = shr;
+    shl = bit32.lshift;
+    shr = bit32.rshift;
+    rotl = bit32.lrotate;
+    rotr = bit32.rrotate;
   }
 elseif bit then
-  local band = bit.band
+  local bxor = bit.bxor
   local shl = bit.lshift
   local shr = bit.rshift
   local rotl = bit.rol
-  local bxor = bit.bxor
+  local rotr = bit.ror
   return {
-    add = function (x, y)
-      return (x + y) % 0x100000000
+    add = add;
+    mul = mul;
+    bxor = function (a, b)
+      local c = bxor(a, b)
+      return c % 0x100000000
     end;
-    mul = function (x, y)
-      local a = shr(x, 16)
-      local b = band(x, 0xFFFF)
-      a = shl(band(a * y, 0xFFFF), 16)
-      b = b * y
-      return (a + b) % 0x100000000
-    end;
-    rotl = function (x, y)
-      return rotl(x, y) % 0x100000000
-    end;
-    bxor = function (x, y)
-      return bxor(x, y) % 0x100000000
+    shl = function (a, b)
+      local c = shl(a, b)
+      return c % 0x100000000
     end;
     shr = shr;
+    rotl = function (a, b)
+      local c = rotl(a, b)
+      return c % 0x100000000
+    end;
+    rotr = function (a, b)
+      local c = rotr(a, b)
+      return c % 0x100000000
+    end;
   }
 else
-  local function add(x, y)
-    local z = x + y
-    return z % 0x100000000
-  end
-
-  local function mul(a, b)
-    local a1 = a % 0x10000
-    local a2 = (a - a1) / 0x10000
-    local b1 = b % 0x10000
-    local c = a1 * b + a2 * b1 * 0x10000
-    return c % 0x100000000
-  end
-
-  local function rotl(a, b)
-    local c = 2 ^ (32 - b)
-    local a1 = a % c
-    local a2 = (a - a1) / c
-    return a1 * (2 ^ b) + a2
-  end
-
   local function bxor(a, b)
     local c = 0
     local d = 1
     for i = 1, 32 do
       local a1 = a % 2
       local b1 = b % 2
-
       if a1 ~= b1 then
         c = c + d
       end
-      d = d * 2
-
       a = (a - a1) / 2
       b = (b - b1) / 2
+      d = d * 2
     end
     return c
   end
 
+  local function shl(a, b)
+    local b1 = 2 ^ (32 - b)
+    local b2 = 2 ^ b
+    local c = a % b1 * b2
+    return c
+  end
+
   local function shr(a, b)
-    local c = a / (2 ^ b)
+    local b1 = 2 ^ b
+    local c = a / b1
     return c - c % 1
+  end
+
+  local function rotl(a, b)
+    local b1 = 2 ^ (32 - b)
+    local b2 = 2 ^ b
+    local a1 = a % b1
+    local a2 = (a - a1) / b1
+    return a1 * b2 + a2
   end
 
   return {
     add = add;
     mul = mul;
-    rotl = rotl;
     bxor = bxor;
+    shl = shl;
     shr = shr;
+    rotl = rotl;
   }
 end
