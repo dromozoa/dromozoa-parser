@@ -93,7 +93,10 @@ elseif bit then
       local c = shl(a, b)
       return c % 0x100000000
     end;
-    shr = shr;
+    shr = function (a, b)
+      local c = shr(a, b)
+      return c % 0x100000000
+    end;
     rotl = function (a, b)
       local c = rotl(a, b)
       return c % 0x100000000
@@ -107,7 +110,7 @@ else
   local function bxor(a, b)
     local c = 0
     local d = 1
-    for i = 1, 32 do
+    for i = 1, 31 do
       local a1 = a % 2
       local b1 = b % 2
       if a1 ~= b1 then
@@ -117,13 +120,18 @@ else
       b = (b - b1) / 2
       d = d * 2
     end
+    local a2 = a % 2
+    local b2 = b % 2
+    if a2 ~= b2 then
+      c = c + d
+    end
     return c
   end
 
   local function shl(a, b)
-    local b1 = 2 ^ (32 - b)
-    local b2 = 2 ^ b
-    local c = a % b1 * b2
+    local b1 = 2 ^ b
+    local b2 = 0x100000000 / b1
+    local c = a % b2 * b1
     return c
   end
 
@@ -134,11 +142,21 @@ else
   end
 
   local function rotl(a, b)
-    local b1 = 2 ^ (32 - b)
-    local b2 = 2 ^ b
+    local b1 = 2 ^ b
+    local b2 = 0x100000000 / b1
+    local a1 = a % b2
+    local a2 = (a - a1) / b2
+    local c = a1 * b1 + a2
+    return c
+  end
+
+  local function rotr(a, b)
+    local b1 = 2 ^ b
+    local b2 = 0x100000000 / b1
     local a1 = a % b1
     local a2 = (a - a1) / b1
-    return a1 * b2 + a2
+    local c = a1 * b2 + a2
+    return c
   end
 
   return {
@@ -148,5 +166,6 @@ else
     shl = shl;
     shr = shr;
     rotl = rotl;
+    rotr = rotr;
   }
 end

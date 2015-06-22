@@ -1,57 +1,39 @@
-local function add(x, y)
-  local z = x + y
-  return z % 0x100000000
-end
+-- Copyright (C) 2015 Tomoyuki Fujimori <moyu@dromozoa.com>
+--
+-- This file is part of dromozoa-parser.
+--
+-- dromozoa-parser is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- dromozoa-parser is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function mul(a, b)
-  local a1 = a % 0x10000
-  local a2 = (a - a1) / 0x10000
-  local b1 = b % 0x10000
-  local c = a1 * b + a2 * b1 * 0x10000
-  return c % 0x100000000
-end
+local uint32 = require "dromozoa.parser.uint32"
 
-local function rotl(a, b)
-  local c = 2 ^ (32 - b)
-  local a1 = a % c
-  local a2 = (a - a1) / c
-  return a1 * (2 ^ b) + a2
-end
+assert(uint32.add(0xFEEDFACE, 0xDEADBEEF) == 0xDD9BB9BD)
+assert(uint32.mul(0xFEEDFACE, 0xDEADBEEF) == 0xC1880A52)
+assert(uint32.bxor(0xFEEDFACE, 0xDEADBEEF) == 0x20404421)
+assert(uint32.shl(0xFEEDFACE, 16) == 0xFACE0000)
+assert(uint32.shr(0xFEEDFACE, 16) == 0x0000FEED)
+assert(uint32.rotl(0xFEEDFACE, 7) == 0x76FD677F)
+assert(uint32.rotl(0xFEEDFACE, 8) == 0xEDFACEFE)
+assert(uint32.rotl(0xFEEDFACE, 16) == 0xFACEFEED)
+assert(uint32.rotl(0xFEEDFACE, 24) == 0xCEFEEDFA)
+assert(uint32.rotr(0xFEEDFACE, 7) == 0x9DFDDBF5)
+assert(uint32.rotr(0xFEEDFACE, 8) == 0xCEFEEDFA)
+assert(uint32.rotr(0xFEEDFACE, 16) == 0xFACEFEED)
+assert(uint32.rotr(0xFEEDFACE, 24) == 0xEDFACEFE)
 
-local function bxor(a, b)
-  local c = 0
-  local d = 1
-  for i = 1, 32 do
-    local a1 = a % 2
-    local b1 = b % 2
-
-    if a1 ~= b1 then
-      c = c + d
-    end
-    d = d * 2
-
-    a = (a - a1) / 2
-    b = (b - b1) / 2
-  end
-  return c
-end
-
--- io.write(string.format("0x%08x\n", bxor(0xFF, 0x0F)))
-
--- local function mul_ref(a, b)
---   return (a * b) & 0xFFFFFFFF
--- end
-
-
-
--- io.write(mul(65535, 65535), "\n")
--- io.write(mul(0x12345678, 0x12345678), "\n")
--- 
--- io.write(mul_ref(65535, 65535), "\n")
--- io.write(mul_ref(0x12345678, 0x12345678), "\n")
-
--- for i = 0, 32 do
---   io.write(rotl(0x12345678, i), "\n")
---   -- print(string.format("0x%08x", rotl(0x12345678, i)))
--- end
+assert(uint32.bxor(0xFFFFFFFF, 0x00000000) == 0xFFFFFFFF)
+assert(uint32.shl(0xFFFFFFFF, 0) == 0xFFFFFFFF)
+assert(uint32.shr(0xFFFFFFFF, 0) == 0xFFFFFFFF)
+assert(uint32.rotl(0xFFFFFFFF, 0) == 0xFFFFFFFF)
+assert(uint32.rotr(0xFFFFFFFF, 0) == 0xFFFFFFFF)
 
