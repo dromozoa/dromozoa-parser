@@ -1,0 +1,76 @@
+-- Copyright (C) 2015 Tomoyuki Fujimori <moyu@dromozoa.com>
+--
+-- This file is part of dromozoa-parser.
+--
+-- dromozoa-parser is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- dromozoa-parser is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
+
+local uint32 = require "dromozoa.parser.uint32"
+
+local string_byte = string.byte
+local add = uint32.add
+local mul = uint32.mul
+local bxor = uint32.bxor
+local shl = uint32.shl
+local shr = uint32.shr
+local rotl = uint32.rotl
+
+local c1 = 0xCC9E2D51
+local c2 = 0x1B873593
+
+return function (key, seed)
+  local h1 = seed
+  local n = #key
+  local m = n - n % 4
+
+  for i = 4, m, 4 do
+    local a, b, c, d = string_byte(key, i - 3, i)
+    local k1 = a + shl(b, 8) + shl(c, 16) + shl(d, 24)
+
+    k1 = mul(k1, c1)
+    k1 = rotl(k1, 15)
+    k1 = mul(k1, c2)
+    h1 = bxor(h1, k1)
+
+    h1 = rotl(h1, 13)
+    h1 = mul(h1, 5)
+    h1 = add(h1, 0xE6546B64)
+  end
+
+  if m < n then
+    local a, b, c = string_byte(key, m + 1, n)
+    local k1 = 0
+    if c then
+      k1 = bxor(k1, shl(c, 16))
+    end
+    if b then
+      k1 = bxor(k1, shl(b, 8))
+    end
+    k1 = bxor(k1, a)
+
+    k1 = mul(k1, c1)
+    k1 = rotl(k1, 15)
+    k1 = mul(k1, c2)
+    h1 = bxor(h1, k1)
+  end
+
+  h1 = bxor(h1, n)
+
+  h1 = bxor(h1, shr(h1, 16))
+  h1 = mul(h1, 0x85EBCA6B)
+  h1 = bxor(h1, shr(h1, 13))
+  h1 = mul(h1, 0xC2B2AE35)
+  h1 = bxor(h1, shr(h1, 16))
+
+  return h1
+end
