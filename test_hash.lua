@@ -1,3 +1,5 @@
+local uint32 = require "dromozoa.parser.uint32"
+
 local function add(x, y)
   local z = x + y
   return z % 0x100000000
@@ -36,17 +38,25 @@ local function bxor(a, b)
   return c
 end
 
-local function shl(a, b)
+local function shr(a, b)
   local c = a / (2 ^ b)
   return c - c % 1
 end
 
+local add = uint32.add
+local mul = uint32.mul
+local rotl = uint32.rotl
+local bxor = uint32.bxor
+local shr = uint32.shr
+
+
+
 local function fmix32(h)
-  h = bxor(h, shl(h, 16))
+  h = bxor(h, shr(h, 16))
   h = mul(h, 0x85EBCA6B)
-  h = bxor(h, shl(h, 13))
+  h = bxor(h, shr(h, 13))
   h = mul(h, 0xC2B2AE35)
-  h = bxor(h, shl(h, 16))
+  h = bxor(h, shr(h, 16))
   return h
 end
 
@@ -94,9 +104,13 @@ local function murmur_hash3(s, seed)
     end
     io.write(string.format("%d\t0x%08X\n", n, k1))
     k1 = mul(k1, c1)
+    io.write(string.format("k1.1: %d\t0x%08X\n", n, k1))
     k1 = rotl(k1, 15)
+    io.write(string.format("k1.2: %d\t0x%08X\n", n, k1))
     k1 = mul(k1, c2)
+    io.write(string.format("k1.3: %d\t0x%08X\n", n, k1))
     h1 = bxor(h1, k1)
+    io.write(string.format("h1.1: %d\t0x%08X\n", n, h1))
   end
 
   io.write(string.format("h1: 0x%08X\n", h1))
