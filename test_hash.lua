@@ -36,24 +36,17 @@ local function bxor(a, b)
   return c
 end
 
+local function shl(a, b)
+  local c = a / (2 ^ b)
+  return c - c % 1
+end
+
 local function fmix32(h)
-  io.write(string.format("fmix32(1): 0x%08X\n", h))
-  local a = h / 0x10000 -- >>16
-  a = a - a % 1
-  h = bxor(h, a)
-  io.write(string.format("fmix32(2): 0x%08X\n", h))
-  h = mul(h, 0x85EBCA6B) -- >>13
-  io.write(string.format("fmix32(3): 0x%08X\n", h))
-  local b = h / 0x2000
-  b = b - b % 1
-  h = bxor(h, b)
-  io.write(string.format("fmix32(4): 0x%08X\n", h))
+  h = bxor(h, shl(h, 16))
+  h = mul(h, 0x85EBCA6B)
+  h = bxor(h, shl(h, 13))
   h = mul(h, 0xC2B2AE35)
-  io.write(string.format("fmix32(5): 0x%08X\n", h))
-  local c = h / 0x10000 -- >>16
-  c = c - c % 1
-  h = bxor(h, c)
-  io.write(string.format("fmix32(6): 0x%08X\n", h))
+  h = bxor(h, shl(h, 16))
   return h
 end
 
