@@ -49,14 +49,7 @@ return function (key, seed)
 
   if m < n then
     local a, b, c = string_byte(key, m + 1, n)
-    local k1 = 0
-    if c then
-      k1 = bxor(k1, shl(c, 16))
-    end
-    if b then
-      k1 = bxor(k1, shl(b, 8))
-    end
-    k1 = bxor(k1, a)
+    local k1 = a + shl(b or 0, 8) + shl(c or 0, 16)
 
     k1 = mul(k1, c1)
     k1 = rotl(k1, 15)
