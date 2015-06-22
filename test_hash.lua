@@ -1,3 +1,4 @@
+local json = require "dromozoa.json"
 local uint32 = require "dromozoa.parser.uint32"
 
 local add = uint32.add
@@ -78,5 +79,3 @@ end
 
 local h = murmur_hash3(arg[1], 0)
 io.write(string.format("0x%08X\t%d\n", h, h))
-
-
