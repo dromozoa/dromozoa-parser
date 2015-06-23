@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local hash_set = require "dromozoa.parser.hash_set"
+local index_set = require "dromozoa.parser.index_set"
 
 local function count(map)
   local n = 0
@@ -84,3 +85,4 @@ local function test(set)
 end
 
 test(hash_set())
+test(index_set())
