@@ -70,3 +70,21 @@ assert(n == 2)
 
 assert(not set:find(1))
 assert(set2:find(1))
+
+assert(set2[1])
+assert(set2[2])
+assert(not set2[42])
+set2[1] = nil
+set2[2] = nil
+set2[42] = true
+assert(not set2[1])
+assert(not set2[2])
+assert(set2[42])
+
+print("--")
+local n = 0
+for v in set2:each() do
+  n = n + 1
+  print(v)
+end
+assert(n == 7)

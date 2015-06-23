@@ -19,6 +19,20 @@ local clone = require "dromozoa.commons.clone"
 local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
 
+local metatable = {}
+
+function metatable:__index(key)
+  return self:find(key)
+end
+
+function metatable:__newindex(key, value)
+  if value then
+    self:insert(key)
+  else
+    self:remove(key)
+  end
+end
+
 local function construct(_u, _v)
   local self = {}
 
@@ -115,7 +129,7 @@ local function construct(_u, _v)
     return false
   end
 
-  return self
+  return setmetatable(self, metatable)
 end
 
 return function ()
