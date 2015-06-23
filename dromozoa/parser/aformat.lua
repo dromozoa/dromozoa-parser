@@ -15,20 +15,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local string_format = string.format
-
-if pcall(string_format, "%a", 0) then
+if pcall(string.format, "%a", 0) then
   return function (value)
-    return string_format("%.13a", value)
+    return string.format("%.13a", value)
   end
 else
-  local math_huge = math.huge
-  local math_frexp = math.frexp
-
   return function (value)
-    if -math_huge < value and value < math_huge then
+    if -math.huge < value and value < math.huge then
       if value == 0 then
-        return string_format("%gx0.0000000000000p+0", value)
+        return string.format("%gx0.0000000000000p+0", value)
       else
         local format
         if value > 0 then
@@ -37,17 +32,17 @@ else
           format = "-0x1.%08x%05xp%+d"
           value = -value
         end
-        local m, e = math_frexp(value)
+        local m, e = math.frexp(value)
         m = m * 2 - 1
         e = e - 1
         local a = m * 0x100000000
         local b = a % 1
         a = a - b
         b = b * 0x100000
-        return string_format(format, a, b, e)
+        return string.format(format, a, b, e)
       end
     else
-      return string_format("%f", value)
+      return string.format("%f", value)
     end
   end
 end

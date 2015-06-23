@@ -26,12 +26,12 @@ local function construct(_u, _v)
     return construct(clone(_u), clone(_v))
   end
 
-  function self:find(value)
-    local h = hash(value)
+  function self:find(key)
+    local h = hash(key)
     local u = _u[h]
     if u == nil then
       return false
-    elseif equal(u, value) then
+    elseif equal(u, key) then
       return true
     end
     local v = _v[h]
@@ -39,7 +39,7 @@ local function construct(_u, _v)
       return false
     end
     for i = 1, #v do
-      if equal(v[i], value) then
+      if equal(v[i], key) then
         return true
       end
     end
@@ -59,35 +59,35 @@ local function construct(_u, _v)
     end)
   end
 
-  function self:insert(value)
-    local h = hash(value)
+  function self:insert(key)
+    local h = hash(key)
     local u = _u[h]
     if u == nil then
-      _u[h] = value
+      _u[h] = key
       return true
-    elseif equal(u, value) then
+    elseif equal(u, key) then
       return false
     end
     local v = _v[h]
     if v == nil then
-      _v[h] = { value }
+      _v[h] = { key }
       return true
     end
     for i = 1, #v do
-      if equal(v[i], value) then
+      if equal(v[i], key) then
         return false
       end
     end
-    v[#v + 1] = value
+    v[#v + 1] = key
     return true
   end
 
-  function self:remove(value)
-    local h = hash(value)
+  function self:remove(key)
+    local h = hash(key)
     local u = _u[h]
     if u == nil then
       return false
-    elseif equal(u, value) then
+    elseif equal(u, key) then
       local v = _v[h]
       if v == nil then
         _u[h] = nil
@@ -104,7 +104,7 @@ local function construct(_u, _v)
       return false
     end
     for i = 1, #v do
-      if equal(v[i], value) then
+      if equal(v[i], key) then
         table.remove(v, i)
         if #v == 0 then
           _v[h] = nil

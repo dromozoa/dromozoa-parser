@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local json = require "dromozoa.json"
 local hash_set = require "dromozoa.parser.hash_set"
 
 local set = hash_set()

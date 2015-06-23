@@ -18,26 +18,24 @@
 local aformat = require "dromozoa.parser.aformat"
 local murmur_hash3 = require "dromozoa.parser.murmur_hash3"
 
-local type = type
-
-local function hash(this)
-  local t = type(this)
+local function hash(key)
+  local t = type(key)
   if t == "number" then
-    return murmur_hash3(aformat(this), 1)
+    return murmur_hash3(aformat(key), 1)
   elseif t == "string" then
-    return murmur_hash3(this, 2)
+    return murmur_hash3(key, 2)
   elseif t == "boolean" then
-    if this then
+    if key then
       return murmur_hash3(1, 3)
     else
       return murmur_hash3(0, 3)
     end
   elseif t == "table" then
-    local that = murmur_hash3(#this, 4)
-    for i = 1, #this do
-      that = murmur_hash3(hash(this[i]), that)
+    local h = murmur_hash3(#key, 4)
+    for i = 1, #key do
+      h = murmur_hash3(hash(key[i]), h)
     end
-    return that
+    return h
   end
 end
 
