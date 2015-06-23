@@ -15,10 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local type = type
-local next = next
-local getmetatable = getmetatable
-
 local function equal(a, b)
   if a == b then
     return true
