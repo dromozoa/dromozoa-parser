@@ -18,20 +18,7 @@
 local clone = require "dromozoa.commons.clone"
 local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
-
-local metatable = {}
-
-function metatable:__index(key)
-  return self:find(key)
-end
-
-function metatable:__newindex(key, value)
-  if value then
-    self:insert(key)
-  else
-    self:remove(key)
-  end
-end
+local set = require "dromozoa.parser.set"
 
 local function construct(_u, _v)
   local self = {}
@@ -44,30 +31,30 @@ local function construct(_u, _v)
     local h = hash(key)
     local u = _u[h]
     if u == nil then
-      return false
+      return nil
     elseif equal(u, key) then
       return true
     end
     local v = _v[h]
     if v == nil then
-      return false
+      return nil
     end
     for i = 1, #v do
       if equal(v[i], key) then
         return true
       end
     end
-    return false
+    return nil
   end
 
   function self:each()
     return coroutine.wrap(function ()
       for _, u in pairs(_u) do
-        coroutine.yield(u)
+        coroutine.yield(u, true)
       end
       for _, v in pairs(_v) do
         for i = 1, #v do
-          coroutine.yield(v[i])
+          coroutine.yield(v[i], true)
         end
       end
     end)
@@ -78,29 +65,29 @@ local function construct(_u, _v)
     local u = _u[h]
     if u == nil then
       _u[h] = key
-      return true
+      return nil
     elseif equal(u, key) then
-      return false
+      return true
     end
     local v = _v[h]
     if v == nil then
       _v[h] = { key }
-      return true
+      return nil
     end
     for i = 1, #v do
       if equal(v[i], key) then
-        return false
+        return true
       end
     end
     v[#v + 1] = key
-    return true
+    return nil
   end
 
   function self:remove(key)
     local h = hash(key)
     local u = _u[h]
     if u == nil then
-      return false
+      return nil
     elseif equal(u, key) then
       local v = _v[h]
       if v == nil then
@@ -115,7 +102,7 @@ local function construct(_u, _v)
     end
     local v = _v[h]
     if v == nil then
-      return false
+      return nil
     end
     for i = 1, #v do
       if equal(v[i], key) then
@@ -126,10 +113,10 @@ local function construct(_u, _v)
         return true
       end
     end
-    return false
+    return nil
   end
 
-  return setmetatable(self, metatable)
+  return set(self)
 end
 
 return function ()
