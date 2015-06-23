@@ -15,38 +15,30 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
--- local clone = require "dromozoa.commons.clone"
-local hash_map = require "dromozoa.parser.hash_map"
-local index = require "dromozoa.parser.index"
-local map = require "dromozoa.parser.map"
+local clone = require "dromozoa.commons.clone"
 
-return function ()
-  return map(index(hash_map()))
-end
-
---[[
-local function construct(_map, _index)
+local function construct(_data, _index)
   local self = {}
 
   function self:clone()
-    return construct(_map:clone(), clone(_index))
+    return setmetatable(construct(_data:clone(), clone(_index)), getmetatable(self))
   end
 
   function self:find(key)
-    return _map:find(key)
+    return _data:find(key)
   end
 
   function self:each()
     return coroutine.wrap(function ()
       for i = 1, #_index do
         local key = _index[i]
-        coroutine.yield(key, _map:find(key))
+        coroutine.yield(key, _data:find(key))
       end
     end)
   end
 
-  function self:insert(key, value, overwrite)
-    local result = _map:insert(key, value, overwrite)
+  function self:insert(key, ...)
+    local result = _data:insert(key, ...)
     if result == nil then
       _index[#_index + 1] = key
     end
@@ -54,7 +46,7 @@ local function construct(_map, _index)
   end
 
   function self:remove(key)
-    local result = _map:remove(key)
+    local result = _data:remove(key)
     if result ~= nil then
       for i = 1, #_index do
         if _index[i] == key then
@@ -66,10 +58,9 @@ local function construct(_map, _index)
     return result
   end
 
-  return map(self)
+  return self
 end
 
-return function ()
-  return construct(hash_map(), {})
+return function (data)
+  return construct(data, {})
 end
-]]
