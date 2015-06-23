@@ -30,12 +30,12 @@ local c2 = 0x1B873593
 
 return function (key, seed)
   local h1 = seed
-  local n = #key
-  local m = n - n % 4
+  local n
 
-  for i = 4, m, 4 do
-    local a, b, c, d = string_byte(key, i - 3, i)
-    local k1 = a + shl(b, 8) + shl(c, 16) + shl(d, 24)
+  local t = type(key)
+  if t == "number" then
+    n = 4
+    local k1 = key
 
     k1 = mul(k1, c1)
     k1 = rotl(k1, 15)
@@ -45,16 +45,33 @@ return function (key, seed)
     h1 = rotl(h1, 13)
     h1 = mul(h1, 5)
     h1 = add(h1, 0xE6546B64)
-  end
+  else
+    n = #key
+    local m = n - n % 4
 
-  if m < n then
-    local a, b, c = string_byte(key, m + 1, n)
-    local k1 = a + shl(b or 0, 8) + shl(c or 0, 16)
+    for i = 4, m, 4 do
+      local a, b, c, d = string_byte(key, i - 3, i)
+      local k1 = a + shl(b, 8) + shl(c, 16) + shl(d, 24)
 
-    k1 = mul(k1, c1)
-    k1 = rotl(k1, 15)
-    k1 = mul(k1, c2)
-    h1 = bxor(h1, k1)
+      k1 = mul(k1, c1)
+      k1 = rotl(k1, 15)
+      k1 = mul(k1, c2)
+      h1 = bxor(h1, k1)
+
+      h1 = rotl(h1, 13)
+      h1 = mul(h1, 5)
+      h1 = add(h1, 0xE6546B64)
+    end
+
+    if m < n then
+      local a, b, c = string_byte(key, m + 1, n)
+      local k1 = a + shl(b or 0, 8) + shl(c or 0, 16)
+
+      k1 = mul(k1, c1)
+      k1 = rotl(k1, 15)
+      k1 = mul(k1, c2)
+      h1 = bxor(h1, k1)
+    end
   end
 
   h1 = bxor(h1, n)

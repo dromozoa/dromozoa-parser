@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local hash = require "dromozoa.parser.hash"
 local murmur_hash3 = require "dromozoa.parser.murmur_hash3"
 
 assert(murmur_hash3("", 0) == 0)
@@ -27,3 +28,16 @@ assert(murmur_hash3("abcdef", 0) == 1635893381)
 assert(murmur_hash3("abcdefg", 0) == 2285673222)
 assert(murmur_hash3("abcdefgh", 0) == 1239272644)
 assert(murmur_hash3("abcdefghi", 0) == 1108608752)
+
+assert(hash(true) == hash(true))
+assert(hash(false) ~= hash(0))
+assert(hash(false) ~= hash(""))
+assert(hash(false) ~= hash(true))
+assert(hash(false) ~= hash({}))
+
+assert(hash({}) == hash({}))
+assert(hash({ "foo", "bar", "baz" }) == hash({ "foo", "bar", "baz" }))
+assert(hash({ "foo", "bar", "baz" }) ~= hash({ "foo", { "bar", "baz" } }))
+assert(hash({ "foo", "bar", "baz" }) ~= hash({ "foo", { "bar", { "baz" } } }))
+
+assert(hash(42) ~= hash("42"))
