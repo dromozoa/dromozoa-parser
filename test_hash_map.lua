@@ -80,3 +80,10 @@ assert(count(map2) == 6)
 assert(map2:find(6) == "6")
 assert(not map2:insert(6, "!", true))
 assert(map2:find(6) == "!")
+
+map2[5] = "!"
+map2[{1,2,3,4}] = true
+
+assert(map2[5] == "!")
+assert(map2[6] == "!")
+assert(map2[{1,2,3,4}])
