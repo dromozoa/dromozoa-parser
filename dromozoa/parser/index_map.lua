@@ -17,6 +17,7 @@
 
 local clone = require "dromozoa.commons.clone"
 local hash_map = require "dromozoa.parser.hash_map"
+local map = require "dromozoa.parser.map"
 
 local function construct(_map, _index)
   local self = {}
@@ -40,7 +41,7 @@ local function construct(_map, _index)
 
   function self:insert(key, value, overwrite)
     local result = _map:insert(key, value, overwrite)
-    if result then
+    if result == nil then
       _index[#_index + 1] = key
     end
     return result
@@ -48,18 +49,18 @@ local function construct(_map, _index)
 
   function self:remove(key)
     local result = _map:remove(key)
-    if result then
+    if result ~= nil then
       for i = 1, #_index do
         if _index[i] == key then
           table.remove(_index, i)
-          break
+          return result
         end
       end
     end
     return result
   end
 
-  return self
+  return map(self)
 end
 
 return function ()

@@ -18,20 +18,7 @@
 local clone = require "dromozoa.commons.clone"
 local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
-
-local metatable = {}
-
-function metatable:__index(key)
-  return self:find(key)
-end
-
-function metatable:__newindex(key, value)
-  if value == nil then
-    self:remove(key)
-  else
-    self:insert(key, value, true)
-  end
-end
+local map = require "dromozoa.parser.map"
 
 local function construct(_u, _v, _w)
   local self = {}
@@ -79,38 +66,42 @@ local function construct(_u, _v, _w)
     if u == nil then
       _u[h] = key
       _v[h] = value
-      return true
+      return nil
     elseif equal(u, key) then
+      local v = _v[h]
       if overwrite then
         _v[h] = value
       end
-      return false
+      return v
     end
     local w = _w[h]
     if w == nil then
       _w[h] = { key, value }
-      return true
+      return nil
     end
     local n = #w
     for i = 1, n, 2 do
       if equal(w[i], key) then
+        local j = i + 1
+        local v = w[j]
         if overwrite then
-          w[i + 1] = value
+          w[j] = value
         end
-        return false
+        return v
       end
     end
     w[n + 1] = key
     w[n + 2] = value
-    return true
+    return nil
   end
 
   function self:remove(key)
     local h = hash(key)
     local u = _u[h]
     if u == nil then
-      return false
+      return nil
     elseif equal(u, key) then
+      local v = _v[h]
       local w = _w[h]
       if w == nil then
         _u[h] = nil
@@ -124,26 +115,26 @@ local function construct(_u, _v, _w)
         _u[h] = u
         _v[h] = v
       end
-      return true
+      return v
     end
     local w = _w[h]
     if w == nil then
-      return false
+      return nil
     end
     for i = 1, #w, 2 do
       if equal(w[i], key) then
         table.remove(w, i)
-        table.remove(w, i)
+        local v = table.remove(w, i)
         if #w == 0 then
           _w[h] = nil
         end
-        return true
+        return v
       end
     end
-    return false
+    return nil
   end
 
-  return setmetatable(self, metatable)
+  return map(self)
 end
 
 return function ()

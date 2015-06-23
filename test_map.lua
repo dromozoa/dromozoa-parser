@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local hash_map = require "dromozoa.parser.hash_map"
+local index_map = require "dromozoa.parser.index_map"
 
 local function count(map)
   local n = 0
@@ -28,20 +29,20 @@ local function count(map)
 end
 
 local function test(map)
-  assert(map:insert(1, "1"))
-  assert(map:insert(2, "2"))
-  assert(map:insert(3, "3"))
-  assert(map:insert(4, "4"))
-  assert(map:insert(5, "5"))
-  assert(map:insert(6, "6"))
+  assert(map:insert(1, "1") == nil)
+  assert(map:insert(2, "2") == nil)
+  assert(map:insert(3, "3") == nil)
+  assert(map:insert(4, "4") == nil)
+  assert(map:insert(5, "5") == nil)
+  assert(map:insert(6, "6") == nil)
   assert(count(map) == 6)
 
   local map2 = map:clone()
 
-  assert(not map:insert(5, "!"))
-  assert(not map:insert(6, "!"))
-  assert(map:insert(7, "7"))
-  assert(map:insert(8, "8"))
+  assert(map:insert(5, "!") == "5")
+  assert(map:insert(6, "!") == "6")
+  assert(map:insert(7, "7") == nil)
+  assert(map:insert(8, "8") == nil)
   assert(count(map) == 8)
 
   assert(map:find(1) == "1")
@@ -53,26 +54,26 @@ local function test(map)
   assert(map:find(7) == "7")
   assert(map:find(8) == "8")
 
-  assert(map:remove(1))
-  assert(map:remove(2))
+  assert(map:remove(1) == "1")
+  assert(map:remove(2) == "2")
   assert(count(map) == 6)
 
-  assert(map:remove(7))
-  assert(map:remove(8))
+  assert(map:remove(7) == "7")
+  assert(map:remove(8) == "8")
   assert(count(map) == 4)
 
-  assert(map:remove(3))
-  assert(map:remove(4))
+  assert(map:remove(3) == "3")
+  assert(map:remove(4) == "4")
   assert(count(map) == 2)
 
-  assert(map:remove(5))
-  assert(map:remove(6))
+  assert(map:remove(5) == "5")
+  assert(map:remove(6) == "6")
   assert(count(map) == 0)
 
   assert(count(map2) == 6)
 
   assert(map2:find(6) == "6")
-  assert(not map2:insert(6, "!", true))
+  assert(map2:insert(6, "!", true) == "6")
   assert(map2:find(6) == "!")
 
   map2[5] = "!"
@@ -81,6 +82,12 @@ local function test(map)
   assert(map2[5] == "!")
   assert(map2[6] == "!")
   assert(map2[{1,2,3,4}])
+
+  print("--")
+  for k, v in pairs(map2) do
+    print(k, v)
+  end
 end
 
 test(hash_map())
+test(index_map())
