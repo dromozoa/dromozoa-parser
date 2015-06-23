@@ -19,6 +19,7 @@ local json = require "dromozoa.json"
 local hash_set = require "dromozoa.parser.hash_set"
 
 local set = hash_set()
+
 assert(set:insert(1))
 assert(set:insert(2))
 assert(set:insert(3))
@@ -40,16 +41,33 @@ assert(not set:insert(6))
 assert(not set:insert(7))
 assert(not set:insert(8))
 
-local u, v = set:get()
-print(json.encode(u))
-print(json.encode(v))
+print("--")
+local n = 0
+for v in set:each() do
+  n = n + 1
+  print(v)
+end
+assert(n == 8)
+
+local set2 = set:clone()
 
 assert(set:remove(1))
 assert(set:remove(2))
+
 assert(set:remove(5))
 assert(set:remove(6))
 assert(not set:remove(9))
 
-local u, v = set:get()
-print(json.encode(u))
-print(json.encode(v))
+assert(set:remove(7))
+assert(set:remove(8))
+
+print("--")
+local n = 0
+for v in set:each() do
+  n = n + 1
+  print(v)
+end
+assert(n == 2)
+
+assert(not set:find(1))
+assert(set2:find(1))

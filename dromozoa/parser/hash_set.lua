@@ -15,20 +15,16 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local clone = require "dromozoa.commons.clone"
 local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
 
-local table_remove = table.remove
-
-local function hash(value)
-  return value % 2 + 1
-end
-
-local function construct()
-  local _u = {}
-  local _v = {}
-
+local function construct(_u, _v)
   local self = {}
+
+  function self:clone()
+    return construct(clone(_u), clone(_v))
+  end
 
   function self:find(value)
     local h = hash(value)
@@ -41,14 +37,26 @@ local function construct()
     local v = _v[h]
     if v == nil then
       return false
-    else
-      for i = 1, #v do
-        if equal(v[i], value) then
-          return true
+    end
+    for i = 1, #v do
+      if equal(v[i], value) then
+        return true
+      end
+    end
+    return false
+  end
+
+  function self:each()
+    return coroutine.wrap(function ()
+      for _, u in pairs(_u) do
+        coroutine.yield(u)
+      end
+      for _, v in pairs(_v) do
+        for i = 1, #v do
+          coroutine.yield(v[i])
         end
       end
-      return false
-    end
+    end)
   end
 
   function self:insert(value)
@@ -64,15 +72,14 @@ local function construct()
     if v == nil then
       _v[h] = { value }
       return true
-    else
-      for i = 1, #v do
-        if equal(v[i], value) then
-          return false
-        end
-      end
-      v[#v + 1] = value
-      return true
     end
+    for i = 1, #v do
+      if equal(v[i], value) then
+        return false
+      end
+    end
+    v[#v + 1] = value
+    return true
   end
 
   function self:remove(value)
@@ -85,12 +92,9 @@ local function construct()
       if v == nil then
         _u[h] = nil
       else
-        local n = #v
-        _u[h] = v[n]
-        if n == 1 then
+        _u[h] = table.remove(v, 1)
+        if #v == 0 then
           _v[h] = nil
-        else
-          v[n] = nil
         end
       end
       return true
@@ -98,29 +102,22 @@ local function construct()
     local v = _v[h]
     if v == nil then
       return false
-    else
-      local n = #v
-      if n == 1 then
-        if equal(v[1], value) then
+    end
+    for i = 1, #v do
+      if equal(v[i], value) then
+        table.remove(v, i)
+        if #v == 0 then
           _v[h] = nil
-          return true
         end
-      else
-        for i = 1, n do
-          if equal(v[i], value) then
-            table_remove(v, i)
-            return true
-          end
-        end
+        return true
       end
     end
-  end
-
-  function self:get()
-    return _u, _v
+    return false
   end
 
   return self
 end
 
-return construct
+return function ()
+  return construct({}, {})
+end
