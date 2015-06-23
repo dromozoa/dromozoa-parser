@@ -45,6 +45,15 @@ assert(not map:insert(6, "!"))
 assert(map:insert(7, "7"))
 assert(map:insert(8, "8"))
 
+assert(map:find(1) == "1")
+assert(map:find(2) == "2")
+assert(map:find(3) == "3")
+assert(map:find(4) == "4")
+assert(map:find(5) == "5")
+assert(map:find(6) == "6")
+assert(map:find(7) == "7")
+assert(map:find(8) == "8")
+
 assert(count(map) == 8)
 
 assert(map:remove(1))
@@ -67,3 +76,7 @@ assert(map:remove(6))
 
 assert(count(map) == 0)
 assert(count(map2) == 6)
+
+assert(map2:find(6) == "6")
+assert(not map2:insert(6, "!", true))
+assert(map2:find(6) == "!")

@@ -44,7 +44,7 @@ local function construct(_u, _v, _w)
     end
     for i = 1, #w, 2 do
       if equal(w[i], key) then
-        return v[i + 1]
+        return w[i + 1]
       end
     end
     return nil
@@ -63,7 +63,7 @@ local function construct(_u, _v, _w)
     end)
   end
 
-  function self:insert(key, value)
+  function self:insert(key, value, overwrite)
     local h = hash(key)
     local u = _u[h]
     if u == nil then
@@ -71,6 +71,9 @@ local function construct(_u, _v, _w)
       _v[h] = value
       return true
     elseif equal(u, key) then
+      if overwrite then
+        _v[h] = value
+      end
       return false
     end
     local w = _w[h]
@@ -81,6 +84,9 @@ local function construct(_u, _v, _w)
     local n = #w
     for i = 1, n, 2 do
       if equal(w[i], key) then
+        if overwrite then
+          w[i + 1] = value
+        end
         return false
       end
     end
