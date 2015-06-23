@@ -18,7 +18,7 @@
 local clone = require "dromozoa.commons.clone"
 local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
-local set = require "dromozoa.parser.set"
+local meta_map = require "dromozoa.parser.meta_map"
 
 local function construct(_u, _v)
   local self = {}
@@ -116,7 +116,7 @@ local function construct(_u, _v)
     return nil
   end
 
-  return set(self)
+  return meta_map(self)
 end
 
 return function ()

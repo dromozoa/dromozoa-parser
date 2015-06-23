@@ -16,12 +16,13 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local clone = require "dromozoa.commons.clone"
+local meta_map = require "dromozoa.parser.meta_map"
 
 local function construct(_data, _index)
   local self = {}
 
   function self:clone()
-    return setmetatable(construct(_data:clone(), clone(_index)), getmetatable(self))
+    return construct(_data:clone(), clone(_index))
   end
 
   function self:find(key)
@@ -58,7 +59,7 @@ local function construct(_data, _index)
     return result
   end
 
-  return self
+  return meta_map(self)
 end
 
 return function (data)
