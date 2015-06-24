@@ -24,8 +24,30 @@ local shl = uint32.shl
 local shr = uint32.shr
 local rotl = uint32.rotl
 
-local c1 = 0xCC9E2D51
-local c2 = 0x1B873593
+local function update1(h1, k1)
+  k1 = mul(k1, 0xCC9E2D51)
+  k1 = rotl(k1, 15)
+  k1 = mul(k1, 0x1B873593)
+  h1 = bxor(h1, k1)
+  return h1
+end
+
+local function update2(h1)
+  h1 = rotl(h1, 13)
+  h1 = mul(h1, 5)
+  h1 = add(h1, 0xE6546B64)
+  return h1
+end
+
+local function finalize(h1, n)
+  h1 = bxor(h1, n)
+  h1 = bxor(h1, shr(h1, 16))
+  h1 = mul(h1, 0x85EBCA6B)
+  h1 = bxor(h1, shr(h1, 13))
+  h1 = mul(h1, 0xC2B2AE35)
+  h1 = bxor(h1, shr(h1, 16))
+  return h1
+end
 
 return function (key, seed)
   local h1 = seed
@@ -35,15 +57,8 @@ return function (key, seed)
   if t == "number" then
     n = 4
     local k1 = key
-
-    k1 = mul(k1, c1)
-    k1 = rotl(k1, 15)
-    k1 = mul(k1, c2)
-    h1 = bxor(h1, k1)
-
-    h1 = rotl(h1, 13)
-    h1 = mul(h1, 5)
-    h1 = add(h1, 0xE6546B64)
+    h1 = update1(h1, k1)
+    h1 = update2(h1)
   else
     n = #key
     local m = n - n % 4
@@ -51,35 +66,17 @@ return function (key, seed)
     for i = 4, m, 4 do
       local a, b, c, d = string.byte(key, i - 3, i)
       local k1 = a + shl(b, 8) + shl(c, 16) + shl(d, 24)
-
-      k1 = mul(k1, c1)
-      k1 = rotl(k1, 15)
-      k1 = mul(k1, c2)
-      h1 = bxor(h1, k1)
-
-      h1 = rotl(h1, 13)
-      h1 = mul(h1, 5)
-      h1 = add(h1, 0xE6546B64)
+      h1 = update1(h1, k1)
+      h1 = update2(h1)
     end
 
     if m < n then
       local a, b, c = string.byte(key, m + 1, n)
       local k1 = a + shl(b or 0, 8) + shl(c or 0, 16)
-
-      k1 = mul(k1, c1)
-      k1 = rotl(k1, 15)
-      k1 = mul(k1, c2)
-      h1 = bxor(h1, k1)
+      h1 = update1(h1, k1)
     end
   end
 
-  h1 = bxor(h1, n)
-
-  h1 = bxor(h1, shr(h1, 16))
-  h1 = mul(h1, 0x85EBCA6B)
-  h1 = bxor(h1, shr(h1, 13))
-  h1 = mul(h1, 0xC2B2AE35)
-  h1 = bxor(h1, shr(h1, 16))
-
+  h1 = finalize(h1, n)
   return h1
 end
