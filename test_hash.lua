@@ -28,6 +28,7 @@ assert(murmur_hash3("abcdef", 0) == 1635893381)
 assert(murmur_hash3("abcdefg", 0) == 2285673222)
 assert(murmur_hash3("abcdefgh", 0) == 1239272644)
 assert(murmur_hash3("abcdefghi", 0) == 1108608752)
+assert(murmur_hash3(0x64636261, 0) == 1139631978)
 
 assert(hash(true) == hash(true))
 assert(hash(false) ~= hash(0))

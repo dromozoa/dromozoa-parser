@@ -17,7 +17,6 @@
 
 local uint32 = require "dromozoa.parser.uint32"
 
-local string_byte = string.byte
 local add = uint32.add
 local mul = uint32.mul
 local bxor = uint32.bxor
@@ -50,7 +49,7 @@ return function (key, seed)
     local m = n - n % 4
 
     for i = 4, m, 4 do
-      local a, b, c, d = string_byte(key, i - 3, i)
+      local a, b, c, d = string.byte(key, i - 3, i)
       local k1 = a + shl(b, 8) + shl(c, 16) + shl(d, 24)
 
       k1 = mul(k1, c1)
@@ -64,7 +63,7 @@ return function (key, seed)
     end
 
     if m < n then
-      local a, b, c = string_byte(key, m + 1, n)
+      local a, b, c = string.byte(key, m + 1, n)
       local k1 = a + shl(b or 0, 8) + shl(c or 0, 16)
 
       k1 = mul(k1, c1)
