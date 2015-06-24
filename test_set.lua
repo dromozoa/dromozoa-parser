@@ -72,15 +72,15 @@ local function test(set)
   assert(not set:find(1))
   assert(set2:find(1))
 
-  assert(set2[1])
-  assert(set2[2])
-  assert(not set2[42])
-  set2[1] = nil
-  set2[2] = nil
-  set2[42] = true
-  assert(not set2[1])
-  assert(not set2[2])
-  assert(set2[42])
+  assert(set2:find(1))
+  assert(set2:find(2))
+  assert(not set2:find(42))
+  assert(set2:remove(1))
+  assert(set2:remove(2))
+  assert(not set2:insert(42))
+  assert(not set2:find(1))
+  assert(not set2:find(2))
+  assert(set2:find(42))
   assert(count(set2) == 7)
 end
 

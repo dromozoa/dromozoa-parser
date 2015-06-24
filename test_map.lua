@@ -75,18 +75,12 @@ local function test(map)
   assert(map2:find(6) == "6")
   assert(map2:insert(6, "!", true) == "6")
   assert(map2:find(6) == "!")
+  assert(map2:insert(5, "!", true) == "5")
+  assert(map2:insert({1,2,3,4}, true) == nil)
 
-  map2[5] = "!"
-  map2[{1,2,3,4}] = true
-
-  assert(map2[5] == "!")
-  assert(map2[6] == "!")
-  assert(map2[{1,2,3,4}])
-
-  print("--")
-  for k, v in pairs(map2) do
-    print(k, v)
-  end
+  assert(map2:find(5)== "!")
+  assert(map2:find(6)== "!")
+  assert(map2:find({1,2,3,4}))
 end
 
 test(hash_map())

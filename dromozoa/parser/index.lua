@@ -16,7 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local clone = require "dromozoa.commons.clone"
-local map = require "dromozoa.parser.map"
 
 local function construct(_data, _index)
   local self = {}
@@ -59,7 +58,7 @@ local function construct(_data, _index)
     return result
   end
 
-  return map(self)
+  return self
 end
 
 return function (data)
