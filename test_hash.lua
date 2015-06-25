@@ -52,3 +52,5 @@ local f2 = function () end
 assert(f1 ~= f2)
 assert(hash(f1) == hash(f2))
 assert(hash({ f1, f2 }) == hash({ f2, f1 }))
+
+assert(hash({ 42 }) == hash({ 42; foo = true; bar = false }))
