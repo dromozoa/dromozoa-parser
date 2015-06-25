@@ -29,14 +29,14 @@ local function mul(a, b)
   return c % 0x100000000
 end
 
-local function encode(value)
-  local a = value % 0x100
-  value = (value - a) / 0x100
-  local b = value % 0x100
-  value = (value - b) / 0x100
-  local c = value % 0x100
-  local d = (value - c) / 0x100
-  return string.char(a, b, c, d)
+local function swap(v)
+  local a = v % 0x100
+  v = (v - a) / 0x100
+  local b = v % 0x100
+  v = (v - b) / 0x100
+  local c = v % 0x100
+  v = (v - c) / 0x100
+  return a * 0x1000000 + b * 0x10000 + c * 0x100 + v
 end
 
 if _VERSION >= "Lua 5.3" then
@@ -74,8 +74,14 @@ if _VERSION >= "Lua 5.3" then
         local c = c1 | c2
         return c & 0xFFFFFFFF
       end;
-      encode = function(value)
-        return string.pack("<I4", value)
+      swap = function(v)
+        local a = v & 0xFF
+        v = v >> 8
+        local b = v & 0xFF
+        v = v >> 8
+        local c = v & 0xFF
+        v = v >> 8
+        return a << 24 | b << 16 | c << 8 | v
       end
     }
   ]]))()
@@ -88,7 +94,7 @@ elseif bit32 then
     shr = bit32.rshift;
     rotl = bit32.lrotate;
     rotr = bit32.rrotate;
-    encode = encode;
+    swap = swap;
   }
 elseif bit then
   local bxor = bit.bxor
@@ -96,30 +102,28 @@ elseif bit then
   local shr = bit.rshift
   local rotl = bit.rol
   local rotr = bit.ror
+  local swap = bit.bswap
   return {
     add = add;
     mul = mul;
     bxor = function (a, b)
-      local c = bxor(a, b)
-      return c % 0x100000000
+      return bxor(a, b) % 0x100000000
     end;
     shl = function (a, b)
-      local c = shl(a, b)
-      return c % 0x100000000
+      return shl(a, b) % 0x100000000
     end;
     shr = function (a, b)
-      local c = shr(a, b)
-      return c % 0x100000000
+      return shr(a, b) % 0x100000000
     end;
     rotl = function (a, b)
-      local c = rotl(a, b)
-      return c % 0x100000000
+      return rotl(a, b) % 0x100000000
     end;
     rotr = function (a, b)
-      local c = rotr(a, b)
-      return c % 0x100000000
+      return rotr(a, b) % 0x100000000
     end;
-    encode = encode;
+    swap = function (v)
+      return swap(v) % 0x100000000
+    end;
   }
 else
   local function bxor(a, b)
@@ -182,6 +186,6 @@ else
     shr = shr;
     rotl = rotl;
     rotr = rotr;
-    encode = encode;
+    swap = swap;
   }
 end
