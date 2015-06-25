@@ -29,6 +29,16 @@ local function mul(a, b)
   return c % 0x100000000
 end
 
+local function encode(value)
+  local a = value % 0x100
+  value = (value - a) / 0x100
+  local b = value % 0x100
+  value = (value - b) / 0x100
+  local c = value % 0x100
+  local d = (value - c) / 0x100
+  return string.char(a, b, c, d)
+end
+
 if _VERSION >= "Lua 5.3" then
   return assert(load([[
     return {
@@ -64,6 +74,9 @@ if _VERSION >= "Lua 5.3" then
         local c = c1 | c2
         return c & 0xFFFFFFFF
       end;
+      encode = function(value)
+        return string.pack("<I4", value)
+      end
     }
   ]]))()
 elseif bit32 then
@@ -75,6 +88,7 @@ elseif bit32 then
     shr = bit32.rshift;
     rotl = bit32.lrotate;
     rotr = bit32.rrotate;
+    encode = encode;
   }
 elseif bit then
   local bxor = bit.bxor
@@ -105,6 +119,7 @@ elseif bit then
       local c = rotr(a, b)
       return c % 0x100000000
     end;
+    encode = encode;
   }
 else
   local function bxor(a, b)
@@ -167,5 +182,6 @@ else
     shr = shr;
     rotl = rotl;
     rotr = rotr;
+    encode = encode;
   }
 end
