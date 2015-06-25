@@ -43,7 +43,7 @@ local DBL_MIN = 2.2250738585072014e-308
 local DBL_EPSILON = 2.2204460492503131e-16
 
 local function test(v, expect)
-  local a, b = uint32.pack_double(v)
+  local a, b = uint32.decode_double(v)
   assert(a == expect[1])
   assert(b == expect[2])
 end

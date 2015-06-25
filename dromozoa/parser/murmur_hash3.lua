@@ -23,7 +23,8 @@ local bxor = uint32.bxor
 local shl = uint32.shl
 local shr = uint32.shr
 local rotl = uint32.rotl
-local pack_double = uint32.pack_double
+local decode_uint64 = uint32.decode_uint64
+local decode_double = uint32.decode_double
 
 local function update1(h1, k1)
   k1 = mul(k1, 0xCC9E2D51)
@@ -60,8 +61,7 @@ return {
 
   uint64 = function(key, seed)
     local h1 = seed
-    local a = key % 0x100000000
-    local b = (key - a) / 0x100000000
+    local a, b = decode_uint64(key)
     h1 = update1(h1, a)
     h1 = update2(h1)
     h1 = update1(h1, b)
@@ -71,7 +71,7 @@ return {
 
   double = function(key, seed)
     local h1 = seed
-    local a, b = pack_double(key)
+    local a, b = decode_double(key)
     h1 = update1(h1, a)
     h1 = update2(h1)
     h1 = update1(h1, b)

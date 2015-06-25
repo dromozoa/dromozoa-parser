@@ -29,7 +29,13 @@ local function mul(a, b)
   return c % 0x100000000
 end
 
-local function pack_double(v)
+local function decode_uint64(v)
+  local a = v % 0x100000000
+  local b = (v - a) / 0x100000000
+  return a, b
+end
+
+local function decode_double(v)
   local a = 0
   local b = 0
   if -math.huge < v and v < math.huge then
@@ -98,7 +104,12 @@ if _VERSION >= "Lua 5.3" then
         local c = c1 | c2
         return c & 0xFFFFFFFF
       end;
-      pack_double = function (v)
+      decode_uint64 = function (v)
+        local a = v & 0xFFFFFFFF
+        local b = v >> 32
+        return a, b
+      end;
+      decode_double = function (v)
         return string.unpack("<I4I4", string.pack("<d", v))
       end;
     }
@@ -112,7 +123,8 @@ elseif bit32 then
     shr = bit32.rshift;
     rotl = bit32.lrotate;
     rotr = bit32.rrotate;
-    pack_double = pack_double;
+    decode_uint64 = decode_uint64;
+    decode_double = decode_double;
   }
 elseif bit then
   local bxor = bit.bxor
@@ -138,7 +150,8 @@ elseif bit then
     rotr = function (a, b)
       return rotr(a, b) % 0x100000000
     end;
-    pack_double = pack_double;
+    decode_uint64 = decode_uint64;
+    decode_double = decode_double;
   }
 else
   local function bxor(a, b)
@@ -201,6 +214,7 @@ else
     shr = shr;
     rotl = rotl;
     rotr = rotr;
-    pack_double = pack_double;
+    decode_uint64 = decode_uint64;
+    decode_double = decode_double;
   }
 end
