@@ -26,78 +26,75 @@ local rotl = uint32.rotl
 local decode_uint64 = uint32.decode_uint64
 local decode_double = uint32.decode_double
 
-local function update1(h1, k1)
-  k1 = mul(k1, 0xCC9E2D51)
-  k1 = rotl(k1, 15)
-  k1 = mul(k1, 0x1B873593)
-  h1 = bxor(h1, k1)
-  return h1
+local function update1(hash, k)
+  k = mul(k, 0xCC9E2D51)
+  k = rotl(k, 15)
+  k = mul(k, 0x1B873593)
+  hash = bxor(hash, k)
+  return hash
 end
 
-local function update2(h1)
-  h1 = rotl(h1, 13)
-  h1 = mul(h1, 5)
-  h1 = add(h1, 0xE6546B64)
-  return h1
+local function update2(hash)
+  hash = rotl(hash, 13)
+  hash = mul(hash, 5)
+  hash = add(hash, 0xE6546B64)
+  return hash
 end
 
-local function finalize(h1, n)
-  h1 = bxor(h1, n)
-  h1 = bxor(h1, shr(h1, 16))
-  h1 = mul(h1, 0x85EBCA6B)
-  h1 = bxor(h1, shr(h1, 13))
-  h1 = mul(h1, 0xC2B2AE35)
-  h1 = bxor(h1, shr(h1, 16))
-  return h1
+local function finalize(hash, n)
+  hash = bxor(hash, n)
+  hash = bxor(hash, shr(hash, 16))
+  hash = mul(hash, 0x85EBCA6B)
+  hash = bxor(hash, shr(hash, 13))
+  hash = mul(hash, 0xC2B2AE35)
+  hash = bxor(hash, shr(hash, 16))
+  return hash
 end
 
 return {
-  uint32 = function(key, seed)
-    local h1 = seed
-    h1 = update1(h1, key)
-    h1 = update2(h1)
-    return finalize(h1, 4)
+  uint32 = function(key, hash)
+    hash = update1(hash, key)
+    hash = update2(hash)
+    return finalize(hash, 4)
   end;
 
-  uint64 = function(key, seed)
-    local h1 = seed
+  uint64 = function(key, hash)
     local a, b = decode_uint64(key)
-    h1 = update1(h1, a)
-    h1 = update2(h1)
-    h1 = update1(h1, b)
-    h1 = update2(h1)
-    return finalize(h1, 8)
+    hash = update1(hash, a)
+    hash = update2(hash)
+    hash = update1(hash, b)
+    hash = update2(hash)
+    return finalize(hash, 8)
   end;
 
-  double = function(key, seed)
-    local h1 = seed
+  double = function(key, hash)
     local a, b = decode_double(key)
-    h1 = update1(h1, a)
-    h1 = update2(h1)
-    h1 = update1(h1, b)
-    h1 = update2(h1)
-    return finalize(h1, 8)
+    hash = update1(hash, a)
+    hash = update2(hash)
+    hash = update1(hash, b)
+    hash = update2(hash)
+    return finalize(hash, 8)
   end;
 
-  string = function(key, seed)
-    local h1 = seed
+  string = function(key, hash)
+    local hash = hash
     local n = #key
     local m = n - n % 4
     for i = 4, m, 4 do
       local a, b, c, d = string.byte(key, i - 3, i)
-      h1 = update1(h1, a + b * 0x100 + c * 0x10000 + d * 0x1000000)
-      h1 = update2(h1)
+      hash = update1(hash, a + b * 0x100 + c * 0x10000 + d * 0x1000000)
+      hash = update2(hash)
     end
     if m < n then
       local a, b, c = string.byte(key, m + 1, n)
       if c then
-        h1 = update1(h1, a + b * 0x100 + c * 0x10000)
+        hash = update1(hash, a + b * 0x100 + c * 0x10000)
       elseif b then
-        h1 = update1(h1, a + b * 0x100)
+        hash = update1(hash, a + b * 0x100)
       else
-        h1 = update1(h1, a)
+        hash = update1(hash, a)
       end
     end
-    return finalize(h1, n)
+    return finalize(hash, n)
   end;
 }
