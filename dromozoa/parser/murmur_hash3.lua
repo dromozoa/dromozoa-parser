@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local double_to_bytes = require "dromozoa.parser.double_to_bytes"
+local encode_double = require "dromozoa.parser.encode_double"
 local uint32 = require "dromozoa.parser.uint32"
 
 local add = uint32.add
@@ -71,10 +71,10 @@ return {
 
   double = function(key, seed)
     local h1 = seed
-    local a, b, c, d, e, f, g, h = double_to_bytes(key)
-    h1 = update1(h1, a + b * 0x100 + c * 0x10000 + d * 0x1000000)
+    local a, b = encode_double(key)
+    h1 = update1(h1, a)
     h1 = update2(h1)
-    h1 = update1(h1, e + f * 0x100 + g * 0x10000 + h * 0x1000000)
+    h1 = update1(h1, b)
     h1 = update2(h1)
     return finalize(h1, 8)
   end;

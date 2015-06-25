@@ -21,43 +21,36 @@ if string.pack then
   end
 else
   return function (v)
-    local sign = 0
-    local exponent = 0
-    local fraction = 0
-
+    local a = 0
+    local b = 0
     if -math.huge < v and v < math.huge then
       if v == 0 then
         if string.format("%g", v) == "-0" then
-          sign = 0x80000000
+          a = 0x80000000
         end
       else
         if v < 0 then
-          sign = 0x80000000
+          a = 0x80000000
           v = -v
         end
         local m, e = math.frexp(v)
         if e < -1021 then
-          fraction = math.ldexp(m, e + 1022) * 0x100000
+          b = math.ldexp(m, e + 1022) * 0x100000
         else
-          exponent = (e + 1022) * 0x100000
-          fraction = (m * 2 - 1) * 0x100000
+          a = a + (e + 1022) * 0x100000
+          b = (m * 2 - 1) * 0x100000
         end
       end
     else
-      exponent = 0x7FF00000
+      a = 0x7FF00000
       if v ~= math.huge then
-        sign = 0x80000000
+        a = a + 0x80000000
         if v ~= -math.huge then
-          fraction = 0x80000
+          b = 0x80000
         end
       end
     end
-
-    local b = fraction
-    local a = b % 1
-    b = b - a
-    b = sign + exponent + b
-    a = a * 0x100000000
-    return a, b
+    local c = b % 1
+    return c * 0x100000000, a + b - c
   end
 end
