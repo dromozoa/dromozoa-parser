@@ -17,7 +17,7 @@
 
 if string.pack then
   return function (v)
-    return string.byte(string.pack("<d", v), 1, 8)
+    return string.unpack("<I4I4", string.pack("<d", v))
   end
 else
   return function (v)
@@ -28,55 +28,36 @@ else
     if -math.huge < v and v < math.huge then
       if v == 0 then
         if string.format("%g", v) == "-0" then
-          sign = 0x8000
+          sign = 0x80000000
         end
       else
         if v < 0 then
-          sign = 0x8000
+          sign = 0x80000000
           v = -v
         end
         local m, e = math.frexp(v)
         if e < -1021 then
-          fraction = math.ldexp(m, e + 1022)
+          fraction = math.ldexp(m, e + 1022) * 0x100000
         else
-          exponent = e + 1022
-          fraction = m * 2 - 1
+          exponent = (e + 1022) * 0x100000
+          fraction = (m * 2 - 1) * 0x100000
         end
       end
     else
-      exponent = 2047
+      exponent = 0x7FF00000
       if v ~= math.huge then
-        sign = 0x8000
+        sign = 0x80000000
         if v ~= -math.huge then
-          fraction = 0.5
+          fraction = 0x80000
         end
       end
     end
 
-    local u = fraction * 16
-    local v = u % 1
-    local b = u - v
-    u = v * 256
-    v = u % 1
-    local c = u - v
-    u = v * 256
-    v = u % 1
-    local d = u - v
-    u = v * 256
-    v = u % 1
-    local e = u - v
-    u = v * 256
-    v = u % 1
-    local f = u - v
-    u = v * 256
-    v = u % 1
-    local g = u - v
-    local h = v * 256
-
-    local ab = sign + exponent * 16 + b
-    b = ab % 256
-    local a = (ab - b) / 256
-
-    return h, g, f, e, d, c, b, a
+    local b = fraction
+    local a = b % 1
+    b = b - a
+    b = sign + exponent + b
+    a = a * 0x100000000
+    return a, b
   end
 end
