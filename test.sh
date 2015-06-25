@@ -22,7 +22,7 @@ case x$1 in
   *) LUA=$1;;
 esac
 
-for i in test_aformat.lua test_deque.lua test_encode_double.lua test_hash.lua test_map.lua test_set.lua test_uint32.lua
+for i in test_deque.lua test_encode_double.lua test_hash.lua test_map.lua test_set.lua test_uint32.lua
 do
   "$LUA" "$i"
 done

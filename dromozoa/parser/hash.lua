@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local aformat = require "dromozoa.parser.aformat"
 local murmur_hash3 = require "dromozoa.parser.murmur_hash3"
 
 local function hash(key)

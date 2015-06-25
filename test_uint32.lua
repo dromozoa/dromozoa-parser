@@ -36,7 +36,3 @@ assert(uint32.shl(0xFFFFFFFF, 0) == 0xFFFFFFFF)
 assert(uint32.shr(0xFFFFFFFF, 0) == 0xFFFFFFFF)
 assert(uint32.rotl(0xFFFFFFFF, 0) == 0xFFFFFFFF)
 assert(uint32.rotr(0xFFFFFFFF, 0) == 0xFFFFFFFF)
-
-assert(uint32.swap(0xFEEDFACE) == 0xCEFAEDFE)
-assert(uint32.swap(0xFACE) == 0xCEFA0000)
-
