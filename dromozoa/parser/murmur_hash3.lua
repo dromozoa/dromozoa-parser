@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local double_to_bytes = require "dromozoa.parser.double_to_bytes"
 local uint32 = require "dromozoa.parser.uint32"
 
 local add = uint32.add
@@ -49,34 +50,54 @@ local function finalize(h1, n)
   return h1
 end
 
-return function (key, seed)
-  local h1 = seed
-  local n
-
-  local t = type(key)
-  if t == "number" then
-    n = 4
-    local k1 = key
-    h1 = update1(h1, k1)
+return {
+  uint32 = function(key, seed)
+    local h1 = seed
+    h1 = update1(h1, key)
     h1 = update2(h1)
-  else
-    n = #key
-    local m = n - n % 4
+    return finalize(h1, 4)
+  end;
 
+  uint64 = function(key, seed)
+    local h1 = seed
+    local a = key % 0x100000000
+    local b = (key - a) / 0x100000000
+    h1 = update1(h1, a)
+    h1 = update2(h1)
+    h1 = update1(h1, b)
+    h1 = update2(h1)
+    return finalize(h1, 8)
+  end;
+
+  double = function(key, seed)
+    local h1 = seed
+    local a, b, c, d, e, f, g, h = double_to_bytes(key)
+    h1 = update1(h1, a + b * 0x100 + c * 0x10000 + d * 0x1000000)
+    h1 = update2(h1)
+    h1 = update1(h1, e + f * 0x100 + g * 0x10000 + h * 0x1000000)
+    h1 = update2(h1)
+    return finalize(h1, 8)
+  end;
+
+  string = function(key, seed)
+    local h1 = seed
+    local n = #key
+    local m = n - n % 4
     for i = 4, m, 4 do
       local a, b, c, d = string.byte(key, i - 3, i)
-      local k1 = a + shl(b, 8) + shl(c, 16) + shl(d, 24)
-      h1 = update1(h1, k1)
+      h1 = update1(h1, a + b * 0x100 + c * 0x10000 + d * 0x1000000)
       h1 = update2(h1)
     end
-
     if m < n then
       local a, b, c = string.byte(key, m + 1, n)
-      local k1 = a + shl(b or 0, 8) + shl(c or 0, 16)
-      h1 = update1(h1, k1)
+      if c then
+        h1 = update1(h1, a + b * 0x100 + c * 0x10000)
+      elseif b then
+        h1 = update1(h1, a + b * 0x100)
+      else
+        h1 = update1(h1, a)
+      end
     end
-  end
-
-  h1 = finalize(h1, n)
-  return h1
-end
+    return finalize(h1, n)
+  end;
+}

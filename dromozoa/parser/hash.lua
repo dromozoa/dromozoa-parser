@@ -21,19 +21,19 @@ local murmur_hash3 = require "dromozoa.parser.murmur_hash3"
 local function hash(key)
   local t = type(key)
   if t == "number" then
-    return murmur_hash3(aformat(key), 1)
+    return murmur_hash3.double(key, 1)
   elseif t == "string" then
-    return murmur_hash3(key, 2)
+    return murmur_hash3.string(key, 2)
   elseif t == "boolean" then
     if key then
-      return murmur_hash3(1, 3)
+      return murmur_hash3.uint32(1, 3)
     else
-      return murmur_hash3(0, 3)
+      return murmur_hash3.uint32(0, 3)
     end
   elseif t == "table" then
-    local h = murmur_hash3(#key, 4)
+    local h = murmur_hash3.uint64(#key, 4)
     for i = 1, #key do
-      h = murmur_hash3(hash(key[i]), h)
+      h = murmur_hash3.uint32(hash(key[i]), h)
     end
     return h
   end
