@@ -45,3 +45,10 @@ assert(hash({ "foo", "bar", "baz" }) ~= hash({ "foo", { "bar", "baz" } }))
 assert(hash({ "foo", "bar", "baz" }) ~= hash({ "foo", { "bar", { "baz" } } }))
 
 assert(hash(42) ~= hash("42"))
+
+local f1 = function () end
+local f2 = function () end
+
+assert(f1 ~= f2)
+assert(hash(f1) == hash(f2))
+assert(hash({ f1, f2 }) == hash({ f2, f1 }))

@@ -36,6 +36,7 @@ local function hash(key)
     end
     return h
   end
+  return 0
 end
 
 return hash
