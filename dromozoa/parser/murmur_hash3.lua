@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local encode_double = require "dromozoa.parser.encode_double"
 local uint32 = require "dromozoa.parser.uint32"
 
 local add = uint32.add
@@ -24,6 +23,7 @@ local bxor = uint32.bxor
 local shl = uint32.shl
 local shr = uint32.shr
 local rotl = uint32.rotl
+local pack_double = uint32.pack_double
 
 local function update1(h1, k1)
   k1 = mul(k1, 0xCC9E2D51)
@@ -71,7 +71,7 @@ return {
 
   double = function(key, seed)
     local h1 = seed
-    local a, b = encode_double(key)
+    local a, b = pack_double(key)
     h1 = update1(h1, a)
     h1 = update2(h1)
     h1 = update1(h1, b)

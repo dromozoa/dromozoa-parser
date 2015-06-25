@@ -29,6 +29,40 @@ local function mul(a, b)
   return c % 0x100000000
 end
 
+local function pack_double(v)
+  local a = 0
+  local b = 0
+  if -math.huge < v and v < math.huge then
+    if v == 0 then
+      if string.format("%g", v) == "-0" then
+        a = 0x80000000
+      end
+    else
+      if v < 0 then
+        a = 0x80000000
+        v = -v
+      end
+      local m, e = math.frexp(v)
+      if e < -1021 then
+        b = math.ldexp(m, e + 1022) * 0x100000
+      else
+        a = a + (e + 1022) * 0x100000
+        b = (m * 2 - 1) * 0x100000
+      end
+    end
+  else
+    a = 0x7FF00000
+    if v ~= math.huge then
+      a = a + 0x80000000
+      if v ~= -math.huge then
+        b = 0x80000
+      end
+    end
+  end
+  local c = b % 1
+  return c * 0x100000000, a + b - c
+end
+
 if _VERSION >= "Lua 5.3" then
   return assert(load([[
     return {
@@ -64,6 +98,9 @@ if _VERSION >= "Lua 5.3" then
         local c = c1 | c2
         return c & 0xFFFFFFFF
       end;
+      pack_double = function (v)
+        return string.unpack("<I4I4", string.pack("<d", v))
+      end;
     }
   ]]))()
 elseif bit32 then
@@ -75,6 +112,7 @@ elseif bit32 then
     shr = bit32.rshift;
     rotl = bit32.lrotate;
     rotr = bit32.rrotate;
+    pack_double = pack_double;
   }
 elseif bit then
   local bxor = bit.bxor
@@ -100,6 +138,7 @@ elseif bit then
     rotr = function (a, b)
       return rotr(a, b) % 0x100000000
     end;
+    pack_double = pack_double;
   }
 else
   local function bxor(a, b)
@@ -162,5 +201,6 @@ else
     shr = shr;
     rotl = rotl;
     rotr = rotr;
+    pack_double = pack_double;
   }
 end
