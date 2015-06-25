@@ -15,8 +15,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local clone = require "dromozoa.commons.clone"
+
 local function construct(_front, _back, _data)
   local self = {}
+
+  function self:clone()
+    return construct(_front, _back, clone(_data))
+  end
 
   function self:front()
     return _data[_front]

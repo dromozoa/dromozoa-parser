@@ -33,8 +33,14 @@ assert(q:size() == 6)
 assert(q:front() == 6)
 assert(q:back() == 3)
 
+local q2 = q:clone()
+
 assert(q:pop_front() == 6)
 assert(q:pop_back() == 3)
 assert(q:size() == 4)
 assert(q:front() == 5)
 assert(q:back() == 2)
+
+assert(q2:size() == 6)
+assert(q2:front() == 6)
+assert(q2:back() == 3)
