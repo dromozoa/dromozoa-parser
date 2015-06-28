@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local json = require "dromozoa.json"
 local hash_table = require "dromozoa.parser.hash_table"
 
 local function count(t)
@@ -82,8 +83,31 @@ assert(t2:find(5)== "!")
 assert(t2:find(6)== "!")
 assert(t2:find({1,2,3,4}))
 
-local a = t2:adapt()
-for k, v in pairs(a) do
-  print(k, v)
-end
+print("==")
 
+local t = hash_table()
+local a = t:adapt()
+
+a[1] = "foo"
+a[2] = "bar"
+a[3] = "baz"
+a["foo"] = 1
+a["bar"] = 2
+a["baz"] = 3
+a[{1}] = 1
+a[{1,2}] = 12
+a[{1,2,3}] = 123
+a[{1,2,3,4}] = 1234
+a[{1,2,3,4}] = "1234"
+a[{1,2,3}] = "123"
+a[{1,2}] = "12"
+a[{1}] = "1"
+
+assert(#a == 3)
+assert(a[1] == "foo")
+assert(a["foo"] == 1)
+assert(a[{1}] == "1")
+
+for k, v in pairs(a) do
+  print(json.encode(k), json.encode(v))
+end

@@ -154,28 +154,24 @@ local function construct(_t, _u, _v, _w)
     return _t, _u, _v, _w
   end
 
+  function this:clone()
+    return construct(clone(_t), clone(_u), clone(_v), clone(_w))
+  end
+
+  function this:length()
+    return #_t
+  end
+
   function this:equal(that)
     local t, u, v, w = that:data()
     return equal(_t, t) and equal(_u, u) and equal(_v, v) and equal(_w, w)
   end
 
-  function this:size()
-    return #_t
-  end
-
-  function this:clone()
-    return construct(clone(_t), clone(_u), clone(_v), clone(_w))
-  end
-
   function this:adapt()
     local metatable = {}
 
-    function metatable:__eq(that)
-      return this:equal(that)
-    end
-
     function metatable:__len()
-      return this:size()
+      return this:length()
     end
 
     function metatable:__index(key)
