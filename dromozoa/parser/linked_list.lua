@@ -19,35 +19,35 @@ local function construct()
   local head = 0
   local tail = 0
 
-  local _prev = { [tail] = head }
-  local _next = { [head] = tail }
-  local _value = {}
+  local _t = { [tail] = head }
+  local _u = { [head] = tail }
+  local _v = {}
   local _n = 0
 
   local this = {}
 
-  function this:insert(prev, value)
-    local next = _next[prev]
-    local id = _n + 1
-    _prev[id] = prev
-    _next[id] = next
-    _value[id] = value
-    _n = id
-    _prev[next] = id
-    _next[prev] = id
-    return id
+  function this:insert(t, v)
+    local u = _u[t]
+    local n = _n + 1
+    _t[n] = t
+    _u[n] = u
+    _v[n] = v
+    _n = n
+    _t[u] = n
+    _u[t] = n
+    return n
   end
 
-  function this:remove(id)
-    local prev = _prev[id]
-    local next = _next[id]
-    local value = _value[id]
-    _prev[id] = nil
-    _next[id] = nil
-    _value[id] = nil
-    _next[prev] = next
-    _prev[next] = prev
-    return value
+  function this:remove(n)
+    local t = _t[n]
+    local u = _u[n]
+    local v = _v[n]
+    _t[n] = nil
+    _u[n] = nil
+    _v[n] = nil
+    _u[t] = u
+    _t[u] = t
+    return v
   end
 
   function this:push_front(value)
@@ -55,23 +55,23 @@ local function construct()
   end
 
   function this:push_back(value)
-    return this:insert(_prev[tail], value)
+    return this:insert(_t[tail], value)
   end
 
   function this:pop_front()
-    return this:remove(_next[head])
+    return this:remove(_u[head])
   end
 
   function this:pop_back()
-    return this:remove(_prev[tail])
+    return this:remove(_t[tail])
   end
 
   function this:each()
     return coroutine.wrap(function ()
-      local i = _next[head]
+      local i = _u[head]
       while i ~= tail do
-        coroutine.yield(_value[i])
-        i = _next[i]
+        coroutine.yield(_v[i])
+        i = _u[i]
       end
     end)
   end
