@@ -20,17 +20,17 @@ local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
 
 local function construct(_t, _u, _v, _w)
-  local this = {}
+  local self = {}
 
-  function this:clone()
+  function self:clone()
     return construct(clone(_t), clone(_u), clone(_v), clone(_w))
   end
 
-  function this:length()
+  function self:length()
     return #_t
   end
 
-  function this:find(key)
+  function self:find(key)
     if type(key) == "table" then
       local h = hash(key)
       local u = _u[h]
@@ -54,7 +54,7 @@ local function construct(_t, _u, _v, _w)
     end
   end
 
-  function this:each()
+  function self:each()
     return coroutine.wrap(function ()
       for k, v in pairs(_t) do
         coroutine.yield(k, v)
@@ -70,7 +70,7 @@ local function construct(_t, _u, _v, _w)
     end)
   end
 
-  function this:insert(key, value, overwrite)
+  function self:insert(key, value, overwrite)
     if type(key) == "table" then
       local h = hash(key)
       local u = _u[h]
@@ -113,7 +113,7 @@ local function construct(_t, _u, _v, _w)
     end
   end
 
-  function this:remove(key)
+  function self:remove(key)
     if type(key) == "table" then
       local h = hash(key)
       local u = _u[h]
@@ -158,12 +158,9 @@ local function construct(_t, _u, _v, _w)
     end
   end
 
-  function this:adapt()
+  function self:adapt()
+    local this = self
     local metatable = {}
-
-    function metatable:__len()
-      return this:length()
-    end
 
     function metatable:__index(key)
       return this:find(key)
@@ -184,7 +181,7 @@ local function construct(_t, _u, _v, _w)
     return setmetatable({}, metatable)
   end
 
-  return this
+  return self
 end
 
 return function ()

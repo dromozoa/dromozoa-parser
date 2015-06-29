@@ -13,7 +13,12 @@ print(list:pop_front())
 print(list:pop_back())
 print("--")
 
-for v in list:each() do
-  print(v)
+for id, v in list:each() do
+  print(id, v)
 end
 
+local id = list:push_back(42)
+assert(list:get(id) == 42)
+assert(list:set(id, 69) == 42)
+assert(list:get(id) == 69)
+assert(list:pop_back() == 69)

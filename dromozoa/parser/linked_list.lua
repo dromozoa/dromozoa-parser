@@ -15,70 +15,81 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function construct()
-  local head = 0
-  local tail = 0
+local clone = require "dromozoa.commons.clone"
 
-  local _t = { [tail] = head }
-  local _u = { [head] = tail }
-  local _v = {}
-  local _n = 0
+local head = 0
+local tail = 0
 
-  local this = {}
+local function construct(_t, _u, _v, _n)
+  local self = {}
 
-  function this:insert(t, v)
-    local u = _u[t]
-    local n = _n + 1
-    _t[n] = t
-    _u[n] = u
-    _v[n] = v
-    _n = n
-    _t[u] = n
-    _u[t] = n
-    return n
+  function self:clone()
+    return construct(clone(_t), clone(_u), clone(_v), _n)
   end
 
-  function this:remove(n)
-    local t = _t[n]
-    local u = _u[n]
-    local v = _v[n]
-    _t[n] = nil
-    _u[n] = nil
-    _v[n] = nil
+  function self:get(id)
+    return _v[id]
+  end
+
+  function self:set(id, value)
+    local v = _v[id]
+    _v[id] = value
+    return v
+  end
+
+  function self:each()
+    return coroutine.wrap(function ()
+      local id = _u[head]
+      while id ~= tail do
+        coroutine.yield(id, _v[id])
+        id = _u[id]
+      end
+    end)
+  end
+
+  function self:insert(t, value)
+    local u = _u[t]
+    local id = _n + 1
+    _t[id] = t
+    _u[id] = u
+    _v[id] = value
+    _n = id
+    _t[u] = id
+    _u[t] = id
+    return id
+  end
+
+  function self:remove(id)
+    local t = _t[id]
+    local u = _u[id]
+    local v = _v[id]
+    _t[id] = nil
+    _u[id] = nil
+    _v[id] = nil
     _u[t] = u
     _t[u] = t
     return v
   end
 
-  function this:push_front(value)
-    return this:insert(head, value)
+  function self:push_front(value)
+    return self:insert(head, value)
   end
 
-  function this:push_back(value)
-    return this:insert(_t[tail], value)
+  function self:push_back(value)
+    return self:insert(_t[tail], value)
   end
 
-  function this:pop_front()
-    return this:remove(_u[head])
+  function self:pop_front()
+    return self:remove(_u[head])
   end
 
-  function this:pop_back()
-    return this:remove(_t[tail])
+  function self:pop_back()
+    return self:remove(_t[tail])
   end
 
-  function this:each()
-    return coroutine.wrap(function ()
-      local i = _u[head]
-      while i ~= tail do
-        coroutine.yield(_v[i])
-        i = _u[i]
-      end
-    end)
-  end
-
-  return this
+  return self
 end
 
 return function ()
-  return construct({}, {}, {}, 0)
+  return construct({ [tail] = head }, { [head] = tail }, {}, tail)
 end
