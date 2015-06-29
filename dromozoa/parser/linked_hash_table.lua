@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local adapt_hash_table = require "dromozoa.parser.adapt_hash_table"
 local hash_table = require "dromozoa.parser.hash_table"
 local linked_list = require "dromozoa.parser.linked_list"
 
@@ -66,6 +67,10 @@ local function construct(_t, _u, _v)
     end
     _u:remove(id)
     return _v:remove(id)
+  end
+
+  function self:adapt()
+    return adapt_hash_table(self)
   end
 
   return self

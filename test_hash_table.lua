@@ -18,7 +18,6 @@
 local json = require "dromozoa.json"
 local hash_table = require "dromozoa.parser.hash_table"
 local linked_hash_table = require "dromozoa.parser.linked_hash_table"
-local adapt_table = require "dromozoa.parser.adapt_table"
 
 local function count(t)
   local n = 0
@@ -86,7 +85,7 @@ local function test1(t)
 end
 
 local function test2(t)
-  local a = adapt_table(t)
+  local a = t:adapt()
 
   a[1] = "foo"
   a[2] = "bar"
