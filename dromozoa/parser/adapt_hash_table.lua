@@ -15,9 +15,28 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local hash_set = require "dromozoa.parser.hash_set"
-local index = require "dromozoa.parser.index"
+return function (this)
+  local metatable = {}
 
-return function ()
-  return index(hash_set())
+  function metatable:__len()
+    return this:length()
+  end
+
+  function metatable:__index(key)
+    return this:find(key)
+  end
+
+  function metatable:__newindex(key, value)
+    if value == nil then
+      this:remove(key)
+    else
+      this:insert(key, value, true)
+    end
+  end
+
+  function metatable:__pairs()
+    return this:each()
+  end
+
+  return setmetatable({}, metatable)
 end
