@@ -1,6 +1,6 @@
-local link_list = require "dromozoa.parser.link_list"
+local linked_list = require "dromozoa.parser.linked_list"
 
-local list = link_list()
+local list = linked_list()
 
 print(list:push_back(4))
 print(list:push_back(5))
