@@ -51,7 +51,7 @@ local function construct(_t, _u, _v)
     end
     local v = _v:get(id)
     if overwrite then
-      _v:set(id, value)
+      _v:put(id, value)
     end
     return v
   end
