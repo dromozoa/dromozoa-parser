@@ -102,7 +102,6 @@ local function test2(t)
   a[{1,2}] = "12"
   a[{1}] = "1"
 
-  assert(#a == 3)
   assert(a[1] == "foo")
   assert(a["foo"] == 1)
   assert(a[{1}] == "1")

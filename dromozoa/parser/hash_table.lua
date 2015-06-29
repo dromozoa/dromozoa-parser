@@ -18,17 +18,13 @@
 local clone = require "dromozoa.commons.clone"
 local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
-local adapt_hash_table = require "dromozoa.parser.adapt_hash_table"
+local hash_table_adapt = require "dromozoa.parser.hash_table_adapt"
 
 local function construct(_t, _u, _v, _w)
   local self = {}
 
   function self:clone()
     return construct(clone(_t), clone(_u), clone(_v), clone(_w))
-  end
-
-  function self:length()
-    return #_t
   end
 
   function self:find(key)
@@ -160,7 +156,7 @@ local function construct(_t, _u, _v, _w)
   end
 
   function self:adapt()
-    return adapt_hash_table(self)
+    return hash_table_adapt(self)
   end
 
   return self

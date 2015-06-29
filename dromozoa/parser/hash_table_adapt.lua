@@ -18,10 +18,6 @@
 return function (this)
   local metatable = {}
 
-  function metatable:__len()
-    return this:length()
-  end
-
   function metatable:__index(key)
     return this:find(key)
   end
