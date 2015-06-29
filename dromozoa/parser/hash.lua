@@ -35,8 +35,9 @@ local function hash(key)
       h = murmur_hash3.uint32(hash(key[i]), h)
     end
     return h
+  else
+    return 0
   end
-  return 0
 end
 
 return hash
