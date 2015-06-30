@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local equal = require "dromozoa.parser.equal"
+local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 local multimap = require "dromozoa.parser.multimap"
 
 local map = {}
@@ -37,3 +38,38 @@ for k, v in multimap.each(map) do
 end
 assert(sum.foo == 6)
 assert(sum.bar == 4)
+
+local map = linked_hash_table():adapt()
+
+multimap.insert(map, "foo", 1)
+multimap.insert(map, "foo", 2)
+multimap.insert(map, "foo", 3)
+multimap.insert(map, "bar", 4)
+multimap.insert(map, "baz", 5)
+multimap.insert(map, "qux", 6)
+multimap.insert(map, "qux", 7)
+multimap.insert(map, 1, "foo")
+multimap.insert(map, 2, "bar")
+multimap.insert(map, 3, "baz")
+multimap.insert(map, 4, "qux")
+
+local expect = {
+  { "foo", 1 };
+  { "foo", 2 };
+  { "foo", 3 };
+  { "bar", 4 };
+  { "baz", 5 };
+  { "qux", 6 };
+  { "qux", 7 };
+  { 1, "foo" };
+  { 2, "bar" };
+  { 3, "baz" };
+  { 4, "qux" };
+}
+
+local i = 0
+for k, v in multimap.each(map) do
+  i = i + 1
+  assert(k == expect[i][1])
+  assert(v == expect[i][2])
+end
