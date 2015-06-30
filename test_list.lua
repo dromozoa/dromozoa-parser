@@ -53,11 +53,13 @@ local function test(list)
 end
 
 local list = deque()
+assert(list:size() == 0)
 test(list)
 assert(list:front(1) == 2)
 assert(list:front(2) == 1)
 assert(list:back(1) == 5)
 assert(list:back(2) == 4)
+assert(list:size() == 4)
 
 local list = linked_list()
 local id = test(list)

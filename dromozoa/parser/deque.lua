@@ -41,7 +41,11 @@ local function construct(_t, _u, _v)
   end
 
   function self:empty()
-    return _u > _v
+    return _v < _u
+  end
+
+  function self:size()
+    return _v - _u + 1
   end
 
   function self:each()
