@@ -15,14 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local hash_set = require "dromozoa.parser.hash_set"
-local hash_map = require "dromozoa.parser.hash_map"
-local index_set = require "dromozoa.parser.index_set"
-local index_map = require "dromozoa.parser.index_map"
+local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 
 local function includes(a, b)
-  for k in b:each() do
-    if a:find(k) == nil then
+  for k in pairs(b) do
+    if a[k] == nil then
       return false
     end
   end
@@ -30,69 +27,73 @@ local function includes(a, b)
 end
 
 local function set_intersection(a, b, c)
-  for k, v in a:each() do
-    if b:find(k) ~= nil then
-      c:insert(k, v)
+  for k, v in pairs(a) do
+    if b[k] ~= nil then
+      c[k] = v
     end
   end
   return c
 end
 
 local function set_union(a, b, c)
-  for k, v in a:each() do
-    c:insert(k, v)
+  for k, v in pairs(a) do
+    c[k] = v
   end
-  for k, v in b:each() do
-    c:insert(k, v)
+  for k, v in pairs(b) do
+    if a[k] == nil then
+      c[k] = v
+    end
   end
   return c
 end
 
 local function set_difference(a, b, c)
-  for k, v in a:each() do
-    if b:find(k) == nil then
-      c:insert(k, v)
+  for k, v in pairs(a) do
+    if b[k] == nil then
+      c[k] = v
     end
   end
   return c
 end
 
 local function set_symmetric_difference(a, b, c)
-  for k, v in a:each() do
-    if b:find(k) == nil then
-      c:insert(k, v)
+  for k, v in pairs(a) do
+    if b[k] == nil then
+      c[k] = v
     end
   end
-  for k, v in b:each() do
-    if a:find(k) == nil then
-      c:insert(k, v)
+  for k, v in pairs(b) do
+    if a[k] == nil then
+      c[k] = v
     end
   end
   return c
 end
 
-local a = index_set()
-a:insert("a")
-a:insert("b")
-a:insert("c")
+local a = linked_hash_table():adapt()
+a.a = 1
+a.b = 1
+a.c = 1
 
-local b = index_set()
-b:insert("b")
-b:insert("c")
-b:insert("d")
+local b = linked_hash_table():adapt()
+b.b = 2
+b.c = 2
+b.d = 2
 
 local function dump(set)
-  for k in set:each() do
-    io.write(k, " ")
+  print("--")
+  for k, v in pairs(set) do
+    print(k, v)
   end
-  io.write("\n")
+  return set
 end
 
 dump(a)
 dump(b)
 print(includes(a, b))
-dump(set_intersection(a, b, index_set()))
-dump(set_union(a, b, index_set()))
-dump(set_difference(a, b, index_set()))
-dump(set_symmetric_difference(a, b, index_set()))
-
+print(includes(a, a))
+dump(set_intersection(a, b, linked_hash_table():adapt()))
+local c = dump(set_union(a, b, linked_hash_table():adapt()))
+assert(c.b == 1)
+dump(set_difference(a, b, linked_hash_table():adapt()))
+dump(set_symmetric_difference(a, b, linked_hash_table():adapt()))
