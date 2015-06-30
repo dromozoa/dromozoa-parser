@@ -50,3 +50,5 @@ assert(equal(to_array(list), { 2, 1, 17, 23, 5 }))
 assert(list:remove(id) == 17)
 assert(equal(to_array(list), { 2, 1, 23, 5 }))
 
+assert(list:front() == 2)
+assert(list:back() == 5)

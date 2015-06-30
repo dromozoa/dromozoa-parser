@@ -68,6 +68,14 @@ local function construct(_t, _u, _v, _n)
     return v
   end
 
+  function self:front()
+    return self:get(_u[0])
+  end
+
+  function self:back()
+    return self:get(_t[0])
+  end
+
   function self:push_front(value)
     return self:insert(0, value)
   end
