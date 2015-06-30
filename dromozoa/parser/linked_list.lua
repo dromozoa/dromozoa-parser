@@ -17,9 +17,6 @@
 
 local clone = require "dromozoa.commons.clone"
 
-local head = 0
-local tail = 0
-
 local function construct(_t, _u, _v, _n)
   local self = {}
 
@@ -31,16 +28,22 @@ local function construct(_t, _u, _v, _n)
     return _v[id]
   end
 
-  function self:set(id, value)
-    local v = _v[id]
-    _v[id] = value
-    return v
+  function self:front()
+    return _v[_u[0]]
+  end
+
+  function self:back()
+    return _v[_t[0]]
+  end
+
+  function self:empty()
+    return _u[0] == 0
   end
 
   function self:each()
     return coroutine.wrap(function ()
-      local id = _u[head]
-      while id ~= tail do
+      local id = _u[0]
+      while id ~= 0 do
         coroutine.yield(id, _v[id])
         id = _u[id]
       end
@@ -59,6 +62,20 @@ local function construct(_t, _u, _v, _n)
     return id
   end
 
+  function self:push_front(value)
+    return self:insert(0, value)
+  end
+
+  function self:push_back(value)
+    return self:insert(_t[0], value)
+  end
+
+  function self:put(id, value)
+    local v = _v[id]
+    _v[id] = value
+    return v
+  end
+
   function self:remove(id)
     local t = _t[id]
     local u = _u[id]
@@ -71,25 +88,17 @@ local function construct(_t, _u, _v, _n)
     return v
   end
 
-  function self:push_front(value)
-    return self:insert(head, value)
-  end
-
-  function self:push_back(value)
-    return self:insert(_t[tail], value)
-  end
-
   function self:pop_front()
-    return self:remove(_u[head])
+    return self:remove(_u[0])
   end
 
   function self:pop_back()
-    return self:remove(_t[tail])
+    return self:remove(_t[0])
   end
 
   return self
 end
 
 return function ()
-  return construct({ [tail] = head }, { [head] = tail }, {}, tail)
+  return construct({ [0] = 0 }, { [0] = 0 }, {}, 0)
 end

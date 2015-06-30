@@ -33,24 +33,17 @@ assert(murmur_hash3.uint32(0xFEEDFACE, 0) == 0x11C86E55)
 assert(murmur_hash3.uint64(0xFEEDFACE0000, 0) == 0x3348F984)
 assert(murmur_hash3.double(math.pi, 0) == 0x8948E5CE)
 
-assert(hash(true) == hash(true))
-assert(hash(false) ~= hash(0))
-assert(hash(false) ~= hash(""))
-assert(hash(false) ~= hash(true))
-assert(hash(false) ~= hash({}))
+assert(hash(0) ~= hash(""))
+assert(hash(0) ~= hash("\0\0\0\0"))
+assert(hash(0) ~= hash("\0\0\0\0\0\0\0\0"))
+assert(hash(0) ~= hash(false))
+assert(hash(0) ~= hash({}))
 
 assert(hash({}) == hash({}))
 assert(hash({ "foo", "bar", "baz" }) == hash({ "foo", "bar", "baz" }))
 assert(hash({ "foo", "bar", "baz" }) ~= hash({ "foo", { "bar", "baz" } }))
 assert(hash({ "foo", "bar", "baz" }) ~= hash({ "foo", { "bar", { "baz" } } }))
 
+assert(hash(true) ~= hash("true"))
 assert(hash(42) ~= hash("42"))
-
-local f1 = function () end
-local f2 = function () end
-
-assert(f1 ~= f2)
-assert(hash(f1) == hash(f2))
-assert(hash({ f1, f2 }) == hash({ f2, f1 }))
-
-assert(hash({ 42 }) == hash({ 42; foo = true; bar = false }))
+assert(hash(function () end) == 0)

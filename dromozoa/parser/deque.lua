@@ -17,60 +17,78 @@
 
 local clone = require "dromozoa.commons.clone"
 
-local function construct(_front, _back, _data)
+local function construct(_t, _u, _v)
   local self = {}
 
   function self:clone()
-    return construct(_front, _back, clone(_data))
+    return construct(clone(_t), _u, _v)
   end
 
-  function self:front()
-    return _data[_front]
+  function self:front(i)
+    if i then
+      return _t[_u + i - 1]
+    else
+      return _t[_u]
+    end
   end
 
-  function self:back()
-    return _data[_back]
+  function self:back(i)
+    if i then
+      return _t[_v - i + 1]
+    else
+      return _t[_v]
+    end
+  end
+
+  function self:empty()
+    return _v < _u
+  end
+
+  function self:size()
+    return _v - _u + 1
+  end
+
+  function self:each()
+    return coroutine.wrap(function ()
+      for id = _u, _v do
+        coroutine.yield(id, _t[id])
+      end
+    end)
   end
 
   function self:push_front(value)
-    local i = _front - 1
-    _front = i
-    _data[i] = value
+    local id = _u - 1
+    _t[id] = value
+    _u = id
+    return id
   end
 
   function self:push_back(value)
-    local i = _back + 1
-    _back = i
-    _data[i] = value
+    local id = _v + 1
+    _t[id] = value
+    _v = id
+    return id
   end
 
   function self:pop_front()
-    local i = _front
-    local value = _data[i]
-    _front = i + 1
-    _data[i] = nil
+    local id = _u
+    local value = _t[id]
+    _t[id] = nil
+    _u = id + 1
     return value
   end
 
   function self:pop_back()
-    local i = _back
-    local value = _data[i]
-    _back = i - 1
-    _data[i] = nil
+    local id = _v
+    local value = _t[id]
+    _t[id] = nil
+    _v = id - 1
     return value
-  end
-
-  function self:empty()
-    return _back < _front
-  end
-
-  function self:size()
-    return _back - _front + 1
   end
 
   return self
 end
 
 return function ()
-  return construct(1, 0, {})
+  return construct({}, 1, 0)
 end

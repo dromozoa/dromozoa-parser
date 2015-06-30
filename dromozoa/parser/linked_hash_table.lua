@@ -15,8 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local adapt_hash_table = require "dromozoa.parser.adapt_hash_table"
 local hash_table = require "dromozoa.parser.hash_table"
+local hash_table_adapt = require "dromozoa.parser.hash_table_adapt"
 local linked_list = require "dromozoa.parser.linked_list"
 
 local function construct(_t, _u, _v)
@@ -24,10 +24,6 @@ local function construct(_t, _u, _v)
 
   function self:clone()
     return construct(_t:clone(), _u:clone(), _v:clone())
-  end
-
-  function self:length()
-    return _t:length()
   end
 
   function self:find(key)
@@ -55,7 +51,7 @@ local function construct(_t, _u, _v)
     end
     local v = _v:get(id)
     if overwrite then
-      _v:set(id, value)
+      _v:put(id, value)
     end
     return v
   end
@@ -70,7 +66,7 @@ local function construct(_t, _u, _v)
   end
 
   function self:adapt()
-    return adapt_hash_table(self)
+    return hash_table_adapt(self)
   end
 
   return self

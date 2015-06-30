@@ -15,32 +15,24 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local deque = require "dromozoa.parser.deque"
+return function (this)
+  local metatable = {}
 
-local q = deque()
+  function metatable:__index(key)
+    return this:find(key)
+  end
 
-q:push_back(1)
-q:push_back(2)
-q:push_back(3)
-assert(q:size() == 3)
-assert(q:front() == 1)
-assert(q:back() == 3)
+  function metatable:__newindex(key, value)
+    if value == nil then
+      this:remove(key)
+    else
+      this:insert(key, value, true)
+    end
+  end
 
-q:push_front(4)
-q:push_front(5)
-q:push_front(6)
-assert(q:size() == 6)
-assert(q:front() == 6)
-assert(q:back() == 3)
+  function metatable:__pairs()
+    return this:each()
+  end
 
-local q2 = q:clone()
-
-assert(q:pop_front() == 6)
-assert(q:pop_back() == 3)
-assert(q:size() == 4)
-assert(q:front() == 5)
-assert(q:back() == 2)
-
-assert(q2:size() == 6)
-assert(q2:front() == 6)
-assert(q2:back() == 3)
+  return setmetatable({}, metatable)
+end
