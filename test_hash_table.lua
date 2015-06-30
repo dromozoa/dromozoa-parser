@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local json = require "dromozoa.json"
 local equal = require "dromozoa.parser.equal"
 local hash_table = require "dromozoa.parser.hash_table"
 local linked_hash_table = require "dromozoa.parser.linked_hash_table"
