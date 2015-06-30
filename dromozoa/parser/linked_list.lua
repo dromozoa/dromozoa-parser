@@ -28,10 +28,16 @@ local function construct(_t, _u, _v, _n)
     return _v[id]
   end
 
-  function self:put(id, value)
-    local v = _v[id]
-    _v[id] = value
-    return v
+  function self:front()
+    return _v[_u[0]]
+  end
+
+  function self:back()
+    return _v[_t[0]]
+  end
+
+  function self:empty()
+    return _u[0] == 0
   end
 
   function self:each()
@@ -56,6 +62,20 @@ local function construct(_t, _u, _v, _n)
     return id
   end
 
+  function self:push_front(value)
+    return self:insert(0, value)
+  end
+
+  function self:push_back(value)
+    return self:insert(_t[0], value)
+  end
+
+  function self:put(id, value)
+    local v = _v[id]
+    _v[id] = value
+    return v
+  end
+
   function self:remove(id)
     local t = _t[id]
     local u = _u[id]
@@ -66,22 +86,6 @@ local function construct(_t, _u, _v, _n)
     _u[t] = u
     _t[u] = t
     return v
-  end
-
-  function self:front()
-    return self:get(_u[0])
-  end
-
-  function self:back()
-    return self:get(_t[0])
-  end
-
-  function self:push_front(value)
-    return self:insert(0, value)
-  end
-
-  function self:push_back(value)
-    return self:insert(_t[0], value)
   end
 
   function self:pop_front()

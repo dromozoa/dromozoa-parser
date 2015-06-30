@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local deque = require "dromozoa.parser.deque"
 local equal = require "dromozoa.parser.equal"
 local linked_list = require "dromozoa.parser.linked_list"
 
@@ -26,19 +27,35 @@ local function to_array(list)
   return array
 end
 
+local function test(list)
+  assert(list:empty())
+
+  local id = list:push_back(4)
+  list:push_back(5)
+  list:push_back(6)
+  list:push_front(1)
+  list:push_front(2)
+  list:push_front(3)
+  assert(not list:empty())
+  assert(equal(to_array(list), { 3, 2, 1, 4, 5, 6 }))
+
+  local list2 = list:clone()
+
+  assert(list:pop_front() == 3)
+  assert(list:pop_back() == 6)
+  assert(equal(to_array(list), { 2, 1, 4, 5 }))
+  assert(list:front() == 2)
+  assert(list:back() == 5)
+
+  assert(equal(to_array(list2), { 3, 2, 1, 4, 5, 6 }))
+
+  return id
+end
+
+test(deque())
+
 local list = linked_list()
-
-local id = list:push_back(4)
-list:push_back(5)
-list:push_back(6)
-list:push_front(1)
-list:push_front(2)
-list:push_front(3)
-assert(equal(to_array(list), { 3, 2, 1, 4, 5, 6 }))
-
-assert(list:pop_front() == 3)
-assert(list:pop_back() == 6)
-assert(equal(to_array(list), { 2, 1, 4, 5 }))
+local id = test(list)
 
 assert(list:get(id) == 4)
 assert(list:put(id, 17) == 4)
@@ -49,6 +66,3 @@ list:insert(id, 23)
 assert(equal(to_array(list), { 2, 1, 17, 23, 5 }))
 assert(list:remove(id) == 17)
 assert(equal(to_array(list), { 2, 1, 23, 5 }))
-
-assert(list:front() == 2)
-assert(list:back() == 5)
