@@ -52,7 +52,12 @@ local function test(list)
   return id
 end
 
-test(deque())
+local list = deque()
+test(list)
+assert(list:front(1) == 2)
+assert(list:front(2) == 1)
+assert(list:back(1) == 5)
+assert(list:back(2) == 4)
 
 local list = linked_list()
 local id = test(list)

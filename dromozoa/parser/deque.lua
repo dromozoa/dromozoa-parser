@@ -24,12 +24,20 @@ local function construct(_t, _u, _v)
     return construct(clone(_t), _u, _v)
   end
 
-  function self:front()
-    return _t[_u]
+  function self:front(i)
+    if i then
+      return _t[_u + i - 1]
+    else
+      return _t[_u]
+    end
   end
 
-  function self:back()
-    return _t[_v]
+  function self:back(i)
+    if i then
+      return _t[_v - i + 1]
+    else
+      return _t[_v]
+    end
   end
 
   function self:empty()
