@@ -75,11 +75,6 @@ local function grammar_to_graph(grammar)
   return g, vertices
 end
 
-local graph_attributes = {}
-function graph_attributes:node_attributes(g, u)
-  return { label = graphviz.quote_string(u.label) }
-end
-
 local grammar = parse_grammar([[
 S -> E
 E -> E + T
@@ -111,7 +106,11 @@ F -> id
 
 -- unparse_grammar(grammar, io.stdout)
 local g, vertices = grammar_to_graph(grammar)
-g:write_graphviz(assert(io.open("test.dot", "w")), graphviz_attributes_adapter(graph_attributes)):close()
+g:write_graphviz(assert(io.open("test.dot", "w")), graphviz_attributes_adapter({
+  node_attributes = function (ctx, g, u)
+    return { label = graphviz.quote_string(u.label) }
+  end;
+})):close()
 
 vertices.S:bfs(bfs_visitor({
   tree_edge = function (ctx, g, e, u, v)
