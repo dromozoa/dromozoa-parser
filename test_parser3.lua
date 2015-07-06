@@ -57,6 +57,13 @@ local function set_size(a)
   return n
 end
 
+local function set_copy(a, b)
+  for k, v in pairs(a) do
+    b[k] = v
+  end
+  return b
+end
+
 local function includes(a, b)
   for k in pairs(b) do
     if a[k] == nil then
@@ -281,10 +288,10 @@ local function make_followset(grammar, firstset, start)
   local follow = linked_hash_table():adapt()
   follow["$"] = true
   followset[start] = follow
-  local n
+  local done
   local changed
   repeat
-    n = 0
+    done = true
     for rule in grammar:each() do
       local head, body = rule[1], rule[2]
       for i = 1, #body do
@@ -298,25 +305,38 @@ local function make_followset(grammar, firstset, start)
           end
           local first_b = first_symbols(rules, b, firstset)
           follow_B, changed = set_union(follow_B, set_difference(first_b, { [EPSILON] = true }, linked_hash_table():adapt()), linked_hash_table():adapt())
-          if changed then n = n + 1 end
+          if changed then done = false end
           followset[B] = follow_B
           if first_b[EPSILON] then
             local follow_A = followset[head]
             if follow_A then
               follow_B, changed = set_union(follow_B, follow_A, linked_hash_table():adapt())
-              if changed then n = n + 1 end
+              if changed then done = false end
               followset[B] = follow_B
             end
           end
         end
       end
     end
-  until n == 0
+  until done
   return followset
 end
 
 local function follow_symbol(symbol, followset)
   return followset[symbol]
+end
+
+local function lr0_closure(grammar, rules, items)
+  local t = linked_hash_table()
+  local J = t:adapt()
+  for k, v in pairs(items) do
+    J[k] = v
+  end
+  local done
+  repeat
+    done = true
+  until done
+  return J
 end
 
 local function grammar_to_graph(grammar)
@@ -353,12 +373,12 @@ end
 
 local grammar = parse_grammar([[
 # S -> E
-E -> E + T
-E -> T
-T -> T * F
-T -> F
-F -> ( E )
-F -> id
+# E -> E + T
+# E -> T
+# T -> T * F
+# T -> F
+# F -> ( E )
+# F -> id
 
 # S -> A a
 # S -> b
@@ -378,6 +398,11 @@ F -> id
 # E -> B
 # B -> 0
 # B -> 1
+
+S' -> S
+S -> C C
+C -> c C
+C -> d
 ]])
 
 local grammar2 = remove_left_recursions(grammar)
@@ -393,7 +418,7 @@ for k, v in pairs(firstset) do
   io.write("\n")
 end
 
-local followset = make_followset(grammar2, firstset, "E")
+local followset = make_followset(grammar2, firstset, "S'")
 
 print("--")
 for k, v in pairs(followset) do
