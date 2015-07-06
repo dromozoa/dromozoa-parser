@@ -79,12 +79,14 @@ local function set_union(a, b, c)
   for k, v in pairs(a) do
     c[k] = v
   end
+  local changed = false
   for k, v in pairs(b) do
     if a[k] == nil then
       c[k] = v
+      changed = true
     end
   end
-  return c
+  return c, changed
 end
 
 local function set_difference(a, b, c)
@@ -280,6 +282,7 @@ local function make_followset(grammar, firstset, start)
   follow["$"] = true
   followset[start] = follow
   local n
+  local changed
   repeat
     n = 0
     for rule in grammar:each() do
@@ -294,18 +297,14 @@ local function make_followset(grammar, firstset, start)
             follow_B = linked_hash_table():adapt()
           end
           local first_b = first_symbols(rules, b, firstset)
-          local x = set_size(follow_B)
-          follow_B = set_union(follow_B, set_difference(first_b, { [EPSILON] = true }, linked_hash_table():adapt()), linked_hash_table():adapt())
-          local y = set_size(follow_B)
-          if x < y then n = n + 1 end
+          follow_B, changed = set_union(follow_B, set_difference(first_b, { [EPSILON] = true }, linked_hash_table():adapt()), linked_hash_table():adapt())
+          if changed then n = n + 1 end
           followset[B] = follow_B
           if first_b[EPSILON] then
             local follow_A = followset[head]
             if follow_A then
-              local x = set_size(follow_B)
-              follow_B = set_union(follow_B, follow_A, linked_hash_table():adapt())
-              local y = set_size(follow_B)
-              if x < y then n = n + 1 end
+              follow_B, changed = set_union(follow_B, follow_A, linked_hash_table():adapt())
+              if changed then n = n + 1 end
               followset[B] = follow_B
             end
           end
@@ -314,6 +313,10 @@ local function make_followset(grammar, firstset, start)
     end
   until n == 0
   return followset
+end
+
+local function follow_symbol(symbol, followset)
+  return followset[symbol]
 end
 
 local function grammar_to_graph(grammar)
