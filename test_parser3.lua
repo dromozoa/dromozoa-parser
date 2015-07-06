@@ -8,6 +8,9 @@ local json = require "dromozoa.json"
 local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 local multimap = require "dromozoa.parser.multimap"
 
+local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
+local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
+
 local function tokenize(text)
   local tokens = {}
   local n = 0
@@ -16,6 +19,34 @@ local function tokenize(text)
     tokens[n] = token
   end
   return tokens
+end
+
+local function concat(a, b, c)
+  local n = #a
+  for i = 1, n do
+    c[i] = a[i]
+  end
+  for i = 1, #b do
+    c[i + n] = b[i]
+  end
+  return c
+end
+
+local function view(a, b, m, n)
+  if not m then
+    m = 1
+  end
+  if not n then
+    n = #a
+  elseif n < 0 then
+    n = #a + n + 1
+  end
+  m = m - 1
+  n = n - m
+  for i = 1, n do
+    b[i] = a[i + m]
+  end
+  return b
 end
 
 local function parse_grammar(text)
@@ -40,6 +71,63 @@ local function unparse_grammar(grammar, out)
       out:write(" ", body[i])
     end
     out:write("\n")
+  end
+end
+
+local function remove_left_recursions_impl(i_body, j_bodies, o_bodies)
+  for i = 1, #j_bodies do
+    o_bodies[#o_bodies + 1] = concat(j_bodies[i], {}, view(i_body, {}, 2))
+  end
+  return o_bodies
+end
+
+local function remove_left_recursions(grammar)
+  local rules = linked_hash_table():adapt()
+  for rule in grammar:each() do
+    local head, body = rule[1], rule[2]
+    multimap.insert(rules, head, body)
+  end
+  local heads = {}
+  for head in pairs(rules) do
+    heads[#heads + 1] = head;
+  end
+  for i = 1, #heads do
+    local i_head = heads[i]
+    for j = 1, i - 1 do
+      local i_bodies = rules[i_head]
+      local j_head = heads[j]
+      local j_bodies = rules[j_head]
+      local o_bodies = {}
+      for k = 1, #i_bodies do
+        local i_body = i_bodies[k]
+        if i_body[1] == j_head then
+          remove_left_recursions_impl(i_body, j_bodies, o_bodies)
+        else
+          o_bodies[#o_bodies + 1] = i_body
+        end
+      end
+      rules[i_head] = o_bodies
+    end
+    local bodies = rules[i_head]
+    local i_bodies = {}
+    local j_head = i_head .. "'"
+    local j_bodies = {}
+    for j = 1, #bodies do
+      local body = bodies[j]
+      if body[1] == i_head then
+        j_bodies[#j_bodies + 1] = concat(view(body, {}, 2), { j_head }, {})
+      else
+        i_bodies[#i_bodies + 1] = concat(body, { j_head }, {})
+      end
+    end
+    if #j_bodies > 0 then
+      j_bodies[#j_bodies + 1] = {};
+      rules[i_head] = i_bodies
+      rules[j_head] = j_bodies
+    end
+  end
+  for head, body in multimap.each(rules) do
+    print(head, json.encode(body))
   end
 end
 
@@ -76,19 +164,19 @@ local function grammar_to_graph(grammar)
 end
 
 local grammar = parse_grammar([[
-S -> E
-E -> E + T
-E -> T
-T -> T * F
-T -> F
-F -> ( E )
-F -> id
+# S -> E
+# E -> E + T
+# E -> T
+# T -> T * F
+# T -> F
+# F -> ( E )
+# F -> id
 
-# S -> A a
-# S -> b
-# A -> A c
-# A -> S d
-# A ->
+S -> A a
+S -> b
+A -> A c
+A -> S d
+A ->
 
 # S -> A B
 # A -> a
@@ -103,6 +191,9 @@ F -> id
 # B -> 0
 # B -> 1
 ]])
+
+remove_left_recursions(grammar)
+os.exit()
 
 -- unparse_grammar(grammar, io.stdout)
 local g, vertices = grammar_to_graph(grammar)
