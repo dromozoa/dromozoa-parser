@@ -49,6 +49,14 @@ local function view(a, b, m, n)
   return b
 end
 
+local function set_size(a)
+  local n = 0
+  for k in pairs(a) do
+    n = n + 1
+  end
+  return n
+end
+
 local function includes(a, b)
   for k in pairs(b) do
     if a[k] == nil then
@@ -191,27 +199,32 @@ local first_symbols
 
 local function first_symbol(rules, symbol, firstset)
   local first = firstset[symbol]
-  if not first then
-    first = linked_hash_table():adapt()
-    local bodies = rules[symbol]
-    for i = 1, #bodies do
-      local body = bodies[i]
-      local f
-      if #body > 0 then
-        f = first_symbols(rules, body, firstset)
-      else
-        f = linked_hash_table():adapt()
-        f[EPSILON] = true
-      end
-      first = set_union(first, f, linked_hash_table():adapt())
-    end
-    firstset[symbol] = first
+  if first then
+    return first
   end
+  first = linked_hash_table():adapt()
+  local bodies = rules[symbol]
+  for i = 1, #bodies do
+    local body = bodies[i]
+    local f
+    if #body > 0 then
+      f = first_symbols(rules, body, firstset)
+    else
+      f = linked_hash_table():adapt()
+      f[EPSILON] = true
+    end
+    first = set_union(first, f, linked_hash_table():adapt())
+  end
+  firstset[symbol] = first
   return first
 end
 
 first_symbols = function (rules, symbols, firstset)
-  local first = linked_hash_table():adapt()
+  local first = firstset[symbols]
+  if first then
+    return first
+  end
+  first = linked_hash_table():adapt()
   for i = 1, #symbols do
     local symbol = symbols[i]
     local f = first_symbol(rules, symbol, firstset)
@@ -219,10 +232,12 @@ first_symbols = function (rules, symbols, firstset)
     if first[EPSILON] then
       first[EPSILON] = nil
     else
+      firstset[symbols] = first
       return first
     end
   end
   first[EPSILON] = true
+  firstset[symbols] = first
   return first
 end
 
@@ -248,6 +263,57 @@ local function make_firstset(grammar)
     first_symbol(rules, head, firstset)
   end
   return firstset
+end
+
+local function debug_set(prefix, set)
+  io.write(prefix)
+  for k, v in pairs(set) do
+    io.write(" ", k)
+  end
+  io.write("\n")
+end
+
+local function make_followset(grammar, firstset, start)
+  local rules = grammar_to_rules(grammar)
+  local followset = linked_hash_table():adapt()
+  local follow = linked_hash_table():adapt()
+  follow["$"] = true
+  followset[start] = follow
+  local n
+  repeat
+    n = 0
+    for rule in grammar:each() do
+      local head, body = rule[1], rule[2]
+      for i = 1, #body do
+        local B = body[i]
+        if rules[B] then
+          local a = view(body, {}, 1, i - 1)
+          local b = view(body, {}, i + 1)
+          local follow_B = followset[B]
+          if not follow_B then
+            follow_B = linked_hash_table():adapt()
+          end
+          local first_b = first_symbols(rules, b, firstset)
+          local x = set_size(follow_B)
+          follow_B = set_union(follow_B, set_difference(first_b, { [EPSILON] = true }, linked_hash_table():adapt()), linked_hash_table():adapt())
+          local y = set_size(follow_B)
+          if x < y then n = n + 1 end
+          followset[B] = follow_B
+          if first_b[EPSILON] then
+            local follow_A = followset[head]
+            if follow_A then
+              local x = set_size(follow_B)
+              follow_B = set_union(follow_B, follow_A, linked_hash_table():adapt())
+              local y = set_size(follow_B)
+              if x < y then n = n + 1 end
+              followset[B] = follow_B
+            end
+          end
+        end
+      end
+    end
+  until n == 0
+  return followset
 end
 
 local function grammar_to_graph(grammar)
@@ -314,9 +380,21 @@ F -> id
 local grammar2 = remove_left_recursions(grammar)
 unparse_grammar(grammar2, io.stdout)
 local firstset = make_firstset(grammar2)
+
 print("--")
 for k, v in pairs(firstset) do
-  io.write(k, " :")
+  io.write(json.encode(k), " :")
+  for u in pairs(v) do
+    io.write(" ", u)
+  end
+  io.write("\n")
+end
+
+local followset = make_followset(grammar2, firstset, "E")
+
+print("--")
+for k, v in pairs(followset) do
+  io.write(json.encode(k), " :")
   for u in pairs(v) do
     io.write(" ", u)
   end
