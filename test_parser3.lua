@@ -76,7 +76,7 @@ end
 
 local function remove_left_recursions_impl(i_body, j_bodies, o_bodies)
   for i = 1, #j_bodies do
-    o_bodies[#o_bodies + 1] = concat(j_bodies[i], {}, view(i_body, {}, 2))
+    o_bodies[#o_bodies + 1] = concat(j_bodies[i], view(i_body, {}, 2), {})
   end
   return o_bodies
 end
@@ -85,12 +85,14 @@ local function remove_left_recursions(grammar)
   local rules = linked_hash_table():adapt()
   for rule in grammar:each() do
     local head, body = rule[1], rule[2]
+    print(head, json.encode(body))
     multimap.insert(rules, head, body)
   end
   local heads = {}
   for head in pairs(rules) do
     heads[#heads + 1] = head;
   end
+  print("--")
   for i = 1, #heads do
     local i_head = heads[i]
     for j = 1, i - 1 do
@@ -114,6 +116,7 @@ local function remove_left_recursions(grammar)
     local j_bodies = {}
     for j = 1, #bodies do
       local body = bodies[j]
+      print(i_head, json.encode(body))
       if body[1] == i_head then
         j_bodies[#j_bodies + 1] = concat(view(body, {}, 2), { j_head }, {})
       else
@@ -126,6 +129,7 @@ local function remove_left_recursions(grammar)
       rules[j_head] = j_bodies
     end
   end
+  print("--")
   for head, body in multimap.each(rules) do
     print(head, json.encode(body))
   end
