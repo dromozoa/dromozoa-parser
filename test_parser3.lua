@@ -74,65 +74,59 @@ local function unparse_grammar(grammar, out)
   end
 end
 
-local function remove_left_recursions_impl(i_body, j_bodies, o_bodies)
-  for i = 1, #j_bodies do
-    o_bodies[#o_bodies + 1] = concat(j_bodies[i], view(i_body, {}, 2), {})
-  end
-  return o_bodies
-end
-
 local function remove_left_recursions(grammar)
   local rules = linked_hash_table():adapt()
   for rule in grammar:each() do
     local head, body = rule[1], rule[2]
-    print(head, json.encode(body))
     multimap.insert(rules, head, body)
   end
   local heads = {}
   for head in pairs(rules) do
     heads[#heads + 1] = head;
   end
-  print("--")
   for i = 1, #heads do
-    local i_head = heads[i]
+    local head1 = heads[i]
     for j = 1, i - 1 do
-      local i_bodies = rules[i_head]
-      local j_head = heads[j]
-      local j_bodies = rules[j_head]
-      local o_bodies = {}
-      for k = 1, #i_bodies do
-        local i_body = i_bodies[k]
-        if i_body[1] == j_head then
-          remove_left_recursions_impl(i_body, j_bodies, o_bodies)
+      local head2 = heads[j]
+      local bodies1 = rules[head1]
+      local bodies2 = rules[head2]
+      local bodies = {}
+      for k = 1, #bodies1 do
+        local body1 = bodies1[k]
+        if body1[1] == head2 then
+          for l = 1, #bodies2 do
+            bodies[#bodies + 1] = concat(bodies2[l], view(body1, {}, 2), {})
+          end
         else
-          o_bodies[#o_bodies + 1] = i_body
+          bodies[#bodies + 1] = body1
         end
       end
-      rules[i_head] = o_bodies
+      rules[head1] = bodies
     end
-    local bodies = rules[i_head]
-    local i_bodies = {}
-    local j_head = i_head .. "'"
-    local j_bodies = {}
+    local head2 = head1 .. "'"
+    local head2_as_body = { head2 }
+    local bodies = rules[head1]
+    local bodies1 = {}
+    local bodies2 = {}
     for j = 1, #bodies do
       local body = bodies[j]
-      print(i_head, json.encode(body))
-      if body[1] == i_head then
-        j_bodies[#j_bodies + 1] = concat(view(body, {}, 2), { j_head }, {})
+      if body[1] == head1 then
+        bodies2[#bodies2 + 1] = concat(view(body, {}, 2), head2_as_body, {})
       else
-        i_bodies[#i_bodies + 1] = concat(body, { j_head }, {})
+        bodies1[#bodies1 + 1] = concat(body, head2_as_body, {})
       end
     end
-    if #j_bodies > 0 then
-      j_bodies[#j_bodies + 1] = {};
-      rules[i_head] = i_bodies
-      rules[j_head] = j_bodies
+    if #bodies2 > 0 then
+      bodies2[#bodies2 + 1] = {};
+      rules[head1] = bodies1
+      rules[head2] = bodies2
     end
   end
-  print("--")
+  local result = linked_hash_table()
   for head, body in multimap.each(rules) do
-    print(head, json.encode(body))
+    result:insert({ head, body }, true)
   end
+  return result
 end
 
 local function grammar_to_graph(grammar)
@@ -196,7 +190,8 @@ A ->
 # B -> 1
 ]])
 
-remove_left_recursions(grammar)
+local grammar2 = remove_left_recursions(grammar)
+unparse_grammar(grammar2, io.stdout)
 os.exit()
 
 -- unparse_grammar(grammar, io.stdout)
