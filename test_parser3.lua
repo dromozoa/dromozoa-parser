@@ -49,6 +49,59 @@ local function view(a, b, m, n)
   return b
 end
 
+local function includes(a, b)
+  for k in pairs(b) do
+    if a[k] == nil then
+      return false
+    end
+  end
+  return true
+end
+
+local function set_intersection(a, b, c)
+  for k, v in pairs(a) do
+    if b[k] ~= nil then
+      c[k] = v
+    end
+  end
+  return c
+end
+
+local function set_union(a, b, c)
+  for k, v in pairs(a) do
+    c[k] = v
+  end
+  for k, v in pairs(b) do
+    if a[k] == nil then
+      c[k] = v
+    end
+  end
+  return c
+end
+
+local function set_difference(a, b, c)
+  for k, v in pairs(a) do
+    if b[k] == nil then
+      c[k] = v
+    end
+  end
+  return c
+end
+
+local function set_symmetric_difference(a, b, c)
+  for k, v in pairs(a) do
+    if b[k] == nil then
+      c[k] = v
+    end
+  end
+  for k, v in pairs(b) do
+    if a[k] == nil then
+      c[k] = v
+    end
+  end
+  return c
+end
+
 local function parse_grammar(text)
   local grammar = linked_hash_table()
   for line in text:gmatch("[^\n]+") do
@@ -63,6 +116,15 @@ local function parse_grammar(text)
   return grammar
 end
 
+local function grammar_to_rules(grammar)
+  local rules = linked_hash_table():adapt()
+  for rule in grammar:each() do
+    local head, body = rule[1], rule[2]
+    multimap.insert(rules, head, body)
+  end
+  return rules
+end
+
 local function unparse_grammar(grammar, out)
   for rule in grammar:each() do
     local head, body = rule[1], rule[2]
@@ -75,11 +137,7 @@ local function unparse_grammar(grammar, out)
 end
 
 local function remove_left_recursions(grammar)
-  local rules = linked_hash_table():adapt()
-  for rule in grammar:each() do
-    local head, body = rule[1], rule[2]
-    multimap.insert(rules, head, body)
-  end
+  local rules = grammar_to_rules(grammar)
   local heads = {}
   for head in pairs(rules) do
     heads[#heads + 1] = head;
@@ -129,6 +187,69 @@ local function remove_left_recursions(grammar)
   return result
 end
 
+local first_symbols
+
+local function first_symbol(rules, symbol, firstset)
+  local first = firstset[symbol]
+  if not first then
+    first = linked_hash_table():adapt()
+    local bodies = rules[symbol]
+    for i = 1, #bodies do
+      local body = bodies[i]
+      local f
+      if #body > 0 then
+        f = first_symbols(rules, body, firstset)
+      else
+        f = linked_hash_table():adapt()
+        f[EPSILON] = true
+      end
+      first = set_union(first, f, linked_hash_table():adapt())
+    end
+    firstset[symbol] = first
+  end
+  return first
+end
+
+first_symbols = function (rules, symbols, firstset)
+  local first = linked_hash_table():adapt()
+  for i = 1, #symbols do
+    local symbol = symbols[i]
+    local f = first_symbol(rules, symbol, firstset)
+    first = set_union(first, f, linked_hash_table():adapt())
+    if first[EPSILON] then
+      first[EPSILON] = nil
+    else
+      return first
+    end
+  end
+  first[EPSILON] = true
+  return first
+end
+
+local function make_firstset(grammar)
+  local rules = grammar_to_rules(grammar)
+  local terms = linked_hash_table():adapt()
+  for rule in grammar:each() do
+    local body = rule[2]
+    for i = 1, #body do
+      local sym = body[i]
+      if rules[sym] == nil then
+        terms[sym] = true
+      end
+    end
+  end
+  local firstset = linked_hash_table():adapt()
+  for term in pairs(terms) do
+    local first = linked_hash_table():adapt()
+    first[term] = true
+    firstset[term] = first
+  end
+  for head in pairs(rules) do
+    first_symbol(rules, head, firstset)
+  end
+  return firstset
+end
+
 local function grammar_to_graph(grammar)
   local g = graph()
   local vertices = linked_hash_table():adapt()
@@ -163,18 +284,18 @@ end
 
 local grammar = parse_grammar([[
 # S -> E
-# E -> E + T
-# E -> T
-# T -> T * F
-# T -> F
-# F -> ( E )
-# F -> id
+E -> E + T
+E -> T
+T -> T * F
+T -> F
+F -> ( E )
+F -> id
 
-S -> A a
-S -> b
-A -> A c
-A -> S d
-A ->
+# S -> A a
+# S -> b
+# A -> A c
+# A -> S d
+# A ->
 
 # S -> A B
 # A -> a
@@ -192,6 +313,16 @@ A ->
 
 local grammar2 = remove_left_recursions(grammar)
 unparse_grammar(grammar2, io.stdout)
+local firstset = make_firstset(grammar2)
+print("--")
+for k, v in pairs(firstset) do
+  io.write(k, " :")
+  for u in pairs(v) do
+    io.write(" ", u)
+  end
+  io.write("\n")
+end
+
 os.exit()
 
 -- unparse_grammar(grammar, io.stdout)
