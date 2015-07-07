@@ -7,6 +7,7 @@ local graphviz_attributes_adapter = require "dromozoa.graph.graphviz_attributes_
 local json = require "dromozoa.json"
 local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 local multimap = require "dromozoa.parser.multimap"
+local set = require "dromozoa.parser.set"
 
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
@@ -49,39 +50,6 @@ local function view(a, b, m, n)
   return b
 end
 
-local function set_size(a)
-  local n = 0
-  for k in pairs(a) do
-    n = n + 1
-  end
-  return n
-end
-
-local function set_copy(a, b)
-  for k, v in pairs(a) do
-    b[k] = v
-  end
-  return b
-end
-
-local function includes(a, b)
-  for k in pairs(b) do
-    if a[k] == nil then
-      return false
-    end
-  end
-  return true
-end
-
-local function set_intersection(a, b, c)
-  for k, v in pairs(a) do
-    if b[k] ~= nil then
-      c[k] = v
-    end
-  end
-  return c
-end
-
 local function set_union(a, b, c)
   for k, v in pairs(a) do
     c[k] = v
@@ -99,20 +67,6 @@ end
 local function set_difference(a, b, c)
   for k, v in pairs(a) do
     if b[k] == nil then
-      c[k] = v
-    end
-  end
-  return c
-end
-
-local function set_symmetric_difference(a, b, c)
-  for k, v in pairs(a) do
-    if b[k] == nil then
-      c[k] = v
-    end
-  end
-  for k, v in pairs(b) do
-    if a[k] == nil then
       c[k] = v
     end
   end
@@ -211,18 +165,15 @@ local function first_symbol(rules, symbol, firstset)
   if first then
     return first
   end
-  first = linked_hash_table():adapt()
+  local first = {}
   local bodies = rules[symbol]
   for i = 1, #bodies do
     local body = bodies[i]
-    local f
     if #body > 0 then
-      f = first_symbols(rules, body, firstset)
+      set.set_union(first, first_symbols(rules, body, firstset))
     else
-      f = linked_hash_table():adapt()
-      f[EPSILON] = true
+      set.set_union(first, { [EPSILON] = true })
     end
-    first = set_union(first, f, linked_hash_table():adapt())
   end
   firstset[symbol] = first
   return first
@@ -233,11 +184,9 @@ first_symbols = function (rules, symbols, firstset)
   if first then
     return first
   end
-  first = linked_hash_table():adapt()
+  local first = {}
   for i = 1, #symbols do
-    local symbol = symbols[i]
-    local f = first_symbol(rules, symbol, firstset)
-    first = set_union(first, f, linked_hash_table():adapt())
+    set.set_union(first, first_symbol(rules, symbols[i], firstset))
     if first[EPSILON] then
       first[EPSILON] = nil
     else
@@ -256,17 +205,15 @@ local function make_firstset(grammar)
   for rule in grammar:each() do
     local body = rule[2]
     for i = 1, #body do
-      local sym = body[i]
-      if rules[sym] == nil then
-        terms[sym] = true
+      local symbol = body[i]
+      if rules[symbol] == nil then
+        terms[symbol] = true
       end
     end
   end
   local firstset = linked_hash_table():adapt()
   for term in pairs(terms) do
-    local first = linked_hash_table():adapt()
-    first[term] = true
-    firstset[term] = first
+    firstset[term] = { [term] = true }
   end
   for head in pairs(rules) do
     first_symbol(rules, head, firstset)
@@ -372,13 +319,13 @@ local function grammar_to_graph(grammar)
 end
 
 local grammar = parse_grammar([[
-# S -> E
-# E -> E + T
-# E -> T
-# T -> T * F
-# T -> F
-# F -> ( E )
-# F -> id
+S -> E
+E -> E + T
+E -> T
+T -> T * F
+T -> F
+F -> ( E )
+F -> id
 
 # S -> A a
 # S -> b
@@ -399,10 +346,10 @@ local grammar = parse_grammar([[
 # B -> 0
 # B -> 1
 
-S' -> S
-S -> C C
-C -> c C
-C -> d
+# S' -> S
+# S -> C C
+# C -> c C
+# C -> d
 ]])
 
 local grammar2 = remove_left_recursions(grammar)
