@@ -1,3 +1,4 @@
+local clone = require "dromozoa.commons.clone"
 local graph = require "dromozoa.graph"
 local bfs_visitor = require "dromozoa.graph.bfs_visitor"
 local dfs_visitor = require "dromozoa.graph.dfs_visitor"
@@ -48,29 +49,6 @@ local function view(a, b, m, n)
     b[i] = a[i + m]
   end
   return b
-end
-
-local function set_union(a, b, c)
-  for k, v in pairs(a) do
-    c[k] = v
-  end
-  local changed = false
-  for k, v in pairs(b) do
-    if a[k] == nil then
-      c[k] = v
-      changed = true
-    end
-  end
-  return c, changed
-end
-
-local function set_difference(a, b, c)
-  for k, v in pairs(a) do
-    if b[k] == nil then
-      c[k] = v
-    end
-  end
-  return c
 end
 
 local function parse_grammar(text)
@@ -232,9 +210,7 @@ end
 local function make_followset(grammar, firstset, start)
   local rules = grammar_to_rules(grammar)
   local followset = linked_hash_table():adapt()
-  local follow = linked_hash_table():adapt()
-  follow["$"] = true
-  followset[start] = follow
+  followset[start] = { ["$"] = true }
   local done
   local changed
   repeat
@@ -248,18 +224,19 @@ local function make_followset(grammar, firstset, start)
           local b = view(body, {}, i + 1)
           local follow_B = followset[B]
           if not follow_B then
-            follow_B = linked_hash_table():adapt()
+            follow_B = {}
+            followset[B] = follow_B
           end
-          local first_b = first_symbols(rules, b, firstset)
-          follow_B, changed = set_union(follow_B, set_difference(first_b, { [EPSILON] = true }, linked_hash_table():adapt()), linked_hash_table():adapt())
-          if changed then done = false end
-          followset[B] = follow_B
-          if first_b[EPSILON] then
+          local first_b = clone(first_symbols(rules, b, firstset))
+          local has_epsilon = first_b[EPSILON]
+          first_b[EPSILON] = nil
+          local m = set.set_union(follow_B, first_b)
+          if m > 0 then done = false end
+          if has_epsilon then
             local follow_A = followset[head]
             if follow_A then
-              follow_B, changed = set_union(follow_B, follow_A, linked_hash_table():adapt())
-              if changed then done = false end
-              followset[B] = follow_B
+              local m = set.set_union(follow_B, follow_A)
+              if m > 0 then done = false end
             end
           end
         end
