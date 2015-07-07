@@ -9,6 +9,7 @@ local json = require "dromozoa.json"
 local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 local multimap = require "dromozoa.parser.multimap"
 local set = require "dromozoa.parser.set"
+local sequence = require "dromozoa.parser.sequence"
 
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
@@ -97,34 +98,33 @@ local function remove_left_recursions(grammar)
       local head2 = heads[j]
       local bodies1 = rules[head1]
       local bodies2 = rules[head2]
-      local bodies = {}
+      local bodies = sequence.adapt({})
       for k = 1, #bodies1 do
         local body1 = bodies1[k]
         if body1[1] == head2 then
           for l = 1, #bodies2 do
-            bodies[#bodies + 1] = concat(bodies2[l], view(body1, {}, 2), {})
+            bodies:push_back(sequence.copy_adapt(bodies2[l]):concat(body1, 2))
           end
         else
-          bodies[#bodies + 1] = body1
+          bodies:push_back(body1)
         end
       end
       rules[head1] = bodies
     end
     local head2 = head1 .. "'"
-    local head2_as_body = { head2 }
     local bodies = rules[head1]
-    local bodies1 = {}
-    local bodies2 = {}
+    local bodies1 = sequence.adapt({})
+    local bodies2 = sequence.adapt({})
     for j = 1, #bodies do
       local body = bodies[j]
       if body[1] == head1 then
-        bodies2[#bodies2 + 1] = concat(view(body, {}, 2), head2_as_body, {})
+        bodies2:push_back(sequence.copy_adapt(body, 2):push_back(head2))
       else
-        bodies1[#bodies1 + 1] = concat(body, head2_as_body, {})
+        bodies1:push_back(sequence.copy_adapt(body):push_back(head2))
       end
     end
     if #bodies2 > 0 then
-      bodies2[#bodies2 + 1] = {};
+      bodies2:push_back(sequence.adapt({}))
       rules[head1] = bodies1
       rules[head2] = bodies2
     end
