@@ -71,3 +71,9 @@ print(a.set_difference)
 
 -- print(op.set_symmetric_difference(a, b))
 
+local x = set.adapt({ a = true, b = true, c = true })
+
+print(x:set_intersection({ a = true, c = true }))
+print(x.a, x.b, x.c)
+
+

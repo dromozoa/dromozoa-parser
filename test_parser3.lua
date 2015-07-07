@@ -212,7 +212,6 @@ local function make_followset(grammar, firstset, start)
   local followset = linked_hash_table():adapt()
   followset[start] = { ["$"] = true }
   local done
-  local changed
   repeat
     done = true
     for rule in grammar:each() do
@@ -228,15 +227,16 @@ local function make_followset(grammar, firstset, start)
             followset[B] = follow_B
           end
           local first_b = clone(first_symbols(rules, b, firstset))
-          local has_epsilon = first_b[EPSILON]
-          first_b[EPSILON] = nil
-          local m = set.set_union(follow_B, first_b)
-          if m > 0 then done = false end
-          if has_epsilon then
+          local epsilon_removed = set.remove(first_b, EPSILON)
+          if set.set_union(follow_B, first_b) > 0 then
+            done = false
+          end
+          if epsilon_removed then
             local follow_A = followset[head]
             if follow_A then
-              local m = set.set_union(follow_B, follow_A)
-              if m > 0 then done = false end
+              if set.set_union(follow_B, follow_A) > 0 then
+                done = false
+              end
             end
           end
         end
