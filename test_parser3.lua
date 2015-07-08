@@ -250,15 +250,30 @@ local function follow_symbol(symbol, followset)
   return followset[symbol]
 end
 
-local function lr0_closure(grammar, rules, items)
-  local t = linked_hash_table()
-  local J = t:adapt()
-  for k, v in pairs(items) do
-    J[k] = v
-  end
+-- item = { head, body, dot }
+-- body = { symbol... }
+-- dot = N
+local function lr0_closure(grammar, rules, I)
+  local J = sequence.copy_adapt(I)
+  local added = linked_hash_table()
   local done
   repeat
     done = true
+    for i = 1, #J do
+      local item = J[i]
+      local head, body, dot = item[1], item[2], item[3]
+      local B = body[dot]
+      local bodies2 = rules[B]
+      if bodies2 then
+        for j = 1, #bodies2 do
+          local item2 = { B, bodies2[j], 1 }
+          if added:insert(item2, true) == nil then
+            J:push_back(item2)
+            done = false
+          end
+        end
+      end
+    end
   until done
   return J
 end
