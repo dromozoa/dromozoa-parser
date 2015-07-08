@@ -18,6 +18,10 @@
 local class = {}
 local metatable = { __index = class }
 
+function class:adapt()
+  return setmetatable(self, metatable)
+end
+
 function class:copy(i, j)
   if i == nil then
     i = 1
@@ -35,20 +39,8 @@ function class:copy(i, j)
   return that
 end
 
-function class:adapt()
-  return setmetatable(self, metatable)
-end
-
 function class:copy_adapt(i, j)
   return class.adapt(class.copy(self, i, j))
-end
-
-function class:front()
-  return self[1]
-end
-
-function class:back()
-  return self[#self]
 end
 
 function class:push_front(v)
