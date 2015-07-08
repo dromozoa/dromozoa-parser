@@ -9,6 +9,7 @@ local json = require "dromozoa.json"
 local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 local multimap = require "dromozoa.parser.multimap"
 local set = require "dromozoa.parser.set"
+local sequence = require "dromozoa.parser.sequence"
 
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
@@ -97,34 +98,33 @@ local function remove_left_recursions(grammar)
       local head2 = heads[j]
       local bodies1 = rules[head1]
       local bodies2 = rules[head2]
-      local bodies = {}
+      local bodies = sequence.adapt({})
       for k = 1, #bodies1 do
         local body1 = bodies1[k]
         if body1[1] == head2 then
           for l = 1, #bodies2 do
-            bodies[#bodies + 1] = concat(bodies2[l], view(body1, {}, 2), {})
+            bodies:push_back(sequence.copy_adapt(bodies2[l]):concat(body1, 2))
           end
         else
-          bodies[#bodies + 1] = body1
+          bodies:push_back(body1)
         end
       end
       rules[head1] = bodies
     end
     local head2 = head1 .. "'"
-    local head2_as_body = { head2 }
     local bodies = rules[head1]
-    local bodies1 = {}
-    local bodies2 = {}
+    local bodies1 = sequence.adapt({})
+    local bodies2 = sequence.adapt({})
     for j = 1, #bodies do
       local body = bodies[j]
       if body[1] == head1 then
-        bodies2[#bodies2 + 1] = concat(view(body, {}, 2), head2_as_body, {})
+        bodies2:push_back(sequence.copy_adapt(body, 2):push_back(head2))
       else
-        bodies1[#bodies1 + 1] = concat(body, head2_as_body, {})
+        bodies1:push_back(sequence.copy_adapt(body):push_back(head2))
       end
     end
     if #bodies2 > 0 then
-      bodies2[#bodies2 + 1] = {};
+      bodies2:push_back(sequence.adapt({}))
       rules[head1] = bodies1
       rules[head2] = bodies2
     end
@@ -212,7 +212,6 @@ local function make_followset(grammar, firstset, start)
   local followset = linked_hash_table():adapt()
   followset[start] = { ["$"] = true }
   local done
-  local changed
   repeat
     done = true
     for rule in grammar:each() do
@@ -228,15 +227,16 @@ local function make_followset(grammar, firstset, start)
             followset[B] = follow_B
           end
           local first_b = clone(first_symbols(rules, b, firstset))
-          local has_epsilon = first_b[EPSILON]
-          first_b[EPSILON] = nil
-          local m = set.set_union(follow_B, first_b)
-          if m > 0 then done = false end
-          if has_epsilon then
+          local epsilon_removed = set.remove(first_b, EPSILON)
+          if set.set_union(follow_B, first_b) > 0 then
+            done = false
+          end
+          if epsilon_removed then
             local follow_A = followset[head]
             if follow_A then
-              local m = set.set_union(follow_B, follow_A)
-              if m > 0 then done = false end
+              if set.set_union(follow_B, follow_A) > 0 then
+                done = false
+              end
             end
           end
         end
@@ -250,15 +250,30 @@ local function follow_symbol(symbol, followset)
   return followset[symbol]
 end
 
-local function lr0_closure(grammar, rules, items)
-  local t = linked_hash_table()
-  local J = t:adapt()
-  for k, v in pairs(items) do
-    J[k] = v
-  end
+-- item = { head, body, dot }
+-- body = { symbol... }
+-- dot = N
+local function lr0_closure(grammar, rules, I)
+  local J = sequence.copy_adapt(I)
+  local added = linked_hash_table()
   local done
   repeat
     done = true
+    for i = 1, #J do
+      local item = J[i]
+      local head, body, dot = item[1], item[2], item[3]
+      local B = body[dot]
+      local bodies2 = rules[B]
+      if bodies2 then
+        for j = 1, #bodies2 do
+          local item2 = { B, bodies2[j], 1 }
+          if added:insert(item2, true) == nil then
+            J:push_back(item2)
+            done = false
+          end
+        end
+      end
+    end
   until done
   return J
 end
