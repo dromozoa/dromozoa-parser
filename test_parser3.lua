@@ -180,6 +180,7 @@ end
 local function make_firstset(grammar)
   local rules = grammar_to_rules(grammar)
   local terms = linked_hash_table():adapt()
+  terms["$"] = true
   for rule in grammar:each() do
     local body = rule[2]
     for i = 1, #body do
@@ -323,6 +324,32 @@ local function lr0_items(rules, start_items)
   return set_of_items
 end
 
+-- item = { head, body, dot, term }
+local function lr1_closure(rules, I, nolr_rules, nolr_firstset)
+  local J = sequence.copy_adapt(I)
+  local done
+  repeat
+    for i = 1, #J do
+      local item = J[i]
+      local head, body, dot, term = item[1], item[2], item[3], item[4]
+      local B = body[dot]
+      if B then
+        local bodies2 = rules[B]
+        for j = 1, #bodies2 do
+          local body2 = bodies2[j]
+          local first = first_symbols(nolr_rules, sequence.copy_adapt(body, dot + 1):push_back(term), nolr_firstset)
+          for term2 in pairs(first) do
+            J:push_back({ B, body2, 1, term2 })
+            done = false
+          end
+        end
+      end
+    end
+    done = true
+  until done
+  return J
+end
+
 local function grammar_to_graph(grammar)
   local g = graph()
   local vertices = linked_hash_table():adapt()
@@ -357,13 +384,13 @@ end
 
 local grammar = parse_grammar([[
 # S -> E
-E' -> E
-E -> E + T
-E -> T
-T -> T * F
-T -> F
-F -> ( E )
-F -> id
+# E' -> E
+# E -> E + T
+# E -> T
+# T -> T * F
+# T -> F
+# F -> ( E )
+# F -> id
 
 # S -> A a
 # S -> b
@@ -384,10 +411,10 @@ F -> id
 # B -> 0
 # B -> 1
 
-# S' -> S
-# S -> C C
-# C -> c C
-# C -> d
+S' -> S
+S -> C C
+C -> c C
+C -> d
 ]])
 
 local grammar2 = remove_left_recursions(grammar)
@@ -456,6 +483,17 @@ for items in set_of_items:each() do
     io.write("\n")
   end
 end
+
+print("--")
+local C = lr1_closure(grammar_to_rules(grammar), {
+  { "S", { "C", "C" }, 2, "$" },
+}, grammar_to_rules(grammar2), firstset)
+
+for i = 1, #C do
+  local c = C[i]
+  print(c[1], json.encode(c[2]), c[3], c[4])
+end
+
 
 os.exit()
 
