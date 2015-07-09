@@ -350,6 +350,18 @@ local function lr1_closure(rules, I, nolr_rules, nolr_firstset)
   return J
 end
 
+local function lr1_goto(rules, items, symbol, nolr_rules, nolr_firstset)
+  local J = {}
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot, term = item[1], item[2], item[3], item[4]
+    if body[dot] == symbol then
+      J[#J + 1] = { head, body, dot + 1, term }
+    end
+  end
+  return lr1_closure(rules, J, nolr_rules, nolr_firstset)
+end
+
 local function grammar_to_graph(grammar)
   local g = graph()
   local vertices = linked_hash_table():adapt()
@@ -485,15 +497,19 @@ for items in set_of_items:each() do
 end
 
 print("--")
-local C = lr1_closure(grammar_to_rules(grammar), {
-  { "S", { "C", "C" }, 2, "$" },
-}, grammar_to_rules(grammar2), firstset)
+local C = lr1_goto(grammar_to_rules(grammar), {
+  { "S'", { "S" }, 1, "$" },
+  { "S", { "C", "C" }, 1, "$" },
+  { "C", { "c", "C" }, 1, "c" },
+  { "C", { "c", "C" }, 1, "d" },
+  { "C", { "d" }, 1, "c" },
+  { "C", { "d" }, 1, "d" },
+}, "c", grammar_to_rules(grammar2), firstset)
 
 for i = 1, #C do
   local c = C[i]
   print(c[1], json.encode(c[2]), c[3], c[4])
 end
-
 
 os.exit()
 
