@@ -253,7 +253,7 @@ end
 -- item = { head, body, dot }
 -- body = { symbol... }
 -- dot = N
-local function lr0_closure(grammar, rules, I)
+local function lr0_closure(rules, I)
   local J = sequence.copy_adapt(I)
   local added = linked_hash_table()
   local done
@@ -263,19 +263,64 @@ local function lr0_closure(grammar, rules, I)
       local item = J[i]
       local head, body, dot = item[1], item[2], item[3]
       local B = body[dot]
-      local bodies2 = rules[B]
-      if bodies2 then
-        for j = 1, #bodies2 do
-          local item2 = { B, bodies2[j], 1 }
-          if added:insert(item2, true) == nil then
-            J:push_back(item2)
-            done = false
+      if B then
+        local bodies2 = rules[B]
+        if bodies2 then
+          for j = 1, #bodies2 do
+            local item2 = { B, bodies2[j], 1 }
+            if added:insert(item2, true) == nil then
+              J:push_back(item2)
+              done = false
+            end
           end
         end
       end
     end
   until done
   return J
+end
+
+local function lr0_goto(rules, items, symbol)
+  local g = {}
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot = item[1], item[2], item[3]
+    if body[dot] == symbol then
+      g[#g + 1] = { head, body, dot + 1 }
+    end
+  end
+  return lr0_closure(rules, g)
+end
+
+local function lr0_items(rules, start_items)
+  local symbols = {}
+  for head, body in multimap.each(rules) do
+    set.insert(symbols, head)
+    for i = 1, #body do
+      set.insert(symbols, body[i])
+    end
+  end
+
+  local set_of_items = linked_hash_table()
+  set_of_items:insert(lr0_closure(rules, start_items), true)
+  local done
+  repeat
+    done = true
+    local C = set_of_items:clone()
+    for items in set_of_items:each() do
+      for symbol in pairs(symbols) do
+        local g = lr0_goto(rules, items, symbol)
+        if #g > 0 then
+          if C:insert(g, true) == nil then
+            done = false
+          end
+        end
+      end
+    end
+    set_of_items = C
+  until done
+
+  return set_of_items
 end
 
 local function grammar_to_graph(grammar)
@@ -311,7 +356,8 @@ local function grammar_to_graph(grammar)
 end
 
 local grammar = parse_grammar([[
-S -> E
+# S -> E
+E' -> E
 E -> E + T
 E -> T
 T -> T * F
@@ -366,6 +412,49 @@ for k, v in pairs(followset) do
     io.write(" ", u)
   end
   io.write("\n")
+end
+
+print("--")
+local C = lr0_closure(grammar_to_rules(grammar), { { "E'", { "E" }, 1 } })
+for i = 1, #C do
+  local c = C[i]
+  print(c[1], json.encode(c[2]), c[3])
+end
+
+print("--")
+local G = lr0_goto(grammar_to_rules(grammar), {
+  { "E'", { "E" }, 2 },
+  { "E", { "E", "+", "T" }, 2 },
+}, "+")
+for i = 1, #G do
+  local g = G[i]
+  print(g[1], json.encode(g[2]), g[3])
+end
+
+print("--")
+local set_of_items = lr0_items(grammar_to_rules(grammar), {
+  { "E'", { "E" }, 1 },
+})
+
+local n = 0
+for items in set_of_items:each() do
+  n = n + 1
+  io.write("==== ", n, " =====\n")
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot = item[1], item[2], item[3]
+    io.write(item[1], " ->")
+    for j = 1, #body do
+      if j == dot then
+        io.write(" ", DOT)
+      end
+      io.write(" ", body[j])
+    end
+    if #body + 1 == dot then
+      io.write(" ", DOT)
+    end
+    io.write("\n")
+  end
 end
 
 os.exit()
