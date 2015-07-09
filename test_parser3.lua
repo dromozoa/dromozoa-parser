@@ -10,6 +10,7 @@ local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 local multimap = require "dromozoa.parser.multimap"
 local set = require "dromozoa.parser.set"
 local sequence = require "dromozoa.parser.sequence"
+local equal = require "dromozoa.parser.equal"
 
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
@@ -399,6 +400,34 @@ local function lr1_items(rules, start_items, nolr_rules, nolr_firstset)
   return set_of_items
 end
 
+local function lr0_kernel(set_of_items, start_items)
+  local set_of_kernel_items = linked_hash_table()
+  for items in set_of_items:each() do
+    local kernel_items = {}
+    for i = 1, #items do
+      local item = items[i]
+      local dot = item[3]
+      local is_kernel
+      for j = 1, #start_items do
+        if equal(item, start_items[j]) then
+          is_kernel = true
+          break
+        end
+      end
+      if dot > 1 then
+        is_kernel = true
+      end
+      if is_kernel then
+        sequence.push_back(kernel_items, item)
+      end
+    end
+    if #kernel_items > 0 then
+      set_of_kernel_items:insert(kernel_items, true)
+    end
+  end
+  return set_of_kernel_items
+end
+
 local function grammar_to_graph(grammar)
   local g = graph()
   local vertices = linked_hash_table():adapt()
@@ -460,11 +489,62 @@ local grammar = parse_grammar([[
 # B -> 0
 # B -> 1
 
+# S' -> S
+# S -> C C
+# C -> c C
+# C -> d
+
 S' -> S
-S -> C C
-C -> c C
-C -> d
+S -> L = R
+S -> R
+L -> * R
+L -> id
+R -> L
 ]])
+
+local grammar2 = remove_left_recursions(grammar)
+unparse_grammar(grammar2, io.stdout)
+local firstset = make_firstset(grammar2)
+
+print("--")
+for k, v in pairs(firstset) do
+  io.write(json.encode(k), " :")
+  for u in pairs(v) do
+    io.write(" ", u)
+  end
+  io.write("\n")
+end
+
+print("--")
+local set_of_items = lr0_items(grammar_to_rules(grammar), {
+  { "S'", { "S" }, 1 },
+})
+local set_of_kernel_items = lr0_kernel(set_of_items, {
+  { "S'", { "S" }, 1 },
+})
+
+local n = 0
+for items in set_of_kernel_items:each() do
+  n = n + 1
+  io.write("==== ", n, " =====\n")
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot = item[1], item[2], item[3]
+    io.write(item[1], " ->")
+    for j = 1, #body do
+      if j == dot then
+        io.write(" ", DOT)
+      end
+      io.write(" ", body[j])
+    end
+    if #body + 1 == dot then
+      io.write(" ", DOT)
+    end
+    io.write("\n")
+  end
+end
+
+os.exit()
 
 local grammar2 = remove_left_recursions(grammar)
 unparse_grammar(grammar2, io.stdout)
