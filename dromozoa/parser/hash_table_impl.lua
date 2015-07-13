@@ -27,6 +27,9 @@ local class = {}
 local metatable = {}
 
 local function insert(self, key, value, overwrite)
+  if key == nil then
+    error "table index is nil"
+  end
   local h = hash(key)
   local K = self[HANDLE_K]
   local k = K[h]
@@ -86,6 +89,9 @@ function class:adapt()
 end
 
 function class:get(key)
+  if key == nil then
+    return nil
+  end
   local h = hash(key)
   local K = self[HANDLE_K]
   local k = K[h]
@@ -147,6 +153,9 @@ function class:insert(key, value)
 end
 
 function class:remove(key)
+  if key == nil then
+    error "table index is nil"
+  end
   local h = hash(key)
   local K = self[HANDLE_K]
   local k = K[h]

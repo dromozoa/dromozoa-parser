@@ -116,3 +116,8 @@ assert(t2[1] == 69)
 
 dump(t1)
 dump(t2)
+
+assert(pcall(hash_table_impl.insert, t, nil) == false)
+assert(pcall(hash_table_impl.remove, t, nil) == false)
+
+assert(t[nil] == nil)
