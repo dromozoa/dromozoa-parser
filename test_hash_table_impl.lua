@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local clone = require "dromozoa.commons.clone"
-local hash_table_impl = require "dromozoa.parser.hash_table_impl"
+local hash_table = require "dromozoa.parser.hash_table2"
 
 local function dump(t)
   for k, v in pairs(t) do
@@ -34,13 +34,13 @@ local function dump(t)
   end
 end
 
-local t = hash_table_impl()
+local t = hash_table()
 assert(t:insert({}) == nil)
 assert(t:insert({}) == true)
 assert(t:remove({}) == true)
 assert(t:remove({}) == nil)
 
-local t = hash_table_impl()
+local t = hash_table()
 t[{}] = 17
 t[{1}] = 23
 t[{1,2}] = 37
@@ -102,8 +102,10 @@ assert(t[{1,2,3,4}] == nil)
 assert(t[{1,2,3,4,5}] == nil)
 assert(t[{1,2,3,4,5,6}] == nil)
 
-local t = hash_table_impl()
+local t = hash_table()
+assert(t:empty())
 t[1] = 42
+assert(not t:empty())
 dump(t)
 
 local t1 = t
@@ -117,7 +119,7 @@ assert(t2[1] == 69)
 dump(t1)
 dump(t2)
 
-assert(pcall(hash_table_impl.insert, t, nil) == false)
-assert(pcall(hash_table_impl.remove, t, nil) == false)
+assert(pcall(hash_table.insert, t, nil) == false)
+assert(pcall(hash_table.remove, t, nil) == false)
 
 assert(t[nil] == nil)

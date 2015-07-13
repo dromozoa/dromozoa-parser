@@ -119,6 +119,10 @@ function class:get(key)
   return nil
 end
 
+function class:empty()
+  return next(self[HANDLE_K]) == nil
+end
+
 function class:each()
   return coroutine.wrap(function ()
     local K = self[HANDLE_K]
