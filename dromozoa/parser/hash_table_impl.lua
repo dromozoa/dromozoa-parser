@@ -18,63 +18,36 @@
 local equal = require "dromozoa.parser.equal"
 local hash = require "dromozoa.parser.hash"
 
-local function hash(key)
-  return #key % 2 + 100
-end
+local function HANDLE_K() end
+local function HANDLE_V() end
+local function HANDLE_KS() end
+local function HANDLE_VS() end
 
 local class = {}
 local metatable = {}
 
-local function get(self, key)
-  local h = hash(key)
-  local K = self[1]
-  local k = K[h]
-  if k == nil then
-    return nil
-  end
-  if equal(k, key) then
-    local V = self[2]
-    local v = V[h]
-    return v
-  end
-  local KS = self[3]
-  local ks = KS[h]
-  if ks == nil then
-    return nil
-  end
-  for i = 1, #ks do
-    if equal(ks[i], key) then
-      local VS = self[4]
-      local vs = VS[h]
-      local v = vs[i]
-      return v
-    end
-  end
-  return nil
-end
-
 local function insert(self, key, value, overwrite)
   local h = hash(key)
-  local K = self[1]
+  local K = self[HANDLE_K]
   local k = K[h]
   if k == nil then
-    local V = self[2]
+    local V = self[HANDLE_V]
     K[h] = key
     V[h] = value
     return nil
   end
   if equal(k, key) then
-    local V = self[2]
+    local V = self[HANDLE_V]
     local v = V[h]
     if overwrite then
       V[h] = value
     end
     return v
   end
-  local KS = self[3]
+  local KS = self[HANDLE_KS]
   local ks = KS[h]
   if ks == nil then
-    local VS = self[4]
+    local VS = self[HANDLE_VS]
     KS[h] = { key }
     VS[h] = { value }
     return nil
@@ -82,7 +55,7 @@ local function insert(self, key, value, overwrite)
   local n = #ks
   for i = 1, n do
     if equal(ks[i], key) then
-      local VS = self[4]
+      local VS = self[HANDLE_VS]
       local vs = VS[h]
       local v = vs[i]
       if overwrite then
@@ -91,7 +64,7 @@ local function insert(self, key, value, overwrite)
       return v
     end
   end
-  local VS = self[4]
+  local VS = self[HANDLE_VS]
   local vs = VS[h]
   n = n + 1
   ks[n] = key
@@ -99,51 +72,13 @@ local function insert(self, key, value, overwrite)
   return nil
 end
 
-local function remove(self, key)
-  local h = hash(key)
-  local K = self[1]
-  local k = K[h]
-  if k == nil then
-    return nil
-  end
-  local KS = self[3]
-  local ks = KS[h]
-  if equal(k, key) then
-    local V = self[2]
-    local v = V[h]
-    if ks == nil then
-      K[h] = nil
-      V[h] = nil
-    else
-      local VS = self[4]
-      local vs = VS[h]
-      K[h] = table.remove(ks, 1)
-      V[h] = table.remove(vs, 1)
-      if #ks == 0 then
-        KS[h] = nil
-        VS[h] = nil
-      end
-    end
-    return v
-  end
-  for i = 1, #ks do
-    if equal(ks[i], key) then
-      table.remove(ks, i)
-      local VS = self[4]
-      local vs = VS[h]
-      local v = table.remove(vs, i)
-      if #ks == 0 then
-        KS[h] = nil
-        VS[h] = nil
-      end
-      return v
-    end
-  end
-  return nil
-end
-
 function class.new()
-  return { {}, {}, {}, {} }
+  return {
+    [HANDLE_K] = {};
+    [HANDLE_V] = {};
+    [HANDLE_KS] = {};
+    [HANDLE_VS] = {};
+  }
 end
 
 function class:adapt()
@@ -151,12 +86,54 @@ function class:adapt()
 end
 
 function class:get(key)
-  return get(self, key)
+  local h = hash(key)
+  local K = self[HANDLE_K]
+  local k = K[h]
+  if k == nil then
+    return nil
+  end
+  if equal(k, key) then
+    local V = self[HANDLE_V]
+    local v = V[h]
+    return v
+  end
+  local KS = self[HANDLE_KS]
+  local ks = KS[h]
+  if ks == nil then
+    return nil
+  end
+  for i = 1, #ks do
+    if equal(ks[i], key) then
+      local VS = self[HANDLE_VS]
+      local vs = VS[h]
+      local v = vs[i]
+      return v
+    end
+  end
+  return nil
+end
+
+function class:each()
+  return coroutine.wrap(function ()
+    local K = self[HANDLE_K]
+    local V = self[HANDLE_V]
+    for h, k in pairs(K) do
+      coroutine.yield(k, V[h])
+    end
+    local KS = self[HANDLE_KS]
+    local VS = self[HANDLE_VS]
+    for h, ks in pairs(KS) do
+      local vs = VS[h]
+      for i = 1, #ks do
+        coroutine.yield(ks[i], vs[i])
+      end
+    end
+  end)
 end
 
 function class:put(key, value)
   if value == nil then
-    return remove(self, key)
+    return class.remove(self, key)
   else
     return insert(self, key, value, true)
   end
@@ -170,7 +147,46 @@ function class:insert(key, value)
 end
 
 function class:remove(key)
-  return remove(self, key)
+  local h = hash(key)
+  local K = self[HANDLE_K]
+  local k = K[h]
+  if k == nil then
+    return nil
+  end
+  local KS = self[HANDLE_KS]
+  local ks = KS[h]
+  if equal(k, key) then
+    local V = self[HANDLE_V]
+    local v = V[h]
+    if ks == nil then
+      K[h] = nil
+      V[h] = nil
+    else
+      local VS = self[HANDLE_VS]
+      local vs = VS[h]
+      K[h] = table.remove(ks, 1)
+      V[h] = table.remove(vs, 1)
+      if #ks == 0 then
+        KS[h] = nil
+        VS[h] = nil
+      end
+    end
+    return v
+  end
+  for i = 1, #ks do
+    if equal(ks[i], key) then
+      table.remove(ks, i)
+      local VS = self[HANDLE_VS]
+      local vs = VS[h]
+      local v = table.remove(vs, i)
+      if #ks == 0 then
+        KS[h] = nil
+        VS[h] = nil
+      end
+      return v
+    end
+  end
+  return nil
 end
 
 function metatable:__index(key)
@@ -182,8 +198,7 @@ function metatable:__index(key)
   end
 end
 
-function metatable:__newindex(key, value)
-  return class.put(self, key, value)
-end
+metatable.__newindex = class.put
+metatable.__pairs = class.each
 
 return class
