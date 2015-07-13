@@ -34,13 +34,13 @@ local function dump(t)
   end
 end
 
-local t = hash_table_impl.adapt(hash_table_impl.new())
+local t = hash_table_impl()
 assert(t:insert({}) == nil)
 assert(t:insert({}) == true)
 assert(t:remove({}) == true)
 assert(t:remove({}) == nil)
 
-local t = hash_table_impl.adapt(hash_table_impl.new())
+local t = hash_table_impl()
 t[{}] = 17
 t[{1}] = 23
 t[{1,2}] = 37
@@ -102,7 +102,7 @@ assert(t[{1,2,3,4}] == nil)
 assert(t[{1,2,3,4,5}] == nil)
 assert(t[{1,2,3,4,5,6}] == nil)
 
-local t = hash_table_impl.adapt(hash_table_impl.new())
+local t = hash_table_impl()
 t[1] = 42
 dump(t)
 

@@ -201,4 +201,8 @@ end
 metatable.__newindex = class.put
 metatable.__pairs = class.each
 
-return class
+return setmetatable(class, {
+  __call = function ()
+    return class.adapt(class.new())
+  end;
+})
