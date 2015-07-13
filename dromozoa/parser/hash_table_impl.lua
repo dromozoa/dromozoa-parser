@@ -141,7 +141,7 @@ function class:each()
   end)
 end
 
-function class:put(key, value)
+function class:set(key, value)
   if value == nil then
     return class.remove(self, key)
   else
@@ -211,7 +211,7 @@ function metatable:__index(key)
   end
 end
 
-metatable.__newindex = class.put
+metatable.__newindex = class.set
 metatable.__pairs = class.each
 
 return setmetatable(class, {

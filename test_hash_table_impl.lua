@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local clone = require "dromozoa.commons.clone"
+-- local hash_table = require "dromozoa.parser.hash_table_impl"
 local hash_table = require "dromozoa.parser.hash_table2"
 
 local function dump(t)
