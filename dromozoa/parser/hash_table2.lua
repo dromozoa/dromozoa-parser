@@ -139,6 +139,6 @@ metatable.__pairs = class.each
 
 return setmetatable(class, {
   __call = function ()
-    return class.adapt({})
+    return class.adapt(class.new())
   end;
 })
