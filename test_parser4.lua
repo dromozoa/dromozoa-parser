@@ -5,18 +5,6 @@ local unpack = require "dromozoa.commons.unpack"
 
 local class = {}
 
---[[
-push_back(...)
-push_back_unpack(t, i, j)
-
-
-push(...)
-copy(t, i, j)
-
-
-
-]]
-
 function class:push(value, ...)
   if value == nil then
     return self
@@ -37,15 +25,6 @@ function class:copy(that, i, j)
     self[#self + 1] = that[i]
   end
   return self
-end
-
-function class:push_back(value, ...)
-  if value == nil then
-    return self
-  else
-    self[#self + 1] = value
-    return class.push_back(self, ...)
-  end
 end
 
 function class:each()
