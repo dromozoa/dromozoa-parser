@@ -105,9 +105,9 @@ local function remove_left_recursions(rules)
   end
   for i = 1, #heads do
     local head1 = heads[i]
+    local bodies1 = rules[head1]
     for j = 1, i - 1 do
       local head2 = heads[j]
-      local bodies1 = rules[head1]
       local bodies2 = rules[head2]
       local bodies = sequence()
       for body1 in bodies1:each() do
@@ -119,10 +119,10 @@ local function remove_left_recursions(rules)
           bodies:push(body1)
         end
       end
-      rules[head1] = bodies
+      bodies1 = bodies
     end
     local head2 = head1 .. "'"
-    local bodies = rules[head1]
+    local bodies = bodies1
     local bodies1 = sequence()
     local bodies2 = sequence()
     for body in bodies:each() do
