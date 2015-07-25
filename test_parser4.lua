@@ -98,7 +98,7 @@ local function unparse_grammar(rules, out)
   end
 end
 
-local function remove_left_recursions(rules)
+local function eliminate_left_recursion(rules)
   local heads = sequence()
   for head in rules:each() do
     heads:push(head)
@@ -109,41 +109,36 @@ local function remove_left_recursions(rules)
     for j = 1, i - 1 do
       local head2 = heads[j]
       local bodies2 = rules[head2]
-      local bodies = sequence()
+      local bodies3 = sequence()
       for body1 in bodies1:each() do
         if body1[1] == head2 then
           for body2 in bodies2:each() do
-            bodies:push(sequence(body2):copy(body1, 2))
+            bodies3:push(sequence(body2):copy(body1, 2))
           end
         else
-          bodies:push(body1)
+          bodies3:push(body1)
         end
       end
-      bodies1 = bodies
+      bodies1 = bodies3
     end
     local head2 = head1 .. "'"
-    local bodies = bodies1
-    local bodies1 = sequence()
     local bodies2 = sequence()
-    for body in bodies:each() do
+    local bodies3 = sequence()
+    for body in bodies1:each() do
       if body[1] == head1 then
-        bodies2:push(sequence(body, 2):push(head2))
+        bodies3:push(sequence(body, 2):push(head2))
       else
-        bodies1:push(sequence(body):push(head2))
+        bodies2:push(sequence(body):push(head2))
       end
     end
-    if #bodies2 > 0 then
-      bodies2:push(sequence())
-      rules[head1] = bodies1
-      rules[head2] = bodies2
+    if #bodies3 > 0 then
+      bodies3:push(sequence())
+      rules[head1] = bodies2
+      rules[head2] = bodies3
     end
   end
   return rules
 end
-
-
-
-
 
 local rules = parse_grammar([[
 # S -> E
@@ -159,6 +154,6 @@ A -> A c
 A -> S d
 A ->
 ]])
-remove_left_recursions(rules)
+eliminate_left_recursion(rules)
 unparse_grammar(rules, io.stdout)
 
