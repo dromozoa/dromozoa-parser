@@ -99,7 +99,7 @@ local function unparse_grammar(rules, out)
 end
 
 local function remove_left_recursions(rules)
-  local heads = sequence({})
+  local heads = sequence()
   for head in rules:each() do
     heads:push(head)
   end
