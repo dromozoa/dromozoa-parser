@@ -52,7 +52,7 @@ end
 local function keys(this)
   local keys = sequence()
   for key in this:each() do
-    keys[#keys + 1] = key
+    keys:push(key)
   end
   return keys
 end
@@ -136,10 +136,7 @@ local function eliminate_immediate_left_recursion(rules, head1, bodies)
 end
 
 local function eliminate_left_recursion(rules)
-  local heads = sequence()
-  for head in rules:each() do
-    heads:push(head)
-  end
+  local heads = keys(rules)
   for i = 1, #heads do
     local head1 = heads[i]
     local bodies1 = rules[head1]
