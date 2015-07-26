@@ -98,6 +98,24 @@ local function unparse_grammar(rules, out)
   end
 end
 
+local function eliminate_immediate_left_recursion(rules, head1, bodies)
+  local head2 = head1 .. "'"
+  local bodies1 = sequence()
+  local bodies2 = sequence()
+  for body in bodies:each() do
+    if body[1] == head1 then
+      bodies2:push(sequence(body, 2):push(head2))
+    else
+      bodies1:push(sequence(body):push(head2))
+    end
+  end
+  if #bodies2 > 0 then
+    bodies2:push(sequence())
+    rules[head1] = bodies1
+    rules[head2] = bodies2
+  end
+end
+
 local function eliminate_left_recursion(rules)
   local heads = sequence()
   for head in rules:each() do
@@ -109,33 +127,19 @@ local function eliminate_left_recursion(rules)
     for j = 1, i - 1 do
       local head2 = heads[j]
       local bodies2 = rules[head2]
-      local bodies3 = sequence()
+      local bodies = sequence()
       for body1 in bodies1:each() do
         if body1[1] == head2 then
           for body2 in bodies2:each() do
-            bodies3:push(sequence(body2):copy(body1, 2))
+            bodies:push(sequence(body2):copy(body1, 2))
           end
         else
-          bodies3:push(body1)
+          bodies:push(body1)
         end
       end
-      bodies1 = bodies3
+      bodies1 = bodies
     end
-    local head2 = head1 .. "'"
-    local bodies2 = sequence()
-    local bodies3 = sequence()
-    for body in bodies1:each() do
-      if body[1] == head1 then
-        bodies3:push(sequence(body, 2):push(head2))
-      else
-        bodies2:push(sequence(body):push(head2))
-      end
-    end
-    if #bodies3 > 0 then
-      bodies3:push(sequence())
-      rules[head1] = bodies2
-      rules[head2] = bodies3
-    end
+    eliminate_immediate_left_recursion(rules, head1, bodies1)
   end
   return rules
 end
