@@ -49,6 +49,25 @@ local function sequence(that, i, j)
   return setmetatable(this, metatable)
 end
 
+local function keys(this)
+  local keys = sequence()
+  for key in this:each() do
+    keys[#keys + 1] = key
+  end
+  return keys
+end
+
+local function set_union(a, b)
+  local n = 0
+  for k, v in pairs(b) do
+    if a[k] == nil then
+      n = n + 1
+      a[k] = v
+    end
+  end
+  return n
+end
+
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
 
@@ -144,14 +163,42 @@ local function eliminate_left_recursion(rules)
   return rules
 end
 
+local first_symbols
+
+local function first_symbol(rules, symbol)
+  local first = linked_hash_table()
+  local bodies = rules[symbol]
+  if bodies == nil then
+    first[symbol] = true
+  else
+    for body in rules[symbol]:each() do
+      if #body == 0 then
+        first:insert(EPSILON)
+      else
+        set_union(first, first_symbols(rules, body))
+      end
+    end
+  end
+  return first
+end
+
+function first_symbols(rules, symbols)
+  local first = linked_hash_table()
+  for symbol in symbols:each() do
+    set_union(first, first_symbol(rules, symbol))
+    if first:remove(EPSILON) == nil then
+      return first
+    end
+  end
+  first:insert(EPSILON)
+  return first
+end
+
+local function first(rules, ...)
+  return keys(first_symbol(rules, ...))
+end
+
 local rules = parse_grammar([[
-# S -> E
-# E -> E + T
-# E -> T
-# T -> T * F
-# T -> F
-# F -> ( E )
-# F -> id
 S -> A a
 S -> b
 A -> A c
@@ -159,5 +206,23 @@ A -> S d
 A ->
 ]])
 eliminate_left_recursion(rules)
+io.write("--\n")
 unparse_grammar(rules, io.stdout)
+
+local rules = parse_grammar([[
+E -> E + T
+E -> T
+T -> T * F
+T -> F
+F -> ( E )
+F -> id
+]])
+eliminate_left_recursion(rules)
+io.write("--\n")
+unparse_grammar(rules, io.stdout)
+
+for symbol in sequence({ "F", "T", "E", "E'", "T'" }):each() do
+  local first = first(rules, symbol)
+  io.write("first(", symbol, ") = {", table.concat(first, ", "), "}\n")
+end
 
