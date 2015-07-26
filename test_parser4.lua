@@ -219,7 +219,6 @@ io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
 for symbol in sequence({ "F", "T", "E", "E'", "T'" }):each() do
-  local first = first(rules, symbol)
-  io.write("first(", symbol, ") = {", table.concat(first, ", "), "}\n")
+  io.write("first(", symbol, ") = {", table.concat(first(rules, symbol), ", "), "}\n")
 end
 
