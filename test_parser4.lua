@@ -204,18 +204,18 @@ local function make_followset(rules, start)
   local done
   repeat
     done = true
-    for A, bodies in rules:each() do
+    for head1, bodies in rules:each() do
       for body in bodies:each() do
         for i = 1, #body do
-          local B = body[i]
-          if rules[B] ~= nil then
+          local head2 = body[i]
+          if rules[head2] ~= nil then
             local first = first_symbols(rules, sequence(body, i + 1))
-            local epsilon_removed = first:remove(EPSILON) ~= nil
-            if set_union(followset[B], first) > 0 then
+            local removed = first:remove(EPSILON) ~= nil
+            if set_union(followset[head2], first) > 0 then
               done = false
             end
-            if epsilon_removed then
-              if set_union(followset[B], followset[A]) > 0 then
+            if removed then
+              if set_union(followset[head2], followset[head1]) > 0 then
                 done = false
               end
             end
@@ -223,7 +223,6 @@ local function make_followset(rules, start)
         end
       end
     end
-    print(done)
   until done
   return followset
 end
