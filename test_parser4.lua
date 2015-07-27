@@ -132,6 +132,44 @@ local function unparse_item(item, out)
   out:write("\n")
 end
 
+local function each_nonterminal_symbol(rules)
+  return coroutine.wrap(function ()
+    for head in rules:each() do
+      coroutine.yield(head)
+    end
+  end)
+end
+
+local function each_terminal_symbol(rules)
+  return coroutine.wrap(function ()
+    local visited = linked_hash_table()
+    for _, bodies in rules:each() do
+      for body in bodies:each() do
+        for symbol in body:each() do
+          if visited:insert(symbol) == nil then
+            coroutine.yield(symbol)
+          end
+        end
+      end
+    end
+  end)
+end
+
+local function each_symbol(rules)
+  return coroutine.wrap(function ()
+    for symbol in each_nonterminal_symbol(rules) do
+      coroutine.yield(symbol)
+    end
+    for symbol in each_terminal_symbol(rules) do
+      coroutine.yield(symbol)
+    end
+  end)
+end
+
+local function is_terminal_symbol(rules, symbol)
+  return rules[symbol] == nil
+end
+
 local function eliminate_immediate_left_recursion(rules, head1, bodies)
   local head2 = head1 .. "'"
   local bodies1 = sequence()
@@ -179,8 +217,7 @@ local first_symbols
 
 local function first_symbol(rules, symbol)
   local first = linked_hash_table()
-  local bodies = rules[symbol]
-  if bodies == nil then
+  if is_terminal_symbol(rules, symbol) then
     first[symbol] = true
   else
     for body in rules[symbol]:each() do
@@ -223,7 +260,7 @@ local function make_followset(rules, start)
       for body in bodies:each() do
         for i = 1, #body do
           local symbol = body[i]
-          if rules[symbol] ~= nil then
+          if not is_terminal_symbol(symbol) then
             local first = first_symbols(rules, sequence(body, i + 1))
             local removed = first:remove(EPSILON) ~= nil
             if set_union(followset[symbol], first) > 0 then
@@ -240,21 +277,6 @@ local function make_followset(rules, start)
     end
   until done
   return followset
-end
-
-local function symbols(rules)
-  local symbols = linked_hash_table()
-  for head, bodies in rules:each() do
-    symbols:insert(head)
-  end
-  for head, bodies in rules:each() do
-    for body in bodies:each() do
-      for symbol in body:each() do
-        symbols:insert(symbol)
-      end
-    end
-  end
-  return keys(symbols)
 end
 
 local function lr0_item(head, body, dot)
@@ -305,7 +327,7 @@ local function lr0_items(rules, start_items)
   repeat
     done = true
     for I in C:each() do
-      for X in symbols(rules):each() do
+      for X in each_symbol(rules) do
         local g = lr0_goto(rules, I, X)
         if #g > 0 then
           if C:insert(g) == nil then
@@ -363,7 +385,7 @@ io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
 io.write("--\n")
-for symbol in symbols(rules):each() do
+for symbol in each_symbol(rules) do
   print(symbol)
 end
 
