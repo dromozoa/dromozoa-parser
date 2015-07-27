@@ -301,23 +301,23 @@ local function lr0_goto(rules, items, symbol)
 end
 
 local function lr0_items(rules, start_items)
-  local C = linked_hash_table()
-  C:insert(lr0_closure(rules, start_items))
+  local set_of_items = linked_hash_table()
+  set_of_items:insert(lr0_closure(rules, start_items))
   local done
   repeat
     done = true
-    for I in C:each() do
+    for I in set_of_items:each() do
       for X in each_symbol(rules) do
         local g = lr0_goto(rules, I, X)
         if #g > 0 then
-          if C:insert(g) == nil then
+          if set_of_items:insert(g) == nil then
             done = false
           end
         end
       end
     end
   until done
-  return C
+  return set_of_items
 end
 
 local rules = parse_grammar([[
