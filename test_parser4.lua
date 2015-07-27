@@ -132,36 +132,20 @@ local function unparse_item(item, out)
   out:write("\n")
 end
 
-local function each_nonterminal_symbol(rules)
+local function each_symbol(rules)
   return coroutine.wrap(function ()
     for head in rules:each() do
       coroutine.yield(head)
     end
-  end)
-end
-
-local function each_terminal_symbol(rules)
-  return coroutine.wrap(function ()
-    local visited = linked_hash_table()
+    local terms = linked_hash_table()
     for _, bodies in rules:each() do
       for body in bodies:each() do
         for symbol in body:each() do
-          if visited:insert(symbol) == nil then
+          if terms:insert(symbol) == nil then
             coroutine.yield(symbol)
           end
         end
       end
-    end
-  end)
-end
-
-local function each_symbol(rules)
-  return coroutine.wrap(function ()
-    for symbol in each_nonterminal_symbol(rules) do
-      coroutine.yield(symbol)
-    end
-    for symbol in each_terminal_symbol(rules) do
-      coroutine.yield(symbol)
     end
   end)
 end
@@ -241,10 +225,6 @@ function first_symbols(rules, symbols)
   end
   first:insert(EPSILON)
   return first
-end
-
-local function first(rules, ...)
-  return keys(first_symbol(rules, ...))
 end
 
 local function make_followset(rules, start)
@@ -364,7 +344,7 @@ io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
 for symbol in sequence({ "F", "T", "E", "E'", "T'" }):each() do
-  io.write("first(", symbol, ") = { ", table.concat(first(rules, symbol), ", "), " }\n")
+  io.write("first(", symbol, ") = { ", table.concat(keys(first_symbol(rules, symbol)), ", "), " }\n")
 end
 
 local followset = make_followset(rules, "E")
