@@ -263,13 +263,13 @@ local function lr0_item(head, body, dot)
   return sequence():push(head):push(sequence(body)):push(dot)
 end
 
-local function lr0_closure(rules, I)
-  local J = clone(I)
+local function lr0_closure(rules, items)
+  local items = clone(items)
   local added = linked_hash_table()
   local done
   repeat
     done = true
-    for item in J:each() do
+    for item in items:each() do
       local head, body, dot = item[1], item[2], item[3]
       local symbol = body[dot]
       if symbol ~= nil then
@@ -278,7 +278,7 @@ local function lr0_closure(rules, I)
           for body in bodies:each() do
             local item = lr0_item(symbol, body, 1)
             if added:insert(item) == nil then
-              J:push(item)
+              items:push(item)
               done = false
             end
           end
@@ -286,7 +286,7 @@ local function lr0_closure(rules, I)
       end
     end
   until done
-  return J
+  return items
 end
 
 local function lr0_goto(rules, items, symbol)
@@ -318,6 +318,9 @@ local function lr0_items(rules, start_items)
     end
   until done
   return set_of_items
+end
+
+local function lr1_closure(rules, I)
 end
 
 local rules = parse_grammar([[
