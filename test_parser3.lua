@@ -10,6 +10,7 @@ local linked_hash_table = require "dromozoa.parser.linked_hash_table"
 local multimap = require "dromozoa.parser.multimap"
 local set = require "dromozoa.parser.set"
 local sequence = require "dromozoa.parser.sequence"
+local equal = require "dromozoa.parser.equal"
 
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
@@ -180,6 +181,7 @@ end
 local function make_firstset(grammar)
   local rules = grammar_to_rules(grammar)
   local terms = linked_hash_table():adapt()
+  terms["$"] = true
   for rule in grammar:each() do
     local body = rule[2]
     for i = 1, #body do
@@ -253,7 +255,7 @@ end
 -- item = { head, body, dot }
 -- body = { symbol... }
 -- dot = N
-local function lr0_closure(grammar, rules, I)
+local function lr0_closure(rules, I)
   local J = sequence.copy_adapt(I)
   local added = linked_hash_table()
   local done
@@ -263,19 +265,167 @@ local function lr0_closure(grammar, rules, I)
       local item = J[i]
       local head, body, dot = item[1], item[2], item[3]
       local B = body[dot]
-      local bodies2 = rules[B]
-      if bodies2 then
-        for j = 1, #bodies2 do
-          local item2 = { B, bodies2[j], 1 }
-          if added:insert(item2, true) == nil then
-            J:push_back(item2)
-            done = false
+      if B then
+        local bodies2 = rules[B]
+        if bodies2 then
+          for j = 1, #bodies2 do
+            local item2 = { B, bodies2[j], 1 }
+            if added:insert(item2, true) == nil then
+              J:push_back(item2)
+              done = false
+            end
           end
         end
       end
     end
   until done
   return J
+end
+
+local function lr0_goto(rules, items, symbol)
+  local g = {}
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot = item[1], item[2], item[3]
+    if body[dot] == symbol then
+      g[#g + 1] = { head, body, dot + 1 }
+    end
+  end
+  return lr0_closure(rules, g)
+end
+
+local function lr0_items(rules, start_items)
+  local symbols = {}
+  for head, body in multimap.each(rules) do
+    set.insert(symbols, head)
+    for i = 1, #body do
+      set.insert(symbols, body[i])
+    end
+  end
+
+  local set_of_items = linked_hash_table()
+  set_of_items:insert(lr0_closure(rules, start_items), true)
+  local done
+  repeat
+    done = true
+    local C = set_of_items:clone()
+    for items in set_of_items:each() do
+      for symbol in pairs(symbols) do
+        local g = lr0_goto(rules, items, symbol)
+        if #g > 0 then
+          if C:insert(g, true) == nil then
+            done = false
+          end
+        end
+      end
+    end
+    set_of_items = C
+  until done
+
+  return set_of_items
+end
+
+-- item = { head, body, dot, term }
+local function lr1_closure(rules, I, nolr_rules, nolr_firstset)
+  local J = sequence.copy_adapt(I)
+  local added = linked_hash_table()
+  local done
+  repeat
+    done = true
+    for i = 1, #J do
+      local item = J[i]
+      local head, body, dot, term = item[1], item[2], item[3], item[4]
+      local B = body[dot]
+      if B then
+        local bodies2 = rules[B]
+        if bodies2 then
+          for j = 1, #bodies2 do
+            local body2 = bodies2[j]
+            local first = first_symbols(nolr_rules, sequence.copy_adapt(body, dot + 1):push_back(term), nolr_firstset)
+            for term2 in pairs(first) do
+              local item2 = { B, body2, 1, term2 }
+              if added:insert(item2, true) == nil then
+                J:push_back(item2)
+                done = false
+              end
+            end
+          end
+        end
+      end
+    end
+  until done
+  return J
+end
+
+local function lr1_goto(rules, items, symbol, nolr_rules, nolr_firstset)
+  local J = {}
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot, term = item[1], item[2], item[3], item[4]
+    if body[dot] == symbol then
+      J[#J + 1] = { head, body, dot + 1, term }
+    end
+  end
+  return lr1_closure(rules, J, nolr_rules, nolr_firstset)
+end
+
+local function lr1_items(rules, start_items, nolr_rules, nolr_firstset)
+  local symbols = {}
+  for head, body in multimap.each(rules) do
+    set.insert(symbols, head)
+    for i = 1, #body do
+      set.insert(symbols, body[i])
+    end
+  end
+
+  local set_of_items = linked_hash_table()
+  set_of_items:insert(lr1_closure(rules, start_items, nolr_rules, nolr_firstset), true)
+  local done
+  repeat
+    done = true
+    local C = set_of_items:clone()
+    for items in set_of_items:each() do
+      for symbol in pairs(symbols) do
+        local g = lr1_goto(rules, items, symbol, nolr_rules, nolr_firstset)
+        if #g > 0 then
+          if C:insert(g, true) == nil then
+            done = false
+          end
+        end
+      end
+    end
+    set_of_items = C
+  until done
+
+  return set_of_items
+end
+
+local function lr0_kernel(set_of_items, start_items)
+  local set_of_kernel_items = linked_hash_table()
+  for items in set_of_items:each() do
+    local kernel_items = {}
+    for i = 1, #items do
+      local item = items[i]
+      local dot = item[3]
+      local is_kernel
+      for j = 1, #start_items do
+        if equal(item, start_items[j]) then
+          is_kernel = true
+          break
+        end
+      end
+      if dot > 1 then
+        is_kernel = true
+      end
+      if is_kernel then
+        sequence.push_back(kernel_items, item)
+      end
+    end
+    if #kernel_items > 0 then
+      set_of_kernel_items:insert(kernel_items, true)
+    end
+  end
+  return set_of_kernel_items
 end
 
 local function grammar_to_graph(grammar)
@@ -311,13 +461,14 @@ local function grammar_to_graph(grammar)
 end
 
 local grammar = parse_grammar([[
-S -> E
-E -> E + T
-E -> T
-T -> T * F
-T -> F
-F -> ( E )
-F -> id
+# S -> E
+# E' -> E
+# E -> E + T
+# E -> T
+# T -> T * F
+# T -> F
+# F -> ( E )
+# F -> id
 
 # S -> A a
 # S -> b
@@ -342,7 +493,58 @@ F -> id
 # S -> C C
 # C -> c C
 # C -> d
+
+S' -> S
+S -> L = R
+S -> R
+L -> * R
+L -> id
+R -> L
 ]])
+
+local grammar2 = remove_left_recursions(grammar)
+unparse_grammar(grammar2, io.stdout)
+local firstset = make_firstset(grammar2)
+
+print("--")
+for k, v in pairs(firstset) do
+  io.write(json.encode(k), " :")
+  for u in pairs(v) do
+    io.write(" ", u)
+  end
+  io.write("\n")
+end
+
+print("--")
+local set_of_items = lr0_items(grammar_to_rules(grammar), {
+  { "S'", { "S" }, 1 },
+})
+local set_of_kernel_items = lr0_kernel(set_of_items, {
+  { "S'", { "S" }, 1 },
+})
+
+local n = 0
+for items in set_of_kernel_items:each() do
+  n = n + 1
+  io.write("==== ", n, " =====\n")
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot = item[1], item[2], item[3]
+    io.write(item[1], " ->")
+    for j = 1, #body do
+      if j == dot then
+        io.write(" ", DOT)
+      end
+      io.write(" ", body[j])
+    end
+    if #body + 1 == dot then
+      io.write(" ", DOT)
+    end
+    io.write("\n")
+  end
+end
+
+os.exit()
 
 local grammar2 = remove_left_recursions(grammar)
 unparse_grammar(grammar2, io.stdout)
@@ -367,6 +569,101 @@ for k, v in pairs(followset) do
   end
   io.write("\n")
 end
+
+print("--")
+local C = lr0_closure(grammar_to_rules(grammar), { { "E'", { "E" }, 1 } })
+for i = 1, #C do
+  local c = C[i]
+  print(c[1], json.encode(c[2]), c[3])
+end
+
+print("--")
+local G = lr0_goto(grammar_to_rules(grammar), {
+  { "E'", { "E" }, 2 },
+  { "E", { "E", "+", "T" }, 2 },
+}, "+")
+for i = 1, #G do
+  local g = G[i]
+  print(g[1], json.encode(g[2]), g[3])
+end
+
+print("--")
+local set_of_items = lr0_items(grammar_to_rules(grammar), {
+  { "E'", { "E" }, 1 },
+})
+
+local n = 0
+for items in set_of_items:each() do
+  n = n + 1
+  io.write("==== ", n, " =====\n")
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot = item[1], item[2], item[3]
+    io.write(item[1], " ->")
+    for j = 1, #body do
+      if j == dot then
+        io.write(" ", DOT)
+      end
+      io.write(" ", body[j])
+    end
+    if #body + 1 == dot then
+      io.write(" ", DOT)
+    end
+    io.write("\n")
+  end
+end
+
+print("--")
+local C = lr1_closure(grammar_to_rules(grammar), {
+  { "S'", { "S" }, 1, "$" },
+}, grammar_to_rules(grammar2), firstset)
+
+for i = 1, #C do
+  local c = C[i]
+  print(c[1], json.encode(c[2]), c[3], c[4])
+end
+
+print("--")
+local C = lr1_goto(grammar_to_rules(grammar), {
+  { "S'", { "S" }, 1, "$" },
+  { "S", { "C", "C" }, 1, "$" },
+  { "C", { "c", "C" }, 1, "c" },
+  { "C", { "c", "C" }, 1, "d" },
+  { "C", { "d" }, 1, "c" },
+  { "C", { "d" }, 1, "d" },
+}, "c", grammar_to_rules(grammar2), firstset)
+
+for i = 1, #C do
+  local c = C[i]
+  print(c[1], json.encode(c[2]), c[3], c[4])
+end
+
+print("--")
+local set_of_items = lr1_items(grammar_to_rules(grammar), {
+  { "S'", { "S" }, 1, "$" },
+}, grammar_to_rules(grammar2), firstset)
+
+local n = 0
+for items in set_of_items:each() do
+  n = n + 1
+  io.write("==== ", n, " =====\n")
+  for i = 1, #items do
+    local item = items[i]
+    local head, body, dot, term = item[1], item[2], item[3], item[4]
+    io.write(item[1], " ->")
+    for j = 1, #body do
+      if j == dot then
+        io.write(" ", DOT)
+      end
+      io.write(" ", body[j])
+    end
+    if #body + 1 == dot then
+      io.write(" ", DOT)
+    end
+    io.write(", ", term, "\n")
+  end
+end
+
 
 os.exit()
 
