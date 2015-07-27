@@ -195,6 +195,39 @@ local function first(rules, ...)
   return keys(first_symbol(rules, ...))
 end
 
+local function make_followset(rules, start)
+  local followset = linked_hash_table()
+  for head in rules:each() do
+    followset[head] = linked_hash_table()
+  end
+  followset[start]:insert("$")
+  local done
+  repeat
+    done = true
+    for A, bodies in rules:each() do
+      for body in bodies:each() do
+        for i = 1, #body do
+          local B = body[i]
+          if rules[B] ~= nil then
+            local first = first_symbols(rules, sequence(body, i + 1))
+            local epsilon_removed = first:remove(EPSILON) ~= nil
+            if set_union(followset[B], first) > 0 then
+              done = false
+            end
+            if epsilon_removed then
+              if set_union(followset[B], followset[A]) > 0 then
+                done = false
+              end
+            end
+          end
+        end
+      end
+    end
+    print(done)
+  until done
+  return followset
+end
+
 local rules = parse_grammar([[
 S -> A a
 S -> b
@@ -219,6 +252,11 @@ io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
 for symbol in sequence({ "F", "T", "E", "E'", "T'" }):each() do
-  io.write("first(", symbol, ") = {", table.concat(first(rules, symbol), ", "), "}\n")
+  io.write("first(", symbol, ") = { ", table.concat(first(rules, symbol), ", "), " }\n")
+end
+
+local followset = make_followset(rules, "E")
+for symbol, follow in followset:each() do
+  io.write("follow(", symbol, ") = { ", table.concat(keys(follow), ", "), " }\n")
 end
 
