@@ -117,6 +117,21 @@ local function unparse_grammar(rules, out)
   end
 end
 
+local function unparse_item(item, out)
+  local head, body, dot = item[1], item[2], item[3]
+  out:write(head, " ->")
+  for i = 1, #body do
+    if dot == i then
+      out:write(" ", DOT)
+    end
+    out:write(" ", body[i])
+  end
+  if dot == #body + 1 then
+    out:write(" ", DOT)
+  end
+  out:write("\n")
+end
+
 local function eliminate_immediate_left_recursion(rules, head1, bodies)
   local head2 = head1 .. "'"
   local bodies1 = sequence()
@@ -204,18 +219,18 @@ local function make_followset(rules, start)
   local done
   repeat
     done = true
-    for head1, bodies in rules:each() do
+    for head, bodies in rules:each() do
       for body in bodies:each() do
         for i = 1, #body do
-          local head2 = body[i]
-          if rules[head2] ~= nil then
+          local symbol = body[i]
+          if rules[symbol] ~= nil then
             local first = first_symbols(rules, sequence(body, i + 1))
             local removed = first:remove(EPSILON) ~= nil
-            if set_union(followset[head2], first) > 0 then
+            if set_union(followset[symbol], first) > 0 then
               done = false
             end
             if removed then
-              if set_union(followset[head2], followset[head1]) > 0 then
+              if set_union(followset[symbol], followset[head]) > 0 then
                 done = false
               end
             end
@@ -225,6 +240,82 @@ local function make_followset(rules, start)
     end
   until done
   return followset
+end
+
+local function symbols(rules)
+  local symbols = linked_hash_table()
+  for head, bodies in rules:each() do
+    symbols:insert(head)
+  end
+  for head, bodies in rules:each() do
+    for body in bodies:each() do
+      for symbol in body:each() do
+        symbols:insert(symbol)
+      end
+    end
+  end
+  return keys(symbols)
+end
+
+local function lr0_item(head, body, dot)
+  return sequence():push(head):push(sequence(body)):push(dot)
+end
+
+local function lr0_closure(rules, I)
+  local J = clone(I)
+  local added = linked_hash_table()
+  local done
+  repeat
+    done = true
+    for item in J:each() do
+      local head, body, dot = item[1], item[2], item[3]
+      local symbol = body[dot]
+      if symbol ~= nil then
+        local bodies = rules[symbol]
+        if bodies ~= nil then
+          for body in bodies:each() do
+            local item = lr0_item(symbol, body, 1)
+            if added:insert(item) == nil then
+              J:push(item)
+              done = false
+            end
+          end
+        end
+      end
+    end
+  until done
+  return J
+end
+
+local function lr0_goto(rules, items, symbol)
+  local g = sequence()
+  for item in items:each() do
+    local head, body, dot = item[1], item[2], item[3]
+    if body[dot] == symbol then
+      g:push(lr0_item(head, body, dot + 1))
+    end
+  end
+  return lr0_closure(rules, g)
+end
+
+local function lr0_items(rules, start_items)
+  local C = linked_hash_table()
+  C:insert(lr0_closure(rules, start_items))
+  local done
+  repeat
+    done = true
+    for I in C:each() do
+      for X in symbols(rules):each() do
+        local g = lr0_goto(rules, I, X)
+        if #g > 0 then
+          if C:insert(g) == nil then
+            done = false
+          end
+        end
+      end
+    end
+  until done
+  return C
 end
 
 local rules = parse_grammar([[
@@ -257,5 +348,41 @@ end
 local followset = make_followset(rules, "E")
 for symbol, follow in followset:each() do
   io.write("follow(", symbol, ") = { ", table.concat(keys(follow), ", "), " }\n")
+end
+
+local rules = parse_grammar([[
+E' -> E
+E -> E + T
+E -> T
+T -> T * F
+T -> F
+F -> ( E )
+F -> id
+]])
+io.write("--\n")
+unparse_grammar(rules, io.stdout)
+
+io.write("--\n")
+for symbol in symbols(rules):each() do
+  print(symbol)
+end
+
+local g = lr0_goto(rules, sequence({
+  lr0_item("E", { "E" }, 2);
+  lr0_item("E", { "E", "+", "T" }, 2);
+}), "+")
+io.write("--\n")
+for item in g:each() do
+  unparse_item(item, io.stdout)
+end
+
+local set_of_items = lr0_items(rules, sequence({ lr0_item("E'", { "E" }, 1) }))
+
+io.write("==\n")
+for items in set_of_items:each() do
+  io.write("--\n")
+  for item in items:each() do
+    unparse_item(item, io.stdout)
+  end
 end
 
