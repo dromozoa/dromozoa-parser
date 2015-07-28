@@ -343,9 +343,9 @@ local function lr1_goto(rules, items, symbol)
   return lr1_closure(rules, g)
 end
 
-local function items(rules, start_items, fn_closure, fn_goto)
+local function items(rules, start_item, fn_closure, fn_goto)
   local set_of_items = linked_hash_table()
-  set_of_items:insert(fn_closure(rules, start_items))
+  set_of_items:insert(fn_closure(rules, sequence():push(start_item)))
   local done
   repeat
     done = true
@@ -363,32 +363,22 @@ local function items(rules, start_items, fn_closure, fn_goto)
   return set_of_items
 end
 
-local function lr0_items(rules, start_items)
-  return items(rules, start_items, lr0_closure, lr0_goto)
+local function lr0_items(rules, start_item)
+  return items(rules, start_item, lr0_closure, lr0_goto)
 end
 
-local function lr1_items(rules, start_items)
-  return items(rules, start_items, lr1_closure, lr1_goto)
+local function lr1_items(rules, start_item)
+  return items(rules, start_item, lr1_closure, lr1_goto)
 end
 
-local function lr0_kernels(rules, start_items)
-  local set_of_items = lr0_items(rules, start_items)
+local function lr0_kernels(rules, start_item)
+  local set_of_items = lr0_items(rules, start_item)
   local kernels = linked_hash_table()
   for items in set_of_items:each() do
     local kernel_items = sequence()
     for item in items:each() do
       local dot = item[3]
-      local is_kernel
-      for start_item in start_items:each() do
-        if equal(item, start_item) then
-          is_kernel = true
-          break
-        end
-      end
-      if dot > 1 then
-        is_kernel = true
-      end
-      if is_kernel then
+      if equal(item, start_item) or dot > 1 then
         kernel_items:push(item)
       end
     end
@@ -457,7 +447,7 @@ for item in g:each() do
   unparse_item(item, io.stdout)
 end
 
-local set_of_items = lr0_items(rules, sequence({ make_item("E'", { "E" }, 1) }))
+local set_of_items = lr0_items(rules, make_item("E'", { "E" }, 1))
 
 io.write("==\n")
 for items in set_of_items:each() do
@@ -476,7 +466,7 @@ C -> d
 io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
-local set_of_items = lr1_items(rules, sequence({ make_item("S'", { "S" }, 1, "$" ) }))
+local set_of_items = lr1_items(rules, make_item("S'", { "S" }, 1, "$" ))
 
 io.write("==\n")
 for items in set_of_items:each() do
@@ -497,7 +487,7 @@ R -> L
 io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
-local kernels = lr0_kernels(rules, sequence({ make_item("S'", { "S" }, 1) }))
+local kernels = lr0_kernels(rules, make_item("S'", { "S" }, 1))
 io.write("==\n")
 for items in kernels:each() do
   io.write("--\n")
