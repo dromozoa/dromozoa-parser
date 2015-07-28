@@ -373,7 +373,7 @@ end
 
 local function lr0_kernels(rules, start_item)
   local set_of_items = lr0_items(rules, start_item)
-  local kernels = linked_hash_table()
+  local set_of_kernel_items = linked_hash_table()
   for items in set_of_items:each() do
     local kernel_items = sequence()
     for item in items:each() do
@@ -383,10 +383,10 @@ local function lr0_kernels(rules, start_item)
       end
     end
     if #kernel_items > 0 then
-      kernels:insert(kernel_items)
+      set_of_kernel_items:insert(kernel_items)
     end
   end
-  return kernels
+  return set_of_kernel_items
 end
 
 local rules = parse_grammar([[
@@ -487,9 +487,9 @@ R -> L
 io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
-local kernels = lr0_kernels(rules, make_item("S'", { "S" }, 1))
+local set_of_kernel_items = lr0_kernels(rules, make_item("S'", { "S" }, 1))
 io.write("==\n")
-for items in kernels:each() do
+for items in set_of_kernel_items:each() do
   io.write("--\n")
   for item in items:each() do
     unparse_item(item, io.stdout)
