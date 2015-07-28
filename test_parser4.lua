@@ -1,7 +1,7 @@
 
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
+local equal = require "dromozoa.commons.equal"
 local clone = require "dromozoa.commons.clone"
-local unpack = require "dromozoa.commons.unpack"
 
 local class = {}
 
@@ -371,6 +371,34 @@ local function lr1_items(rules, start_items)
   return items(rules, start_items, lr1_closure, lr1_goto)
 end
 
+local function lr0_kernels(rules, start_items)
+  local set_of_items = lr0_items(rules, start_items)
+  local kernels = linked_hash_table()
+  for items in set_of_items:each() do
+    local kernel_items = sequence()
+    for item in items:each() do
+      local dot = item[3]
+      local is_kernel
+      for start_item in start_items:each() do
+        if equal(item, start_item) then
+          is_kernel = true
+          break
+        end
+      end
+      if dot > 1 then
+        is_kernel = true
+      end
+      if is_kernel then
+        kernel_items:push(item)
+      end
+    end
+    if #kernel_items > 0 then
+      kernels:insert(kernel_items)
+    end
+  end
+  return kernels
+end
+
 local rules = parse_grammar([[
 S -> A a
 S -> b
@@ -452,6 +480,26 @@ local set_of_items = lr1_items(rules, sequence({ make_item("S'", { "S" }, 1, "$"
 
 io.write("==\n")
 for items in set_of_items:each() do
+  io.write("--\n")
+  for item in items:each() do
+    unparse_item(item, io.stdout)
+  end
+end
+
+local rules = parse_grammar([[
+S' -> S
+S -> L = R
+S -> R
+L -> * R
+L -> id
+R -> L
+]])
+io.write("--\n")
+unparse_grammar(rules, io.stdout)
+
+local kernels = lr0_kernels(rules, sequence({ make_item("S'", { "S" }, 1) }))
+io.write("==\n")
+for items in kernels:each() do
   io.write("--\n")
   for item in items:each() do
     unparse_item(item, io.stdout)
