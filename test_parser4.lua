@@ -391,20 +391,19 @@ end
 
 local function determine_lookaheads(rules, start_item, symbol)
   local set_of_kernel_items = lr0_kernels(rules, start_item)
-  local map = linked_hash_table()
-
   for kernel_items in set_of_kernel_items:each() do
     for kernel_item in kernel_items:each() do
       unparse_item(kernel_item, io.stdout)
       local head, body, dot = kernel_item[1], kernel_item[2], kernel_item[3]
       local items = lr1_closure(rules, sequence():push(make_item(head, body, dot, "#")))
       for item in items:each() do
-        io.write("  ")
-        unparse_item(item, io.stdout)
-        local term = item[4]
+        local head, body, dot, term = item[1], item[2], item[3], item[4]
         if term == "#" then
-          -- conclude that lookaheads propagate from `A -> a dot b` in I to `B -> c X dot d` in GOTO(I, X)
         else
+          local goto_item = make_item(head, body, dot + 1)
+          io.write("  ", term, " ")
+          unparse_item(goto_item, io.stdout)
+
           -- conclude that lookahead a is generated spontaneously for item `B -> c X dot d` in GOTO(I, X)
         end
       end
