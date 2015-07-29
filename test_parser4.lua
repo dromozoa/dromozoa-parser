@@ -5,24 +5,35 @@ local clone = require "dromozoa.commons.clone"
 
 local class = {}
 
-function class:push(value, ...)
+local function push(self, n, value, ...)
   if value == nil then
     return self
   else
-    self[#self + 1] = value
-    return class.push(self, ...)
+    n = n + 1
+    self[n] = value
+    return push(self, n, ...)
   end
+end
+
+function class:push(...)
+  return push(self, #self, ...)
 end
 
 function class:copy(that, i, j)
   if i == nil then
     i = 1
+  elseif i < 0 then
+    i = #that + 1 + i
   end
   if j == nil then
     j = #that
+  elseif j < 0 then
+    j = #that + 1 + j
   end
+  local n = #self
   for i = i, j do
-    self[#self + 1] = that[i]
+    n = n + 1
+    self[n] = that[i]
   end
   return self
 end
