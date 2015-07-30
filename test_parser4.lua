@@ -383,6 +383,15 @@ local function lr1_items(rules, start_item)
 end
 
 local function construct_canonical_lr_parsing_tables(rules, start_item)
+  local rules_map = linked_hash_table()
+  local n = 0
+  for head, bodies in rules:each() do
+    for body in bodies:each() do
+      io.write(n, ": ", head, " -> ", table.concat(body, " "), "\n")
+      rules_map:insert({ head, body }, n)
+      n = n + 1
+    end
+  end
   local C = lr1_items(rules, start_item)
   local C_map = linked_hash_table()
   local n = 0
@@ -401,19 +410,19 @@ local function construct_canonical_lr_parsing_tables(rules, start_item)
           assert(equal(body, start_item[2]))
           assert(equal(dot, start_item[3] + 1))
           assert(equal(term, start_item[4]))
-          if ACTION:insert({ i, "$" }) == nil then
+          if ACTION:insert({ i, "$" }, { "acc" }) == nil then
             io.write("[", i, ",", "$", "] = accept\n")
           end
         else
-          if ACTION:insert({ i, term }) == nil then
-            io.write("[", i, ",", term, "] = reduce ", head, " -> ", table.concat(body, " "), "\n")
+          if ACTION:insert({ i, term }, { "r", rules_map[{ head, body }] }) == nil then
+            io.write("[", i, ",", term, "] = reduce ", rules_map[{ head, body }], "\n")
           end
         end
       elseif is_terminal_symbol(rules, a) then
         local g = lr1_goto(rules, items, a)
         local j = C[g]
         assert(j ~= nil)
-        if ACTION:insert({ i, a }) == nil then
+        if ACTION:insert({ i, a }, { "s", j }) == nil then
           io.write("[", i, ",", a, "] = shift ", j, "\n")
         end
       end
@@ -425,10 +434,13 @@ local function construct_canonical_lr_parsing_tables(rules, start_item)
       local g = lr1_goto(rules, items, head)
       local j = C[g]
       if j ~= nil then
-        io.write("GOTO[", i, ", ", head, "] = ", j, "\n")
+        if GOTO:insert({ i, head }, j ) == nil then
+          io.write("GOTO[", i, ",", head, "] = ", j, "\n")
+        end
       end
     end
   end
+  return rules_map, n, ACTION, GOTO
 end
 
 local function lr0_kernels(rules, start_item)
