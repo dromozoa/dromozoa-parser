@@ -382,6 +382,55 @@ local function lr1_items(rules, start_item)
   return items(rules, start_item, lr1_closure, lr1_goto)
 end
 
+local function construct_canonical_lr_parsing_tables(rules, start_item)
+  local C = lr1_items(rules, start_item)
+  local C_map = linked_hash_table()
+  local n = 0
+  for items in C:each() do
+    C[items] = n
+    C_map[n] = items
+    n = n + 1
+  end
+  local ACTION = linked_hash_table()
+  for items, i in C:each() do
+    for item in items:each() do
+      local head, body, dot, term = item[1], item[2], item[3], item[4]
+      local a = body[dot]
+      if a == nil then
+        if head == start_item[1] then
+          assert(equal(body, start_item[2]))
+          assert(equal(dot, start_item[3] + 1))
+          assert(equal(term, start_item[4]))
+          if ACTION:insert({ i, "$" }) == nil then
+            io.write("[", i, ",", "$", "] = accept\n")
+          end
+        else
+          if ACTION:insert({ i, term }) == nil then
+            io.write("[", i, ",", term, "] = reduce ", head, " -> ", table.concat(body, " "), "\n")
+          end
+        end
+      elseif is_terminal_symbol(rules, a) then
+        local g = lr1_goto(rules, items, a)
+        local j = C[g]
+        assert(j ~= nil)
+        if ACTION:insert({ i, a }) == nil then
+          io.write("[", i, ",", a, "] = shift ", j, "\n")
+        end
+      end
+    end
+  end
+  local GOTO = linked_hash_table()
+  for items, i in C:each() do
+    for head in rules:each() do
+      local g = lr1_goto(rules, items, head)
+      local j = C[g]
+      if j ~= nil then
+        io.write("GOTO[", i, ", ", head, "] = ", j, "\n")
+      end
+    end
+  end
+end
+
 local function lr0_kernels(rules, start_item)
   local set_of_items = lr0_items(rules, start_item)
   local set_of_kernel_items = linked_hash_table()
@@ -508,6 +557,11 @@ for items in set_of_items:each() do
     unparse_item(item, io.stdout)
   end
 end
+
+io.write("==\n")
+local parsing_tables = construct_canonical_lr_parsing_tables(rules, make_item("S'", { "S" }, 1, "$"))
+
+os.exit()
 
 local rules = parse_grammar([[
 S' -> S
