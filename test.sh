@@ -18,11 +18,11 @@
 # along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 case x$1 in
-  x) LUA=lua;;
-  *) LUA=$1;;
+  x) lua=lua;;
+  *) lua=$1;;
 esac
 
-for i in test_hash.lua test_hash_table.lua test_list.lua test_multimap.lua test_uint32.lua
+for i in test*.lua
 do
-  "$LUA" "$i"
+  "$lua" "$i"
 done
