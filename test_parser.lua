@@ -2,63 +2,7 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local equal = require "dromozoa.commons.equal"
 local clone = require "dromozoa.commons.clone"
-
-local class = {}
-
-local function push(self, n, value, ...)
-  if value == nil then
-    return self
-  else
-    n = n + 1
-    self[n] = value
-    return push(self, n, ...)
-  end
-end
-
-function class:push(...)
-  return push(self, #self, ...)
-end
-
-function class:copy(that, i, j)
-  if i == nil then
-    i = 1
-  elseif i < 0 then
-    i = #that + 1 + i
-  end
-  if j == nil then
-    j = #that
-  elseif j < 0 then
-    j = #that + 1 + j
-  end
-  local n = #self
-  for i = i, j do
-    n = n + 1
-    self[n] = that[i]
-  end
-  return self
-end
-
-function class:each()
-  return coroutine.wrap(function ()
-    for i, v in ipairs(self) do
-      coroutine.yield(v)
-    end
-  end)
-end
-
-local metatable = {
-  __index = class;
-}
-
-local function sequence(that, i, j)
-  local this = setmetatable({}, metatable)
-  if that == nil then
-    return this
-  else
-    return this:copy(that, i, j)
-  end
-  return setmetatable(this, metatable)
-end
+local sequence = require "dromozoa.parser.sequence"
 
 local function keys(this)
   local keys = sequence()
