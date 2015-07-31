@@ -35,8 +35,19 @@ function class.new(that, i, j)
   end
 end
 
+function class:top(i)
+  return self[#self]
+end
+
 function class:push(...)
   return push(self, #self, ...)
+end
+
+function class:pop()
+  local n = #self
+  local v = self[n]
+  self[n] = nil
+  return v
 end
 
 function class:copy(that, i, j)

@@ -25,6 +25,19 @@ s:push(23, 37)
 assert(equal(s, { 17, 23, 37 }))
 
 local s = sequence()
+s:push(17)
+s:push(23)
+s:push(37)
+assert(#s == 3)
+assert(s:top() == 37)
+assert(s:pop() == 37)
+assert(s:pop() == 23)
+assert(s:pop() == 17)
+assert(#s == 0)
+assert(s:top() == nil)
+assert(s:pop() == nil)
+
+local s = sequence()
 s:copy({})
 s:copy({ 17 })
 s:copy({ 23, 37 })
@@ -50,3 +63,11 @@ s:copy({ 17, 23, 37, 42 }, -3, -2)
 assert(equal(s, { 23, 37 }))
 assert(equal(s, sequence({ 17, 23, 37, 42 }, -3, -2)))
 
+local m = 0
+local n = 0
+for v in sequence({ 17, 23, 37, 42 }):each() do
+  m = m + v
+  n = n + 1
+end
+assert(m == 17 + 23 + 37 + 42)
+assert(n == 4)
