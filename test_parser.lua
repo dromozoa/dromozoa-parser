@@ -1,8 +1,8 @@
 
-local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local equal = require "dromozoa.commons.equal"
 local clone = require "dromozoa.commons.clone"
-local sequence = require "dromozoa.parser.sequence"
+local equal = require "dromozoa.commons.equal"
+local linked_hash_table = require "dromozoa.commons.linked_hash_table"
+local sequence = require "dromozoa.commons.sequence"
 
 local function keys(this)
   local keys = sequence()
