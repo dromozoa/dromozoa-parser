@@ -19,7 +19,7 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 
 return function (text)
-  local rules = sequence()
+  local productions = sequence()
   local names = linked_hash_table()
   for line in text:gmatch("[^\n]+") do
     if not line:match("^%s*#") then
@@ -38,8 +38,8 @@ return function (text)
           end
         end
       end
-      rules:push(sequence():push(head, body))
+      productions:push(sequence():push(head, body))
     end
   end
-  return names, rules
+  return names, productions
 end
