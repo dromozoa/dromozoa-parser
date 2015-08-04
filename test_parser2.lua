@@ -1,7 +1,7 @@
-local parse_grammar = require "dromozoa.parser.parse_grammar"
+local parse = require "dromozoa.parser.parse"
 local json = require "dromozoa.json"
 
-local names, productions = parse_grammar([[
+local names, productions = parse([[
 S' -> S
 S -> L = R
 S -> R
