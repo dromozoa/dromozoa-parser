@@ -10,11 +10,12 @@ L -> id
 R -> L
 ]])
 
-for rule in prods:each() do
-  local head, body = rule[1], rule[2]
-  io.write(head, " ->")
-  for sym in body:each() do
-    io.write(" ", sym)
+for head, bodies in prods:each() do
+  for body in bodies:each() do
+    io.write(head, " ->")
+    for sym in body:each() do
+      io.write(" ", sym)
+    end
+    io.write("\n")
   end
-  io.write("\n")
 end
