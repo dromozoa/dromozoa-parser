@@ -19,27 +19,25 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 
 return function (text)
-  local productions = sequence()
-  local names = linked_hash_table()
+  local prods = sequence()
   for line in text:gmatch("[^\n]+") do
     if not line:match("^%s*#") then
       local head
       local body = sequence()
-      for symbol in line:gmatch("%S+") do
-        if symbol == "->" then
+      for sym in line:gmatch("%S+") do
+        if sym == "->" then
           assert(head ~= nil)
           assert(#body == 0)
         else
-          names:insert(symbol)
           if head == nil then
-            head = names:identity(symbol)
+            head = sym
           else
-            body:push(names:identity(symbol))
+            body:push(sym)
           end
         end
       end
-      productions:push(sequence():push(head, body))
+      prods:push(sequence():push(head, body))
     end
   end
-  return names, productions
+  return prods
 end
