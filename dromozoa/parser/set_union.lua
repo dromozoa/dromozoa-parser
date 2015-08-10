@@ -15,17 +15,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local identity_generator = require "dromozoa.parser.identity_generator"
+local pairs = require "dromozoa.commons.pairs"
 
-local tokens = identity_generator()
-assert(tokens.TK_NUMBER == 1)
-assert(tokens.TK_STRING == 2)
-assert(tokens.TK_BOOLEAN == 3)
-assert(#tokens == 3)
-assert(tokens.TK_NUMBER == 1)
-assert(tokens.TK_STRING == 2)
-assert(tokens.TK_BOOLEAN == 3)
-assert(#tokens == 3)
-assert(tokens[1] == "TK_NUMBER")
-assert(tokens[2] == "TK_STRING")
-assert(tokens[3] == "TK_BOOLEAN")
+return function (a, b)
+  local n = 0
+  for k, v in pairs(b) do
+    if a[k] == nil then
+      n = n + 1
+      a[k] = v
+    end
+  end
+  return n
+end

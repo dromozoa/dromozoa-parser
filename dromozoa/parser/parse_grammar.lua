@@ -15,27 +15,34 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function equal(a, b)
-  if a == b then
-    return true
-  else
-    if type(a) == "table" and type(b) == "table" then
-      for k, u in next, a do
-        local v = b[k]
-        if v == nil or not equal(u, v) then
-          return false
+local linked_hash_table = require "dromozoa.commons.linked_hash_table"
+local sequence = require "dromozoa.commons.sequence"
+
+return function (text)
+  local prods = linked_hash_table()
+  for line in text:gmatch("[^\n]+") do
+    if not line:match("^%s*#") then
+      local head
+      local body = sequence()
+      for sym in line:gmatch("%S+") do
+        if sym == "->" then
+          assert(head ~= nil)
+          assert(#body == 0)
+        else
+          if head == nil then
+            head = sym
+          else
+            body:push(sym)
+          end
         end
       end
-      for k in next, b do
-        if a[k] == nil then
-          return false
-        end
+      local bodies = prods[head]
+      if bodies == nil then
+        prods[head] = sequence():push(body)
+      else
+        bodies:push(body)
       end
-      return getmetatable(a) == getmetatable(b)
-    else
-      return false
     end
   end
+  return prods
 end
-
-return equal

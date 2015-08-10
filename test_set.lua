@@ -15,65 +15,18 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local set = require "dromozoa.parser.set"
-local json = require "dromozoa.json"
-local clone = require "dromozoa.commons.clone"
-local linked_hash_table = require "dromozoa.parser.linked_hash_table"
+local linked_hash_table = require "dromozoa.commons.linked_hash_table"
+local set_union = require "dromozoa.parser.set_union"
 
-local a = linked_hash_table():adapt()
-a.a = 1
-a.b = 1
-a.c = 1
+local a = linked_hash_table()
+a:insert({}, 0)
+a:insert({1}, 1)
+a:insert({1,2}, 2)
 
-local b = linked_hash_table():adapt()
-b.b = 2
-b.c = 2
-b.d = 2
-b.e = 2
-b.f = 2
-b.g = 2
-b.h = 2
+local b = linked_hash_table()
+b:insert({1}, 3)
+b:insert({1,2,3}, 4)
 
-local function next_index(index, this, key)
-  if index ~= nil then
-    if type(index) == "function" then
-      return index(this, key)
-    else
-      return index[key]
-    end
-  end
-end
-
-local function adapt(this)
-  local metatable = getmetatable(this)
-  if metatable == nil then
-    metatable = {}
-  end
-  local h = metatable.__index
-  metatable.__index = function (this, key)
-    local v = set[key]
-    if v ~= nil then
-      return v
-    end
-    return next_index(h, this, key)
-  end
-  return setmetatable(this, metatable)
-end
-
-local a = adapt(a)
-print(set.set_symmetric_difference(a, b))
-for k, v in pairs(a) do
-  print(k, v)
-end
-print(a.a)
-print(a.set_difference)
--- print(json.encode(a))
-
--- print(op.set_symmetric_difference(a, b))
-
-local x = set.adapt({ a = true, b = true, c = true })
-local y = set.adapt({})
-y:insert("a")
-y:insert("c")
-print(x:set_intersection(y))
-print(x.a, x.b, x.c)
+assert(set_union(a, b) == 1)
+assert(a[{1}] == 1)
+assert(a[{1,2,3}] == 4)
