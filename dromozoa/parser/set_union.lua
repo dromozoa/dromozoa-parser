@@ -17,9 +17,7 @@
 
 local pairs = require "dromozoa.commons.pairs"
 
-local class = {}
-
-function class.set_union(a, b)
+return function (a, b)
   local n = 0
   for k, v in pairs(b) do
     if a[k] == nil then
@@ -29,5 +27,3 @@ function class.set_union(a, b)
   end
   return n
 end
-
-return class

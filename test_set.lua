@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local set = require "dromozoa.parser.set"
+local set_union = require "dromozoa.parser.set_union"
 
 local a = linked_hash_table()
 a:insert({}, 0)
@@ -27,6 +27,6 @@ local b = linked_hash_table()
 b:insert({1}, 3)
 b:insert({1,2,3}, 4)
 
-assert(set.set_union(a, b) == 1)
+assert(set_union(a, b) == 1)
 assert(a[{1}] == 1)
 assert(a[{1,2,3}] == 4)
