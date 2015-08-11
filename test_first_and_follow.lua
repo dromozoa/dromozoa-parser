@@ -32,7 +32,6 @@ T -> F
 F -> ( E )
 F -> id
 ]])
-
 eliminate_left_recursion(prods)
 
 local expected = linked_hash_table()
