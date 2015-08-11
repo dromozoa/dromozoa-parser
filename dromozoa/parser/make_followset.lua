@@ -17,7 +17,7 @@
 
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
-local first = require "dromozoa.parser.first"
+local first_symbols = require "dromozoa.parser.first_symbols"
 local set_union = require "dromozoa.parser.set_union"
 
 return function (prods, start)
@@ -34,9 +34,9 @@ return function (prods, start)
         for i = 1, #body do
           local symbol = body[i]
           if prods[symbol] ~= nil then
-            local f = first(prods, sequence(body, i + 1))
-            local removed = f:remove({}) ~= nil
-            if set_union(followset[symbol], f) > 0 then
+            local first = first_symbols(prods, sequence(body, i + 1))
+            local removed = first:remove({}) ~= nil
+            if set_union(followset[symbol], first) > 0 then
               done = false
             end
             if removed then
