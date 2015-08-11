@@ -19,7 +19,6 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local set_union = require "dromozoa.parser.set_union"
 
 local EPSILON = {}
-
 local first_symbols
 
 local function first_symbol(prods, symbol)
