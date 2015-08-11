@@ -22,6 +22,7 @@ local json = require "dromozoa.json"
 local parse_grammar = require "dromozoa.parser.parse_grammar"
 local eliminate_left_recursion = require "dromozoa.parser.eliminate_left_recursion"
 local first = require "dromozoa.parser.first"
+local make_followset = require "dromozoa.parser.make_followset"
 
 local prods = parse_grammar([[
 E -> E + T
@@ -71,3 +72,44 @@ local expected = linked_hash_table()
 expected:insert("*")
 expected:insert({})
 assert(equal(first(prods, sequence({ { "T", "'" } })), expected))
+
+local function write_symbol(symbol)
+  if type(symbol) == "table" then
+    for i = 1, #symbol do
+      write_symbol(symbol[i])
+    end
+  else
+    io.write(symbol)
+  end
+end
+
+local followset = make_followset(prods, "E")
+for symbol, follow in followset:each() do
+  write_symbol(symbol)
+  io.write(" :")
+  for symbol in follow:each() do
+    io.write(" ")
+    write_symbol(symbol)
+  end
+  io.write("\n")
+end
+
+local expected = linked_hash_table()
+expected:insert(")")
+expected:insert({ "$" })
+assert(equal(followset["E"], expected))
+assert(equal(followset[{ "E", "'" }], expected))
+
+local expected = linked_hash_table()
+expected:insert("+")
+expected:insert(")")
+expected:insert({ "$" })
+assert(equal(followset["T"], expected))
+assert(equal(followset[{ "T", "'" }], expected))
+
+local expected = linked_hash_table()
+expected:insert("+")
+expected:insert("*")
+expected:insert(")")
+expected:insert({ "$" })
+assert(equal(followset["F"], expected))

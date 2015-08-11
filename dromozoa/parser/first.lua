@@ -18,7 +18,6 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local set_union = require "dromozoa.parser.set_union"
 
-local EPSILON = {}
 local first_symbols
 
 local function first_symbol(prods, symbol)
@@ -29,7 +28,7 @@ local function first_symbol(prods, symbol)
   else
     for body in bodies:each() do
       if #body == 0 then
-        first:insert(EPSILON)
+        first:insert({})
       else
         set_union(first, first_symbols(prods, body))
       end
@@ -42,11 +41,11 @@ first_symbols = function (prods, symbols)
   local first = linked_hash_table()
   for symbol in symbols:each() do
     set_union(first, first_symbol(prods, symbol))
-    if first:remove(EPSILON) == nil then
+    if first:remove({}) == nil then
       return first
     end
   end
-  first:insert(EPSILON)
+  first:insert({})
   return first
 end
 
