@@ -13,13 +13,13 @@ A ->
 local prods2 = clone(prods)
 eliminate_left_recursion(prods2)
 
-local function write_symbol(sym)
-  if type(sym) == "table" then
-    for i = 1, #sym do
-      write_symbol(sym[i])
+local function write_symbol(symbol)
+  if type(symbol) == "table" then
+    for i = 1, #symbol do
+      write_symbol(symbol[i])
     end
   else
-    io.write(sym)
+    io.write(symbol)
   end
 end
 
@@ -27,9 +27,9 @@ for head, bodies in prods2:each() do
   for body in bodies:each() do
     write_symbol(head)
     io.write(" ->")
-    for sym in body:each() do
+    for symbol in body:each() do
       io.write(" ")
-      write_symbol(sym)
+      write_symbol(symbol)
     end
     io.write("\n")
   end

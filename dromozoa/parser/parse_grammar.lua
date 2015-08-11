@@ -24,15 +24,15 @@ return function (text)
     if not line:match("^%s*#") then
       local head
       local body = sequence()
-      for sym in line:gmatch("%S+") do
-        if sym == "->" then
+      for symbol in line:gmatch("%S+") do
+        if symbol == "->" then
           assert(head ~= nil)
           assert(#body == 0)
         else
           if head == nil then
-            head = sym
+            head = symbol
           else
-            body:push(sym)
+            body:push(symbol)
           end
         end
       end
