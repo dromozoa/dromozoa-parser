@@ -1,8 +1,8 @@
 local clone = require "dromozoa.commons.clone"
-local parse_grammar = require "dromozoa.parser.parse_grammar"
 local eliminate_left_recursion = require "dromozoa.parser.eliminate_left_recursion"
+local test = require "test"
 
-local prods = parse_grammar([[
+local prods = test.parse_grammar([[
 S -> A a
 S -> b
 A -> A c

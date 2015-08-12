@@ -18,7 +18,9 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 
-return function (text)
+local class = {}
+
+function class.parse_grammar(text)
   local prods = linked_hash_table()
   for line in text:gmatch("[^\n]+") do
     if not line:match("^%s*#") then
@@ -46,3 +48,5 @@ return function (text)
   end
   return prods
 end
+
+return class

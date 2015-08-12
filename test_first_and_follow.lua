@@ -19,12 +19,12 @@ local equal = require "dromozoa.commons.equal"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local json = require "dromozoa.json"
-local parse_grammar = require "dromozoa.parser.parse_grammar"
 local eliminate_left_recursion = require "dromozoa.parser.eliminate_left_recursion"
 local first_symbols = require "dromozoa.parser.first_symbols"
 local make_followset = require "dromozoa.parser.make_followset"
+local test = require "test"
 
-local prods = parse_grammar([[
+local prods = test.parse_grammar([[
 E -> E + T
 E -> T
 T -> T * F

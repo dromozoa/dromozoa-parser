@@ -18,9 +18,10 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local each_symbol = require "dromozoa.parser.each_symbol"
 local eliminate_left_recursion = require "dromozoa.parser.eliminate_left_recursion"
-local parse_grammar = require "dromozoa.parser.parse_grammar"
 
-local prods = parse_grammar([[
+local test = require "test"
+
+local prods = test.parse_grammar([[
 E -> E + T
 E -> T
 T -> T * F

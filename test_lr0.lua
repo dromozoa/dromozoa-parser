@@ -17,11 +17,11 @@
 
 local equal = require "dromozoa.commons.equal"
 local sequence = require "dromozoa.commons.sequence"
-local parse_grammar = require "dromozoa.parser.parse_grammar"
 local lr0 = require "dromozoa.parser.lr0"
 local json = require "dromozoa.json"
+local test = require "test"
 
-local prods = parse_grammar([[
+local prods = test.parse_grammar([[
 E' -> E
 E -> E + T
 E -> T
