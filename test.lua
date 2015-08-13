@@ -66,6 +66,19 @@ function class.unparse_symbol(out, symbol)
   return out
 end
 
+function class.unparse_symbols(out, symbols)
+  local first = true
+  for symbol in symbols:each() do
+    if first then
+      first = false
+    else
+      out:write(" ")
+    end
+    class.unparse_symbol(out, symbol)
+  end
+  return out
+end
+
 function class.unparse_grammar(out, prods)
   for head, bodies in prods:each() do
     class.unparse_symbol(out, head)

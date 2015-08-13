@@ -22,6 +22,7 @@ local json = require "dromozoa.json"
 local eliminate_left_recursion = require "dromozoa.parser.eliminate_left_recursion"
 local first_symbols = require "dromozoa.parser.first_symbols"
 local make_followset = require "dromozoa.parser.make_followset"
+local sequence_writer = require "dromozoa.parser.sequence_writer"
 local test = require "test"
 
 local prods = test.parse_grammar([[
@@ -34,62 +35,23 @@ F -> id
 ]])
 eliminate_left_recursion(prods)
 
-local expected = linked_hash_table()
-expected["E"] = {
-  { "T", { "E", "'" } };
-}
-expected[{ "E", "'" }] = {
-  { "+", "T", { "E", "'" } };
-  {};
-}
-expected["T"] = {
-  { "F", { "T", "'" } };
-}
-expected[{ "T", "'" }] = {
-  { "*", "F", { "T", "'" } };
-  {};
-}
-expected["F"] = {
-  { "(", "E", ")" };
-  { "id" };
-}
-assert(equal(prods, expected))
+assert(test.unparse_grammar(sequence_writer(), prods):concat() == [[
+E -> T E'
+T -> F T'
+F -> ( E ) | id
+E' -> + T E' | ε
+T' -> * F T' | ε
+]])
 
-local expected = linked_hash_table()
-expected:insert("(")
-expected:insert("id")
-assert(equal(first_symbols(prods, sequence({ "F" })), expected))
-assert(equal(first_symbols(prods, sequence({ "T" })), expected))
-assert(equal(first_symbols(prods, sequence({ "E" })), expected))
-
-local expected = linked_hash_table()
-expected:insert("+")
-expected:insert({})
-assert(equal(first_symbols(prods, sequence({ { "E", "'" } })), expected))
-
-local expected = linked_hash_table()
-expected:insert("*")
-expected:insert({})
-assert(equal(first_symbols(prods, sequence({ { "T", "'" } })), expected))
+assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push("F"))):concat() == "( id")
+assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push("T"))):concat() == "( id")
+assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push("E"))):concat() == "( id")
+assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push({ "E", "'" }))):concat() == "+ ε")
+assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push({ "T", "'" }))):concat() == "* ε")
 
 local followset = make_followset(prods, "E")
-
-local expected = linked_hash_table()
-expected:insert(")")
-expected:insert({ "$" })
-assert(equal(followset["E"], expected))
-assert(equal(followset[{ "E", "'" }], expected))
-
-local expected = linked_hash_table()
-expected:insert("+")
-expected:insert(")")
-expected:insert({ "$" })
-assert(equal(followset["T"], expected))
-assert(equal(followset[{ "T", "'" }], expected))
-
-local expected = linked_hash_table()
-expected:insert("+")
-expected:insert("*")
-expected:insert(")")
-expected:insert({ "$" })
-assert(equal(followset["F"], expected))
+assert(test.unparse_symbols(sequence_writer(), followset["E"]):concat() == "$ )")
+assert(test.unparse_symbols(sequence_writer(), followset[{ "E", "'" }]):concat() == "$ )")
+assert(test.unparse_symbols(sequence_writer(), followset["T"]):concat() == "+ $ )")
+assert(test.unparse_symbols(sequence_writer(), followset[{ "T", "'" }]):concat() == "+ $ )")
+assert(test.unparse_symbols(sequence_writer(), followset["F"]):concat() == "* + $ )")
