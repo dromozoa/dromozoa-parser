@@ -24,9 +24,9 @@ local function eliminate_immediate_left_recursion(prods, head1, bodies)
   local bodies2 = sequence()
   for body in bodies:each() do
     if equal(body[1], head1) then
-      bodies2:push(sequence(body, 2):push(head2))
+      bodies2:push(sequence():copy(body, 2):push(head2))
     else
-      bodies1:push(sequence(body):push(head2))
+      bodies1:push(sequence():copy(body):push(head2))
     end
   end
   if #bodies2 > 0 then
@@ -51,7 +51,7 @@ return function (prods)
       for body1 in bodies1:each() do
         if equal(body1[1], head2) then
           for body2 in bodies2:each() do
-            bodies:push(sequence(body2):copy(body1, 2))
+            bodies:push(sequence():copy(body2):copy(body1, 2))
           end
         else
           bodies:push(body1)

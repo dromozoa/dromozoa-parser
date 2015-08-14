@@ -34,7 +34,7 @@ return function (prods, start)
         for i = 1, #body do
           local symbol = body[i]
           if prods[symbol] ~= nil then
-            local first = first_symbols(prods, sequence(body, i + 1))
+            local first = first_symbols(prods, sequence():copy(body, i + 1))
             local removed = first:remove({}) ~= nil
             if set_union(followset[symbol], first) > 0 then
               done = false
