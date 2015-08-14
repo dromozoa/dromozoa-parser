@@ -18,7 +18,7 @@
 local clone = require "dromozoa.commons.clone"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
-local each_symbol = require "dromozoa.parser.each_symbol"
+local items = require "dromozoa.parser.items"
 
 local class = {}
 
@@ -60,23 +60,7 @@ function class.goto_(prods, items, symbol)
 end
 
 function class.items(prods, start)
-  local set_of_items = linked_hash_table()
-  set_of_items:insert(class.closure(prods, sequence():push(start)))
-  local done
-  repeat
-    done = true
-    for items in set_of_items:each() do
-      for symbol in each_symbol(prods) do
-        local goto_items = class.goto_(prods, items, symbol)
-        if #goto_items > 0 then
-          if set_of_items:insert(goto_items) == nil then
-            done = false
-          end
-        end
-      end
-    end
-  until done
-  return set_of_items
+  return items(class, prods, start)
 end
 
 return class
