@@ -10,7 +10,15 @@ A -> S d
 A ->
 ]])
 
-local prods2 = clone(prods)
-eliminate_left_recursion(prods2)
-local result = test.unparse_grammar(prods2)
-io.write(result)
+assert(test.unparse_grammar(prods) == [[
+S -> A a | b
+A -> A c | S d | ε
+]])
+
+eliminate_left_recursion(prods)
+
+assert(test.unparse_grammar(prods) == [[
+S -> A a | b
+A -> b d A' | A'
+A' -> c A' | a d A' | ε
+]])
