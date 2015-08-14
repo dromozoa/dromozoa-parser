@@ -16,81 +16,70 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local sequence = require "dromozoa.commons.sequence"
-local lr0 = require "dromozoa.parser.lr0"
+local lr1 = require "dromozoa.parser.lr1"
 local test = require "test"
 
 local prods = test.parse_grammar([[
-E' -> E
-E -> E + T
-E -> T
-T -> T * F
-T -> F
-F -> ( E )
-F -> id
+S' -> S
+S -> C C
+C -> c C
+C -> d
 ]])
 
-local goto_items = lr0.goto_(
+local items = lr1.closure(
     prods,
     sequence()
-        :push({ "E'", sequence():push("E"), 2 })
-        :push({ "E", sequence():push("E", "+", "T"), 2 }),
-    "+")
-
-assert(test.unparse_items(goto_items) == [[
-E -> E + · T
-T -> · T * F
-T -> · F
-F -> · ( E )
-F -> · id
+        :push({ "S'", sequence():push("S"), 1, { "$" } }))
+assert(test.unparse_items(items) == [[
+S' -> · S, $
+S -> · C C, $
+C -> · c C, c
+C -> · c C, d
+C -> · d, c
+C -> · d, d
 ]])
 
-local set_of_items = lr0.items(prods, { "E'", sequence():push("E"), 1})
+local goto_items = lr1.goto_(prods, items, "S")
+assert(test.unparse_items(goto_items) == [[
+S' -> S ·, $
+]])
 
+local set_of_items = lr1.items(prods, { "S'", sequence():push("S"), 1, { "$" } })
 assert(test.unparse_set_of_items(set_of_items) == [[
 I0
-  E' -> · E
-  E -> · E + T
-  E -> · T
-  T -> · T * F
-  T -> · F
-  F -> · ( E )
-  F -> · id
+  S' -> · S, $
+  S -> · C C, $
+  C -> · c C, c
+  C -> · c C, d
+  C -> · d, c
+  C -> · d, d
 I1
-  E' -> E ·
-  E -> E · + T
+  S' -> S ·, $
 I2
-  E -> T ·
-  T -> T · * F
+  S -> C · C, $
+  C -> · c C, $
+  C -> · d, $
 I3
-  T -> F ·
+  C -> c · C, c
+  C -> c · C, d
+  C -> · c C, c
+  C -> · d, c
+  C -> · c C, d
+  C -> · d, d
 I4
-  F -> ( · E )
-  E -> · E + T
-  E -> · T
-  T -> · T * F
-  T -> · F
-  F -> · ( E )
-  F -> · id
+  C -> d ·, c
+  C -> d ·, d
 I5
-  F -> id ·
+  S -> C C ·, $
 I6
-  E -> E + · T
-  T -> · T * F
-  T -> · F
-  F -> · ( E )
-  F -> · id
+  C -> c · C, $
+  C -> · c C, $
+  C -> · d, $
 I7
-  T -> T * · F
-  F -> · ( E )
-  F -> · id
+  C -> d ·, $
 I8
-  F -> ( E · )
-  E -> E · + T
+  C -> c C ·, c
+  C -> c C ·, d
 I9
-  E -> E + T ·
-  T -> T · * F
-I10
-  T -> T * F ·
-I11
-  F -> ( E ) ·
+  C -> c C ·, $
 ]])

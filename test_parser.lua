@@ -270,10 +270,10 @@ local function lr1_closure(rules, items)
       if symbol ~= nil then
         local bodies = rules[symbol]
         if bodies ~= nil then
-          for body2 in bodies:each() do
-            local first = first_symbols(rules, sequence():copy(body, dot + 1):push(term))
-            for term2 in first:each() do
-              local item = make_item(symbol, body2, 1, term2)
+          local first = first_symbols(rules, sequence():copy(body, dot + 1):push(term))
+          for body in bodies:each() do
+            for term in first:each() do
+              local item = make_item(symbol, body, 1, term)
               if added:insert(item) == nil then
                 items:push(item)
                 done = false
