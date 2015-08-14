@@ -31,9 +31,12 @@ F -> ( E )
 F -> id
 ]])
 
-local goto_items = lr0.goto_(prods, sequence()
-  :push(sequence():push("E'", sequence():push("E"), 2))
-  :push(sequence():push("E", sequence():push("E", "+", "T"), 2)), "+")
+local goto_items = lr0.goto_(
+    prods,
+    sequence()
+        :push({ "E'", sequence():push("E"), 2 })
+        :push({ "E", sequence():push("E", "+", "T"), 2 }),
+    "+")
 
 assert(test.unparse_items(goto_items) == [[
 E -> E + · T
@@ -43,10 +46,7 @@ F -> · ( E )
 F -> · id
 ]])
 
-local set_of_items = lr0.items(prods, sequence()
-  :push("E'", sequence():push("E"), 1))
-
-io.write(test.unparse_set_of_items(set_of_items))
+local set_of_items = lr0.items(prods, { "E'", sequence():push("E"), 1})
 
 assert(test.unparse_set_of_items(set_of_items) == [[
 I0
