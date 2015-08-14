@@ -17,9 +17,64 @@
 
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
+local sequence_writer = require "dromozoa.parser.sequence_writer"
 
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
+
+local function write_symbol(out, symbol)
+  local t = type(symbol)
+  if type(symbol) == "table" then
+    if #symbol == 0 then
+      out:write(EPSILON)
+    else
+      for v in sequence.each(symbol) do
+        out:write(v)
+      end
+    end
+  else
+    out:write(symbol)
+  end
+  return out
+end
+
+local function write_symbols(out, symbols)
+  local first = true
+  for symbol in symbols:each() do
+    if first then
+      first = false
+    else
+      out:write(" ")
+    end
+    write_symbol(out, symbol)
+  end
+  return out
+end
+
+local function write_grammar(out, prods)
+  for head, bodies in prods:each() do
+    write_symbol(out, head)
+    local first = true
+    for body in bodies:each() do
+      if first then
+        first = false
+        out:write(" ->")
+      else
+        out:write(" |")
+      end
+      if #body == 0 then
+        out:write(" ", EPSILON)
+      else
+        for symbol in body:each() do
+          out:write(" ")
+          write_symbol(out, symbol)
+        end
+      end
+    end
+    out:write("\n")
+  end
+  return out
+end
 
 local class = {}
 
@@ -52,56 +107,12 @@ function class.parse_grammar(text)
   return prods
 end
 
-function class.unparse_symbol(out, symbol)
-  local t = type(symbol)
-  if type(symbol) == "table" then
-    if #symbol == 0 then
-      out:write(EPSILON)
-    else
-      out:write(table.concat(symbol))
-    end
-  else
-    out:write(symbol)
-  end
-  return out
+function class.unparse_symbols(symbols)
+  return write_symbols(sequence_writer(), symbols):concat()
 end
 
-function class.unparse_symbols(out, symbols)
-  local first = true
-  for symbol in symbols:each() do
-    if first then
-      first = false
-    else
-      out:write(" ")
-    end
-    class.unparse_symbol(out, symbol)
-  end
-  return out
-end
-
-function class.unparse_grammar(out, prods)
-  for head, bodies in prods:each() do
-    class.unparse_symbol(out, head)
-    local first = true
-    for body in bodies:each() do
-      if first then
-        first = false
-        out:write(" ->")
-      else
-        out:write(" |")
-      end
-      if #body == 0 then
-        out:write(" ", EPSILON)
-      else
-        for symbol in body:each() do
-          out:write(" ")
-          class.unparse_symbol(out, symbol)
-        end
-      end
-    end
-    out:write("\n")
-  end
-  return out
+function class.unparse_grammar(prods)
+  return write_grammar(sequence_writer(), prods):concat()
 end
 
 return class

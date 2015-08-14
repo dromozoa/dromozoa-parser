@@ -1,6 +1,5 @@
 local clone = require "dromozoa.commons.clone"
 local eliminate_left_recursion = require "dromozoa.parser.eliminate_left_recursion"
-local sequence_writer = require "dromozoa.parser.sequence_writer"
 local test = require "test"
 
 local prods = test.parse_grammar([[
@@ -13,6 +12,5 @@ A ->
 
 local prods2 = clone(prods)
 eliminate_left_recursion(prods2)
-local result = test.unparse_grammar(sequence_writer(), prods2):concat()
-
+local result = test.unparse_grammar(prods2)
 io.write(result)

@@ -22,7 +22,6 @@ local json = require "dromozoa.json"
 local eliminate_left_recursion = require "dromozoa.parser.eliminate_left_recursion"
 local first_symbols = require "dromozoa.parser.first_symbols"
 local make_followset = require "dromozoa.parser.make_followset"
-local sequence_writer = require "dromozoa.parser.sequence_writer"
 local test = require "test"
 
 local prods = test.parse_grammar([[
@@ -35,7 +34,7 @@ F -> id
 ]])
 eliminate_left_recursion(prods)
 
-assert(test.unparse_grammar(sequence_writer(), prods):concat() == [[
+assert(test.unparse_grammar(prods) == [[
 E -> T E'
 T -> F T'
 F -> ( E ) | id
@@ -43,15 +42,15 @@ E' -> + T E' | ε
 T' -> * F T' | ε
 ]])
 
-assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push("F"))):concat() == "( id")
-assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push("T"))):concat() == "( id")
-assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push("E"))):concat() == "( id")
-assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push({ "E", "'" }))):concat() == "+ ε")
-assert(test.unparse_symbols(sequence_writer(), first_symbols(prods, sequence():push({ "T", "'" }))):concat() == "* ε")
+assert(test.unparse_symbols(first_symbols(prods, sequence():push("F"))) == "( id")
+assert(test.unparse_symbols(first_symbols(prods, sequence():push("T"))) == "( id")
+assert(test.unparse_symbols(first_symbols(prods, sequence():push("E"))) == "( id")
+assert(test.unparse_symbols(first_symbols(prods, sequence():push({ "E", "'" }))) == "+ ε")
+assert(test.unparse_symbols(first_symbols(prods, sequence():push({ "T", "'" }))) == "* ε")
 
 local followset = make_followset(prods, "E")
-assert(test.unparse_symbols(sequence_writer(), followset["E"]):concat() == "$ )")
-assert(test.unparse_symbols(sequence_writer(), followset[{ "E", "'" }]):concat() == "$ )")
-assert(test.unparse_symbols(sequence_writer(), followset["T"]):concat() == "+ $ )")
-assert(test.unparse_symbols(sequence_writer(), followset[{ "T", "'" }]):concat() == "+ $ )")
-assert(test.unparse_symbols(sequence_writer(), followset["F"]):concat() == "* + $ )")
+assert(test.unparse_symbols(followset["E"]) == "$ )")
+assert(test.unparse_symbols(followset[{ "E", "'" }]) == "$ )")
+assert(test.unparse_symbols(followset["T"]) == "+ $ )")
+assert(test.unparse_symbols(followset[{ "T", "'" }]) == "+ $ )")
+assert(test.unparse_symbols(followset["F"]) == "* + $ )")
