@@ -34,19 +34,65 @@ F -> id
 local goto_items = lr0.goto_(prods, sequence()
   :push(sequence():push("E'", sequence():push("E"), 2))
   :push(sequence():push("E", sequence():push("E", "+", "T"), 2)), "+")
-assert(equal(goto_items, {
-  { "E", { "E", "+", "T" }, 3 };
-  { "T", { "T", "*", "F" }, 1 };
-  { "T", { "F" }, 1 };
-  { "F", { "(", "E", ")" }, 1 };
-  { "F", { "id" }, 1 };
-}))
+
+assert(test.unparse_items(goto_items) == [[
+E -> E + · T
+T -> · T * F
+T -> · F
+F -> · ( E )
+F -> · id
+]])
 
 local set_of_items = lr0.items(prods, sequence()
   :push("E'", sequence():push("E"), 1))
 
-for items in set_of_items:each() do
-  io.write("----\n")
-  io.write(json.encode(items),"\n")
-end
+io.write(test.unparse_set_of_items(set_of_items))
 
+assert(test.unparse_set_of_items(set_of_items) == [[
+I0
+  E' -> · E
+  E -> · E + T
+  E -> · T
+  T -> · T * F
+  T -> · F
+  F -> · ( E )
+  F -> · id
+I1
+  E' -> E ·
+  E -> E · + T
+I2
+  E -> T ·
+  T -> T · * F
+I3
+  T -> F ·
+I4
+  F -> ( · E )
+  E -> · E + T
+  E -> · T
+  T -> · T * F
+  T -> · F
+  F -> · ( E )
+  F -> · id
+I5
+  F -> id ·
+I6
+  E -> E + · T
+  T -> · T * F
+  T -> · F
+  F -> · ( E )
+  F -> · id
+I7
+  T -> T * · F
+  F -> · ( E )
+  F -> · id
+I8
+  F -> ( E · )
+  E -> E · + T
+I9
+  E -> E + T ·
+  T -> T · * F
+I10
+  T -> T * F ·
+I11
+  F -> ( E ) ·
+]])

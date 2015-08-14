@@ -76,6 +76,48 @@ local function write_grammar(out, prods)
   return out
 end
 
+local function write_item(out, item)
+  local head, body, dot, term = item[1], item[2], item[3], item[4]
+  write_symbol(out, head)
+  out:write(" ->")
+  for i = 1, #body do
+    if dot == i then
+      out:write(" ", DOT)
+    end
+    out:write(" ")
+    write_symbol(out, body[i])
+  end
+  if dot == #body + 1 then
+    out:write(" ", DOT)
+  end
+  if term ~= nil then
+    out:write(", ")
+    write_symbol(out, term)
+  end
+  return out
+end
+
+local function write_items(out, items, prefix)
+  for item in items:each() do
+    if prefix ~= nil then
+      out:write(prefix)
+    end
+    write_item(out, item)
+    out:write("\n")
+  end
+  return out
+end
+
+local function write_set_of_items(out, set_of_items)
+  local i = 0
+  for items in set_of_items:each() do
+    out:write("I", i, "\n")
+    write_items(out, items, "  ")
+    i = i + 1
+  end
+  return out
+end
+
 local class = {}
 
 function class.parse_grammar(text)
@@ -113,6 +155,14 @@ end
 
 function class.unparse_grammar(prods)
   return write_grammar(sequence_writer(), prods):concat()
+end
+
+function class.unparse_items(items)
+  return write_items(sequence_writer(), items):concat()
+end
+
+function class.unparse_set_of_items(set_of_items)
+  return write_set_of_items(sequence_writer(), set_of_items):concat()
 end
 
 return class
