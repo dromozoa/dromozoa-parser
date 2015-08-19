@@ -15,34 +15,42 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local sequence = require "dromozoa.commons.sequence"
-
-return function (text)
-  local prods = linked_hash_table()
-  for line in text:gmatch("[^\n]+") do
-    if not line:match("^%s*#") then
-      local head
-      local body = sequence()
-      for sym in line:gmatch("%S+") do
-        if sym == "->" then
-          assert(head ~= nil)
-          assert(#body == 0)
-        else
-          if head == nil then
-            head = sym
-          else
-            body:push(sym)
-          end
-        end
-      end
-      local bodies = prods[head]
-      if bodies == nil then
-        prods[head] = sequence():push(body)
-      else
-        bodies:push(body)
-      end
+local function write(self, i, j, n, value, ...)
+  j = j + 1
+  local t = type(value)
+  if t == "string" or t == "number" then
+    i = i + 1
+    self[i] = value
+    if j < n then
+      return write(self, i, j, n, ...)
+    else
+      return self
     end
+  else
+    error("bad argument #" .. j .. " to 'write' (string expected, got " .. t .. ")")
   end
-  return prods
 end
+
+local class = {}
+
+function class.new()
+  return {}
+end
+
+function class:write(...)
+  return write(self, #self, 0, select("#", ...), ...)
+end
+
+function class:concat()
+  return table.concat(self)
+end
+
+local metatable = {
+  __index = class;
+}
+
+return setmetatable(class, {
+  __call = function ()
+    return setmetatable(class.new(), metatable)
+  end;
+})

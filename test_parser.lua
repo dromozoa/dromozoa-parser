@@ -41,7 +41,7 @@ local function parse_grammar(text)
       end
       local bodies = rules[head]
       if bodies == nil then
-        rules[head] = sequence({ body })
+        rules[head] = sequence():push(body)
       else
         bodies:push(body)
       end
@@ -91,7 +91,7 @@ local function unparse_item(item, out)
 end
 
 local function make_item(head, body, dot, term)
-  return sequence():push(head):push(sequence(body)):push(dot):push(term)
+  return sequence():push(head):push(sequence():copy(body)):push(dot):push(term)
 end
 
 local function each_symbol(rules)
@@ -122,9 +122,9 @@ local function eliminate_immediate_left_recursion(rules, head1, bodies)
   local bodies2 = sequence()
   for body in bodies:each() do
     if body[1] == head1 then
-      bodies2:push(sequence(body, 2):push(head2))
+      bodies2:push(sequence():copy(body, 2):push(head2))
     else
-      bodies1:push(sequence(body):push(head2))
+      bodies1:push(sequence():copy(body):push(head2))
     end
   end
   if #bodies2 > 0 then
@@ -146,7 +146,7 @@ local function eliminate_left_recursion(rules)
       for body1 in bodies1:each() do
         if body1[1] == head2 then
           for body2 in bodies2:each() do
-            bodies:push(sequence(body2):copy(body1, 2))
+            bodies:push(sequence():copy(body2):copy(body1, 2))
           end
         else
           bodies:push(body1)
@@ -203,7 +203,7 @@ local function make_followset(rules, start)
         for i = 1, #body do
           local symbol = body[i]
           if not is_terminal_symbol(symbol) then
-            local first = first_symbols(rules, sequence(body, i + 1))
+            local first = first_symbols(rules, sequence():copy(body, i + 1))
             local removed = first:remove(EPSILON) ~= nil
             if set_union(followset[symbol], first) > 0 then
               done = false
@@ -270,10 +270,10 @@ local function lr1_closure(rules, items)
       if symbol ~= nil then
         local bodies = rules[symbol]
         if bodies ~= nil then
-          for body2 in bodies:each() do
-            local first = first_symbols(rules, sequence(body, dot + 1):push(term))
-            for term2 in first:each() do
-              local item = make_item(symbol, body2, 1, term2)
+          local first = first_symbols(rules, sequence():copy(body, dot + 1):push(term))
+          for body in bodies:each() do
+            for term in first:each() do
+              local item = make_item(symbol, body, 1, term)
               if added:insert(item) == nil then
                 items:push(item)
                 done = false
@@ -450,7 +450,7 @@ eliminate_left_recursion(rules)
 io.write("--\n")
 unparse_grammar(rules, io.stdout)
 
-for symbol in sequence({ "F", "T", "E", "E'", "T'" }):each() do
+for symbol in sequence():push("F", "T", "E", "E'", "T'"):each() do
   io.write("first(", symbol, ") = { ", table.concat(keys(first_symbol(rules, symbol)), ", "), " }\n")
 end
 
@@ -476,10 +476,12 @@ for symbol in each_symbol(rules) do
   print(symbol)
 end
 
-local g = lr0_goto(rules, sequence({
-  make_item("E", { "E" }, 2);
-  make_item("E", { "E", "+", "T" }, 2);
-}), "+")
+local g = lr0_goto(
+    rules,
+    sequence()
+        :push(make_item("E", { "E" }, 2))
+        :push(make_item("E", { "E", "+", "T" }, 2)),
+    "+")
 io.write("--\n")
 for item in g:each() do
   unparse_item(item, io.stdout)
