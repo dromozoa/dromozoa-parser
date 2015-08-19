@@ -15,27 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
-local items = require "dromozoa.parser.items"
+local lr_impl = require "dromozoa.parser.lr_impl"
 local lr0_closure = require "dromozoa.parser.lr0_closure"
 
-local class = {
-  closure = lr0_closure;
-}
-
-function class.goto_(prods, items, symbol)
-  local goto_items = sequence()
-  for item in items:each() do
-    local head, body, dot = item[1], item[2], item[3]
-    if body[dot] == symbol then
-      goto_items:push(sequence():push(head, body, dot + 1))
-    end
-  end
-  return class.closure(prods, goto_items)
-end
-
-function class.items(prods, start)
-  return items(class, prods, start)
-end
-
-return class
+return lr_impl(lr0_closure)
