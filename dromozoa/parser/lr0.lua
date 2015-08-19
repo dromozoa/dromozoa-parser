@@ -18,9 +18,9 @@
 local clone = require "dromozoa.commons.clone"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
-local lr_impl = require "dromozoa.parser.lr_impl"
+local lr = require "dromozoa.parser.lr"
 
-return lr_impl(function (prods, items)
+return lr(function (prods, items)
   local items = clone(items)
   local added = linked_hash_table()
   local done
