@@ -22,7 +22,6 @@ local first_symbols = require "dromozoa.parser.first_symbols"
 local lr = require "dromozoa.parser.lr"
 
 return lr(function (prods, items)
-  local items = clone(items)
   local added = linked_hash_table()
   local done
   repeat
