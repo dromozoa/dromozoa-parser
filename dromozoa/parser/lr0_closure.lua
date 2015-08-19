@@ -15,27 +15,32 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local clone = require "dromozoa.commons.clone"
+local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
-local items = require "dromozoa.parser.items"
-local lr0_closure = require "dromozoa.parser.lr0_closure"
 
-local class = {
-  closure = lr0_closure;
-}
-
-function class.goto_(prods, items, symbol)
-  local goto_items = sequence()
-  for item in items:each() do
-    local head, body, dot = item[1], item[2], item[3]
-    if body[dot] == symbol then
-      goto_items:push(sequence():push(head, body, dot + 1))
+return function (prods, items)
+  local items = clone(items)
+  local added = linked_hash_table()
+  local done
+  repeat
+    done = true
+    for item in items:each() do
+      local head, body, dot = item[1], item[2], item[3]
+      local symbol = body[dot]
+      if symbol ~= nil then
+        local bodies = prods[symbol]
+        if bodies ~= nil then
+          for body in bodies:each() do
+            local item = sequence():push(symbol, body, 1)
+            if added:insert(item) == nil then
+              items:push(item)
+              done = false
+            end
+          end
+        end
+      end
     end
-  end
-  return class.closure(prods, goto_items)
+  until done
+  return items
 end
-
-function class.items(prods, start)
-  return items(class, prods, start)
-end
-
-return class
