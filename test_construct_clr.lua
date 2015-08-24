@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local sequence = require "dromozoa.commons.sequence"
-local clr = require "dromozoa.parser.construct_canonical_lr1_parsing_table"
+local construct_clr = require "dromozoa.parser.construct_clr"
 local test = require "test"
 
 local prods = test.parse_grammar([[
@@ -26,7 +26,7 @@ C -> c C
 C -> d
 ]])
 
-local actions, gotos = clr(prods, { "S'", sequence():push("S"), 1, { "$" } })
+local actions, gotos = construct_clr(prods, { "S'", sequence():push("S"), 1, { "$" } })
 assert(test.unparse_actions(actions) == [[
 0 c : shift 3
 0 d : shift 4
