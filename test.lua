@@ -159,6 +159,40 @@ local function write_set_of_items(out, set_of_items)
   return out
 end
 
+local function write_actions(out, actions)
+  for k, v in actions:each() do
+    local state, symbol = k[1], k[2]
+    local command, arg = v[1], v[2]
+    out:write(state, " ")
+    write_symbol(out, symbol)
+    out:write(" : ", command)
+    if command == "reduce" then
+      local head, body = arg[1], arg[2]
+      out:write(" ")
+      write_symbol(out, head)
+      out:write(" ->")
+      for symbol in body:each() do
+        out:write(" ")
+        write_symbol(out, symbol)
+      end
+    elseif command == "shift" then
+      out:write(" ", arg)
+    end
+    out:write("\n")
+  end
+  return out
+end
+
+local function write_gotos(out, gotos)
+  for k, v in gotos:each() do
+    local state, symbol = k[1], k[2]
+    out:write(state, " ")
+    write_symbol(out, symbol)
+    out:write(" : ", v, "\n")
+  end
+  return out
+end
+
 local class = {}
 
 function class.parse_grammar(text)
@@ -204,6 +238,14 @@ end
 
 function class.unparse_set_of_items(set_of_items)
   return write_set_of_items(sequence_writer(), set_of_items):concat()
+end
+
+function class.unparse_actions(actions)
+  return write_actions(sequence_writer(), actions):concat()
+end
+
+function class.unparse_gotos(gotos)
+  return write_gotos(sequence_writer(), gotos):concat()
 end
 
 return class
