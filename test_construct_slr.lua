@@ -15,9 +15,27 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence_writer = require "dromozoa.parser.sequence_writer"
+local sequence = require "dromozoa.commons.sequence"
+local construct_slr = require "dromozoa.parser.construct_clr"
+local make_followset = require "dromozoa.parser.make_followset"
+local test = require "test"
 
-local out = sequence_writer()
-out:write(42):write("foo"):write("bar", "baz")
-assert(out:concat() == "42foobarbaz")
-assert(not pcall(out.write, out, true))
+local prods = test.parse_grammar([[
+S -> E
+E -> 1 E
+E -> 1
+]])
+local actions, gotos = construct_slr(prods, { "E'", sequence():push("E"), 1, { "$" } })
+
+assert(test.unparse_actions(actions) == [[
+0 1 : shift 2
+1 $ : accept
+2 $ : reduce E -> 1
+2 1 : shift 2
+3 $ : reduce E -> 1 E
+]])
+
+assert(test.unparse_gotos(gotos) == [[
+0 E : 1
+2 E : 3
+]])

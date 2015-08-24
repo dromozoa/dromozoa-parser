@@ -17,10 +17,51 @@
 
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
-local sequence_writer = require "dromozoa.parser.sequence_writer"
 
 local DOT = string.char(0xC2, 0xB7) -- MIDDLE DOT
 local EPSILON = string.char(0xCE, 0xB5) -- GREEK SMALL LETTER EPSILON
+
+local sequence_writer
+
+do
+  local function write(self, i, j, n, value, ...)
+    j = j + 1
+    local t = type(value)
+    if t == "string" or t == "number" then
+      i = i + 1
+      self[i] = value
+      if j < n then
+        return write(self, i, j, n, ...)
+      else
+        return self
+      end
+    else
+      error("bad argument #" .. j .. " to 'write' (string expected, got " .. t .. ")")
+    end
+  end
+
+  local class = {}
+
+  function class.new()
+    return {}
+  end
+
+  function class:write(...)
+    return write(self, #self, 0, select("#", ...), ...)
+  end
+
+  function class:concat()
+    return table.concat(self)
+  end
+
+  local metatable = {
+    __index = class;
+  }
+
+  sequence_writer = function ()
+    return setmetatable(class.new(), metatable)
+  end
+end
 
 local function write_symbol(out, symbol)
   local t = type(symbol)
@@ -118,6 +159,40 @@ local function write_set_of_items(out, set_of_items)
   return out
 end
 
+local function write_actions(out, actions)
+  for k, v in actions:each() do
+    local state, symbol = k[1], k[2]
+    local command, arg = v[1], v[2]
+    out:write(state, " ")
+    write_symbol(out, symbol)
+    out:write(" : ", command)
+    if command == "reduce" then
+      local head, body = arg[1], arg[2]
+      out:write(" ")
+      write_symbol(out, head)
+      out:write(" ->")
+      for symbol in body:each() do
+        out:write(" ")
+        write_symbol(out, symbol)
+      end
+    elseif command == "shift" then
+      out:write(" ", arg)
+    end
+    out:write("\n")
+  end
+  return out
+end
+
+local function write_gotos(out, gotos)
+  for k, v in gotos:each() do
+    local state, symbol = k[1], k[2]
+    out:write(state, " ")
+    write_symbol(out, symbol)
+    out:write(" : ", v, "\n")
+  end
+  return out
+end
+
 local class = {}
 
 function class.parse_grammar(text)
@@ -163,6 +238,14 @@ end
 
 function class.unparse_set_of_items(set_of_items)
   return write_set_of_items(sequence_writer(), set_of_items):concat()
+end
+
+function class.unparse_actions(actions)
+  return write_actions(sequence_writer(), actions):concat()
+end
+
+function class.unparse_gotos(gotos)
+  return write_gotos(sequence_writer(), gotos):concat()
 end
 
 return class

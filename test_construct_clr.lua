@@ -15,42 +15,41 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function write(self, i, j, n, value, ...)
-  j = j + 1
-  local t = type(value)
-  if t == "string" or t == "number" then
-    i = i + 1
-    self[i] = value
-    if j < n then
-      return write(self, i, j, n, ...)
-    else
-      return self
-    end
-  else
-    error("bad argument #" .. j .. " to 'write' (string expected, got " .. t .. ")")
-  end
-end
+local sequence = require "dromozoa.commons.sequence"
+local construct_clr = require "dromozoa.parser.construct_clr"
+local test = require "test"
 
-local class = {}
+local prods = test.parse_grammar([[
+S' -> S
+S -> C C
+C -> c C
+C -> d
+]])
 
-function class.new()
-  return {}
-end
+local actions, gotos = construct_clr(prods, { "S'", sequence():push("S"), 1, { "$" } })
+assert(test.unparse_actions(actions) == [[
+0 c : shift 3
+0 d : shift 4
+1 $ : accept
+2 c : shift 6
+2 d : shift 7
+3 c : shift 3
+3 d : shift 4
+4 c : reduce C -> d
+4 d : reduce C -> d
+5 $ : reduce S -> C C
+6 c : shift 6
+6 d : shift 7
+7 $ : reduce C -> d
+8 c : reduce C -> c C
+8 d : reduce C -> c C
+9 $ : reduce C -> c C
+]])
 
-function class:write(...)
-  return write(self, #self, 0, select("#", ...), ...)
-end
-
-function class:concat()
-  return table.concat(self)
-end
-
-local metatable = {
-  __index = class;
-}
-
-return setmetatable(class, {
-  __call = function ()
-    return setmetatable(class.new(), metatable)
-  end;
-})
+assert(test.unparse_gotos(gotos) == [[
+0 S : 1
+0 C : 2
+2 C : 5
+3 C : 8
+6 C : 9
+]])
