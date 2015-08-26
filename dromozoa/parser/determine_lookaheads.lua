@@ -56,5 +56,5 @@ return function (prods, start)
       end
     end
   end
-  return lookaheads
+  return generate, propagate
 end

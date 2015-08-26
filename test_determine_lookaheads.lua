@@ -29,7 +29,20 @@ L -> id
 R -> L
 ]])
 
-local lookaheads = determine_lookaheads(prods, { "S'", sequence():push("S"), 1 })
+local generate, propagate = determine_lookaheads(prods, { "S'", sequence():push("S"), 1 })
+
+for item, symbol in generate:each() do
+  io.write("generate ", test.unparse_item(item), " / ", test.unparse_symbol(symbol), "\n")
+end
+
+for to_item, from_items in propagate:each() do
+  io.write("propagate to ", test.unparse_item(to_item), "\n")
+  for from_item in from_items:each() do
+    io.write("  from ", test.unparse_item(from_item), "\n")
+  end
+end
+
+os.exit()
 
 for la in lookaheads:each() do
   local to, from, symbol = clone(la[1]), clone(la[2]), la[3]
