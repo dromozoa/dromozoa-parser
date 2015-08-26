@@ -224,12 +224,20 @@ function class.parse_grammar(text)
   return prods
 end
 
+function class.unparse_symbol(symbol)
+  return write_symbol(sequence_writer(), symbol):concat()
+end
+
 function class.unparse_symbols(symbols)
   return write_symbols(sequence_writer(), symbols):concat()
 end
 
 function class.unparse_grammar(prods)
   return write_grammar(sequence_writer(), prods):concat()
+end
+
+function class.unparse_item(item)
+  return write_item(sequence_writer(), item):concat()
 end
 
 function class.unparse_items(items)
