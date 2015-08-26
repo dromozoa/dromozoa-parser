@@ -193,6 +193,30 @@ local function write_gotos(out, gotos)
   return out
 end
 
+local function write_lookaheds(out, generate, propagate)
+  for item, symbols in generate:each() do
+    out:write("generate ")
+    write_item(out, item)
+    out:write("\n")
+    for symbol in symbols:each() do
+      out:write("  ")
+      write_symbol(out, symbol)
+      out:write("\n")
+    end
+  end
+  for to_item, from_items in propagate:each() do
+    out:write("propagate ")
+    write_item(out, to_item)
+    out:write("\n")
+    for from_item in from_items:each() do
+      out:write("  ")
+      write_item(out, from_item)
+      out:write("\n")
+    end
+  end
+  return out
+end
+
 local class = {}
 
 function class.parse_grammar(text)
@@ -254,6 +278,10 @@ end
 
 function class.unparse_gotos(gotos)
   return write_gotos(sequence_writer(), gotos):concat()
+end
+
+function class.unparse_lookaheads(generate, propagate)
+  return write_lookaheds(sequence_writer(), generate, propagate):concat()
 end
 
 return class

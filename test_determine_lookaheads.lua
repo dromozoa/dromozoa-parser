@@ -30,29 +30,33 @@ R -> L
 ]])
 
 local generate, propagate = determine_lookaheads(prods, { "S'", sequence():push("S"), 1 })
-
-for item, symbol in generate:each() do
-  io.write("generate ", test.unparse_item(item), " / ", test.unparse_symbol(symbol), "\n")
-end
-
-for to_item, from_items in propagate:each() do
-  io.write("propagate to ", test.unparse_item(to_item), "\n")
-  for from_item in from_items:each() do
-    io.write("  from ", test.unparse_item(from_item), "\n")
-  end
-end
-
-os.exit()
-
-for la in lookaheads:each() do
-  local to, from, symbol = clone(la[1]), clone(la[2]), la[3]
-  if from == nil then
-    io.write("generated ", test.unparse_item(to))
-  else
-    from[4] = nil
-    to[4] = nil
-    io.write("propagate ", test.unparse_item(from), " : ", test.unparse_item(to))
-  end
-  io.write("\n")
-end
-
+assert(test.unparse_lookaheads(generate, propagate) == [[
+generate L -> * · R
+  =
+generate L -> id ·
+  =
+propagate S' -> S ·
+  S' -> · S
+propagate S -> L · = R
+  S' -> · S
+propagate S -> R ·
+  S' -> · S
+propagate R -> L ·
+  S' -> · S
+  L -> * · R
+  S -> L = · R
+propagate L -> * · R
+  S' -> · S
+  L -> * · R
+  S -> L = · R
+propagate L -> id ·
+  S' -> · S
+  L -> * · R
+  S -> L = · R
+propagate S -> L = · R
+  S -> L · = R
+propagate L -> * R ·
+  L -> * · R
+propagate S -> L = R ·
+  S -> L = · R
+]])
