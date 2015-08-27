@@ -221,6 +221,7 @@ local class = {}
 
 function class.parse_grammar(text)
   local prods = linked_hash_table()
+  local start
   for line in text:gmatch("[^\n]+") do
     if not line:match("^%s*#") then
       local head
@@ -243,9 +244,12 @@ function class.parse_grammar(text)
       else
         bodies:push(body)
       end
+      if start == nil then
+        start = { head, body }
+      end
     end
   end
-  return prods
+  return prods, start
 end
 
 function class.unparse_symbol(symbol)

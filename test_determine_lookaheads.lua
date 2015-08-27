@@ -20,7 +20,7 @@ local sequence = require "dromozoa.commons.sequence"
 local determine_lookaheads = require "dromozoa.parser.determine_lookaheads"
 local test = require "test"
 
-local prods = test.parse_grammar([[
+local prods, start = test.parse_grammar([[
 S' -> S
 S -> L = R
 S -> R
@@ -28,8 +28,9 @@ L -> * R
 L -> id
 R -> L
 ]])
+start[3] = 1
 
-local generate, propagate = determine_lookaheads(prods, { "S'", sequence():push("S"), 1 })
+local generate, propagate = determine_lookaheads(prods, start)
 assert(test.unparse_lookaheads(generate, propagate) == [[
 generate L -> * · R
   =
