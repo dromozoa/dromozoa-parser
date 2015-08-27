@@ -193,7 +193,7 @@ local function write_gotos(out, gotos)
   return out
 end
 
-local function write_lookaheds(out, generate, propagate)
+local function write_lookaheads_generate(out, generate)
   for item, symbols in generate:each() do
     out:write("generate ")
     write_item(out, item)
@@ -204,6 +204,10 @@ local function write_lookaheds(out, generate, propagate)
       out:write("\n")
     end
   end
+  return out
+end
+
+local function write_lookaheads_propagate(out, propagate)
   for to_item, from_items in propagate:each() do
     out:write("propagate ")
     write_item(out, to_item)
@@ -284,8 +288,12 @@ function class.unparse_gotos(gotos)
   return write_gotos(sequence_writer(), gotos):concat()
 end
 
-function class.unparse_lookaheads(generate, propagate)
-  return write_lookaheds(sequence_writer(), generate, propagate):concat()
+function class.unparse_lookaheads_generate(generate)
+  return write_lookaheads_generate(sequence_writer(), generate):concat()
+end
+
+function class.unparse_lookaheads_propagate(propagate)
+  return write_lookaheads_propagate(sequence_writer(), propagate):concat()
 end
 
 return class

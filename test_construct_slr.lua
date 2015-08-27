@@ -25,8 +25,9 @@ S -> E
 E -> 1 E
 E -> 1
 ]])
-local actions, gotos = construct_slr(prods, { "E'", sequence():push("E"), 1, { "$" } })
+local start = { "E'", sequence():push("E"), 1, { "$" } }
 
+local actions, gotos = construct_slr(prods, start)
 assert(test.unparse_actions(actions) == [[
 0 1 : shift 2
 1 $ : accept
@@ -34,7 +35,6 @@ assert(test.unparse_actions(actions) == [[
 2 1 : shift 2
 3 $ : reduce E -> 1 E
 ]])
-
 assert(test.unparse_gotos(gotos) == [[
 0 E : 1
 2 E : 3

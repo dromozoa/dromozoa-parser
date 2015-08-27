@@ -16,7 +16,6 @@ A -> A c | S d | ε
 ]])
 
 eliminate_left_recursion(prods)
-
 assert(test.unparse_grammar(prods) == [[
 S -> A a | b
 A -> b d A' | A'

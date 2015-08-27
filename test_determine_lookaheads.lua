@@ -31,11 +31,13 @@ R -> L
 start[3] = 1
 
 local generate, propagate = determine_lookaheads(prods, start)
-assert(test.unparse_lookaheads(generate, propagate) == [[
+assert(test.unparse_lookaheads_generate(generate) == [[
 generate L -> * · R
   =
 generate L -> id ·
   =
+]])
+assert(test.unparse_lookaheads_propagate(propagate) == [[
 propagate S' -> S ·
   S' -> · S
 propagate S -> L · = R

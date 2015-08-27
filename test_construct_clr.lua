@@ -19,14 +19,16 @@ local sequence = require "dromozoa.commons.sequence"
 local construct_clr = require "dromozoa.parser.construct_clr"
 local test = require "test"
 
-local prods = test.parse_grammar([[
+local prods, start = test.parse_grammar([[
 S' -> S
 S -> C C
 C -> c C
 C -> d
 ]])
+start[3] = 1
+start[4] = { "$" }
 
-local actions, gotos = construct_clr(prods, { "S'", sequence():push("S"), 1, { "$" } })
+local actions, gotos = construct_clr(prods, start)
 assert(test.unparse_actions(actions) == [[
 0 c : shift 3
 0 d : shift 4
@@ -45,7 +47,6 @@ assert(test.unparse_actions(actions) == [[
 8 d : reduce C -> c C
 9 $ : reduce C -> c C
 ]])
-
 assert(test.unparse_gotos(gotos) == [[
 0 S : 1
 0 C : 2
