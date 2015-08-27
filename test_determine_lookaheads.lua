@@ -70,5 +70,5 @@ propagate S -> L = R ·
   S -> L = · R
 ]])
 
-local generate = lalr_kernel_items(prods, start, set_of_kernel_items)
-io.write(test.unparse_lookaheads_generate(generate))
+local set_of_kernel_items = lalr_kernel_items(prods, start, set_of_kernel_items)
+io.write(test.unparse_set_of_items(set_of_kernel_items))
