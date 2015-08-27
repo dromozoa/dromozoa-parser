@@ -45,40 +45,40 @@ S' -> S ·, $
 
 local set_of_items = lr1.items(prods, start)
 assert(test.unparse_set_of_items(set_of_items) == [[
-I0
+I1
   S' -> · S, $
   S -> · C C, $
   C -> · c C, c
   C -> · c C, d
   C -> · d, c
   C -> · d, d
-I1
-  S' -> S ·, $
 I2
+  S' -> S ·, $
+I3
   S -> C · C, $
   C -> · c C, $
   C -> · d, $
-I3
+I4
   C -> c · C, c
   C -> c · C, d
   C -> · c C, c
   C -> · d, c
   C -> · c C, d
   C -> · d, d
-I4
+I5
   C -> d ·, c
   C -> d ·, d
-I5
-  S -> C C ·, $
 I6
+  S -> C C ·, $
+I7
   C -> c · C, $
   C -> · c C, $
   C -> · d, $
-I7
-  C -> d ·, $
 I8
+  C -> d ·, $
+I9
   C -> c C ·, c
   C -> c C ·, d
-I9
+I10
   C -> c C ·, $
 ]])

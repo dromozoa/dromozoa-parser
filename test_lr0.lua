@@ -46,7 +46,7 @@ F -> · id
 
 local set_of_items = lr0.items(prods, start)
 assert(test.unparse_set_of_items(set_of_items) == [[
-I0
+I1
   E' -> · E
   E -> · E + T
   E -> · T
@@ -54,15 +54,15 @@ I0
   T -> · F
   F -> · ( E )
   F -> · id
-I1
+I2
   E' -> E ·
   E -> E · + T
-I2
+I3
   E -> T ·
   T -> T · * F
-I3
-  T -> F ·
 I4
+  T -> F ·
+I5
   F -> ( · E )
   E -> · E + T
   E -> · T
@@ -70,26 +70,26 @@ I4
   T -> · F
   F -> · ( E )
   F -> · id
-I5
-  F -> id ·
 I6
+  F -> id ·
+I7
   E -> E + · T
   T -> · T * F
   T -> · F
   F -> · ( E )
   F -> · id
-I7
+I8
   T -> T * · F
   F -> · ( E )
   F -> · id
-I8
+I9
   F -> ( E · )
   E -> E · + T
-I9
+I10
   E -> E + T ·
   T -> T · * F
-I10
-  T -> T * F ·
 I11
+  T -> T * F ·
+I12
   F -> ( E ) ·
 ]])

@@ -31,25 +31,25 @@ start[3] = 1
 
 local set_of_kernel_items = lr0_kernel_items(prods, start)
 assert(test.unparse_set_of_items(set_of_kernel_items) == [[
-I0
-  S' -> · S
 I1
-  S' -> S ·
+  S' -> · S
 I2
+  S' -> S ·
+I3
   S -> L · = R
   R -> L ·
-I3
-  S -> R ·
 I4
-  L -> * · R
+  S -> R ·
 I5
-  L -> id ·
+  L -> * · R
 I6
-  S -> L = · R
+  L -> id ·
 I7
-  R -> L ·
+  S -> L = · R
 I8
-  L -> * R ·
+  R -> L ·
 I9
+  L -> * R ·
+I10
   S -> L = R ·
 ]])
