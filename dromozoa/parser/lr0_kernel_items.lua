@@ -15,42 +15,25 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local equal = require "dromozoa.commons.equal"
+local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
-local construct_clr = require "dromozoa.parser.construct_clr"
-local test = require "test"
+local lr0 = require "dromozoa.parser.lr0"
 
-local prods, start = test.parse_grammar([[
-S' -> S
-S -> C C
-C -> c C
-C -> d
-]])
-start[3] = 1
-start[4] = { "$" }
-
-local actions, gotos = construct_clr(prods, start)
-assert(test.unparse_actions(actions) == [[
-0 c : shift 3
-0 d : shift 4
-1 $ : accept
-2 c : shift 6
-2 d : shift 7
-3 c : shift 3
-3 d : shift 4
-4 c : reduce C -> d
-4 d : reduce C -> d
-5 $ : reduce S -> C C
-6 c : shift 6
-6 d : shift 7
-7 $ : reduce C -> d
-8 c : reduce C -> c C
-8 d : reduce C -> c C
-9 $ : reduce C -> c C
-]])
-assert(test.unparse_gotos(gotos) == [[
-0 S : 1
-0 C : 2
-2 C : 5
-3 C : 8
-6 C : 9
-]])
+return function (prods, start)
+  local set_of_items = lr0.items(prods, start)
+  local set_of_kernel_items = linked_hash_table()
+  for items in set_of_items:each() do
+    local kernel_items = sequence()
+    for item in items:each() do
+      local dot = item[3]
+      if equal(item, start) or dot > 1 then
+        kernel_items:push(item)
+      end
+    end
+    if #kernel_items > 0 then
+      set_of_kernel_items:insert(kernel_items)
+    end
+  end
+  return set_of_kernel_items
+end

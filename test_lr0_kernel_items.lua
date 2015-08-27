@@ -16,41 +16,40 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local sequence = require "dromozoa.commons.sequence"
-local construct_clr = require "dromozoa.parser.construct_clr"
+local lr0_kernel_items = require "dromozoa.parser.lr0_kernel_items"
 local test = require "test"
 
 local prods, start = test.parse_grammar([[
 S' -> S
-S -> C C
-C -> c C
-C -> d
+S -> L = R
+S -> R
+L -> * R
+L -> id
+R -> L
 ]])
 start[3] = 1
-start[4] = { "$" }
 
-local actions, gotos = construct_clr(prods, start)
-assert(test.unparse_actions(actions) == [[
-0 c : shift 3
-0 d : shift 4
-1 $ : accept
-2 c : shift 6
-2 d : shift 7
-3 c : shift 3
-3 d : shift 4
-4 c : reduce C -> d
-4 d : reduce C -> d
-5 $ : reduce S -> C C
-6 c : shift 6
-6 d : shift 7
-7 $ : reduce C -> d
-8 c : reduce C -> c C
-8 d : reduce C -> c C
-9 $ : reduce C -> c C
-]])
-assert(test.unparse_gotos(gotos) == [[
-0 S : 1
-0 C : 2
-2 C : 5
-3 C : 8
-6 C : 9
+local set_of_kernel_items = lr0_kernel_items(prods, start)
+assert(test.unparse_set_of_items(set_of_kernel_items) == [[
+I0
+  S' -> · S
+I1
+  S' -> S ·
+I2
+  S -> L · = R
+  R -> L ·
+I3
+  S -> R ·
+I4
+  L -> * · R
+I5
+  L -> id ·
+I6
+  S -> L = · R
+I7
+  R -> L ·
+I8
+  L -> * R ·
+I9
+  S -> L = R ·
 ]])

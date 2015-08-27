@@ -193,10 +193,39 @@ local function write_gotos(out, gotos)
   return out
 end
 
+local function write_lookaheads_generate(out, generate)
+  for item, symbols in generate:each() do
+    out:write("generate ")
+    write_item(out, item)
+    out:write("\n")
+    for symbol in symbols:each() do
+      out:write("  ")
+      write_symbol(out, symbol)
+      out:write("\n")
+    end
+  end
+  return out
+end
+
+local function write_lookaheads_propagate(out, propagate)
+  for to_item, from_items in propagate:each() do
+    out:write("propagate ")
+    write_item(out, to_item)
+    out:write("\n")
+    for from_item in from_items:each() do
+      out:write("  ")
+      write_item(out, from_item)
+      out:write("\n")
+    end
+  end
+  return out
+end
+
 local class = {}
 
 function class.parse_grammar(text)
   local prods = linked_hash_table()
+  local start
   for line in text:gmatch("[^\n]+") do
     if not line:match("^%s*#") then
       local head
@@ -219,9 +248,16 @@ function class.parse_grammar(text)
       else
         bodies:push(body)
       end
+      if start == nil then
+        start = { head, body }
+      end
     end
   end
-  return prods
+  return prods, start
+end
+
+function class.unparse_symbol(symbol)
+  return write_symbol(sequence_writer(), symbol):concat()
 end
 
 function class.unparse_symbols(symbols)
@@ -230,6 +266,10 @@ end
 
 function class.unparse_grammar(prods)
   return write_grammar(sequence_writer(), prods):concat()
+end
+
+function class.unparse_item(item)
+  return write_item(sequence_writer(), item):concat()
 end
 
 function class.unparse_items(items)
@@ -246,6 +286,14 @@ end
 
 function class.unparse_gotos(gotos)
   return write_gotos(sequence_writer(), gotos):concat()
+end
+
+function class.unparse_lookaheads_generate(generate)
+  return write_lookaheads_generate(sequence_writer(), generate):concat()
+end
+
+function class.unparse_lookaheads_propagate(propagate)
+  return write_lookaheads_propagate(sequence_writer(), propagate):concat()
 end
 
 return class

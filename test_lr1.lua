@@ -19,17 +19,16 @@ local sequence = require "dromozoa.commons.sequence"
 local lr1 = require "dromozoa.parser.lr1"
 local test = require "test"
 
-local prods = test.parse_grammar([[
+local prods, start = test.parse_grammar([[
 S' -> S
 S -> C C
 C -> c C
 C -> d
 ]])
+start[3] = 1
+start[4] = { "$" }
 
-local items = lr1.closure(
-    prods,
-    sequence()
-        :push({ "S'", sequence():push("S"), 1, { "$" } }))
+local items = lr1.closure(prods, sequence({ start }))
 assert(test.unparse_items(items) == [[
 S' -> · S, $
 S -> · C C, $
@@ -44,7 +43,7 @@ assert(test.unparse_items(goto_items) == [[
 S' -> S ·, $
 ]])
 
-local set_of_items = lr1.items(prods, { "S'", sequence():push("S"), 1, { "$" } })
+local set_of_items = lr1.items(prods, start)
 assert(test.unparse_set_of_items(set_of_items) == [[
 I0
   S' -> · S, $
