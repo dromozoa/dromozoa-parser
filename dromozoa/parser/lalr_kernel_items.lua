@@ -21,8 +21,8 @@ local lr0_kernel_items = require "dromozoa.parser.lr0_kernel_items"
 local determine_lookaheads = require "dromozoa.parser.determine_lookaheads"
 local set_union = require "dromozoa.parser.set_union"
 
-return function (prods, start)
-  local generate, propagate = determine_lookaheads(prods, start)
+return function (prods, start, set_of_kernel_items)
+  local generate, propagate = determine_lookaheads(prods, start, set_of_kernel_items)
   local done
   repeat
     done = true
