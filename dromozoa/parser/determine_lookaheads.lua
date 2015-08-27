@@ -26,6 +26,9 @@ local set_union = require "dromozoa.parser.set_union"
 return function (prods, start)
   local set_of_kernel_items = lr0_kernel_items(prods, start)
   local generate = linked_hash_table()
+  local symbols = linked_hash_table()
+  symbols:insert({ "$" })
+  generate[start] = symbols
   local propagate = linked_hash_table()
   for kernel_items in set_of_kernel_items:each() do
     for kernel_item in kernel_items:each() do
@@ -49,11 +52,10 @@ return function (prods, start)
           else
             local symbols = generate[to_item]
             if symbols == nil then
-              symbols = sequence():push(term)
+              symbols = linked_hash_table()
               generate[to_item] = symbols
-            else
-              generate:insert(to_item, sequence():push(term))
             end
+            symbols:insert(term)
           end
         end
       end

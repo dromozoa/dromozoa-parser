@@ -18,6 +18,7 @@
 local clone = require "dromozoa.commons.clone"
 local sequence = require "dromozoa.commons.sequence"
 local determine_lookaheads = require "dromozoa.parser.determine_lookaheads"
+local lalr_kernel_items = require "dromozoa.parser.lalr_kernel_items"
 local test = require "test"
 
 local prods, start = test.parse_grammar([[
@@ -32,6 +33,8 @@ start[3] = 1
 
 local generate, propagate = determine_lookaheads(prods, start)
 assert(test.unparse_lookaheads_generate(generate) == [[
+generate S' -> · S
+  $
 generate L -> * · R
   =
 generate L -> id ·
@@ -63,3 +66,6 @@ propagate L -> * R ·
 propagate S -> L = R ·
   S -> L = · R
 ]])
+
+local generate = lalr_kernel_items(prods, start)
+io.write(test.unparse_lookaheads_generate(generate))
