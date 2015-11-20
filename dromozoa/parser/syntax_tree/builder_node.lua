@@ -16,7 +16,10 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local function create_binary_expression(tag, a, b)
-  return a:tree():create_binary_expression(tag, a, b)
+  local node = a:tree():create_node(tag)
+  node:append_child(a)
+  node:append_child(b)
+  return node
 end
 
 local class = {}

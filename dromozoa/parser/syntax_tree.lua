@@ -17,25 +17,23 @@
 
 local apply = require "dromozoa.commons.apply"
 local clone = require "dromozoa.commons.clone"
-local push = require "dromozoa.commons.push"
 local tree = require "dromozoa.tree"
 local builder = require "dromozoa.parser.syntax_tree.builder"
 local graphviz_visitor = require "dromozoa.parser.syntax_tree.graphviz_visitor"
 
 local class = clone(tree)
 
+function class.new()
+  local self = tree.new()
+  class.create_node(self, "start").start = true
+  return self
+end
+
 function class:start()
   if self:count_node("start") > 1 then
     error("only one start node allowed")
   end
   return apply(self:each_node("start"))
-end
-
-function class:create_binary_expression(tag, a, b)
-  local node = self:create_node(tag)
-  node:append_child(a)
-  node:append_child(b)
-  return node
 end
 
 function class:builder()

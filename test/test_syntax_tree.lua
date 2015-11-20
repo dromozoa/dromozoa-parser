@@ -19,7 +19,6 @@ local sequence_writer = require "dromozoa.commons.sequence_writer"
 local syntax_tree = require "dromozoa.parser.syntax_tree"
 
 local ast = syntax_tree()
-ast:create_node("root").start = 1
 
 local B = ast:builder()
 B["S'"] = B.S
