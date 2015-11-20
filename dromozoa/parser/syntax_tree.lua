@@ -31,12 +31,6 @@ function class:start()
   return apply(self:each_node("start"))
 end
 
-function class:create_node(...)
-  local node = tree.create_node(self)
-  push(node, 0, ...)
-  return node
-end
-
 function class:create_binary_expression(tag, a, b)
   local node = self:create_node(tag)
   node:append_child(a)
