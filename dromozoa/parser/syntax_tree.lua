@@ -18,8 +18,11 @@
 local apply = require "dromozoa.commons.apply"
 local clone = require "dromozoa.commons.clone"
 local tree = require "dromozoa.tree"
+local grammar = require "dromozoa.parser.grammar"
 local builder = require "dromozoa.parser.syntax_tree.builder"
 local graphviz_visitor = require "dromozoa.parser.syntax_tree.graphviz_visitor"
+local normalize = require "dromozoa.parser.syntax_tree.normalize"
+local to_grammar = require "dromozoa.parser.syntax_tree.to_grammar"
 
 local class = clone(tree)
 
@@ -38,6 +41,14 @@ end
 
 function class:builder()
   return builder(self)
+end
+
+function class:normalize()
+  return normalize(self):apply()
+end
+
+function class:to_grammar()
+  return to_grammar(self, grammar()):apply()
 end
 
 function class:write_graphviz(out)

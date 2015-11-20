@@ -15,17 +15,34 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence_writer = require "dromozoa.commons.sequence_writer"
-local syntax_tree = require "dromozoa.parser.syntax_tree"
+local sequence = require "dromozoa.commons.sequence"
 
-local ast = syntax_tree()
+local class = {}
 
-local B = ast:builder()
-B.foo = B.a * B.b * B.c + B.c * B.b * B.a
-B.foo = B.a * (B.b * B.c + B.c * B.b) * B.a
-B.foo = B.a * B.b * (B.c + B.c) * B.b * B.a
-B.bar = (B.a + B.b) * B.c
+function class.new()
+  return {}
+end
 
-ast:write_graphviz(assert(io.open("test1.dot", "w"))):close()
-ast:normalize()
-ast:write_graphviz(assert(io.open("test2.dot", "w"))):close()
+function class:discover_node(u)
+  local tag = u[1]
+  if tag == "|" or tag == "concat" then
+    u.bodies = sequence()
+  end
+end
+
+function class:finish_edge(u, v)
+  local tag = u[1]
+  if tag == "|" or tag == "concat" then
+    u.bodies:push(v.ref)
+  end
+end
+
+local metatable = {
+  __index = class;
+}
+
+return setmetatable(class, {
+  __call = function (_, this, that)
+    return setmetatable(class.new(this, that), metatable)
+  end;
+})

@@ -15,42 +15,57 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local builder_node = require "dromozoa.parser.syntax_tree.builder_node"
-
-local private_tree = function () end
+local apply = require "dromozoa.commons.apply"
+local sequence = require "dromozoa.commons.sequence"
 
 local class = {}
 
-function class.new(tree)
+function class.new(this)
   return {
-    [private_tree] = tree;
+    this = this;
   }
 end
 
-function class:get(key)
-  local tree = self[private_tree]
-  return builder_node(tree:create_node("ref", key))
+function class:discover_node(u)
+  local tag = u[1]
+  if tag == "|" or tag == "concat" then
+    u.bodies = sequence()
+  end
 end
 
-function class:set(key, that)
-  local tree = self[private_tree]
-  local u = tree:create_node("=", key)
-  local v = that.node
-  if v[1] == "|" then
-    u:append_child(v)
-  else
-    u:append_child(tree:create_node("|")):append_child(v)
+function class:finish_edge(u, v)
+  local tag = u[1]
+  if tag == "|" or tag == "concat" then
+    u.bodies:push(v.ref)
   end
-  tree:start():append_child(u)
+end
+
+function class:apply()
+  local this = self.this
+
+  local map = {}
+  for u in this:start():each_child() do
+    local name = u[2]
+    local v = map[name]
+    if v == nil then
+      map[name] = apply(u:each_child())
+    else
+      for w in apply(u:each_child()):each_child() do
+        v:append_child(w:remove())
+      end
+      u:remove():delete(true)
+    end
+  end
+
+  return this
 end
 
 local metatable = {
-  __index = class.get;
-  __newindex = class.set;
+  __index = class;
 }
 
 return setmetatable(class, {
-  __call = function (_, tree)
-    return setmetatable(class.new(tree), metatable)
+  __call = function (_, this)
+    return setmetatable(class.new(this), metatable)
   end;
 })
