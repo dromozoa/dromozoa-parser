@@ -15,21 +15,41 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local json = require "dromozoa.commons.json"
-local sequence_writer = require "dromozoa.commons.sequence_writer"
+local equal = require "dromozoa.commons.equal"
 local syntax_tree = require "dromozoa.parser.syntax_tree"
 
 local ast = syntax_tree()
 
 local B = ast:builder()
-B.foo = B.a * B.b * B.c + B.c * B.b * B.a
-B.foo = B.a * (B.b * B.c + B.c * B.b) * B.a
-B.foo = B.a * B.b * (B.c + B.c) * B.b * B.a
-B.bar = (B.a + B.b) * B.c
-B.baz = B.a + B.b + B.c
+B.foo = B.a + B.b + B.c
+B.foo = B.d * B.e + B.f
+B.foo = B.g + B.h * B.i
+B.bar = B.a + (B.b + B.c)
+B.bar = B.d * (B.e + B.f)
+B.baz = (B.a + B.b) * (B.c + B.d)
+B.qux = (B.a + B.b + B.c) * (B.d + B.e + B.f)
 
 ast:write_graphviz(assert(io.open("test1.dot", "w"))):close()
 local grammar = ast:to_grammar()
 ast:write_graphviz(assert(io.open("test2.dot", "w"))):close()
 
-print(json.encode(grammar.prods))
+assert(equal(grammar.prods, {
+  foo = {
+    { "a" }; { "b" }; { "c" };
+    { "d", "e" }; { "f" };
+    { "g" }; { "h", "i" };
+  };
+  bar = {
+    { "a" }; { "b" }; { "c" };
+    { "d", "e" }; { "d", "f" };
+  };
+  baz = {
+    { "a", "c" }; { "a", "d" };
+    { "b", "c" }; { "b", "d" };
+  };
+  qux = {
+    { "a", "d" }; { "a", "e" }; { "a", "f" };
+    { "b", "d" }; { "b", "e" }; { "b", "f" };
+    { "c", "d" }; { "c", "e" }; { "c", "f" };
+  }
+}))
