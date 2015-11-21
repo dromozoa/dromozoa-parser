@@ -19,7 +19,6 @@ local apply = require "dromozoa.commons.apply"
 local clone = require "dromozoa.commons.clone"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local tree = require "dromozoa.tree"
-local grammar = require "dromozoa.parser.grammar"
 local builder = require "dromozoa.parser.syntax_tree.builder"
 local graphviz_visitor = require "dromozoa.parser.syntax_tree.graphviz_visitor"
 local to_grammar = require "dromozoa.parser.syntax_tree.to_grammar"
@@ -44,7 +43,7 @@ function class:builder()
 end
 
 function class:to_grammar()
-  return grammar(to_grammar(self, linked_hash_table()):apply())
+  return self.super.grammar(to_grammar(self, linked_hash_table()):apply())
 end
 
 function class:write_graphviz(out)

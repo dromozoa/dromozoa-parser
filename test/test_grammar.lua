@@ -17,10 +17,9 @@
 
 local equal = require "dromozoa.commons.equal"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local syntax_tree = require "dromozoa.parser.syntax_tree"
+local parser = require "dromozoa.parser"
 
-local ast = syntax_tree()
-
+local ast = parser.syntax_tree()
 local B = ast:builder()
 B.E = B.E * B["+"] * B.T
     + B.T
@@ -28,7 +27,6 @@ B.T = B.T * B["*"] * B.F
     + B.F
 B.F = B["("] * B.E * B[")"]
     + B.id
-
 ast:write_graphviz(assert(io.open("test1.dot", "w"))):close()
 local grammar = ast:to_grammar()
 ast:write_graphviz(assert(io.open("test2.dot", "w"))):close()
@@ -51,3 +49,7 @@ assert(equal(symbols, {
   [")"] = true;
   id = true;
 }))
+
+grammar:eliminate_left_recursion()
+
+
