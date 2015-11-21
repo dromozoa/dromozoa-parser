@@ -15,41 +15,20 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
-local lr0_kernel_items = require "dromozoa.parser.lr0_kernel_items"
-local test = require "test"
+local class = {}
 
-local prods, start = test.parse_grammar([[
-S' -> S
-S -> L = R
-S -> R
-L -> * R
-L -> id
-R -> L
-]])
-start[3] = 1
+function class.new(prods)
+  return {
+    prods = prods;
+  }
+end
 
-local set_of_kernel_items = lr0_kernel_items(prods, start)
-assert(test.unparse_set_of_items(set_of_kernel_items) == [[
-I1
-  S' -> · S
-I2
-  S' -> S ·
-I3
-  S -> L · = R
-  R -> L ·
-I4
-  S -> R ·
-I5
-  L -> * · R
-I6
-  L -> id ·
-I7
-  S -> L = · R
-I8
-  R -> L ·
-I9
-  L -> * R ·
-I10
-  S -> L = R ·
-]])
+local metatable = {
+  __index = class;
+}
+
+return setmetatable(class, {
+  __call = function (_, prods)
+    return setmetatable(class.new(prods), metatable)
+  end;
+})

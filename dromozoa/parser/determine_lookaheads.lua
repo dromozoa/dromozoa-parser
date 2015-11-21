@@ -19,12 +19,10 @@ local equal = require "dromozoa.commons.equal"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local each_symbol = require "dromozoa.parser.each_symbol"
-local lr0_kernel_items = require "dromozoa.parser.lr0_kernel_items"
 local lr1 = require "dromozoa.parser.lr1"
 local set_union = require "dromozoa.parser.set_union"
 
-return function (prods, start)
-  local set_of_kernel_items = lr0_kernel_items(prods, start)
+return function (prods, start, set_of_kernel_items)
   local generate = linked_hash_table()
   local symbols = linked_hash_table()
   symbols:insert({ "$" })

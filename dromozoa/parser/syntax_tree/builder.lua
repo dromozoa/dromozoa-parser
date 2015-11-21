@@ -15,41 +15,37 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
-local lr0_kernel_items = require "dromozoa.parser.lr0_kernel_items"
-local test = require "test"
+local builder_node = require "dromozoa.parser.syntax_tree.builder_node"
 
-local prods, start = test.parse_grammar([[
-S' -> S
-S -> L = R
-S -> R
-L -> * R
-L -> id
-R -> L
-]])
-start[3] = 1
+local private_tree = function () end
 
-local set_of_kernel_items = lr0_kernel_items(prods, start)
-assert(test.unparse_set_of_items(set_of_kernel_items) == [[
-I1
-  S' -> · S
-I2
-  S' -> S ·
-I3
-  S -> L · = R
-  R -> L ·
-I4
-  S -> R ·
-I5
-  L -> * · R
-I6
-  L -> id ·
-I7
-  S -> L = · R
-I8
-  R -> L ·
-I9
-  L -> * R ·
-I10
-  S -> L = R ·
-]])
+local class = {}
+
+function class.new(tree)
+  return {
+    [private_tree] = tree;
+  }
+end
+
+function class:get(key)
+  local tree = self[private_tree]
+  return builder_node(tree:create_node("ref", key))
+end
+
+function class:set(key, that)
+  local tree = self[private_tree]
+  local node = tree:create_node("=", key)
+  node:append_child(that.node)
+  tree:start():append_child(node)
+end
+
+local metatable = {
+  __index = class.get;
+  __newindex = class.set;
+}
+
+return setmetatable(class, {
+  __call = function (_, tree)
+    return setmetatable(class.new(tree), metatable)
+  end;
+})

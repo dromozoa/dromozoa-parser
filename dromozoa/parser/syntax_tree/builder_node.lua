@@ -15,41 +15,36 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
-local lr0_kernel_items = require "dromozoa.parser.lr0_kernel_items"
-local test = require "test"
+local function create_binary_expression(tag, a, b)
+  local node = a:tree():create_node(tag)
+  node:append_child(a)
+  node:append_child(b)
+  return node
+end
 
-local prods, start = test.parse_grammar([[
-S' -> S
-S -> L = R
-S -> R
-L -> * R
-L -> id
-R -> L
-]])
-start[3] = 1
+local class = {}
 
-local set_of_kernel_items = lr0_kernel_items(prods, start)
-assert(test.unparse_set_of_items(set_of_kernel_items) == [[
-I1
-  S' -> · S
-I2
-  S' -> S ·
-I3
-  S -> L · = R
-  R -> L ·
-I4
-  S -> R ·
-I5
-  L -> * · R
-I6
-  L -> id ·
-I7
-  S -> L = · R
-I8
-  R -> L ·
-I9
-  L -> * R ·
-I10
-  S -> L = R ·
-]])
+function class.new(node)
+  return {
+    node = node;
+  }
+end
+
+function class:branch(that)
+  return class(create_binary_expression("|", self.node, that.node))
+end
+
+function class:concat(that)
+  return class(create_binary_expression("concat", self.node, that.node))
+end
+
+local metatable = {
+  __add = class.branch;
+  __mul = class.concat;
+}
+
+return setmetatable(class, {
+  __call = function (_, node)
+    return setmetatable(class.new(node), metatable)
+  end;
+})

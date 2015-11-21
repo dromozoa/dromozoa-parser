@@ -150,11 +150,9 @@ local function write_items(out, items, prefix)
 end
 
 local function write_set_of_items(out, set_of_items)
-  local i = 0
-  for items in set_of_items:each() do
-    out:write("I", i, "\n")
+  for items, _, identity in set_of_items:each() do
+    out:write("I", identity, "\n")
     write_items(out, items, "  ")
-    i = i + 1
   end
   return out
 end
