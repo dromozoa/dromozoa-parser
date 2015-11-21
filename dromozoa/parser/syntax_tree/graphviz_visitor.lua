@@ -17,15 +17,9 @@
 
 local ipairs = require "dromozoa.commons.ipairs"
 local sequence_writer = require "dromozoa.commons.sequence_writer"
+local json = require "dromozoa.commons.json"
 local xml = require "dromozoa.commons.xml"
 local graphviz = require "dromozoa.regexp.graphviz"
-
-local function write_property(out, u, k)
-  local v = u[k]
-  if v ~= nil then
-    out:write("<tr><td>", k, "</td><td>", xml.escape(v, "%W"), "</td></tr>")
-  end
-end
 
 local class = {}
 
@@ -39,6 +33,7 @@ function class:node_attributes(u)
   for i, v in ipairs(u) do
     out:write("<tr><td>", i, "</td><td>", xml.escape(v, "%W"), "</td></tr>")
   end
+  out:write("<tr><td>bodies</td><td>", xml.escape(json.encode(u.bodies), "%W"), "</td></tr>")
   return {
     shape = "plaintext";
     label = out:write("</table>>"):concat();

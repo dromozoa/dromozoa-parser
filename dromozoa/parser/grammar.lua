@@ -15,13 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-
 local class = {}
 
-function class.new()
+function class.new(prods)
   return {
-    prods = linked_hash_table();
+    prods = prods;
   }
 end
 
@@ -30,7 +28,7 @@ local metatable = {
 }
 
 return setmetatable(class, {
-  __call = function ()
-    return setmetatable(class.new(), metatable)
+  __call = function (_, prods)
+    return setmetatable(class.new(prods), metatable)
   end;
 })

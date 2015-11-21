@@ -34,14 +34,9 @@ end
 
 function class:set(key, that)
   local tree = self[private_tree]
-  local u = tree:create_node("=", key)
-  local v = that.node
-  if v[1] == "|" then
-    u:append_child(v)
-  else
-    u:append_child(tree:create_node("|")):append_child(v)
-  end
-  tree:start():append_child(u)
+  local node = tree:create_node("=", key)
+  node:append_child(that.node)
+  tree:start():append_child(node)
 end
 
 local metatable = {
