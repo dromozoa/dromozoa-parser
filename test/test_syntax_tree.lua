@@ -55,7 +55,7 @@ assert(equal(grammar.prods, {
 
 local ast = parser.syntax_tree()
 local B = ast:builder()
-local A_prime = { "A", "'" }
+local A_prime = {"A"}
 local epsilon = {}
 B.S = B.A * B.a + B.b
 B.A = B.b * B.d * B[A_prime] + B[A_prime]
@@ -65,6 +65,4 @@ ast:write_graphviz(assert(io.open("test1.dot", "w"))):close()
 local grammar = ast:to_grammar()
 ast:write_graphviz(assert(io.open("test2.dot", "w"))):close()
 
-for head, bodies in grammar.prods:each() do
-  print(head)
-end
+grammar:dump(io.stdout)

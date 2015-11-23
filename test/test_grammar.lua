@@ -15,8 +15,10 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
 local equal = require "dromozoa.commons.equal"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
+local sequence_writer = require "dromozoa.commons.sequence_writer"
 local parser = require "dromozoa.parser"
 
 local ast = parser.syntax_tree()
@@ -30,6 +32,11 @@ B.F = B["("] * B.E * B[")"]
 ast:write_graphviz(assert(io.open("test1.dot", "w"))):close()
 local grammar = ast:to_grammar()
 ast:write_graphviz(assert(io.open("test2.dot", "w"))):close()
+
+grammar:dump(io.stdout)
+
+local grammar2 = dumper.decode(grammar:dump(sequence_writer()):concat())
+assert(equal(grammar, grammar2))
 
 assert(grammar.start == "E")
 grammar.start = "T"
@@ -50,6 +57,4 @@ assert(equal(symbols, {
   id = true;
 }))
 
-grammar:eliminate_left_recursion()
-
-
+-- grammar:eliminate_left_recursion()

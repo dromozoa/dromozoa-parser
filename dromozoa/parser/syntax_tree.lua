@@ -42,8 +42,8 @@ function class:builder()
   return builder(self)
 end
 
-function class:to_grammar()
-  return self.super.grammar(to_grammar(self, linked_hash_table()):apply())
+function class:to_grammar(start)
+  return self.super.grammar(to_grammar(self, linked_hash_table()):apply(), start)
 end
 
 function class:write_graphviz(out)

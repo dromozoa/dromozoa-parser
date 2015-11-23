@@ -21,6 +21,7 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local keys = require "dromozoa.commons.keys"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
+local dump = require "dromozoa.parser.grammar.dump"
 
 local epsilon = {}
 
@@ -54,6 +55,10 @@ function class:each_symbol()
       end
     end
   end)
+end
+
+function class:dump(out)
+  return dump(out, self)
 end
 
 function class:eliminate_immediate_left_recursion(head1, bodies)
