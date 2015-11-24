@@ -25,6 +25,7 @@ local sequence = require "dromozoa.commons.sequence"
 local sequence_writer = require "dromozoa.commons.sequence_writer"
 local set = require "dromozoa.commons.set"
 local dump = require "dromozoa.parser.grammar.dump"
+local eliminate_left_recursion = require "dromozoa.parser.grammar.eliminate_left_recursion"
 
 local epsilon = {}
 
@@ -72,49 +73,9 @@ function class:each_symbol()
   end)
 end
 
-function class:eliminate_immediate_left_recursion(head1, bodies)
-  local prods = self.prods
-  local head2 = { head1 }
-  local bodies1 = sequence()
-  local bodies2 = sequence()
-  for body in bodies:each() do
-    if equal(body[1], head1) then
-      bodies2:push(sequence():copy(body, 2):push(head2))
-    else
-      bodies1:push(sequence():copy(body):push(head2))
-    end
-  end
-  if not empty(bodies2) then
-    bodies2:push(sequence())
-    prods[head1] = bodies1
-    prods[head2] = bodies2
-  end
-end
-
 function class:eliminate_left_recursion()
-  local prods = self.prods
-  local heads = keys(prods)
-  for i = 1, #heads do
-    local head1 = heads[i]
-    local bodies1 = prods[head1]
-    for j = 1, i - 1 do
-      local head2 = heads[j]
-      local bodies2 = prods[head2]
-      local bodies = sequence()
-      for body1 in bodies1:each() do
-        if equal(body1[1], head2) then
-          for body2 in bodies2:each() do
-            bodies:push(sequence():copy(body2):copy(body1, 2))
-          end
-        else
-          bodies:push(body1)
-        end
-      end
-      bodies1 = bodies
-    end
-    self:eliminate_immediate_left_recursion(head1, bodies1)
-  end
-  return prods
+  eliminate_left_recursion(self.prods)
+  return self
 end
 
 function class:first_symbol(symbol)
