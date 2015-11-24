@@ -39,7 +39,6 @@ return function (out, this)
   local parser = require "dromozoa.parser"
   local t = parser.syntax_tree()
   local b = t:builder()
-
 ]])
 
   for head, bodies in prods:each() do
@@ -48,9 +47,9 @@ return function (out, this)
     out:write("\n")
     for i, body in ipairs(bodies) do
       if i == 1 then
-        out:write("    =")
+        out:write("      =")
       else
-        out:write("    +")
+        out:write("      +")
       end
       if empty(body) then
         out:write(" b()")
@@ -66,7 +65,6 @@ return function (out, this)
       end
       out:write("\n")
     end
-    out:write("\n")
   end
 
   out:write("  return t:to_grammar(")
