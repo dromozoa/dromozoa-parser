@@ -15,12 +15,128 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local apply = require "dromozoa.commons.apply"
+local dumper = require "dromozoa.commons.dumper"
+local linked_hash_table = require "dromozoa.commons.linked_hash_table"
+local sequence = require "dromozoa.commons.sequence"
+local sequence_writer = require "dromozoa.commons.sequence_writer"
+local set = require "dromozoa.commons.set"
+local dump = require "dromozoa.parser.grammar.dump"
+local eliminate_left_recursion = require "dromozoa.parser.grammar.eliminate_left_recursion"
+
+local epsilon = {}
+
 local class = {}
 
-function class.new(prods)
+function class.new(prods, start)
+  if start == nil then
+    start = apply(prods:each())
+  end
   return {
     prods = prods;
+    start = start;
   }
+end
+
+function class:dump(out)
+  return dump(out, self)
+end
+
+function class:encode()
+  return self:dump(sequence_writer()):concat()
+end
+
+function class.decode(code)
+  return dumper.decode(code)
+end
+
+function class:each_symbol()
+  local prods = self.prods
+  return coroutine.wrap(function ()
+    local map = linked_hash_table()
+    for head in prods:each() do
+      map:insert(head)
+      coroutine.yield(head, false)
+    end
+    for head, bodies in prods:each() do
+      for body in bodies:each() do
+        for symbol in body:each() do
+          if map:insert(symbol) == nil then
+            coroutine.yield(symbol, true)
+          end
+        end
+      end
+    end
+  end)
+end
+
+function class:eliminate_left_recursion()
+  return eliminate_left_recursion(self)
+end
+
+function class:first_symbol(symbol)
+  local prods = self.prods
+  local first = linked_hash_table()
+  local bodies = prods[symbol]
+  if bodies == nil then
+    first:insert(symbol)
+  else
+    for body in bodies:each() do
+      if #body == 0 then
+        first:insert(epsilon)
+      else
+        set.union(first, self:first_symbols(body))
+      end
+    end
+  end
+  return first
+end
+
+function class:first_symbols(symbols)
+  local prods = self.prods
+  local first = linked_hash_table()
+  for symbol in symbols:each() do
+    set.union(first, self:first_symbol(symbol))
+    if first:remove(epsilon) == nil then
+      return first
+    end
+  end
+  first:insert(epsilon)
+  return first
+end
+
+function class:make_followset()
+  local prods = self.prods
+  local start = self.start
+  local followset = linked_hash_table()
+  for head in prods:each() do
+    followset[head] = linked_hash_table()
+  end
+  followset[start]:insert({ "$" })
+  local done
+  repeat
+    done = true
+    for head, bodies in prods:each() do
+      for body in bodies:each() do
+        for i = 1, #body do
+          local symbol = body[i]
+          if prods[symbol] ~= nil then
+            local first = self:first_symbols(sequence():copy(body, i + 1))
+            local removed = first:remove({}) ~= nil
+            if set.union(followset[symbol], first) > 0 then
+              done = false
+            end
+            if removed then
+              if set.union(followset[symbol], followset[head]) > 0 then
+                done = false
+              end
+            end
+          end
+        end
+      end
+    end
+  until done
+  return followset
 end
 
 local metatable = {
@@ -28,7 +144,7 @@ local metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, prods)
-    return setmetatable(class.new(prods), metatable)
+  __call = function (_, prods, start)
+    return setmetatable(class.new(prods, start), metatable)
   end;
 })

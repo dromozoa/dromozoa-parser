@@ -15,21 +15,49 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local json = require "dromozoa.commons.json"
-local sequence_writer = require "dromozoa.commons.sequence_writer"
-local syntax_tree = require "dromozoa.parser.syntax_tree"
+local equal = require "dromozoa.commons.equal"
+local parser = require "dromozoa.parser"
 
-local ast = syntax_tree()
+local t = parser.syntax_tree()
+local b = t:builder()
+b.foo = b.a + b.b + b.c
+b.foo = b.d * b.e + b.f
+b.foo = b.g + b.h * b.i
+b.bar = b.a + (b.b + b.c)
+b.bar = b.d * (b.e + b.f)
+b.baz = (b.a + b.b) * (b.c + b.d)
+b.qux = (b.a + b.b + b.c) * (b.d + b.e + b.f)
 
-local B = ast:builder()
-B.foo = B.a * B.b * B.c + B.c * B.b * B.a
-B.foo = B.a * (B.b * B.c + B.c * B.b) * B.a
-B.foo = B.a * B.b * (B.c + B.c) * B.b * B.a
-B.bar = (B.a + B.b) * B.c
-B.baz = B.a + B.b + B.c
+t:write_graphviz(assert(io.open("test1.dot", "w"))):close()
+local grammar = t:to_grammar()
+t:write_graphviz(assert(io.open("test2.dot", "w"))):close()
 
-ast:write_graphviz(assert(io.open("test1.dot", "w"))):close()
-local grammar = ast:to_grammar()
-ast:write_graphviz(assert(io.open("test2.dot", "w"))):close()
+assert(equal(grammar.prods, {
+  foo = {
+    { "a" }; { "b" }; { "c" };
+    { "d", "e" }; { "f" };
+    { "g" }; { "h", "i" };
+  };
+  bar = {
+    { "a" }; { "b" }; { "c" };
+    { "d", "e" }; { "d", "f" };
+  };
+  baz = {
+    { "a", "c" }; { "a", "d" };
+    { "b", "c" }; { "b", "d" };
+  };
+  qux = {
+    { "a", "d" }; { "a", "e" }; { "a", "f" };
+    { "b", "d" }; { "b", "e" }; { "b", "f" };
+    { "c", "d" }; { "c", "e" }; { "c", "f" };
+  }
+}))
 
-print(json.encode(grammar.prods))
+local t = parser.syntax_tree()
+local b = t:builder()
+b.foo = b.a * b.b + b()
+b.bar = b() + b.c * b.d
+
+t:write_graphviz(assert(io.open("test1.dot", "w"))):close()
+local grammar = t:to_grammar()
+t:write_graphviz(assert(io.open("test2.dot", "w"))):close()
