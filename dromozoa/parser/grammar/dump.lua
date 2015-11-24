@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
+local empty = require "dromozoa.commons.empty"
 local ipairs = require "dromozoa.commons.ipairs"
 
 local function dump_symbol(out, symbol)
@@ -51,13 +52,17 @@ return function (out, this)
       else
         out:write("    +")
       end
-      for j, symbol in ipairs(body) do
-        if j == 1 then
-          out:write(" ")
-        else
-          out:write(" * ")
+      if empty(body) then
+        out:write(" b()")
+      else
+        for j, symbol in ipairs(body) do
+          if j == 1 then
+            out:write(" ")
+          else
+            out:write(" * ")
+          end
+          dump_symbol(out, symbol)
         end
-        dump_symbol(out, symbol)
       end
       out:write("\n")
     end

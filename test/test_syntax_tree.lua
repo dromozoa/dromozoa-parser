@@ -52,3 +52,12 @@ assert(equal(grammar.prods, {
     { "c", "d" }; { "c", "e" }; { "c", "f" };
   }
 }))
+
+local t = parser.syntax_tree()
+local b = t:builder()
+b.foo = b.a * b.b + b()
+b.bar = b() + b.c * b.d
+
+t:write_graphviz(assert(io.open("test1.dot", "w"))):close()
+local grammar = t:to_grammar()
+t:write_graphviz(assert(io.open("test2.dot", "w"))):close()

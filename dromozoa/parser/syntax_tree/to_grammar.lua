@@ -34,6 +34,8 @@ function class:discover_node(u)
     u.bodies = sequence():push(sequence())
   elseif tag == "ref" then
     u.bodies = sequence():push(sequence():push(u[2]))
+  elseif tag == "epsilon" then
+    u.bodies = sequence():push(sequence())
   end
 end
 

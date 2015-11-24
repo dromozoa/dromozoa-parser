@@ -73,7 +73,7 @@ end
 
 function class:eliminate_immediate_left_recursion(head1, bodies)
   local prods = self.prods
-  local head2 = { head1, "'" }
+  local head2 = { head1 }
   local bodies1 = sequence()
   local bodies2 = sequence()
   for body in bodies:each() do

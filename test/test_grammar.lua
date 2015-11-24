@@ -71,4 +71,16 @@ assert(equal(symbols, {
   id = true;
 }))
 
+grammar:eliminate_left_recursion()
+local code = grammar:encode()
+-- io.write(code)
+assert(equal(grammar, parser.grammar.decode(code)))
 
+local t = parser.syntax_tree()
+local b = t:builder()
+b.E = b.T * b[{"E"}]
+b[{"E"}] = b["+"] * b.T * b[{"E"}] + b()
+b.T = b.F * b[{"T"}]
+b[{"T"}] = b["*"] * b.F * b[{"T"}] + b()
+b.F = b["("] * b.E * b[")"] + b.id
+assert(equal(grammar, t:to_grammar()))

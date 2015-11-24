@@ -39,9 +39,15 @@ function class:set(key, that)
   tree:start():append_child(node)
 end
 
+function class:epsilon()
+  local tree = self[private_tree]
+  return builder_node(tree:create_node("epsilon"))
+end
+
 local metatable = {
   __index = class.get;
   __newindex = class.set;
+  __call = class.epsilon;
 }
 
 return setmetatable(class, {
