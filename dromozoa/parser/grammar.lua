@@ -17,11 +17,7 @@
 
 local apply = require "dromozoa.commons.apply"
 local dumper = require "dromozoa.commons.dumper"
-local empty = require "dromozoa.commons.empty"
-local equal = require "dromozoa.commons.equal"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local keys = require "dromozoa.commons.keys"
-local sequence = require "dromozoa.commons.sequence"
 local sequence_writer = require "dromozoa.commons.sequence_writer"
 local set = require "dromozoa.commons.set"
 local dump = require "dromozoa.parser.grammar.dump"
