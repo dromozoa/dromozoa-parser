@@ -16,10 +16,12 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local apply = require "dromozoa.commons.apply"
+local dumper = require "dromozoa.commons.dumper"
 local equal = require "dromozoa.commons.equal"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local keys = require "dromozoa.commons.keys"
 local sequence = require "dromozoa.commons.sequence"
+local sequence_writer = require "dromozoa.commons.sequence_writer"
 local set = require "dromozoa.commons.set"
 local dump = require "dromozoa.parser.grammar.dump"
 
@@ -35,6 +37,18 @@ function class.new(prods, start)
     prods = prods;
     start = start;
   }
+end
+
+function class:dump(out)
+  return dump(out, self)
+end
+
+function class:encode()
+  return self:dump(sequence_writer()):concat()
+end
+
+function class.decode(code)
+  return dumper.decode(code)
 end
 
 function class:each_symbol()
@@ -55,10 +69,6 @@ function class:each_symbol()
       end
     end
   end)
-end
-
-function class:dump(out)
-  return dump(out, self)
 end
 
 function class:eliminate_immediate_left_recursion(head1, bodies)

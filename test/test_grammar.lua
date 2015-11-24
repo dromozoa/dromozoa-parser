@@ -21,26 +21,40 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence_writer = require "dromozoa.commons.sequence_writer"
 local parser = require "dromozoa.parser"
 
-local ast = parser.syntax_tree()
-local B = ast:builder()
-B.E = B.E * B["+"] * B.T
-    + B.T
-B.T = B.T * B["*"] * B.F
-    + B.F
-B.F = B["("] * B.E * B[")"]
-    + B.id
-ast:write_graphviz(assert(io.open("test1.dot", "w"))):close()
-local grammar = ast:to_grammar()
-ast:write_graphviz(assert(io.open("test2.dot", "w"))):close()
+local t = parser.syntax_tree()
+local b = t:builder()
+local A_prime = {"A"}
+local epsilon = {}
+b.S = b.A * b.a + b.b
+b.A = b.b * b.d * b[A_prime] + b[A_prime]
+b[A_prime] = b.c * b[A_prime] + b.a * b.d * b[A_prime] + b[epsilon]
 
-grammar:dump(io.stdout)
+t:write_graphviz(assert(io.open("test1.dot", "w"))):close()
+local grammar = t:to_grammar()
+t:write_graphviz(assert(io.open("test2.dot", "w"))):close()
 
-local grammar2 = dumper.decode(grammar:dump(sequence_writer()):concat())
-assert(equal(grammar, grammar2))
+assert(grammar.start == "S")
+local code = grammar:encode()
+-- io.write(code)
+assert(equal(grammar, parser.grammar.decode(code)))
+
+local t = parser.syntax_tree()
+local b = t:builder()
+b.E = b.E * b["+"] * b.T
+    + b.T
+b.T = b.T * b["*"] * b.F
+    + b.F
+b.F = b["("] * b.E * b[")"]
+    + b.id
+
+t:write_graphviz(assert(io.open("test1.dot", "w"))):close()
+local grammar = t:to_grammar()
+t:write_graphviz(assert(io.open("test2.dot", "w"))):close()
 
 assert(grammar.start == "E")
-grammar.start = "T"
-assert(grammar.start == "T")
+local code = grammar:encode()
+-- io.write(code)
+assert(equal(grammar, parser.grammar.decode(code)))
 
 local symbols = linked_hash_table()
 for symbol, is_terminal_symbol in grammar:each_symbol() do
@@ -57,4 +71,4 @@ assert(equal(symbols, {
   id = true;
 }))
 
--- grammar:eliminate_left_recursion()
+
