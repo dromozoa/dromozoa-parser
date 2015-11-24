@@ -17,6 +17,7 @@
 
 local apply = require "dromozoa.commons.apply"
 local dumper = require "dromozoa.commons.dumper"
+local empty = require "dromozoa.commons.empty"
 local equal = require "dromozoa.commons.equal"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local keys = require "dromozoa.commons.keys"
@@ -83,7 +84,7 @@ function class:eliminate_immediate_left_recursion(head1, bodies)
       bodies1:push(sequence():copy(body):push(head2))
     end
   end
-  if #bodies2 > 0 then
+  if not empty(bodies2) then
     bodies2:push(sequence())
     prods[head1] = bodies1
     prods[head2] = bodies2
