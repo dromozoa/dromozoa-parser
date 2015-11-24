@@ -18,6 +18,7 @@
 local apply = require "dromozoa.commons.apply"
 local dumper = require "dromozoa.commons.dumper"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
+local sequence = require "dromozoa.commons.sequence"
 local sequence_writer = require "dromozoa.commons.sequence_writer"
 local set = require "dromozoa.commons.set"
 local dump = require "dromozoa.parser.grammar.dump"
@@ -70,8 +71,7 @@ function class:each_symbol()
 end
 
 function class:eliminate_left_recursion()
-  eliminate_left_recursion(self.prods)
-  return self
+  return eliminate_left_recursion(self)
 end
 
 function class:first_symbol(symbol)
@@ -103,6 +103,40 @@ function class:first_symbols(symbols)
   end
   first:insert(epsilon)
   return first
+end
+
+function class:make_followset()
+  local prods = self.prods
+  local start = self.start
+  local followset = linked_hash_table()
+  for head in prods:each() do
+    followset[head] = linked_hash_table()
+  end
+  followset[start]:insert({ "$" })
+  local done
+  repeat
+    done = true
+    for head, bodies in prods:each() do
+      for body in bodies:each() do
+        for i = 1, #body do
+          local symbol = body[i]
+          if prods[symbol] ~= nil then
+            local first = self:first_symbols(sequence():copy(body, i + 1))
+            local removed = first:remove({}) ~= nil
+            if set.union(followset[symbol], first) > 0 then
+              done = false
+            end
+            if removed then
+              if set.union(followset[symbol], followset[head]) > 0 then
+                done = false
+              end
+            end
+          end
+        end
+      end
+    end
+  until done
+  return followset
 end
 
 local metatable = {

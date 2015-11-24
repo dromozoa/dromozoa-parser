@@ -15,8 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local equal = require "dromozoa.commons.equal"
+local keys = require "dromozoa.commons.keys"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence_writer = require "dromozoa.commons.sequence_writer"
 local parser = require "dromozoa.parser"
@@ -84,3 +84,37 @@ b.T = b.F * b[{"T"}]
 b[{"T"}] = b["*"] * b.F * b[{"T"}] + b()
 b.F = b["("] * b.E * b[")"] + b.id
 assert(equal(grammar, t:to_grammar()))
+
+local data = linked_hash_table()
+data["("] = true
+data.id = true
+assert(equal(grammar:first_symbol("F"), data))
+assert(equal(grammar:first_symbol("T"), data))
+assert(equal(grammar:first_symbol("E"), data))
+local data = linked_hash_table()
+data["+"] = true
+data[{}] = true
+assert(equal(grammar:first_symbol({"E"}), data))
+local data = linked_hash_table()
+data["*"] = true
+data[{}] = true
+assert(equal(grammar:first_symbol({"T"}), data))
+
+local followset = grammar:make_followset()
+local data = linked_hash_table()
+data[")"] = true
+data[{"$"}] = true
+assert(equal(followset.E, data))
+assert(equal(followset[{"E"}], data))
+local data = linked_hash_table()
+data["+"] = true
+data[")"] = true
+data[{"$"}] = true
+assert(equal(followset.T, data))
+assert(equal(followset[{"T"}], data))
+local data = linked_hash_table()
+data["+"] = true
+data["*"] = true
+data[")"] = true
+data[{"$"}] = true
+assert(equal(followset.F, data))
