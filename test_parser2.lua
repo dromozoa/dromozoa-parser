@@ -17,6 +17,7 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local symbols = require "dromozoa.parser.symbols"
+local productions = require "dromozoa.parser.productions"
 
 --[[
 terminals / tokens
@@ -32,14 +33,20 @@ production
 
 local T = symbols("terminal")
 local N = symbols("nonterminal")
+local P = productions()
 
-local function production(...)
-  print(dumper.encode({ ... }, { pretty = true }))
-end
+P(N"expression", N"expression", T"+", N"term")
+P(N"expression", N"expression", T"-", N"term")
+P(N"expression", N"term")
+P(N"term", N"term", T"*", N"factor")
+P(N"term", N"term", T"/", N"factor")
+P(N"term", N"factor")
+P(N"factor", T"(", N"expression", T")")
+P(N"factor", T"id")
 
-production(N"expression", T"(", N"expression", T")")
 print(dumper.encode(T, { pretty = true }))
 print(dumper.encode(N, { pretty = true }))
+print(dumper.encode(P, { pretty = true }))
 
 
 
