@@ -26,6 +26,16 @@ function class.new(head, ...)
   }
 end
 
+function class:write(out)
+  self.head:write(out)
+  out:write(" &\\to&")
+  for s in self.body:each() do
+    out:write(" \\  ")
+    s:write(out)
+  end
+  return out
+end
+
 class.metatable = {
   __index = class;
 }

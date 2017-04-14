@@ -44,10 +44,8 @@ P(N"term", N"factor")
 P(N"factor", T"(", N"expression", T")")
 P(N"factor", T"id")
 
-print(dumper.encode(T, { pretty = true }))
-print(dumper.encode(N, { pretty = true }))
-print(dumper.encode(P, { pretty = true }))
+-- print(dumper.encode(T, { pretty = true }))
+-- print(dumper.encode(N, { pretty = true }))
+-- print(dumper.encode(P, { pretty = true }))
 
-
-
-
+P:write(io.stdout)

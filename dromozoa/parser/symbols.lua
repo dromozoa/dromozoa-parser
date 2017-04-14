@@ -38,7 +38,7 @@ function class.metatable:__call(name)
   if s == nil then
     local id = self.count + 1
     self.count = id
-    s = symbol(self.type, id)
+    s = symbol(self.type, id, name)
     symbols[name] = s
   end
   return s

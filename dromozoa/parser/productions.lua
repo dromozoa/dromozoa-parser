@@ -27,6 +27,22 @@ function class.new()
   }
 end
 
+function class:write(out)
+  out:write("\\begin{eqnarray}\n")
+  local first = true
+  for p in self.productions:each() do
+    if first then
+      first = false
+    else
+      out:write("\\\\\n")
+    end
+    out:write("  ")
+    p:write(out)
+  end
+  out:write("\n\\end{eqnarray}\n")
+  return out
+end
+
 class.metatable = {
   __index = class;
 }
