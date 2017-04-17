@@ -15,20 +15,23 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local symbol = require "dromozoa.parser.builder.symbol"
-
-local super = symbol
 local class = {}
 
-function class.new(tag, id, name, grammar)
-  local self = super(tag, id, name)
-  self.grammar = grammar
-  return self
+function class.new(id, name, grammar)
+  return {
+    id = id;
+    name = name;
+    grammar = grammar;
+  }
 end
 
 function class:body(...)
   self.grammar:production(self, ...)
   return self
+end
+
+function class:translate(max_terminal_symbol)
+  return self.id + max_terminal_symbol
 end
 
 class.metatable = {
@@ -37,8 +40,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __index = super;
-  __call = function (_, tag, id, name, grammar)
-    return setmetatable(class.new(tag, id, name, grammar), class.metatable)
+  __call = function (_, id, name, grammar)
+    return setmetatable(class.new(id, name, grammar), class.metatable)
   end;
 })

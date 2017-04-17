@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
 local grammar = require "dromozoa.parser.builder.grammar"
 
 --[[
@@ -47,8 +48,5 @@ _"factor"
     ("(", _"expression", ")")
     ("id")
 
-local g = _:build(_"expression")
-
-
-
-
+local g = _()
+print(dumper.encode(g, { pretty = true }))

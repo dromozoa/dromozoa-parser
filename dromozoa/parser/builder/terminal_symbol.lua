@@ -17,12 +17,15 @@
 
 local class = {}
 
-function class.new(tag, id, name)
+function class.new(id, name)
   return {
-    tag = tag;
     id = id;
     name = name;
   }
+end
+
+function class:translate()
+  return self.id
 end
 
 class.metatable = {
@@ -30,7 +33,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, tag, id, name)
-    return setmetatable(class.new(tag, id, name), class.metatable)
+  __call = function (_, id, name)
+    return setmetatable(class.new(id, name), class.metatable)
   end;
 })

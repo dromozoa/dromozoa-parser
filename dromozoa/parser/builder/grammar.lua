@@ -18,8 +18,8 @@
 local ipairs = require "dromozoa.commons.ipairs"
 local sequence = require "dromozoa.commons.sequence"
 local nonterminal_symbol = require "dromozoa.parser.builder.nonterminal_symbol"
-local symbol = require "dromozoa.parser.builder.symbol"
 local symbol_table = require "dromozoa.parser.builder.symbol_table"
+local terminal_symbol = require "dromozoa.parser.builder.terminal_symbol"
 
 local class = {}
 
@@ -32,28 +32,61 @@ function class.new()
 end
 
 function class:terminal_symbol(name)
-  return symbol("terminal", self.terminal_symbols:symbol(name), name)
+  return terminal_symbol(self.terminal_symbols:symbol(name), name)
 end
 
 function class:nonterminal_symbol(name)
-  return nonterminal_symbol("nonterminal", self.nonterminal_symbols:symbol(name), name, self)
+  return nonterminal_symbol(self.nonterminal_symbols:symbol(name), name, self)
 end
 
-function class:production(...)
-  local production = sequence():push(...)
-  for i, symbol in ipairs(production) do
+function class:production(head, ...)
+  local body = sequence():push(...)
+  for i, symbol in ipairs(body) do
     if type(symbol) == "string" then
-      production[i] = self:terminal_symbol(symbol)
+      body[i] = self:terminal_symbol(symbol)
     end
   end
-  self.productions:push(production)
+  self.productions:push({ head = head, body = body })
   return self
+end
+
+function class:build(start_symbol)
+  local terminal_symbols = self.terminal_symbols
+  local nonterminal_symbols = self.nonterminal_symbols
+  local productions = self.productions
+
+  if start_symbol == nil then
+    start_symbol = productions[1].head
+  end
+
+  local max_terminal_symbol = terminal_symbols.n
+
+  local productions = sequence()
+  for production in self.productions:each() do
+    local head = production.head
+    local body = production.body
+  end
+
+  local symbols = sequence()
+
+  return {
+    start_symbol = start_symbol:translate(max_terminal_symbol)
+  }
+
+  -- local symbol_table = {}
 end
 
 class.metatable = {
   __index = class;
-  __call = class.nonterminal_symbol;
 }
+
+function class.metatable:__call(symbol)
+  if type(symbol) == "string" then
+    return self:nonterminal_symbol(symbol)
+  else
+    return self:build(symbol)
+  end
+end
 
 return setmetatable(class, {
   __call = function ()
