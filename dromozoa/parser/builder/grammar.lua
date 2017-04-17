@@ -18,6 +18,7 @@
 local ipairs = require "dromozoa.commons.ipairs"
 local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
+local grammar = require "dromozoa.parser.grammar"
 local nonterminal_symbol = require "dromozoa.parser.builder.nonterminal_symbol"
 local symbol_table = require "dromozoa.parser.builder.symbol_table"
 local terminal_symbol = require "dromozoa.parser.builder.terminal_symbol"
@@ -40,14 +41,14 @@ function class:nonterminal_symbol(name)
   return nonterminal_symbol(self.nonterminal_symbols:symbol(name), self)
 end
 
-function class:production(head, ...)
-  local body = sequence():push(...)
-  for i, symbol in ipairs(body) do
+function class:production(...)
+  local production = sequence():push(...)
+  for i, symbol in ipairs(production) do
     if type(symbol) == "string" then
-      body[i] = self:terminal_symbol(symbol)
+      production[i] = self:terminal_symbol(symbol)
     end
   end
-  self.productions:push({ head = head, body = body })
+  self.productions:push(production)
   return self
 end
 
@@ -57,24 +58,21 @@ function class:build(start_symbol)
   local productions = self.productions
 
   if start_symbol == nil then
-    start_symbol = productions[1].head
+    start_symbol = productions[1][1]
   end
 
   local max_terminal_symbol = terminal_symbols.n
 
-  local productions = sequence()
+  local translated_productions = sequence()
   for production in self.productions:each() do
-    local body = sequence()
-    for symbol in production.body:each() do
-      body:push(symbol:translate(max_terminal_symbol))
+    local translated_production = sequence()
+    for symbol in production:each() do
+      translated_production:push(symbol:translate(max_terminal_symbol))
     end
-    productions:push({
-      head = production.head:translate(max_terminal_symbol);
-      body = body;
-    })
+    translated_productions:push(translated_production)
   end
 
-  local symbols = {}
+  local symbols = sequence()
   for name, id in pairs(terminal_symbols.map) do
     symbols[id] = name
   end
@@ -82,12 +80,7 @@ function class:build(start_symbol)
     symbols[id + max_terminal_symbol] = name
   end
 
-  return {
-    start_symbol = start_symbol:translate(max_terminal_symbol);
-    productions = productions;
-    symbols = symbols;
-    max_terminal_symbol = max_terminal_symbol;
-  }
+  return grammar(start_symbol:translate(max_terminal_symbol), max_terminal_symbol, translated_productions, symbols)
 end
 
 class.metatable = {
