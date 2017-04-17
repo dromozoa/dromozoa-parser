@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local ipairs = require "dromozoa.commons.ipairs"
+local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
 local nonterminal_symbol = require "dromozoa.parser.builder.nonterminal_symbol"
 local symbol_table = require "dromozoa.parser.builder.symbol_table"
@@ -63,17 +64,30 @@ function class:build(start_symbol)
 
   local productions = sequence()
   for production in self.productions:each() do
-    local head = production.head
-    local body = production.body
+    local body = sequence()
+    for symbol in production.body:each() do
+      body:push(symbol:translate(max_terminal_symbol))
+    end
+    productions:push({
+      head = production.head:translate(max_terminal_symbol);
+      body = body;
+    })
   end
 
-  local symbols = sequence()
+  local symbols = {}
+  for name, id in pairs(terminal_symbols.map) do
+    symbols[id] = name
+  end
+  for name, id in pairs(nonterminal_symbols.map) do
+    symbols[id + max_terminal_symbol] = name
+  end
 
   return {
-    start_symbol = start_symbol:translate(max_terminal_symbol)
+    start_symbol = start_symbol:translate(max_terminal_symbol);
+    productions = productions;
+    symbols = symbols;
+    max_terminal_symbol = max_terminal_symbol;
   }
-
-  -- local symbol_table = {}
 end
 
 class.metatable = {
