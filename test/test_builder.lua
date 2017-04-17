@@ -18,22 +18,6 @@
 local dumper = require "dromozoa.commons.dumper"
 local grammar = require "dromozoa.parser.builder.grammar"
 
---[[
-terminals / tokens
-nonterminals
-grammar
-start symbol
-productions
-production
-  head / left side
-  -> / ::=
-  body / right side
-
-terminal 1, 2, ...
-nonterminal -1, -2, ...
-
-]]
-
 local _ = grammar()
 
 _"expression"

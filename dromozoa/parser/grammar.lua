@@ -17,12 +17,12 @@
 
 local class = {}
 
-function class.new(start_symbol, max_terminal_symbol, productions, symbols)
+function class.new(productions, symbols, max_terminal_symbol, start_symbol)
   return {
-    start_symbol = start_symbol;
-    max_terminal_symbol = max_terminal_symbol;
     productions = productions;
     symbols = symbols;
+    max_terminal_symbol = max_terminal_symbol;
+    start_symbol = start_symbol;
   }
 end
 

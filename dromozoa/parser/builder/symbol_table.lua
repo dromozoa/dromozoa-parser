@@ -15,6 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local pairs = require "dromozoa.commons.pairs"
+
 local class = {}
 
 function class.new()
@@ -33,6 +35,18 @@ function class:symbol(name)
     map[name] = id
   end
   return id
+end
+
+function class:max()
+  return self.n
+end
+
+function class:each()
+  return coroutine.wrap(function ()
+    for name, id in pairs(self.map) do
+      coroutine.yield(id, name)
+    end
+  end)
 end
 
 class.metatable = {
