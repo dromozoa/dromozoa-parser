@@ -15,43 +15,29 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
-local production = require "dromozoa.parser.production"
-
 local class = {}
 
 function class.new()
   return {
-    count = 0;
-    productions = sequence()
+    n = 0;
+    map = {};
   }
 end
 
-function class:write(out)
-  out:write("\\begin{eqnarray}\n")
-  local first = true
-  for p in self.productions:each() do
-    if first then
-      first = false
-    else
-      out:write("\\\\\n")
-    end
-    out:write("  ")
-    p:write(out)
+function class:symbol(name)
+  local map = self.map
+  local id = map[name]
+  if id == nil then
+    id = self.n + 1
+    self.n = id
+    map[name] = id
   end
-  out:write("\n\\end{eqnarray}\n")
-  return out
+  return id
 end
 
 class.metatable = {
   __index = class;
 }
-
-function class.metatable:__call(head, ...)
-  local p = production(head, ...)
-  self.productions:push(p)
-  return p
-end
 
 return setmetatable(class, {
   __call = function ()

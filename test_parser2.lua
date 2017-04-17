@@ -15,9 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-local symbols = require "dromozoa.parser.symbols"
-local productions = require "dromozoa.parser.productions"
+local grammar = require "dromozoa.parser.builder.grammar"
 
 --[[
 terminals / tokens
@@ -29,23 +27,28 @@ production
   head / left side
   -> / ::=
   body / right side
+
+terminal 1, 2, ...
+nonterminal -1, -2, ...
+
 ]]
 
-local T = symbols("terminal")
-local N = symbols("nonterminal")
-local P = productions()
+local _ = grammar()
 
-P(N"expression", N"expression", T"+", N"term")
-P(N"expression", N"expression", T"-", N"term")
-P(N"expression", N"term")
-P(N"term", N"term", T"*", N"factor")
-P(N"term", N"term", T"/", N"factor")
-P(N"term", N"factor")
-P(N"factor", T"(", N"expression", T")")
-P(N"factor", T"id")
+_"expression"
+    (_"expression", "+", _"term")
+    (_"expression", "-", _"term")
+    (_"term")
+_"term"
+    (_"term", "*", _"factor")
+    (_"term", "/", _"factor")
+    (_"factor")
+_"factor"
+    ("(", _"expression", ")")
+    ("id")
 
--- print(dumper.encode(T, { pretty = true }))
--- print(dumper.encode(N, { pretty = true }))
--- print(dumper.encode(P, { pretty = true }))
+local g = _:build(_"expression")
 
-P:write(io.stdout)
+
+
+

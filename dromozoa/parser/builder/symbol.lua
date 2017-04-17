@@ -17,21 +17,12 @@
 
 local class = {}
 
-function class.new(type, id, name)
+function class.new(tag, id, name)
   return {
-    type = type;
+    tag = tag;
     id = id;
     name = name;
   }
-end
-
-function class:write(out)
-  if self.type == "terminal" then
-    out:write("\\mathbf{", self.name, "}")
-  else
-    out:write("\\mathit{", self.name, "}")
-  end
-  return out
 end
 
 class.metatable = {
@@ -39,7 +30,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, type, id, name)
-    return setmetatable(class.new(type, id, name), class.metatable)
+  __call = function (_, tag, id, name)
+    return setmetatable(class.new(tag, id, name), class.metatable)
   end;
 })

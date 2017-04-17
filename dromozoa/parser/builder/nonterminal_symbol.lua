@@ -15,37 +15,30 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local symbol = require "dromozoa.parser.symbol"
+local symbol = require "dromozoa.parser.builder.symbol"
 
+local super = symbol
 local class = {}
 
-function class.new(type)
-  return {
-    type = type;
-    count = 0;
-    symbols = linked_hash_table();
-  }
+function class.new(tag, id, name, grammar)
+  local self = super(tag, id, name)
+  self.grammar = grammar
+  return self
+end
+
+function class:body(...)
+  self.grammar:production(self, ...)
+  return self
 end
 
 class.metatable = {
   __index = class;
+  __call = class.body;
 }
 
-function class.metatable:__call(name)
-  local symbols = self.symbols
-  local s = symbols[name]
-  if s == nil then
-    local id = self.count + 1
-    self.count = id
-    s = symbol(self.type, id, name)
-    symbols[name] = s
-  end
-  return s
-end
-
 return setmetatable(class, {
-  __call = function (_, type)
-    return setmetatable(class.new(type), class.metatable)
+  __index = super;
+  __call = function (_, tag, id, name, grammar)
+    return setmetatable(class.new(tag, id, name, grammar), class.metatable)
   end;
 })
