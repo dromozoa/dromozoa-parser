@@ -17,10 +17,9 @@
 
 local class = {}
 
-function class.new(id, name)
+function class.new(id)
   return {
     id = id;
-    name = name;
   }
 end
 
@@ -33,7 +32,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, id, name)
-    return setmetatable(class.new(id, name), class.metatable)
+  __call = function (_, id)
+    return setmetatable(class.new(id), class.metatable)
   end;
 })

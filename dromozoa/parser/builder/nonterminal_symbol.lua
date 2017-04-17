@@ -17,10 +17,9 @@
 
 local class = {}
 
-function class.new(id, name, grammar)
+function class.new(id, grammar)
   return {
     id = id;
-    name = name;
     grammar = grammar;
   }
 end
@@ -40,7 +39,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, id, name, grammar)
-    return setmetatable(class.new(id, name, grammar), class.metatable)
+  __call = function (_, id, grammar)
+    return setmetatable(class.new(id, grammar), class.metatable)
   end;
 })

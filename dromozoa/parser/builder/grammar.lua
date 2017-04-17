@@ -33,11 +33,11 @@ function class.new()
 end
 
 function class:terminal_symbol(name)
-  return terminal_symbol(self.terminal_symbols:symbol(name), name)
+  return terminal_symbol(self.terminal_symbols:symbol(name))
 end
 
 function class:nonterminal_symbol(name)
-  return nonterminal_symbol(self.nonterminal_symbols:symbol(name), name, self)
+  return nonterminal_symbol(self.nonterminal_symbols:symbol(name), self)
 end
 
 function class:production(head, ...)
