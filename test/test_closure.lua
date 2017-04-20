@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
+local ipairs = require "dromozoa.commons.ipairs"
 local sequence = require "dromozoa.commons.sequence"
 local grammar = require "dromozoa.parser.builder.grammar"
 
@@ -49,22 +50,27 @@ _"T" (_"T", "*", _"F") (_"F")
 _"F" ("(", _"E", ")") ("id")
 
 local g = _():argument()
-print(dumper.encode(g, { pretty = true }))
+-- print(dumper.encode(g, { pretty = true }))
 
 -- E' -> E
 local I = sequence():push(sequence():push(7, 2))
 local J = g:closure(I)
 -- print(dumper.encode(J, { pretty = true }))
 
-print("--")
-dump_set_of_items(g, J)
+-- print("--")
+-- dump_set_of_items(g, J)
 
 local I = sequence()
   :push(sequence():push(7, 3))
   :push(sequence():push(1, 3))
-print("--")
-dump_set_of_items(g, I)
+-- print("--")
+-- dump_set_of_items(g, I)
 local J = g:goto_(I, 1)
-print("--")
-dump_set_of_items(g, J)
+-- print("--")
+-- dump_set_of_items(g, J)
 
+local C = g:items()
+for i, I in ipairs(C) do
+  io.write(("======== I_%d ==========\n"):format(i))
+  dump_set_of_items(g, C[i])
+end

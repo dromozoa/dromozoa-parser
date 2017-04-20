@@ -16,6 +16,8 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local clone = require "dromozoa.commons.clone"
+local empty = require "dromozoa.commons.empty"
+local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
 local sequence = require "dromozoa.commons.sequence"
 
@@ -110,6 +112,34 @@ function class:goto_(I, X)
     end
   end
   return self:closure(J)
+end
+
+function class:items()
+  local productions = self.productions
+  local symbols = self.symbols
+  local start_symbol = self.start_symbol
+  local C = sequence()
+  for id, production in ipairs(productions) do
+    if production[1] == start_symbol then
+      C:push(self:closure(sequence():push(sequence():push(id, 2))))
+      break
+    end
+  end
+  local added = hash_table()
+  local added_C
+  repeat
+    added_C = false
+    for I in C:each() do
+      for X in ipairs(symbols) do
+        local goto_ = self:goto_(I, X)
+        if not empty(goto_) and added:insert(goto_, true) == nil then
+          C:push(goto_)
+          added_C = true
+        end
+      end
+    end
+  until not added_C
+  return C
 end
 
 class.metatable = {
