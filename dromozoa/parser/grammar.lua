@@ -31,11 +31,11 @@ function class.new(productions, symbols, max_terminal_symbol, start_symbol)
 end
 
 function class:is_terminal_symbol(symbol)
-  return symbol <= self.max_terminal_symbol
+  return symbol ~= nil and symbol <= self.max_terminal_symbol
 end
 
 function class:is_nonterminal_symbol(symbol)
-  return symbol > self.max_terminal_symbol
+  return symbol ~= nil and symbol > self.max_terminal_symbol
 end
 
 function class:symbol_name(symbol)
@@ -96,6 +96,20 @@ function class:closure(I)
     end
   until not added_J
   return J
+end
+
+function class:goto_(I, X)
+  local productions = self.productions
+  local J = sequence()
+  for items in I:each() do
+    local production = productions[items[1]]
+    local dot = items[2]
+    local symbol = production[dot]
+    if symbol == X then
+      J:push(sequence():push(items[1], dot + 1))
+    end
+  end
+  return self:closure(J)
 end
 
 class.metatable = {

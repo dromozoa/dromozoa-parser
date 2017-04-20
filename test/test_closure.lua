@@ -49,11 +49,22 @@ _"T" (_"T", "*", _"F") (_"F")
 _"F" ("(", _"E", ")") ("id")
 
 local g = _():argument()
--- print(dumper.encode(g, { pretty = true }))
+print(dumper.encode(g, { pretty = true }))
 
 -- E' -> E
 local I = sequence():push(sequence():push(7, 2))
 local J = g:closure(I)
 -- print(dumper.encode(J, { pretty = true }))
 
+print("--")
 dump_set_of_items(g, J)
+
+local I = sequence()
+  :push(sequence():push(7, 3))
+  :push(sequence():push(1, 3))
+print("--")
+dump_set_of_items(g, I)
+local J = g:goto_(I, 1)
+print("--")
+dump_set_of_items(g, J)
+
