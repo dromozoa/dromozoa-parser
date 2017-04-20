@@ -73,7 +73,7 @@ function class:set_of_items()
   return set_of_items
 end
 
-function class:closure(I)
+function class:lr0_closure(I)
   local productions = self.productions
   local J = clone(I)
   local added = {}
@@ -100,7 +100,7 @@ function class:closure(I)
   return J
 end
 
-function class:goto_(I, X)
+function class:lr0_goto(I, X)
   local productions = self.productions
   local J = sequence()
   for items in I:each() do
@@ -111,17 +111,17 @@ function class:goto_(I, X)
       J:push(sequence():push(items[1], dot + 1))
     end
   end
-  return self:closure(J)
+  return self:lr0_closure(J)
 end
 
-function class:items()
+function class:lr0_items()
   local productions = self.productions
   local symbols = self.symbols
   local start_symbol = self.start_symbol
   local C = sequence()
   for id, production in ipairs(productions) do
     if production[1] == start_symbol then
-      C:push(self:closure(sequence():push(sequence():push(id, 2))))
+      C:push(self:lr0_closure(sequence():push(sequence():push(id, 2))))
       break
     end
   end
@@ -131,7 +131,7 @@ function class:items()
     added_C = false
     for I in C:each() do
       for X in ipairs(symbols) do
-        local goto_ = self:goto_(I, X)
+        local goto_ = self:lr0_goto(I, X)
         if not empty(goto_) and added:insert(goto_, true) == nil then
           C:push(goto_)
           added_C = true

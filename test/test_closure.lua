@@ -54,7 +54,7 @@ local g = _():argument()
 
 -- E' -> E
 local I = sequence():push(sequence():push(7, 2))
-local J = g:closure(I)
+local J = g:lr0_closure(I)
 -- print(dumper.encode(J, { pretty = true }))
 
 -- print("--")
@@ -65,11 +65,11 @@ local I = sequence()
   :push(sequence():push(1, 3))
 -- print("--")
 -- dump_set_of_items(g, I)
-local J = g:goto_(I, 1)
+local J = g:lr0_goto(I, 1)
 -- print("--")
 -- dump_set_of_items(g, J)
 
-local C = g:items()
+local C = g:lr0_items()
 for i, I in ipairs(C) do
   io.write(("======== I_%d ==========\n"):format(i))
   dump_set_of_items(g, C[i])
