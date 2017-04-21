@@ -19,9 +19,13 @@ local clone = require "dromozoa.commons.clone"
 local empty = require "dromozoa.commons.empty"
 local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
+local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
+local set = require "dromozoa.commons.set"
 
 local class = {}
+
+local epsilon = -1
 
 function class.new(productions, symbols, max_terminal_symbol, start_symbol)
   return {
@@ -33,7 +37,7 @@ function class.new(productions, symbols, max_terminal_symbol, start_symbol)
 end
 
 function class:is_terminal_symbol(symbol)
-  return symbol ~= nil and symbol <= self.max_terminal_symbol
+  return symbol ~= nil and 0 < symbol and symbol <= self.max_terminal_symbol
 end
 
 function class:is_nonterminal_symbol(symbol)
@@ -140,6 +144,67 @@ function class:lr0_items()
     end
   until not added_C
   return C
+end
+
+function class:first_symbol(X)
+  local first = linked_hash_table()
+  if self:is_terminal_symbol(X) then
+    first:insert(X, true)
+    return first
+  else
+    for production in self.productions:each() do
+      if production[1] == X then
+        if #production == 1 then
+          first:insert(epsilon)
+        else
+          local have_epsilon
+          for i = 2, #production do
+            local f = self:first_symbol(production[i])
+            have_epsilon = f[epsilon]
+            f[epsilon] = nil
+            set.union(first, f)
+            if not have_epsilon then
+              break
+            end
+          end
+          if have_epsilon then
+            first:insert(epsilon)
+          end
+        end
+      end
+    end
+    return first
+  end
+end
+
+function class:first_symbols(symbols)
+  local first = linked_hash_table()
+  for symbol in symbols:each() do
+    local f = self:first_symbol(symbol)
+    local have_epsilon = f[epsilon]
+    f[epsilon] = nil
+    set_union(first, f)
+    if not have_epsilon then
+      return first
+    end
+  end
+  first[epsilon] = true
+  return first
+end
+
+function class:lr1_closure(I)
+  local productions = self.productions
+  local added = {}
+  local added_I
+  repeat
+    added_I = false
+    for items in I:each() do
+      local production = productions[items[1]]
+      local dot = items[2]
+      local a = items[3]
+    end
+  until not added_I
+  return I
 end
 
 class.metatable = {
