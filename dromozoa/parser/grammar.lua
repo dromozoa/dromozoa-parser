@@ -22,10 +22,12 @@ local ipairs = require "dromozoa.commons.ipairs"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
+local unpack = require "dromozoa.commons.unpack"
 
 local class = {}
 
 local epsilon = -1
+local eof = 0
 
 function class.new(productions, symbols, max_terminal_symbol, start_symbol)
   return {
@@ -37,7 +39,7 @@ function class.new(productions, symbols, max_terminal_symbol, start_symbol)
 end
 
 function class:is_terminal_symbol(symbol)
-  return symbol ~= nil and 0 < symbol and symbol <= self.max_terminal_symbol
+  return symbol ~= nil and symbol <= self.max_terminal_symbol
 end
 
 function class:is_nonterminal_symbol(symbol)
@@ -183,7 +185,7 @@ function class:first_symbols(symbols)
     local f = self:first_symbol(symbol)
     local have_epsilon = f[epsilon]
     f[epsilon] = nil
-    set_union(first, f)
+    set.union(first, f)
     if not have_epsilon then
       return first
     end
@@ -194,17 +196,77 @@ end
 
 function class:lr1_closure(I)
   local productions = self.productions
-  local added = {}
+  local added = hash_table()
   local added_I
   repeat
     added_I = false
     for items in I:each() do
       local production = productions[items[1]]
       local dot = items[2]
+      local symbol = production[dot]
       local a = items[3]
+      if self:is_nonterminal_symbol(symbol) then
+        local symbols = sequence():push(unpack(production, dot + 1)):push(a)
+        for id, B in ipairs(productions) do
+          if B[1] == symbol then
+            local f = self:first_symbols(symbols)
+            for b in f:each() do
+              local item = sequence():push(id, 2, b)
+              if added:insert(item) == nil then
+                I:push(item)
+                added_I = true
+              end
+            end
+          end
+        end
+      end
     end
   until not added_I
   return I
+end
+
+function class:lr1_goto(I, X)
+  local productions = self.productions
+  local J = sequence()
+  for item in I:each() do
+    local id = item[1]
+    local production = productions[id]
+    local dot = item[2]
+    local symbol = production[dot]
+    local a = item[3]
+    if symbol == X then
+      J:push(sequence():push(id, dot + 1, a))
+    end
+  end
+  return self:lr1_closure(J)
+end
+
+function class:lr1_items() -- not used LALR(1)
+  local productions = self.productions
+  local symbols = self.symbols
+  local start_symbol = self.start_symbol
+  local C = sequence()
+  for id, production in ipairs(productions) do
+    if production[1] == start_symbol then
+      C:push(self:lr1_closure(sequence():push(sequence():push(id, 2, eof))))
+      break
+    end
+  end
+  local added = hash_table()
+  local added_C
+  repeat
+    added_C = false
+    for I in C:each() do
+      for X in ipairs(symbols) do
+        local goto_ = self:lr1_goto(I, X)
+        if not empty(goto_) and added:insert(goto_, true) == nil then
+          C:push(goto_)
+          added_C = true
+        end
+      end
+    end
+  until not added_C
+  return C
 end
 
 class.metatable = {
