@@ -29,14 +29,14 @@ local function dump_set_of_items(g, set_of_items)
   for items in set_of_items:each() do
     local production = productions[items[1]]
     local dot = items[2]
-    io.write(symbols[production[1]], " ", TO)
-    for i = 2, #production do
+    io.write(symbols[production.head], " ", TO)
+    for i = 1, #production.body do
       if i == dot then
         io.write(" ", DOT)
       end
-      io.write(" ", symbols[production[i]])
+      io.write(" ", symbols[production.body[i]])
     end
-    if dot == #production + 1 then
+    if dot == #production.body + 1 then
       io.write(" ", DOT)
     end
     io.write("\n")
@@ -50,15 +50,17 @@ _"T" (_"T", "*", _"F") (_"F")
 _"F" ("(", _"E", ")") ("id")
 
 local g = _():argument()
--- print(dumper.encode(g, { pretty = true }))
+print(dumper.encode(g, { pretty = true }))
 
--- E' -> E
-local I = sequence():push(sequence():push(7, 2))
+-- E' -> dot E
+local I = sequence():push(sequence():push(7, 1))
 local J = g:lr0_closure(I)
 -- print(dumper.encode(J, { pretty = true }))
 
--- print("--")
--- dump_set_of_items(g, J)
+print("--")
+dump_set_of_items(g, J)
+
+os.exit()
 
 local I = sequence()
   :push(sequence():push(7, 3))

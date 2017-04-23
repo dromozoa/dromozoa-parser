@@ -91,12 +91,12 @@ function class:lr0_closure(I)
     for items in J:each() do
       local production = productions[items[1]]
       local dot = items[2]
-      local symbol = production[dot]
+      local symbol = production.body[dot]
       if self:is_nonterminal_symbol(symbol) then
         if not added[symbol] then
           for id, production in ipairs(productions) do
-            if production[1] == symbol then
-              J:push(sequence():push(id, 2))
+            if production.head == symbol then
+              J:push(sequence():push(id, 1))
               added_J = true
             end
           end
