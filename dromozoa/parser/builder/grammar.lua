@@ -40,14 +40,14 @@ function class:nonterminal_symbol(name)
   return nonterminal_symbol(self.nonterminal_symbols:symbol(name), self)
 end
 
-function class:production(...)
-  local production = sequence():push(...)
-  for i, symbol in ipairs(production) do
+function class:production(head, ...)
+  local body = sequence():push(...)
+  for i, symbol in ipairs(body) do
     if type(symbol) == "string" then
-      production[i] = self:terminal_symbol(symbol)
+      body[i] = self:terminal_symbol(symbol)
     end
   end
-  self.productions:push(production)
+  self.productions:push({ head = head, body = body })
   return self
 end
 
@@ -57,18 +57,19 @@ function class:build(start_symbol)
   local productions = self.productions
 
   if start_symbol == nil then
-    start_symbol = productions[1][1]
+    start_symbol = productions[1].head
   end
 
   local max_terminal_symbol = terminal_symbols:max()
 
-  local translated_productions = sequence()
+  local productions = sequence()
   for production in self.productions:each() do
-    local translated_production = sequence()
-    for symbol in production:each() do
-      translated_production:push(symbol:translate(max_terminal_symbol))
+    local head = production.head:translate(max_terminal_symbol)
+    local body = sequence()
+    for symbol in production.body:each() do
+      body:push(symbol:translate(max_terminal_symbol))
     end
-    translated_productions:push(translated_production)
+    productions:push({ head = head, body = body })
   end
 
   local symbols = sequence()
@@ -79,7 +80,7 @@ function class:build(start_symbol)
     symbols[id + max_terminal_symbol] = name
   end
 
-  return grammar(translated_productions, symbols, max_terminal_symbol, start_symbol:translate(max_terminal_symbol))
+  return grammar(productions, symbols, max_terminal_symbol, start_symbol:translate(max_terminal_symbol))
 end
 
 class.metatable = {

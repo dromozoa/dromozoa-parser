@@ -57,8 +57,9 @@ function class:create_nonterminal_symbol(name)
   return #symbols
 end
 
-function class:create_production(...)
-  self.productions:push(sequence():push(...))
+function class:create_production(head, ...)
+  local body = sequence():push(...)
+  self.productions:push({ head = head, body = body })
   return self
 end
 
