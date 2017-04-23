@@ -47,7 +47,10 @@ function class:production(head, ...)
       body[i] = self:terminal_symbol(symbol)
     end
   end
-  self.productions:push({ head = head, body = body })
+  self.productions:push({
+    head = head;
+    body = body;
+  })
   return self
 end
 
@@ -64,12 +67,14 @@ function class:build(start_symbol)
 
   local productions = sequence()
   for production in self.productions:each() do
-    local head = production.head:translate(max_terminal_symbol)
     local body = sequence()
     for symbol in production.body:each() do
       body:push(symbol:translate(max_terminal_symbol))
     end
-    productions:push({ head = head, body = body })
+    productions:push({
+      head = production.head:translate(max_terminal_symbol);
+      body = body;
+    })
   end
 
   local symbols = sequence()
