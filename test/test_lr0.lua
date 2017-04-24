@@ -28,15 +28,16 @@ local function dump_items(g, items)
   local symbols = g.symbols
   for item in items:each() do
     local production = productions[item.id]
+    local body = production.body
     local dot = item.dot
     io.write(symbols[production.head], " ", TO)
-    for i, symbol in ipairs(production.body) do
+    for i, symbol in ipairs(body) do
       if i == dot then
         io.write(" ", DOT)
       end
       io.write(" ", symbols[symbol])
     end
-    if dot == #production.body + 1 then
+    if dot == #body + 1 then
       io.write(" ", DOT)
     end
     io.write("\n")
@@ -50,28 +51,46 @@ _"T" (_"T", "*", _"F") (_"F")
 _"F" ("(", _"E", ")") ("id")
 
 local g = _():argument()
-print(dumper.encode(g, { pretty = true }))
+-- print("--")
+-- print(dumper.encode(g, { pretty = true }))
 
 -- E' -> dot E
 local I = sequence():push():push({ id = 7, dot = 1 })
+-- print("--")
 -- print(dumper.encode(I, { pretty = true }))
+-- dump_items(g, I)
+
+-- E' -> dot E
+-- E -> dot E + T
+-- E -> dot T
+-- T -> dot T * F
+-- T -> dot F
+-- F -> dot ( E )
+-- F -> dot id
 local J = g:lr0_closure(I)
+-- print("--")
 -- print(dumper.encode(J, { pretty = true }))
+-- dump_items(g, J)
 
-print("--")
-dump_items(g, J)
-
+-- E' -> E dot
+-- E -> E dot + T
 local I = sequence()
   :push({ id = 7, dot = 2 })
   :push({ id = 1, dot = 2 })
-print("--")
-dump_items(g, I)
+-- print("--")
+-- dump_items(g, I)
+
+-- E -> E + dot T
+-- T -> dot T * F
+-- T -> dot F
+-- F -> dot ( E )
+-- F -> dot id
 local J = g:lr0_goto(I, 1)
-print("--")
-dump_items(g, J)
+-- print("--")
+-- dump_items(g, J)
 
 local C = g:lr0_items()
 for i, I in ipairs(C) do
   io.write(("======== I_%d ==========\n"):format(i))
-  dump_items(g, C[i])
+  dump_items(g, I)
 end

@@ -128,6 +128,7 @@ function class:lr0_items()
   repeat
     local done = true
     for items in result:each() do
+      -- [TODO] 全部のシンボルについて試す必要はない
       for symbol in ipairs(self.symbols) do
         local to_items = self:lr0_goto(items, symbol)
         if not empty(to_items) and added:insert(to_items) == nil then
@@ -137,6 +138,7 @@ function class:lr0_items()
       end
     end
   until done
+  -- [TODO] GOTO関係の保持は？
   return result
 end
 
