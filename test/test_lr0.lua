@@ -27,8 +27,8 @@ local function dump_set_of_items(g, set_of_items)
   local productions = g.productions
   local symbols = g.symbols
   for items in set_of_items:each() do
-    local production = productions[items[1]]
-    local dot = items[2]
+    local production = productions[items.production]
+    local dot = items[items.dot]
     io.write(symbols[production.head], " ", TO)
     for i = 1, #production.body do
       if i == dot then
@@ -53,7 +53,8 @@ local g = _():argument()
 print(dumper.encode(g, { pretty = true }))
 
 -- E' -> dot E
-local I = sequence():push(sequence():push(7, 1))
+local I = sequence():push():push({ production = 7, dot = 1 })
+-- print(dumper.encode(I, { pretty = true }))
 local J = g:lr0_closure(I)
 -- print(dumper.encode(J, { pretty = true }))
 
@@ -63,8 +64,8 @@ dump_set_of_items(g, J)
 os.exit()
 
 local I = sequence()
-  :push(sequence():push(7, 3))
-  :push(sequence():push(1, 3))
+  :push(sequence():push(7, 2))
+  :push(sequence():push(1, 2))
 -- print("--")
 -- dump_set_of_items(g, I)
 local J = g:lr0_goto(I, 1)

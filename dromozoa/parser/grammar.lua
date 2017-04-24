@@ -68,17 +68,28 @@ function class:argument()
   local new_start_symbol = self:create_nonterminal_symbol(self:symbol_name(start_symbol) .. "'")
   self:create_production(new_start_symbol, start_symbol)
   self.start_symbol = new_start_symbol
+  self.argumented = true
   return self
 end
 
 function class:set_of_items()
   local set_of_items = sequence()
   for id, production in ipairs(self.productions) do
-    for i = 1, #production + 1 do
+    for i = 1, #production.body + 1 do
       set_of_items:push(sequence():push(id, i))
     end
   end
   return set_of_items
+end
+
+function class:each_production(head)
+  return coroutine.wrap(function ()
+    for id, production in ipairs(self.productions) do
+      if production.head == head then
+        coroutine.yield(id, production)
+      end
+    end
+  end)
 end
 
 function class:lr0_closure(I)
@@ -88,17 +99,17 @@ function class:lr0_closure(I)
   local added_J
   repeat
     added_J = false
-    for items in J:each() do
-      local production = productions[items[1]]
-      local dot = items[2]
-      local symbol = production.body[dot]
+    for item in J:each() do
+      local production = productions[item.production]
+      local symbol = production.body[item.dot]
       if self:is_nonterminal_symbol(symbol) then
         if not added[symbol] then
-          for id, production in ipairs(productions) do
-            if production.head == symbol then
-              J:push(sequence():push(id, 1))
-              added_J = true
-            end
+          for id in self:each_production(symbol) do
+            J:push({
+              production = id;
+              dot = 1;
+            })
+            added_J = true
           end
           added[symbol] = true
         end
