@@ -23,18 +23,18 @@ local grammar = require "dromozoa.parser.builder.grammar"
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
 
-local function dump_set_of_items(g, set_of_items)
+local function dump_items(g, items)
   local productions = g.productions
   local symbols = g.symbols
-  for item in set_of_items:each() do
+  for item in items:each() do
     local production = productions[item.id]
     local dot = item.dot
     io.write(symbols[production.head], " ", TO)
-    for i = 1, #production.body do
+    for i, symbol in ipairs(production.body) do
       if i == dot then
         io.write(" ", DOT)
       end
-      io.write(" ", symbols[production.body[i]])
+      io.write(" ", symbols[symbol])
     end
     if dot == #production.body + 1 then
       io.write(" ", DOT)
@@ -59,21 +59,19 @@ local J = g:lr0_closure(I)
 -- print(dumper.encode(J, { pretty = true }))
 
 print("--")
-dump_set_of_items(g, J)
+dump_items(g, J)
 
 local I = sequence()
   :push({ id = 7, dot = 2 })
   :push({ id = 1, dot = 2 })
 print("--")
-dump_set_of_items(g, I)
+dump_items(g, I)
 local J = g:lr0_goto(I, 1)
 print("--")
-dump_set_of_items(g, J)
-
-os.exit()
+dump_items(g, J)
 
 local C = g:lr0_items()
 for i, I in ipairs(C) do
   io.write(("======== I_%d ==========\n"):format(i))
-  dump_set_of_items(g, C[i])
+  dump_items(g, C[i])
 end

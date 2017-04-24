@@ -72,16 +72,6 @@ function class:argument()
   return self
 end
 
-function class:set_of_items()
-  local set_of_items = sequence()
-  for id, production in ipairs(self.productions) do
-    for i = 1, #production.body + 1 do
-      set_of_items:push(sequence():push(id, i))
-    end
-  end
-  return set_of_items
-end
-
 function class:each_production(head)
   return coroutine.wrap(function ()
     for id, production in ipairs(self.productions) do
@@ -130,31 +120,24 @@ function class:lr0_goto(items, goto_symbol)
 end
 
 function class:lr0_items()
-  local productions = self.productions
-  local symbols = self.symbols
-  local start_symbol = self.start_symbol
-  local C = sequence()
-  for id, production in ipairs(productions) do
-    if production[1] == start_symbol then
-      C:push(self:lr0_closure(sequence():push(sequence():push(id, 2))))
-      break
-    end
+  local result = sequence()
+  for id in self:each_production(self.start_symbol) do
+    result:push(self:lr0_closure(sequence():push({ id = id, dot = 1 })))
   end
   local added = hash_table()
-  local added_C
   repeat
-    added_C = false
-    for I in C:each() do
-      for X in ipairs(symbols) do
-        local goto_ = self:lr0_goto(I, X)
-        if not empty(goto_) and added:insert(goto_, true) == nil then
-          C:push(goto_)
-          added_C = true
+    local done = true
+    for items in result:each() do
+      for symbol in ipairs(self.symbols) do
+        local to_items = self:lr0_goto(items, symbol)
+        if not empty(to_items) and added:insert(to_items) == nil then
+          result:push(to_items)
+          done = false
         end
       end
     end
-  until not added_C
-  return C
+  until done
+  return result
 end
 
 function class:first_symbol(X)
