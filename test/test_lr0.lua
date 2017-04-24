@@ -26,9 +26,9 @@ local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
 local function dump_set_of_items(g, set_of_items)
   local productions = g.productions
   local symbols = g.symbols
-  for items in set_of_items:each() do
-    local production = productions[items.production]
-    local dot = items[items.dot]
+  for item in set_of_items:each() do
+    local production = productions[item.id]
+    local dot = item.dot
     io.write(symbols[production.head], " ", TO)
     for i = 1, #production.body do
       if i == dot then
@@ -53,7 +53,7 @@ local g = _():argument()
 print(dumper.encode(g, { pretty = true }))
 
 -- E' -> dot E
-local I = sequence():push():push({ production = 7, dot = 1 })
+local I = sequence():push():push({ id = 7, dot = 1 })
 -- print(dumper.encode(I, { pretty = true }))
 local J = g:lr0_closure(I)
 -- print(dumper.encode(J, { pretty = true }))
@@ -61,16 +61,16 @@ local J = g:lr0_closure(I)
 print("--")
 dump_set_of_items(g, J)
 
-os.exit()
-
 local I = sequence()
-  :push(sequence():push(7, 2))
-  :push(sequence():push(1, 2))
--- print("--")
--- dump_set_of_items(g, I)
+  :push({ id = 7, dot = 2 })
+  :push({ id = 1, dot = 2 })
+print("--")
+dump_set_of_items(g, I)
 local J = g:lr0_goto(I, 1)
--- print("--")
--- dump_set_of_items(g, J)
+print("--")
+dump_set_of_items(g, J)
+
+os.exit()
 
 local C = g:lr0_items()
 for i, I in ipairs(C) do

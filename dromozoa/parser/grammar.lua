@@ -92,45 +92,41 @@ function class:each_production(head)
   end)
 end
 
-function class:lr0_closure(I)
+function class:lr0_closure(items)
   local productions = self.productions
-  local J = clone(I)
   local added = {}
-  local added_J
   repeat
-    added_J = false
-    for item in J:each() do
-      local production = productions[item.production]
+    local done = true
+    for item in items:each() do
+      local production = productions[item.id]
       local symbol = production.body[item.dot]
       if self:is_nonterminal_symbol(symbol) then
         if not added[symbol] then
           for id in self:each_production(symbol) do
-            J:push({
-              production = id;
-              dot = 1;
-            })
-            added_J = true
+            items:push({ id = id, dot = 1 })
+            done = false
           end
           added[symbol] = true
         end
       end
     end
-  until not added_J
-  return J
+  until done
+  return items
 end
 
-function class:lr0_goto(I, X)
+function class:lr0_goto(items, goto_symbol)
   local productions = self.productions
-  local J = sequence()
-  for items in I:each() do
-    local production = productions[items[1]]
-    local dot = items[2]
-    local symbol = production[dot]
-    if symbol == X then
-      J:push(sequence():push(items[1], dot + 1))
+  local result = sequence()
+  for item in items:each() do
+    local id = item.id
+    local production = productions[id]
+    local dot = item.dot
+    local symbol = production.body[dot]
+    if symbol == goto_symbol then
+      result:push({ id = id, dot = dot + 1 })
     end
   end
-  return self:lr0_closure(J)
+  return self:lr0_closure(result)
 end
 
 function class:lr0_items()
