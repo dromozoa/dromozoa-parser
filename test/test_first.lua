@@ -47,10 +47,10 @@ _"T'" ("*", _"F", _"T'") ()
 _"F"  ("(", _"E", ")") ("id")
 
 local g = _()
-print(dumper.encode(g, { pretty = true }))
+-- print(dumper.encode(g, { pretty = true }))
 
-dump_first(g, g:first_symbol(9)) -- F
-dump_first(g, g:first_symbol(7)) -- T
-dump_first(g, g:first_symbol(6)) -- E
-dump_first(g, g:first_symbol(8)) -- E'
-dump_first(g, g:first_symbol(10)) -- T'
+dump_first(g, g:first_symbol(9)) -- FIRST(F) -> (, id
+dump_first(g, g:first_symbol(7)) -- FIRST(T) -> (, id
+dump_first(g, g:first_symbol(6)) -- FIRST(E) -> (, id
+dump_first(g, g:first_symbol(8)) -- FIRST(E') -> +, epsilon
+dump_first(g, g:first_symbol(10)) -- FIRST(T') -> *, epsilon

@@ -76,7 +76,7 @@ function class:each_production(head)
   return coroutine.wrap(function ()
     for id, production in ipairs(self.productions) do
       if production.head == head then
-        coroutine.yield(id, production)
+        coroutine.yield(id, production.body)
       end
     end
   end)
@@ -142,50 +142,35 @@ function class:lr0_items()
   return result
 end
 
-function class:first_symbol(X)
-  local first = linked_hash_table()
-  if self:is_terminal_symbol(X) then
-    first:insert(X, true)
-    return first
+function class:first_symbol(symbol)
+  local result = linked_hash_table()
+  if self:is_terminal_symbol(symbol) then
+    result:insert(symbol, true)
   else
-    for production in self.productions:each() do
-      if production[1] == X then
-        if #production == 1 then
-          first:insert(epsilon)
-        else
-          local have_epsilon
-          for i = 2, #production do
-            local f = self:first_symbol(production[i])
-            have_epsilon = f[epsilon]
-            f[epsilon] = nil
-            set.union(first, f)
-            if not have_epsilon then
-              break
-            end
-          end
-          if have_epsilon then
-            first:insert(epsilon)
-          end
-        end
+    for _, body in self:each_production(symbol) do
+      if empty(body) then
+        result:insert(epsilon)
+      else
+        set.union(result, self:first_symbols(body))
       end
     end
-    return first
   end
+  return result
 end
 
 function class:first_symbols(symbols)
-  local first = linked_hash_table()
+  local result = linked_hash_table()
   for symbol in symbols:each() do
-    local f = self:first_symbol(symbol)
-    local have_epsilon = f[epsilon]
-    f[epsilon] = nil
-    set.union(first, f)
+    local first = self:first_symbol(symbol)
+    local have_epsilon = first[epsilon]
+    first[epsilon] = nil
+    set.union(result, first)
     if not have_epsilon then
-      return first
+      return result
     end
   end
-  first[epsilon] = true
-  return first
+  result[epsilon] = true
+  return result
 end
 
 function class:lr1_closure(I)
@@ -235,7 +220,7 @@ function class:lr1_goto(I, X)
   return self:lr1_closure(J)
 end
 
-function class:lr1_items() -- not used LALR(1)
+function class:lr1_items() -- [TODO] not used LALR(1)
   local productions = self.productions
   local symbols = self.symbols
   local start_symbol = self.start_symbol
