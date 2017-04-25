@@ -24,28 +24,29 @@ local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
 local EOF = "$"
 
-local function dump_set_of_items(g, set_of_items)
+local function dump_items(g, items)
   local productions = g.productions
   local symbols = g.symbols
-  for items in set_of_items:each() do
-    local production = productions[items[1]]
-    local dot = items[2]
-    local a = items[3]
-    io.write(symbols[production[1]], " ", TO)
-    for i = 2, #production do
+  for item in items:each() do
+    local production = productions[item.id]
+    local body = production.body
+    local dot = item.dot
+    local la = item.la
+    io.write(symbols[production.head], " ", TO)
+    for i, symbol in ipairs(body) do
       if i == dot then
         io.write(" ", DOT)
       end
-      io.write(" ", symbols[production[i]])
+      io.write(" ", symbols[symbol])
     end
-    if dot == #production + 1 then
+    if dot == #body + 1 then
       io.write(" ", DOT)
     end
     io.write(", ")
-    if a == 0 then
+    if la == 0 then
       io.write(EOF)
     else
-      io.write(symbols[a])
+      io.write(symbols[la])
     end
     io.write("\n")
   end
@@ -59,16 +60,21 @@ _"C" ("c", _"C") ("d")
 local g = _():argument()
 print(dumper.encode(g, { pretty = true }))
 
-local I = sequence():push(sequence():push(4, 2, 0)) -- S' -> dot S , $
+-- S' -> dot S, $
+local I = sequence():push({ id = 4, dot = 1, la = 0 })
 print("--")
-dump_set_of_items(g, I)
+dump_items(g, I)
 
+-- S' -> dot S, $
+-- S -> dot C C, $
+-- C -> dot c C, c/d
+-- C -> dot d, c/d
 local J = g:lr1_closure(I)
 print("--")
-dump_set_of_items(g, J)
+dump_items(g, J)
 
-local C = g:lr1_items()
-for i, I in ipairs(C) do
+local set_of_items = g:lr1_items()
+for i, items in ipairs(set_of_items) do
   io.write(("======== I_%d ==========\n"):format(i))
-  dump_set_of_items(g, C[i])
+  dump_items(g, items)
 end

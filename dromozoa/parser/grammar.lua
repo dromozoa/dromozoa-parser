@@ -84,7 +84,7 @@ end
 
 function class:lr0_closure(items)
   local productions = self.productions
-  local added = {}
+  local added = hash_table()
   repeat
     local done = true
     for item in items:each() do
@@ -93,10 +93,12 @@ function class:lr0_closure(items)
       if self:is_nonterminal_symbol(symbol) then
         if not added[symbol] then
           for id in self:each_production(symbol) do
-            items:push({ id = id, dot = 1 })
-            done = false
+            local item = { id = id, dot = 1 }
+            if added:insert(item) == nil then
+              items:push(item)
+              done = false
+            end
           end
-          added[symbol] = true
         end
       end
     end
@@ -104,7 +106,7 @@ function class:lr0_closure(items)
   return items
 end
 
-function class:lr0_goto(items, goto_symbol)
+function class:lr0_goto(items, to_symbol)
   local productions = self.productions
   local result = sequence()
   for item in items:each() do
@@ -112,7 +114,7 @@ function class:lr0_goto(items, goto_symbol)
     local production = productions[id]
     local dot = item.dot
     local symbol = production.body[dot]
-    if symbol == goto_symbol then
+    if symbol == to_symbol then
       result:push({ id = id, dot = dot + 1 })
     end
   end
@@ -120,6 +122,7 @@ function class:lr0_goto(items, goto_symbol)
 end
 
 function class:lr0_items()
+  local symbols = self.symbols
   local result = sequence()
   for id in self:each_production(self.start_symbol) do
     result:push(self:lr0_closure(sequence():push({ id = id, dot = 1 })))
@@ -129,7 +132,7 @@ function class:lr0_items()
     local done = true
     for items in result:each() do
       -- [TODO] 全部のシンボルについて試す必要はない
-      for symbol in ipairs(self.symbols) do
+      for symbol in ipairs(symbols) do
         local to_items = self:lr0_goto(items, symbol)
         if not empty(to_items) and added:insert(to_items) == nil then
           result:push(to_items)
@@ -173,79 +176,71 @@ function class:first_symbols(symbols)
   return result
 end
 
-function class:lr1_closure(I)
+function class:lr1_closure(items)
   local productions = self.productions
   local added = hash_table()
-  local added_I
   repeat
-    added_I = false
-    for items in I:each() do
-      local production = productions[items[1]]
-      local dot = items[2]
-      local symbol = production[dot]
-      local a = items[3]
+    local done = true
+    for item in items:each() do
+      local production = productions[item.id]
+      local body = production.body
+      local dot = item.dot
+      local symbol = body[dot]
       if self:is_nonterminal_symbol(symbol) then
-        local symbols = sequence():push(unpack(production, dot + 1)):push(a)
-        for id, B in ipairs(productions) do
-          if B[1] == symbol then
-            local f = self:first_symbols(symbols)
-            for b in f:each() do
-              local item = sequence():push(id, 2, b)
-              if added:insert(item) == nil then
-                I:push(item)
-                added_I = true
-              end
+        local symbols = sequence():push(unpack(body, dot + 1)):push(item.la)
+        for id in self:each_production(symbol) do
+          local first = self:first_symbols(symbols)
+          for la in first:each() do
+            local item = { id = id, dot = 1, la = la }
+            if added:insert(item) == nil then
+              items:push(item)
+              done = false
             end
           end
         end
       end
     end
-  until not added_I
-  return I
+  until done
+  return items
 end
 
-function class:lr1_goto(I, X)
+function class:lr1_goto(I, to_symbol)
   local productions = self.productions
-  local J = sequence()
+  local result = sequence()
   for item in I:each() do
-    local id = item[1]
+    local id = item.id
     local production = productions[id]
-    local dot = item[2]
-    local symbol = production[dot]
-    local a = item[3]
-    if symbol == X then
-      J:push(sequence():push(id, dot + 1, a))
+    local dot = item.dot
+    local symbol = production.body[dot]
+    local a = item.la
+    if symbol == to_symbol then
+      result:push({ id = id, dot = dot + 1, la = a })
     end
   end
-  return self:lr1_closure(J)
+  return self:lr1_closure(result)
 end
 
 function class:lr1_items() -- [TODO] not used LALR(1)
-  local productions = self.productions
   local symbols = self.symbols
-  local start_symbol = self.start_symbol
-  local C = sequence()
-  for id, production in ipairs(productions) do
-    if production[1] == start_symbol then
-      C:push(self:lr1_closure(sequence():push(sequence():push(id, 2, eof))))
-      break
-    end
+  local result = sequence()
+  for id in self:each_production(self.start_symbol) do
+    result:push(self:lr1_closure(sequence():push({ id = id, dot = 1, la = eof })))
   end
   local added = hash_table()
-  local added_C
   repeat
-    added_C = false
-    for I in C:each() do
-      for X in ipairs(symbols) do
-        local goto_ = self:lr1_goto(I, X)
-        if not empty(goto_) and added:insert(goto_, true) == nil then
-          C:push(goto_)
-          added_C = true
+    local done = true
+    for items in result:each() do
+      -- [TODO] 全部のシンボルについて試す必要はない？
+      for symbol in ipairs(symbols) do
+        local to_items = self:lr1_goto(items, symbol)
+        if not empty(to_items) and added:insert(to_items) == nil then
+          result:push(to_items)
+          done = false
         end
       end
     end
-  until not added_C
-  return C
+  until done
+  return result
 end
 
 function class:is_kernel_item(item)

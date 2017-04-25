@@ -89,8 +89,8 @@ local J = g:lr0_goto(I, 1)
 -- print("--")
 -- dump_items(g, J)
 
-local C = g:lr0_items()
-for i, I in ipairs(C) do
+local set_of_items = g:lr0_items()
+for i, items in ipairs(set_of_items) do
   io.write(("======== I_%d ==========\n"):format(i))
-  dump_items(g, I)
+  dump_items(g, items)
 end
