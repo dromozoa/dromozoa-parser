@@ -23,38 +23,51 @@ local grammar = require "dromozoa.parser.builder.grammar"
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
 local EOF = "$"
-local LA = "#"
+local LOOKAHEAD = "#"
 
-local function dump_set_of_items(g, set_of_items)
+local function dump_items(g, items)
   local productions = g.productions
   local symbols = g.symbols
-  for items in set_of_items:each() do
-    local production = productions[items[1]]
-    local dot = items[2]
-    local a = items[3]
-    io.write(symbols[production[1]], " ", TO)
-    for i = 2, #production do
+  for item in items:each() do
+    local production = productions[item.id]
+    local body = production.body
+    local dot = item.dot
+    local la = item.la
+    io.write(symbols[production.head], " ", TO)
+    for i, symbol in ipairs(body) do
       if i == dot then
         io.write(" ", DOT)
       end
-      io.write(" ", symbols[production[i]])
+      io.write(" ", symbols[symbol])
     end
-    if dot == #production + 1 then
+    if dot == #body + 1 then
       io.write(" ", DOT)
     end
-    if a then
+    if la then
       io.write(", ")
-      for i = 3, #items do
-        if i > 3 then
-          io.write(" / ")
-        end
-        local a = items[i]
-        if a == 0 then
+      if type(la) == "number" then
+        if la == 0 then
           io.write(EOF)
-        elseif a == -2 then
-          io.write(LA)
+        elseif la == -2 then
+          io.write(LOOKAHEAD)
         else
-          io.write(symbols[a])
+          io.write(symbols[la])
+        end
+      else
+        local first = true
+        for la in la:each() do
+          if first then
+            first = false
+          else
+            io.write(" / ")
+          end
+          if la == 0 then
+            io.write(EOF)
+          elseif la == -2 then
+            io.write(LOOKAHEAD)
+          else
+            io.write(symbols[la])
+          end
         end
       end
     end
@@ -69,7 +82,10 @@ _"L" ("*", _"R") ("id")
 _"R" (_"L")
 
 local g = _():argument()
-print(dumper.encode(g, { pretty = true }))
+-- print(dumper.encode(g, { pretty = true }))
 
-g:lalr1_kernels(dump_set_of_items)
-
+local K = g:lalr1_kernels(dump_items)
+for i, items in ipairs(K) do
+  io.write(("======== I_%d ==========\n"):format(i))
+  dump_items(g, items)
+end

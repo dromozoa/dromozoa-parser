@@ -189,6 +189,7 @@ function class:lr1_closure(items)
       if self:is_nonterminal_symbol(symbol) then
         local symbols = sequence():push(unpack(body, dot + 1)):push(item.la)
         for id in self:each_production(symbol) do
+          -- [TODO] epsilonの扱いは？
           local first = self:first_symbols(symbols)
           for la in first:each() do
             local item = { id = id, dot = 1, la = la }
@@ -244,10 +245,10 @@ function class:lr1_items() -- [TODO] not used LALR(1)
 end
 
 function class:is_kernel_item(item)
-  local id = item[1]
+  local id = item.id
   local production = self.productions[id]
-  local dot = item[2]
-  return production[1] == self.start_symbol or dot > 2
+  local dot = item.dot
+  return production.head == self.start_symbol or dot > 1
 end
 
 function class:lalr1_kernels(f)
@@ -297,7 +298,7 @@ function class:lalr1_kernels(f)
             print("_____ from/to _____")
             f(self, sequence():push(item))
             f(self, goto2)
-            -- [TODO] 自分自身へのGOTOが存在する？
+            -- 自分自身へのGOTOは正常
             lookaheads:push({
               from = item;
               to = goto2;
@@ -372,7 +373,7 @@ function class:lalr1_kernels(f)
                         end
                       end
                       if not found then
-                        item:push(item2[k])
+                        item:push(item3[k])
                         not_propagated = false
                       end
                     end
@@ -386,6 +387,97 @@ function class:lalr1_kernels(f)
       f(self, K)
     end
   until not_propagated
+end
+
+function class:lalr1_kernels(f)
+  local productions = self.productions
+
+  local lr0_set_of_items = self:lr0_items()
+
+  local propagated = sequence()
+  local generated = sequence()
+
+  for i, items in ipairs(lr0_set_of_items) do
+    for from_item in items:each() do
+      if self:is_kernel_item(from_item) then
+        local closure = self:lr1_closure(sequence():push({
+          id = from_item.id,
+          dot = from_item.dot,
+          la = lookahead
+        }))
+        for item in closure:each() do
+          local production = productions[item.id]
+          local symbol = production.body[item.dot]
+          local la = item.la
+          if symbol ~= nil then
+            local to_items = self:lr1_goto(sequence():push(item), symbol)
+            for to_item in to_items:each() do
+              if self:is_kernel_item(to_item) then
+                if la == lookahead then
+                  print("---- from/to ----")
+                  f(self, sequence():push(from_item, to_item))
+                  propagated:push({
+                    from = { id = from_item.id, dot = from_item.dot };
+                    to = { id = to_item.id, dot = to_item.dot };
+                  })
+                else
+                  generated:push({
+                    to = { id = to_item.id, dot = to_item.dot };
+                    la = la;
+                  })
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  local result = sequence()
+  local map = hash_table()
+
+  for items in lr0_set_of_items:each() do
+    local kernel = sequence()
+    for item in items:each() do
+      if self:is_kernel_item(item) then
+        local new_item = {
+          id = item.id;
+          dot = item.dot;
+          la = linked_hash_table();
+        }
+        kernel:push(new_item)
+        map[item] = new_item
+      end
+    end
+    if not empty(kernel) then
+      result:push(kernel)
+    end
+  end
+
+  for id in self:each_production(self.start_symbol) do
+    assert(assert(map[{ id = id, dot = 1 }]).la:insert(eof) == nil)
+  end
+
+  for op in generated:each() do
+    assert(assert(map[op.to]).la:insert(op.la) == nil)
+  end
+
+  repeat
+    print(("="):rep(80))
+    local done = true
+    for op in propagated:each() do
+      local from_item = assert(map[op.from])
+      local to_item = assert(map[op.to])
+      print("---- from/to ----")
+      f(self, sequence():push(from_item, to_item))
+      if set.union(to_item.la, from_item.la) > 0 then
+        done = false
+      end
+    end
+  until done
+
+  return result
 end
 
 class.metatable = {
