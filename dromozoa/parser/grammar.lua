@@ -19,6 +19,7 @@ local clone = require "dromozoa.commons.clone"
 local empty = require "dromozoa.commons.empty"
 local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
+local keys = require "dromozoa.commons.keys"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
@@ -82,6 +83,12 @@ function class:each_production(head)
   end)
 end
 
+function class:start_production()
+  for id, body in self:each_production(self.start_symbol) do
+    return id, body
+  end
+end
+
 function class:lr0_closure(items)
   local productions = self.productions
   local added = hash_table()
@@ -123,37 +130,35 @@ end
 
 function class:lr0_items()
   local symbols = self.symbols
-  local set_of_items = sequence()
-  local transitions = sequence()
-  for id in self:each_production(self.start_symbol) do
-    local start_items = self:lr0_closure(sequence():push({ id = id, dot = 1 }))
-    set_of_items:push(start_items)
-  end
-  local map = hash_table()
-  local transition_map = hash_table()
+  local set_of_items = linked_hash_table()
+  local transitions = linked_hash_table()
+
+  local id = 1
+
+  local start_id = self:start_production()
+  local start_items = self:lr0_closure(sequence():push({ id = start_id, dot = 1 }))
+  set_of_items:insert(start_items, id)
+
   repeat
     local done = true
-    for i, items in ipairs(set_of_items) do
+    for items, i in set_of_items:each() do
       -- [TODO] 全部のシンボルについて試す必要はない
       for symbol in ipairs(symbols) do
         local to_items = self:lr0_goto(items, symbol)
         if not empty(to_items) then
-          local j = map:get(to_items)
+          local j = set_of_items:get(to_items)
           if j == nil then
-            set_of_items:push(to_items)
-            j = #set_of_items
-            map:insert(to_items, j)
+            id = id + 1
+            set_of_items:insert(to_items, id)
+            j = id
             done = false
           end
-          local transition = { from = i, to = j, symbol = symbol }
-          if transition_map:insert(transition) == nil then
-            transitions:push(transition)
-          end
+          transitions:insert({ from = i, to = j, symbol = symbol })
         end
       end
     end
   until done
-  return set_of_items, transitions
+  return keys(set_of_items), keys(transitions)
 end
 
 function class:first_symbol(symbol)
