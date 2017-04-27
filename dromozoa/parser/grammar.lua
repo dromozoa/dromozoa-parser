@@ -123,26 +123,37 @@ end
 
 function class:lr0_items()
   local symbols = self.symbols
-  local result = sequence()
+  local set_of_items = sequence()
+  local transitions = sequence()
   for id in self:each_production(self.start_symbol) do
-    result:push(self:lr0_closure(sequence():push({ id = id, dot = 1 })))
+    local start_items = self:lr0_closure(sequence():push({ id = id, dot = 1 }))
+    set_of_items:push(start_items)
   end
-  local added = hash_table()
+  local map = hash_table()
+  local transition_map = hash_table()
   repeat
     local done = true
-    for items in result:each() do
+    for i, items in ipairs(set_of_items) do
       -- [TODO] 全部のシンボルについて試す必要はない
       for symbol in ipairs(symbols) do
         local to_items = self:lr0_goto(items, symbol)
-        if not empty(to_items) and added:insert(to_items) == nil then
-          result:push(to_items)
-          done = false
+        if not empty(to_items) then
+          local j = map:get(to_items)
+          if j == nil then
+            set_of_items:push(to_items)
+            j = #set_of_items
+            map:insert(to_items, j)
+            done = false
+          end
+          local transition = { from = i, to = j, symbol = symbol }
+          if transition_map:insert(transition) == nil then
+            transitions:push(transition)
+          end
         end
       end
     end
   until done
-  -- [TODO] GOTO関係の保持は？
-  return result
+  return set_of_items, transitions
 end
 
 function class:first_symbol(symbol)
