@@ -91,66 +91,64 @@ end
 
 function class:lr0_closure(items)
   local productions = self.productions
-  local added = hash_table()
+  local added = {}
   repeat
     local done = true
     for item in items:each() do
-      local production = productions[item.id]
-      local symbol = production.body[item.dot]
-      if self:is_nonterminal_symbol(symbol) then
-        if not added[symbol] then
-          for id in self:each_production(symbol) do
-            local item = { id = id, dot = 1 }
-            if added:insert(item) == nil then
-              items:push(item)
-              done = false
-            end
-          end
+      local symbol = productions[item.id].body[item.dot]
+      if self:is_nonterminal_symbol(symbol) and not added[symbol] then
+        for id in self:each_production(symbol) do
+          items:push({ id = id, dot = 1 })
+          done = false
         end
+        added[symbol] = true
       end
     end
   until done
-  return items
 end
 
-function class:lr0_goto(items, to_symbol)
+function class:lr0_goto(items)
   local productions = self.productions
-  local result = sequence()
+  local map_of_items = linked_hash_table()
   for item in items:each() do
     local id = item.id
     local production = productions[id]
     local dot = item.dot
     local symbol = production.body[dot]
-    if symbol == to_symbol then
-      result:push({ id = id, dot = dot + 1 })
+    if symbol ~= nil then
+      local items = map_of_items:get(symbol)
+      if items == nil then
+        items = sequence()
+        map_of_items:insert(symbol, items)
+      end
+      items:push({ id = id, dot = dot + 1 })
     end
   end
-  return self:lr0_closure(result)
+  for symbol, items in map_of_items:each() do
+    self:lr0_closure(items)
+  end
+  return map_of_items
 end
 
 function class:lr0_items()
-  local symbols = self.symbols
   local set_of_items = linked_hash_table()
   local transitions = linked_hash_table()
 
-  local id = 1
+  local start_items = sequence():push({ id = self:start_production(), dot = 1 })
+  self:lr0_closure(start_items)
+  set_of_items:insert(start_items, 1)
 
-  local start_id = self:start_production()
-  local start_items = self:lr0_closure(sequence():push({ id = start_id, dot = 1 }))
-  set_of_items:insert(start_items, id)
-
+  local n = 1
   repeat
     local done = true
     for items, i in set_of_items:each() do
-      -- [TODO] 全部のシンボルについて試す必要はない
-      for symbol in ipairs(symbols) do
-        local to_items = self:lr0_goto(items, symbol)
+      for symbol, to_items in self:lr0_goto(items):each() do
         if not empty(to_items) then
           local j = set_of_items:get(to_items)
           if j == nil then
-            id = id + 1
-            set_of_items:insert(to_items, id)
-            j = id
+            n = n + 1
+            set_of_items:insert(to_items, n)
+            j = n
             done = false
           end
           transitions:insert({ from = i, to = j, symbol = symbol })

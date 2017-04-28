@@ -105,10 +105,10 @@ local I = sequence():push():push({ id = 7, dot = 1 })
 -- T -> dot F
 -- F -> dot ( E )
 -- F -> dot id
-local J = g:lr0_closure(I)
+g:lr0_closure(I)
 -- print("--")
--- print(dumper.encode(J, { pretty = true }))
--- dump_items(g, J)
+-- print(dumper.encode(I, { pretty = true }))
+-- dump_items(g, I)
 
 -- E' -> E dot
 -- E -> E dot + T
@@ -123,7 +123,7 @@ local I = sequence()
 -- T -> dot F
 -- F -> dot ( E )
 -- F -> dot id
-local J = g:lr0_goto(I, 1)
+local J = g:lr0_goto(I)[1]
 -- print("--")
 -- dump_items(g, J)
 
