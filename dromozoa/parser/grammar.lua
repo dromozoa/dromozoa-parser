@@ -133,11 +133,9 @@ end
 function class:lr0_items()
   local set_of_items = linked_hash_table()
   local transitions = linked_hash_table()
-
   local start_items = sequence():push({ id = self:start_production(), dot = 1 })
   self:lr0_closure(start_items)
   set_of_items:insert(start_items, 1)
-
   local n = 1
   repeat
     local done = true
@@ -160,34 +158,35 @@ function class:lr0_items()
 end
 
 function class:first_symbol(symbol)
-  local result = linked_hash_table()
+  local first = linked_hash_table()
   if self:is_terminal_symbol(symbol) then
-    result:insert(symbol, true)
+    first:insert(symbol)
   else
     for _, body in self:each_production(symbol) do
       if empty(body) then
-        result:insert(epsilon)
+        first:insert(epsilon)
       else
-        set.union(result, self:first_symbols(body))
+        set.union(first, self:first_symbols(body))
       end
     end
   end
-  return result
+  return first
 end
 
 function class:first_symbols(symbols)
-  local result = linked_hash_table()
+  local first = linked_hash_table()
   for symbol in symbols:each() do
-    local first = self:first_symbol(symbol)
-    local have_epsilon = first[epsilon]
-    first[epsilon] = nil
-    set.union(result, first)
-    if not have_epsilon then
-      return result
+    set.union(first, self:first_symbol(symbol))
+    if first:remove(epsilon) == nil then
+      return first
     end
   end
-  result[epsilon] = true
-  return result
+  first:insert(epsilon)
+  return first
+end
+
+function class:first(symbols)
+  return keys(self:first_symbols(symbols))
 end
 
 function class:lr1_closure(items)
@@ -204,7 +203,7 @@ function class:lr1_closure(items)
         local symbols = sequence():push(unpack(body, dot + 1)):push(item.la)
         for id in self:each_production(symbol) do
           -- [TODO] epsilonの扱いは？
-          local first = self:first_symbols(symbols)
+          local first = self:first(symbols)
           for la in first:each() do
             local item = { id = id, dot = 1, la = la }
             if added:insert(item) == nil then
