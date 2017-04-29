@@ -195,15 +195,13 @@ function class:lr1_closure(items)
   repeat
     local done = true
     for item in items:each() do
-      local production = productions[item.id]
-      local body = production.body
+      local body = productions[item.id].body
       local dot = item.dot
       local symbol = body[dot]
       if self:is_nonterminal_symbol(symbol) then
         local symbols = sequence():push(unpack(body, dot + 1)):push(item.la)
+        local first = self:first(symbols)
         for id in self:each_production(symbol) do
-          -- [TODO] epsilonの扱いは？
-          local first = self:first(symbols)
           for la in first:each() do
             local item = { id = id, dot = 1, la = la }
             if added:insert(item) == nil then

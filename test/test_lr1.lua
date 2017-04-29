@@ -58,7 +58,7 @@ _"S" (_"C", _"C")
 _"C" ("c", _"C") ("d")
 
 local g = _():argument()
-print(dumper.encode(g, { pretty = true }))
+print(dumper.encode(g, { pretty = true, stable = true }))
 
 -- S' -> dot S, $
 local I = sequence():push({ id = 4, dot = 1, la = 0 })
@@ -69,9 +69,9 @@ dump_items(g, I)
 -- S -> dot C C, $
 -- C -> dot c C, c/d
 -- C -> dot d, c/d
-local J = g:lr1_closure(I)
+g:lr1_closure(I)
 print("--")
-dump_items(g, J)
+dump_items(g, I)
 
 local set_of_items = g:lr1_items()
 for i, items in ipairs(set_of_items) do
