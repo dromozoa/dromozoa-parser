@@ -213,46 +213,59 @@ function class:lr1_closure(items)
       end
     end
   until done
-  return items
 end
 
-function class:lr1_goto(I, to_symbol)
+function class:lr1_goto(items)
   local productions = self.productions
-  local result = sequence()
-  for item in I:each() do
+  local map_of_items = linked_hash_table()
+  for item in items:each() do
     local id = item.id
     local production = productions[id]
     local dot = item.dot
     local symbol = production.body[dot]
-    local a = item.la
-    if symbol == to_symbol then
-      result:push({ id = id, dot = dot + 1, la = a })
+    local la = item.la
+    if symbol ~= nil then
+      local items = map_of_items:get(symbol)
+      if items == nil then
+        items = sequence()
+        map_of_items:insert(symbol, items)
+      end
+      items:push({ id = id, dot = dot + 1, la = la })
     end
   end
-  return self:lr1_closure(result)
+  for symbol, items in map_of_items:each() do
+    self:lr1_closure(items)
+  end
+  return map_of_items
 end
 
 function class:lr1_items() -- [TODO] not used LALR(1)
   local symbols = self.symbols
-  local result = sequence()
-  for id in self:each_production(self.start_symbol) do
-    result:push(self:lr1_closure(sequence():push({ id = id, dot = 1, la = eof })))
-  end
-  local added = hash_table()
+
+  local set_of_items = linked_hash_table()
+  local transitions = linked_hash_table()
+  local start_items = sequence():push({ id = self:start_production(), dot = 1, la = eof })
+  self:lr1_closure(start_items)
+  set_of_items:insert(start_items, 1)
+  local n = 1
   repeat
     local done = true
-    for items in result:each() do
-      -- [TODO] 全部のシンボルについて試す必要はない？
-      for symbol in ipairs(symbols) do
-        local to_items = self:lr1_goto(items, symbol)
-        if not empty(to_items) and added:insert(to_items) == nil then
-          result:push(to_items)
-          done = false
+    for items, i in set_of_items:each() do
+      for symbol, to_items in self:lr1_goto(items):each() do
+        if not empty(to_items) then
+          local j = set_of_items:get(to_items)
+          if j == nil then
+            n = n + 1
+            set_of_items:insert(to_items, n)
+            j = n
+            done = false
+          end
+          transitions:insert({ from = i, to = j, symbol = symbol })
         end
       end
     end
   until done
-  return result
+  return keys(set_of_items), keys(transitions)
 end
 
 function class:is_kernel_item(item)
@@ -297,7 +310,7 @@ function class:lalr1_kernels(f)
         local symbol = production[dot]
         if symbol ~= nil then
           -- print("----------------")
-          local goto_ = self:lr1_goto(sequence():push(sequence():push(id, dot, item2[3])), symbol)
+          local goto_ = self:lr1_goto_(sequence():push(sequence():push(id, dot, item2[3])), symbol)
           local goto2 = sequence()
           for item3 in goto_:each() do
             if self:is_kernel_item(item3) then
@@ -421,7 +434,7 @@ function class:lalr1_kernels(f)
           local symbol = production.body[item.dot]
           local la = item.la
           if symbol ~= nil then
-            local to_items = self:lr1_goto(sequence():push(item), symbol)
+            local to_items = self:lr1_goto_(sequence():push(item), symbol)
             for to_item in to_items:each() do
               if self:is_kernel_item(to_item) then
                 if la == lookahead then
