@@ -24,6 +24,7 @@ local grammar = require "dromozoa.parser.builder.grammar"
 
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
+local EOF = "$"
 
 local function dump_item(out, g, item)
   local productions = g.productions
@@ -31,6 +32,7 @@ local function dump_item(out, g, item)
   local production = productions[item.id]
   local body = production.body
   local dot = item.dot
+  local la = item.la
   out:write(symbols[production.head], " ", TO)
   for i, symbol in ipairs(body) do
     if i == dot then
@@ -40,6 +42,12 @@ local function dump_item(out, g, item)
   end
   if dot == #body + 1 then
     out:write(" ", DOT)
+  end
+  out:write(", ")
+  if la == 0 then
+    out:write(EOF)
+  else
+    out:write(symbols[la])
   end
   return out
 end
@@ -84,50 +92,26 @@ end
 
 local _ = grammar()
 
-_"E" (_"E", "+", _"T") (_"T")
-_"T" (_"T", "*", _"F") (_"F")
-_"F" ("(", _"E", ")") ("id")
+_"S" (_"C", _"C")
+_"C" ("c", _"C") ("d")
 
 local g = _():argument()
--- print("--")
--- print(dumper.encode(g, { pretty = true }))
+print(dumper.encode(g, { pretty = true, stable = true }))
 
--- E' -> dot E
-local I = sequence():push():push({ id = 7, dot = 1 })
--- print("--")
--- print(dumper.encode(I, { pretty = true }))
--- dump_items(g, I)
+-- S' -> dot S, $
+local I = sequence():push({ id = 4, dot = 1, la = 0 })
+print("--")
+dump_items(g, I)
 
--- E' -> dot E
--- E -> dot E + T
--- E -> dot T
--- T -> dot T * F
--- T -> dot F
--- F -> dot ( E )
--- F -> dot id
-g:lr0_closure(I)
--- print("--")
--- print(dumper.encode(I, { pretty = true }))
--- dump_items(g, I)
+-- S' -> dot S, $
+-- S -> dot C C, $
+-- C -> dot c C, c/d
+-- C -> dot d, c/d
+g:lr1_closure(I)
+print("--")
+dump_items(g, I)
 
--- E' -> E dot
--- E -> E dot + T
-local I = sequence()
-  :push({ id = 7, dot = 2 })
-  :push({ id = 1, dot = 2 })
--- print("--")
--- dump_items(g, I)
-
--- E -> E + dot T
--- T -> dot T * F
--- T -> dot F
--- F -> dot ( E )
--- F -> dot id
-local J = g:lr0_goto(I)[1]
--- print("--")
--- dump_items(g, J)
-
-local set_of_items, transitions = g:lr0_items()
+local set_of_items, transitions = g:lr1_items()
 for i, items in ipairs(set_of_items) do
   io.write(("======== I_%d ==========\n"):format(i))
   dump_items(g, items)
