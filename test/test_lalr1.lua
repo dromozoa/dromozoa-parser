@@ -90,8 +90,16 @@ _"R" (_"L")
 local g = _():argument()
 -- print(dumper.encode(g, { pretty = true }))
 
-local K = g:lalr1_kernels(dump_item)
-for i, items in ipairs(K) do
+local set_of_items = g:lalr1_kernels(g:lr0_items())
+-- for i, items in ipairs(set_of_items) do
+--   io.write(("======== I_%d ==========\n"):format(i))
+--   dump_items(g, items)
+-- end
+
+for items in set_of_items:each() do
+  g:lr1_closure(items)
+end
+for i, items in ipairs(set_of_items) do
   io.write(("======== I_%d ==========\n"):format(i))
   dump_items(g, items)
 end

@@ -275,10 +275,8 @@ function class:is_kernel_item(item)
   return production.head == self.start_symbol or dot > 1
 end
 
-function class:lalr1_kernels(f)
+function class:lalr1_kernels(set_of_items, transitions)
   local productions = self.productions
-
-  local set_of_items, transitions = self:lr0_items()
 
   local map_of_items = hash_table()
   for i, items in ipairs(set_of_items) do
@@ -346,7 +344,20 @@ function class:lalr1_kernels(f)
     end
   until done
 
-  return set_of_kernel_items
+  local result = sequence()
+  for items in set_of_kernel_items:each() do
+    local expanded_items = sequence()
+    for item in items:each() do
+      local id = item.id
+      local dot = item.dot
+      for la in item.la:each() do
+        expanded_items:push({ id = id, dot = dot, la = la })
+      end
+    end
+    result:push(expanded_items)
+  end
+
+  return result
 end
 
 class.metatable = {
