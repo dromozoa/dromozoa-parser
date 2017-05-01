@@ -360,6 +360,14 @@ function class:lalr1_kernels(set_of_items, transitions)
   return result
 end
 
+function class:lr1_construct_table(set_of_items, transitions)
+  local actions = hash_set()
+  local gotos = hash_set()
+
+  for i, items in ipairs(set_of_items) do
+  end
+end
+
 class.metatable = {
   __index = class;
 }
