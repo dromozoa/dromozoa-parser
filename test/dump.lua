@@ -16,6 +16,8 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local ipairs = require "dromozoa.commons.ipairs"
+local sequence_writer = require "dromozoa.commons.sequence_writer"
+local xml = require "dromozoa.commons.xml"
 
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
@@ -84,6 +86,37 @@ function class.set_of_items(out, g, set_of_items)
     io.write("======== I_", i, " ==========\n")
     class.items(out, g, items)
   end
+end
+
+function class.write_graph(filename, g, set_of_items, transitions)
+  local symbols = g.symbols
+
+  local out = assert(io.open(filename, "w"))
+  out:write([[
+digraph g {
+graph [rankdir=LR];
+node [shape=plaintext]
+]])
+
+  for i, items in ipairs(set_of_items) do
+    out:write(("%d [label=<<table border=\"1\" cellborder=\"0\" cellpadding=\"0\" cellspacing=\"0\" margin=\"0\">"):format(i))
+    out:write(("<tr><td>I%d</td></tr>"):format(i))
+    for item in items:each() do
+      out:write(("<tr><td align=\"left\" bgcolor=\"%s\">%s</td></tr>"):format(
+          g:is_kernel_item(item) and "white" or "grey",
+          xml.escape(class.item(sequence_writer(), g, item):concat())))
+    end
+    out:write("</table>>]\n")
+  end
+
+  for transition, to in transitions:each() do
+    out:write(([[
+%d->%d [label=<%s>];
+]]):format(transition.from, to, xml.escape(symbols[transition.symbol])))
+  end
+
+  out:write("}\n")
+  out:close()
 end
 
 return class
