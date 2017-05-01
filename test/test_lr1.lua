@@ -80,10 +80,10 @@ node [shape=plaintext]
     out:write("</table>>]\n")
   end
 
-  for transition in transitions:each() do
+  for transition, to in transitions:each() do
     out:write(([[
 %d->%d [label=<%s>];
-]]):format(transition.from, transition.to, xml.escape(symbols[transition.symbol])))
+]]):format(transition.from, to, xml.escape(symbols[transition.symbol])))
   end
 
   out:write("}\n")

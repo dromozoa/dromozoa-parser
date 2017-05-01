@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
+local empty = require "dromozoa.commons.empty"
 local ipairs = require "dromozoa.commons.ipairs"
 local sequence = require "dromozoa.commons.sequence"
 local grammar = require "dromozoa.parser.builder.grammar"
@@ -25,52 +26,57 @@ local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
 local EOF = "$"
 local LOOKAHEAD = "#"
 
-local function dump_items(g, items)
+local function dump_la(out, g, la)
+  local symbols = g.symbols
+  if la == 0 then
+    out:write(EOF)
+  elseif la == -2 then
+    out:write(LOOKAHEAD)
+  else
+    out:write(symbols[la])
+  end
+end
+
+local function dump_item(out, g, item)
   local productions = g.productions
   local symbols = g.symbols
-  for item in items:each() do
-    local production = productions[item.id]
-    local body = production.body
-    local dot = item.dot
-    local la = item.la
-    io.write(symbols[production.head], " ", TO)
-    for i, symbol in ipairs(body) do
-      if i == dot then
-        io.write(" ", DOT)
-      end
-      io.write(" ", symbols[symbol])
+  local production = productions[item.id]
+  local body = production.body
+  local dot = item.dot
+  local la = item.la
+  out:write(symbols[production.head], " ", TO)
+  for i, symbol in ipairs(body) do
+    if i == dot then
+      out:write(" ", DOT)
     end
-    if dot == #body + 1 then
-      io.write(" ", DOT)
-    end
-    if la then
-      io.write(", ")
-      if type(la) == "number" then
-        if la == 0 then
-          io.write(EOF)
-        elseif la == -2 then
-          io.write(LOOKAHEAD)
+    out:write(" ", symbols[symbol])
+  end
+  if dot == #body + 1 then
+    out:write(" ", DOT)
+  end
+  if la then
+    if type(la) == "number" then
+      out:write(", ")
+      dump_la(out, g, la)
+    elseif not empty(la) then
+      out:write(", ")
+      local first = true
+      for la in la:each() do
+        if first then
+          first = false
         else
-          io.write(symbols[la])
+          out:write(" / ")
         end
-      else
-        local first = true
-        for la in la:each() do
-          if first then
-            first = false
-          else
-            io.write(" / ")
-          end
-          if la == 0 then
-            io.write(EOF)
-          elseif la == -2 then
-            io.write(LOOKAHEAD)
-          else
-            io.write(symbols[la])
-          end
-        end
+        dump_la(out, g, la)
       end
     end
+  end
+  return out
+end
+
+local function dump_items(g, items)
+  for item in items:each() do
+    dump_item(io.stdout, g, item)
     io.write("\n")
   end
 end
@@ -84,7 +90,7 @@ _"R" (_"L")
 local g = _():argument()
 -- print(dumper.encode(g, { pretty = true }))
 
-local K = g:lalr1_kernels(dump_items)
+local K = g:lalr1_kernels(dump_item)
 for i, items in ipairs(K) do
   io.write(("======== I_%d ==========\n"):format(i))
   dump_items(g, items)

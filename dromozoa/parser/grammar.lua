@@ -149,12 +149,12 @@ function class:lr0_items()
             j = n
             done = false
           end
-          transitions:insert({ from = i, to = j, symbol = symbol })
+          transitions:insert({ from = i, symbol = symbol }, j)
         end
       end
     end
   until done
-  return keys(set_of_items), keys(transitions)
+  return keys(set_of_items), transitions
 end
 
 function class:first_symbol(symbol)
@@ -239,7 +239,7 @@ function class:lr1_goto(items)
   return map_of_items
 end
 
-function class:lr1_items() -- [TODO] not used LALR(1)
+function class:lr1_items()
   local symbols = self.symbols
 
   local set_of_items = linked_hash_table()
@@ -260,12 +260,12 @@ function class:lr1_items() -- [TODO] not used LALR(1)
             j = n
             done = false
           end
-          transitions:insert({ from = i, to = j, symbol = symbol })
+          transitions:insert({ from = i, symbol = symbol }, j)
         end
       end
     end
   until done
-  return keys(set_of_items), keys(transitions)
+  return keys(set_of_items), transitions
 end
 
 function class:is_kernel_item(item)
@@ -277,180 +277,37 @@ end
 
 function class:lalr1_kernels(f)
   local productions = self.productions
-  local start_symbol = self.start_symbol
-  local set_of_items = self:lr0_items()
-  local kernels = sequence()
 
-  for items in set_of_items:each() do
-    local K = sequence()
-    for item in items:each() do
-      if self:is_kernel_item(item) then
-        K:push(item)
-      end
-    end
-    kernels:push(K)
-  end
+  local set_of_items, transitions = self:lr0_items()
 
-  local lookaheads = sequence()
-  local generated = sequence()
-
-  for i, K in ipairs(kernels) do
-    io.write(("======== I_%d ==========\n"):format(i))
-    f(self, K)
-    -- print("................")
-    for item in K:each() do
-      local id = item[1]
-      local dot = item[2]
-      local J = self:lr1_closure(sequence():push(sequence():push(id, dot, lookahead)))
-      -- f(self, J)
-      for item2 in J:each() do
-        local id = item2[1]
-        local production = productions[id]
-        local dot = item2[2]
-        local symbol = production[dot]
-        if symbol ~= nil then
-          -- print("----------------")
-          local goto_ = self:lr1_goto_(sequence():push(sequence():push(id, dot, item2[3])), symbol)
-          local goto2 = sequence()
-          for item3 in goto_:each() do
-            if self:is_kernel_item(item3) then
-              goto2:push(sequence():push(item3[1], item3[2]))
-            end
-          end
-          -- f(self, goto2)
-          if item2[3] == lookahead then
-            print("_____ from/to _____")
-            f(self, sequence():push(item))
-            f(self, goto2)
-            -- 自分自身へのGOTOは正常
-            lookaheads:push({
-              from = item;
-              to = goto2;
-            })
-          else
-            generated:push({
-              to = goto2;
-              symbol = item2[3];
-            })
-          end
-        end
-      end
+  local map_of_items = hash_table()
+  for i, items in ipairs(set_of_items) do
+    for j, item in ipairs(items) do
+      map_of_items:insert({ i = i, item = item }, j)
     end
   end
-
-  print(("/"):rep(80))
-  for i, K in ipairs(kernels) do
-    io.write(("======== I_%d ==========\n"):format(i))
-    for item in K:each() do
-      if productions[item[1]][1] == start_symbol and item[2] == 2 then
-        item:push(eof)
-      end
-      for x in generated:each() do
-        for y in x.to:each() do
-          if item[1] == y[1] and item[2] == y[2] then
-            local found = false
-            for j = 3, #item do
-              if item[j] == x.symbol then
-                found = true
-              end
-            end
-            if not found then
-              item:push(x.symbol)
-            end
-          end
-        end
-      end
-    end
-    f(self, K)
-  end
-
-  for x in lookaheads:each() do
-    print("================")
-    for y in x.to:each() do
-      print("_____ from/to _____")
-      f(self, sequence():push(x.from))
-      f(self, sequence():push(y))
-    end
-  end
-
-  repeat
-    local not_propagated = true
-    print(("/"):rep(80))
-    for i, K in ipairs(kernels) do
-      io.write(("======== I_%d ==========\n"):format(i))
-      for item in K:each() do
-        for x in lookaheads:each() do
-          for y in x.to:each() do
-            if item[1] == y[1] and item[2] == y[2] then
-              for K2 in kernels:each() do
-                for item2 in K2:each() do
-                  if item2[1] == x.from[1] and item2[2] == x.from[2] then
-                    -- print("=>")
-                    -- f(self, sequence():push(item2, item, x.from, y))
-                    -- print("???")
-                    -- f(self, x.to)
-                    for k = 3, #item2 do
-                      local found = false
-                      for j = 3, #item do
-                        if item[j] == item2[k] then
-                          found = true
-                        end
-                      end
-                      if not found then
-                        item:push(item3[k])
-                        not_propagated = false
-                      end
-                    end
-                  end
-                end
-              end
-            end
-          end
-        end
-      end
-      f(self, K)
-    end
-  until not_propagated
-end
-
-function class:lalr1_kernels(f)
-  local productions = self.productions
-
-  local lr0_set_of_items = self:lr0_items()
 
   local propagated = sequence()
   local generated = sequence()
 
-  for i, items in ipairs(lr0_set_of_items) do
-    for from_item in items:each() do
+  for i, from_items in ipairs(set_of_items) do
+    for j, from_item in ipairs(from_items) do
       if self:is_kernel_item(from_item) then
-        local closure = self:lr1_closure(sequence():push({
-          id = from_item.id,
-          dot = from_item.dot,
-          la = lookahead
-        }))
-        for item in closure:each() do
-          local production = productions[item.id]
-          local symbol = production.body[item.dot]
+        local items = sequence():push({ id = from_item.id, dot = from_item.dot, la = lookahead })
+        self:lr1_closure(items)
+        for item in items:each() do
+          local id = item.id
+          local production = productions[id]
+          local dot = item.dot
+          local symbol = production.body[dot]
           local la = item.la
           if symbol ~= nil then
-            local to_items = self:lr1_goto_(sequence():push(item), symbol)
-            for to_item in to_items:each() do
-              if self:is_kernel_item(to_item) then
-                if la == lookahead then
-                  print("---- from/to ----")
-                  f(self, sequence():push(from_item, to_item))
-                  propagated:push({
-                    from = { id = from_item.id, dot = from_item.dot };
-                    to = { id = to_item.id, dot = to_item.dot };
-                  })
-                else
-                  generated:push({
-                    to = { id = to_item.id, dot = to_item.dot };
-                    la = la;
-                  })
-                end
-              end
+            local to_i = assert(transitions:get({ from = i, symbol = symbol }))
+            local to_j = assert(map_of_items:get({ i = to_i, item = { id = id, dot = dot + 1 } }))
+            if la == lookahead then
+              propagated:push({ from_i = i, from_j = j, to_i = to_i, to_j = to_j })
+            else
+              generated:push({ i = to_i, j = to_j, la = la })
             end
           end
         end
@@ -458,50 +315,38 @@ function class:lalr1_kernels(f)
     end
   end
 
-  local result = sequence()
-  local map = hash_table()
+  local set_of_kernel_items = sequence()
 
-  for items in lr0_set_of_items:each() do
-    local kernel = sequence()
+  for items in set_of_items:each() do
+    local kernel_items = sequence()
     for item in items:each() do
       if self:is_kernel_item(item) then
-        local new_item = {
-          id = item.id;
-          dot = item.dot;
-          la = linked_hash_table();
-        }
-        kernel:push(new_item)
-        map[item] = new_item
+        local kernel_item = { id = item.id, dot = item.dot, la = linked_hash_table() }
+        if productions[item.id].head == self.start_symbol and item.dot == 1 then
+          kernel_item.la:insert(eof)
+        end
+        kernel_items:push(kernel_item)
       end
     end
-    if not empty(kernel) then
-      result:push(kernel)
-    end
-  end
-
-  for id in self:each_production(self.start_symbol) do
-    assert(assert(map[{ id = id, dot = 1 }]).la:insert(eof) == nil)
+    set_of_kernel_items:push(kernel_items)
   end
 
   for op in generated:each() do
-    assert(assert(map[op.to]).la:insert(op.la) == nil)
+    set_of_kernel_items[op.i][op.j].la:insert(op.la)
   end
 
   repeat
-    print(("="):rep(80))
     local done = true
     for op in propagated:each() do
-      local from_item = assert(map[op.from])
-      local to_item = assert(map[op.to])
-      print("---- from/to ----")
-      f(self, sequence():push(from_item, to_item))
-      if set.union(to_item.la, from_item.la) > 0 then
+      local from_la = set_of_kernel_items[op.from_i][op.from_j].la
+      local to_la = set_of_kernel_items[op.to_i][op.to_j].la
+      if set.union(to_la, from_la) > 0 then
         done = false
       end
     end
   until done
 
-  return result
+  return set_of_kernel_items
 end
 
 class.metatable = {
