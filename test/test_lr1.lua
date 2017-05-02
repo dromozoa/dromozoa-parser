@@ -25,7 +25,7 @@ local _ = grammar()
 _"S" (_"C", _"C")
 _"C" ("c", _"C") ("d")
 
-local g = _():argument()
+local g = _()
 print(dumper.encode(g, { pretty = true, stable = true }))
 
 -- S' -> dot S, $

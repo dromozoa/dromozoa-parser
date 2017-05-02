@@ -32,5 +32,5 @@ _"factor"
     ("(", _"expression", ")")
     ("id")
 
-local g = _():argument()
-print(dumper.encode(g, { pretty = true }))
+local g = _()
+print(dumper.encode(g, { pretty = true, stable = true }))

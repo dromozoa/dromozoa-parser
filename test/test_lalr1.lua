@@ -25,13 +25,13 @@ _"S" (_"L", "=", _"R") (_"R")
 _"L" ("*", _"R") ("id")
 _"R" (_"L")
 
-local g = _():argument()
+local g = _()
 -- print(dumper.encode(g, { pretty = true }))
 
 local set_of_items = g:lalr1_kernels(g:lr0_items())
--- dump.set_of_items(io.stdout, g, set_of_items)
+dump.set_of_items(io.stdout, g, set_of_items)
 
 for items in set_of_items:each() do
   g:lr1_closure(items)
 end
-dump.set_of_items(io.stdout, g, set_of_items)
+-- dump.set_of_items(io.stdout, g, set_of_items)

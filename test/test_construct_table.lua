@@ -31,7 +31,7 @@ _"F" ("id")
 -- _"S" (_"C", _"C")
 -- _"C" ("c", _"C") ("d")
 
-local g = _():argument()
+local g = _()
 
 local symbols = g.symbols
 local set_of_items, transitions = g:lr0_items()

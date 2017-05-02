@@ -26,12 +26,6 @@ function class.new()
   }
 end
 
-function class:end_marker()
-  self.n = 1
-  self[1] = "$"
-  return self
-end
-
 function class:symbol(name)
   local map = self.map
   local id = map[name]

@@ -53,27 +53,6 @@ function class:symbol_name(symbol)
   return self.symbols[symbol]
 end
 
-function class:create_nonterminal_symbol(name)
-  local symbols = self.symbols
-  symbols:push(name)
-  return #symbols
-end
-
-function class:create_production(head, ...)
-  local body = sequence():push(...)
-  self.productions:push({ head = head, body = body })
-  return self
-end
-
-function class:argument()
-  local start_symbol = self.start_symbol
-  local new_start_symbol = self:create_nonterminal_symbol(self:symbol_name(start_symbol) .. "'")
-  self:create_production(new_start_symbol, start_symbol)
-  self.start_symbol = new_start_symbol
-  self.argumented = true
-  return self
-end
-
 function class:each_production(head)
   return coroutine.wrap(function ()
     for id, production in ipairs(self.productions) do
