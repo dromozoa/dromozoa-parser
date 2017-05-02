@@ -54,19 +54,19 @@ io.write([[
 io.write("  <tr>\n")
 io.write("    <td rowspan=\"2\">STATE</td>\n")
 io.write("    <td colspan=\"", g.max_terminal_symbol, "\">ACTION</td>\n")
-io.write("    <td colspan=\"", #symbols - g.max_terminal_symbol, "\">GOTO</td>\n")
+io.write("    <td colspan=\"", #symbols - g.max_terminal_symbol - 1, "\">GOTO</td>\n")
 io.write("  </tr>\n")
 
 io.write("  <tr>\n")
-for _, name in ipairs(symbols) do
-  io.write("    <td>", xml.escape(name), "</td>\n")
+for i = 1, #symbols - 1 do
+  io.write("    <td>", xml.escape(symbols[i]), "</td>\n")
 end
 io.write("  </tr>\n")
 
 for state = 1, #set_of_items do
   io.write("  <tr>\n")
   io.write("    <td>", state, "</td>\n")
-  for symbol = 1, #symbols do
+  for symbol = 1, #symbols - 1 do
     if g:is_terminal_symbol(symbol) then
       local action = actions:get({ state = state, symbol = symbol })
       if action == nil then
