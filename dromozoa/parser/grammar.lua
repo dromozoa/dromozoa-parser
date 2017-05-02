@@ -17,6 +17,7 @@
 
 local clone = require "dromozoa.commons.clone"
 local empty = require "dromozoa.commons.empty"
+local equal = require "dromozoa.commons.equal"
 local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
 local keys = require "dromozoa.commons.keys"
@@ -358,6 +359,51 @@ function class:lalr1_kernels(set_of_items, transitions)
   end
 
   return result
+end
+
+function class:lr1_construct_table(set_of_items, transitions)
+  local productions = self.productions
+  local symbols = self.symbols
+  local start_symbol = self.start_symbol
+
+  local actions = hash_table()
+  local gotos = hash_table()
+
+  for i, items in ipairs(set_of_items) do
+    for item in items:each() do
+      local id = item.id
+      local production = productions[id]
+      local dot = item.dot
+      local symbol = production.body[dot]
+      local la = item.la
+      if symbol == nil then
+        if production.head == start_symbol and la == eof then
+          local action = { "accept" }
+          local result = actions:insert({ state = i, symbol = la }, action)
+          assert(result == nil or equal(result, action))
+        else
+          local action = { "reduce", id }
+          local result = actions:insert({ state = i, symbol = la }, action)
+          assert(result == nil or equal(result, action))
+        end
+      elseif self:is_terminal_symbol(symbol) then
+        local j = assert(transitions:get({ from = i, symbol = symbol }))
+        local action = { "shift", j }
+        local result = actions:insert({ state = i, symbol = symbol }, action)
+        assert(result == nil or equal(result, action))
+      end
+    end
+  end
+
+  for transition, to in transitions:each() do
+    local symbol = transition.symbol
+    if self:is_nonterminal_symbol(symbol) then
+      local result = gotos:insert(transition, to)
+      assert(result == nil or result == to)
+    end
+  end
+
+  return actions, gotos
 end
 
 class.metatable = {
