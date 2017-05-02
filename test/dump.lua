@@ -27,11 +27,7 @@ local class = {}
 
 function class.la(out, g, la)
   local symbols = g.symbols
-  if la == -2 then
-    out:write(LOOKAHEAD)
-  else
-    out:write(symbols[la])
-  end
+  out:write(symbols[la])
 end
 
 function class.item(out, g, item)

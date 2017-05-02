@@ -27,9 +27,9 @@ local unpack = require "dromozoa.commons.unpack"
 
 local class = {}
 
-local epsilon = -1
-local end_marker = 1
-local lookahead = -2
+local epsilon = 0
+local marker_end = 1
+local marker_la = -1
 
 function class.new(productions, symbols, max_terminal_symbol, start_symbol)
   return {
@@ -219,7 +219,7 @@ function class:lr1_items()
 
   local set_of_items = linked_hash_table()
   local transitions = linked_hash_table()
-  local start_items = sequence():push({ id = self:start_production(), dot = 1, la = end_marker })
+  local start_items = sequence():push({ id = self:start_production(), dot = 1, la = marker_end })
   self:lr1_closure(start_items)
   set_of_items:insert(start_items, 1)
   local n = 1
@@ -266,7 +266,7 @@ function class:lalr1_kernels(set_of_items, transitions)
   for i, from_items in ipairs(set_of_items) do
     for j, from_item in ipairs(from_items) do
       if self:is_kernel_item(from_item) then
-        local items = sequence():push({ id = from_item.id, dot = from_item.dot, la = lookahead })
+        local items = sequence():push({ id = from_item.id, dot = from_item.dot, la = marker_la })
         self:lr1_closure(items)
         for item in items:each() do
           local id = item.id
@@ -277,7 +277,7 @@ function class:lalr1_kernels(set_of_items, transitions)
           if symbol ~= nil then
             local to_i = assert(transitions:get({ from = i, symbol = symbol }))
             local to_j = assert(map_of_items:get({ i = to_i, item = { id = id, dot = dot + 1 } }))
-            if la == lookahead then
+            if la == marker_la then
               propagated:push({ from_i = i, from_j = j, to_i = to_i, to_j = to_j })
             else
               generated:push({ i = to_i, j = to_j, la = la })
@@ -296,7 +296,7 @@ function class:lalr1_kernels(set_of_items, transitions)
       if self:is_kernel_item(item) then
         local kernel_item = { id = item.id, dot = item.dot, la = linked_hash_table() }
         if productions[item.id].head == self.start_symbol and item.dot == 1 then
-          kernel_item.la:insert(end_marker)
+          kernel_item.la:insert(marker_end)
         end
         kernel_items:push(kernel_item)
       end
@@ -351,7 +351,7 @@ function class:lr1_construct_table(set_of_items, transitions)
       local symbol = production.body[dot]
       local la = item.la
       if symbol == nil then
-        if production.head == start_symbol and la == end_marker then
+        if production.head == start_symbol and la == marker_end then
           local action = { "accept" }
           local result = actions:insert({ state = i, symbol = la }, action)
           assert(result == nil or equal(result, action))

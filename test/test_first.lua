@@ -29,7 +29,7 @@ local function dump_first(g, f)
     if count > 1 then
       io.write(", ")
     end
-    if symbol == -1 then
+    if symbol == 0 then
       io.write(EPSILON)
     else
       io.write(symbols[symbol])
