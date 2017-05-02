@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local clone = require "dromozoa.commons.clone"
 local empty = require "dromozoa.commons.empty"
 local equal = require "dromozoa.commons.equal"
 local hash_table = require "dromozoa.commons.hash_table"
