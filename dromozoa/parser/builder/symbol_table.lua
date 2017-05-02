@@ -26,12 +26,19 @@ function class.new()
   }
 end
 
+function class:end_marker()
+  self.n = 1
+  self[1] = "$"
+  return self
+end
+
 function class:symbol(name)
   local map = self.map
   local id = map[name]
   if id == nil then
     id = self.n + 1
     self.n = id
+    self[id] = name
     map[name] = id
   end
   return id
@@ -43,7 +50,7 @@ end
 
 function class:each()
   return coroutine.wrap(function ()
-    for name, id in pairs(self.map) do
+    for id, name in ipairs(self) do
       coroutine.yield(id, name)
     end
   end)

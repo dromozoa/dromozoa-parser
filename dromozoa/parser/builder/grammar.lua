@@ -26,7 +26,7 @@ local class = {}
 
 function class.new()
   return {
-    terminal_symbols = symbol_table();
+    terminal_symbols = symbol_table():end_marker();
     nonterminal_symbols = symbol_table();
     productions = sequence();
   }

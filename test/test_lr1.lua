@@ -29,7 +29,7 @@ local g = _():argument()
 print(dumper.encode(g, { pretty = true, stable = true }))
 
 -- S' -> dot S, $
-local I = sequence():push({ id = 4, dot = 1, la = 0 })
+local I = sequence():push({ id = 4, dot = 1, la = 1 })
 print("--")
 dump.items(io.stdout, g, I)
 
