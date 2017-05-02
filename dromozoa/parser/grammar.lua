@@ -30,6 +30,7 @@ local class = {}
 local epsilon = 0
 local marker_end = 1
 local marker_la = -1
+local start_id = 1
 
 function class.new(productions, symbols, max_terminal_symbol, start_symbol)
   return {
@@ -56,12 +57,6 @@ function class:each_production(head)
       end
     end
   end)
-end
-
-function class:start_production()
-  for id, body in self:each_production(self.start_symbol) do
-    return id, body
-  end
 end
 
 function class:lr0_closure(items)
@@ -108,7 +103,7 @@ end
 function class:lr0_items()
   local set_of_items = linked_hash_table()
   local transitions = linked_hash_table()
-  local start_items = sequence():push({ id = self:start_production(), dot = 1 })
+  local start_items = sequence():push({ id = start_id, dot = 1 })
   self:lr0_closure(start_items)
   set_of_items:insert(start_items, 1)
   local n = 1
@@ -219,7 +214,7 @@ function class:lr1_items()
 
   local set_of_items = linked_hash_table()
   local transitions = linked_hash_table()
-  local start_items = sequence():push({ id = self:start_production(), dot = 1, la = marker_end })
+  local start_items = sequence():push({ id = start_id, dot = 1, la = marker_end })
   self:lr1_closure(start_items)
   set_of_items:insert(start_items, 1)
   local n = 1
