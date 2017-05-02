@@ -48,10 +48,6 @@ function class:is_nonterminal_symbol(symbol)
   return symbol ~= nil and symbol > self.max_terminal_symbol
 end
 
-function class:symbol_name(symbol)
-  return self.symbols[symbol]
-end
-
 function class:each_production(head)
   return coroutine.wrap(function ()
     for id, production in ipairs(self.productions) do
