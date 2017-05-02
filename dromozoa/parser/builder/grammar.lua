@@ -63,14 +63,14 @@ function class:build(start_symbol)
     start_symbol = productions[1].head
   end
 
-  local argumented_symbol_id = nonterminal_symbols.n + 1
-  nonterminal_symbols.n = argumented_symbol_id
-  nonterminal_symbols[argumented_symbol_id] = nonterminal_symbols[start_symbol.id] .. "'"
-  local argumented_symbol = nonterminal_symbol(argumented_symbol_id, self)
+  local argumented_start_symbol_id = nonterminal_symbols.n + 1
+  nonterminal_symbols.n = argumented_start_symbol_id
+  nonterminal_symbols[argumented_start_symbol_id] = nonterminal_symbols[start_symbol.id] .. "'"
+  local argumented_start_symbol = nonterminal_symbol(argumented_start_symbol_id, self)
 
   local max_terminal_symbol = terminal_symbols:max()
 
-  local head = argumented_symbol:translate(max_terminal_symbol)
+  local head = argumented_start_symbol:translate(max_terminal_symbol)
   local body = sequence():push(start_symbol:translate(max_terminal_symbol))
   local productions = sequence():push({ head = head, body = body })
   for production in self.productions:each() do
@@ -90,7 +90,7 @@ function class:build(start_symbol)
     symbols[id + max_terminal_symbol] = name
   end
 
-  return grammar(productions, symbols, max_terminal_symbol, argumented_symbol:translate(max_terminal_symbol))
+  return grammar(productions, symbols, max_terminal_symbol, argumented_start_symbol:translate(max_terminal_symbol))
 end
 
 class.metatable = {
