@@ -15,16 +15,82 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
+local xml = require "dromozoa.commons.xml"
 local grammar = require "dromozoa.parser.builder.grammar"
 
 local _ = grammar()
 
-_"S" (_"C", _"C")
-_"C" ("c", _"C") ("d")
+_"E" (_"E", "+", _"T")
+_"E" (_"T")
+_"T" (_"T", "*", _"F")
+_"T" (_"F")
+_"F" ("(", _"E", ")")
+_"F" ("id")
+
+-- _"S" (_"C", _"C")
+-- _"C" ("c", _"C") ("d")
 
 local g = _():argument()
 
-local set_of_items, transitions = g:lr1_items()
+local symbols = g.symbols
+local set_of_items, transitions = g:lr0_items()
+local set_of_items = g:lalr1_kernels(set_of_items, transitions)
+for items in set_of_items:each() do
+  g:lr1_closure(items)
+end
 
 local actions, gotos = g:lr1_construct_table(set_of_items, transitions)
 
+io.write([[
+<style>
+  td {
+    border: 1px solid #ccc;
+  }
+</style>
+<table>
+]])
+
+io.write("  <tr>\n")
+io.write("    <td rowspan=\"2\">STATE</td>\n")
+io.write("    <td colspan=\"", g.max_terminal_symbol + 1, "\">ACTION</td>\n")
+io.write("    <td colspan=\"", #symbols - g.max_terminal_symbol, "\">GOTO</td>\n")
+io.write("  </tr>\n")
+
+io.write("  <tr>\n")
+io.write("    <td>$</td>\n")
+for _, name in ipairs(symbols) do
+  io.write("    <td>", xml.escape(name), "</td>\n")
+end
+io.write("  </tr>\n")
+
+for state = 1, #set_of_items do
+  io.write("  <tr>\n")
+  io.write("    <td>", state, "</td>\n")
+  for symbol = 0, #symbols do
+    if g:is_terminal_symbol(symbol) then
+      local action = actions:get({ state = state, symbol = symbol })
+      if action == nil then
+        io.write("    <td></td>\n")
+      else
+        if action[1] == "accept" then
+          io.write("    <td>acc</td>\n")
+        elseif action[1] == "reduce" then
+          io.write("    <td>r", action[2], "</td>\n")
+        elseif action[1] == "shift" then
+          io.write("    <td>s", action[2], "</td>\n")
+        end
+      end
+    else
+      local to = gotos:get({ from = state, symbol = symbol })
+      if to == nil then
+        io.write("    <td></td>\n")
+      else
+        io.write("    <td>", to, "</td>\n")
+      end
+    end
+  end
+  io.write("  </tr>\n")
+end
+
+io.write("</table>\n")

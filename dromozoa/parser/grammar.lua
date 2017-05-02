@@ -363,6 +363,8 @@ end
 
 function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
+  local symbols = self.symbols
+  local start_symbol = self.start_symbol
 
   local actions = hash_table()
   local gotos = hash_table()
@@ -372,23 +374,36 @@ function class:lr1_construct_table(set_of_items, transitions)
       local id = item.id
       local production = productions[id]
       local dot = item.dot
-      local symbol = production[dot]
-      if self:is_terminal_symbol(symbol) then
-        local j = assert(transitions:get({ from = i, symbol = symbol }))
-        assert(actions:insert({ state = i, symbol = symbol }, { "shift", j }) == nil)
-      elseif symbol == nil then
-        if production.head == self.start_symbol and item.la == eof then
-          assert(actions:insert({ state = i, symbol = item.la }, { "accept" }) == nil)
+      local symbol = production.body[dot]
+      local la = item.la
+      if symbol == nil then
+        if production.head == start_symbol and la == eof then
+          local action = { "accept" }
+          local result = actions:insert({ state = i, symbol = la }, action)
+          assert(result == nil or equal(result, action))
         else
-          local result = actions:insert({ state = i, symbol = item.la }, { "reduce", id })
-          if result ~= nil then
-            print(i, item.la, result[1], result[2])
-          end
-          assert(result == nil or equal(result, { "reduce", id }))
+          local action = { "reduce", id }
+          local result = actions:insert({ state = i, symbol = la }, action)
+          assert(result == nil or equal(result, action))
         end
+      elseif self:is_terminal_symbol(symbol) then
+        local j = assert(transitions:get({ from = i, symbol = symbol }))
+        local action = { "shift", j }
+        local result = actions:insert({ state = i, symbol = symbol }, action)
+        assert(result == nil or equal(result, action))
       end
     end
   end
+
+  for transition, to in transitions:each() do
+    local symbol = transition.symbol
+    if self:is_nonterminal_symbol(symbol) then
+      local result = gotos:insert(transition, to)
+      assert(result == nil or result == to)
+    end
+  end
+
+  return actions, gotos
 end
 
 class.metatable = {
