@@ -34,12 +34,7 @@ _"C" ("c", _"C") ("d")
 local g = _()
 
 local symbols = g.symbols
-local set_of_items, transitions = g:lr0_items()
-local set_of_items = g:lalr1_kernels(set_of_items, transitions)
-for items in set_of_items:each() do
-  g:lr1_closure(items)
-end
-
+local set_of_items, transitions = g:lalr1_items()
 local data = g:lr1_construct_table(set_of_items, transitions)
 -- print(dumper.encode(data, { stable = true }))
 

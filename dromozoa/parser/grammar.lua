@@ -311,6 +311,15 @@ function class:lalr1_kernels(set_of_items, transitions)
   return expanded_set_of_kernel_items
 end
 
+function class:lalr1_items()
+  local set_of_items, transitions = self:lr0_items()
+  local set_of_items = self:lalr1_kernels(set_of_items, transitions)
+  for items in set_of_items:each() do
+    self:lr1_closure(items)
+  end
+  return set_of_items, transitions
+end
+
 function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
   local symbols = self.symbols

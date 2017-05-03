@@ -30,8 +30,3 @@ local g = _()
 
 local set_of_items = g:lalr1_kernels(g:lr0_items())
 dump.set_of_items(io.stdout, g, set_of_items)
-
-for items in set_of_items:each() do
-  g:lr1_closure(items)
-end
--- dump.set_of_items(io.stdout, g, set_of_items)
