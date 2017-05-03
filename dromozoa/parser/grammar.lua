@@ -16,14 +16,12 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local empty = require "dromozoa.commons.empty"
-local equal = require "dromozoa.commons.equal"
 local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
 local keys = require "dromozoa.commons.keys"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
-local unpack = require "dromozoa.commons.unpack"
 
 local class = {}
 
@@ -171,7 +169,7 @@ function class:lr1_closure(items)
       local dot = item.dot
       local symbol = body[dot]
       if self:is_nonterminal_symbol(symbol) then
-        local symbols = sequence():push(unpack(body, dot + 1)):push(item.la)
+        local symbols = sequence():copy(body, dot + 1):push(item.la)
         local first = self:first_symbols(symbols)
         for id in self:each_production(symbol) do
           for la in first:each() do
