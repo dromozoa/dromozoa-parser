@@ -21,15 +21,15 @@ local grammar = require "dromozoa.parser.builder.grammar"
 
 local _ = grammar()
 
-_"E" (_"E", "+", _"T")
-_"E" (_"T")
-_"T" (_"T", "*", _"F")
-_"T" (_"F")
-_"F" ("(", _"E", ")")
-_"F" ("id")
+-- _"E" (_"E", "+", _"T")
+-- _"E" (_"T")
+-- _"T" (_"T", "*", _"F")
+-- _"T" (_"F")
+-- _"F" ("(", _"E", ")")
+-- _"F" ("id")
 
--- _"S" (_"C", _"C")
--- _"C" ("c", _"C") ("d")
+_"S" (_"C", _"C")
+_"C" ("c", _"C") ("d")
 
 local g = _()
 
@@ -40,7 +40,12 @@ for items in set_of_items:each() do
   g:lr1_closure(items)
 end
 
-local actions, gotos = g:lr1_construct_table(set_of_items, transitions)
+local data = g:lr1_construct_table(set_of_items, transitions)
+-- print(dumper.encode(data, { stable = true }))
+
+local max_state = data.max_state
+local max_symbol = data.max_symbol
+local table = data.table
 
 io.write([[
 <style>
@@ -54,35 +59,37 @@ io.write([[
 io.write("  <tr>\n")
 io.write("    <td rowspan=\"2\">STATE</td>\n")
 io.write("    <td colspan=\"", g.max_terminal_symbol, "\">ACTION</td>\n")
-io.write("    <td colspan=\"", #symbols - g.max_terminal_symbol - 1, "\">GOTO</td>\n")
+io.write("    <td colspan=\"", max_symbol - g.max_terminal_symbol, "\">GOTO</td>\n")
 io.write("  </tr>\n")
 
 io.write("  <tr>\n")
-for i = 1, #symbols - 1 do
-  io.write("    <td>", xml.escape(symbols[i]), "</td>\n")
+for symbol = 1, max_symbol do
+  io.write("    <td>", xml.escape(symbols[symbol]), "</td>\n")
 end
 io.write("  </tr>\n")
 
-for state = 1, #set_of_items do
+for state = 1, max_state do
   io.write("  <tr>\n")
   io.write("    <td>", state, "</td>\n")
-  for symbol = 1, #symbols - 1 do
+  for symbol = 1, max_symbol do
+    local index = state * max_symbol + symbol
     if g:is_terminal_symbol(symbol) then
-      local action = actions:get({ state = state, symbol = symbol })
-      if action == nil then
+      local action = table[index]
+      if action == 0 then
         io.write("    <td></td>\n")
+      elseif action <= max_state then
+        io.write("    <td>s", action, "</td>\n")
       else
-        if action[1] == "accept" then
+        local reduce = action - max_state
+        if reduce == 1 then
           io.write("    <td>acc</td>\n")
-        elseif action[1] == "reduce" then
-          io.write("    <td>r", action[2], "</td>\n")
-        elseif action[1] == "shift" then
-          io.write("    <td>s", action[2], "</td>\n")
+        else
+          io.write("    <td>r", reduce, "</td>\n")
         end
       end
     else
-      local to = gotos:get({ from = state, symbol = symbol })
-      if to == nil then
+      local to = table[index]
+      if to == 0 then
         io.write("    <td></td>\n")
       else
         io.write("    <td>", to, "</td>\n")

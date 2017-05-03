@@ -241,15 +241,25 @@ end
 function class:lalr1_kernels(set_of_items, transitions)
   local productions = self.productions
 
-  local map_of_items = hash_table()
+  local set_of_kernel_items = sequence()
+  local map_of_kernel_items = hash_table()
+
   for i, items in ipairs(set_of_items) do
+    local kernel_items = sequence()
     for j, item in ipairs(items) do
-      map_of_items:insert({ i = i, item = item }, j)
+      if self:is_kernel_item(item) then
+        map_of_kernel_items:insert({ i = i, item = item }, j)
+        local la = linked_hash_table()
+        if item.id == start_id and item.dot == 1 then
+          la:insert(marker_end)
+        end
+        kernel_items:push({ id = item.id, dot = item.dot, la = la })
+      end
     end
+    set_of_kernel_items:push(kernel_items)
   end
 
   local propagated = sequence()
-  local generated = sequence()
 
   for i, from_items in ipairs(set_of_items) do
     for j, from_item in ipairs(from_items) do
@@ -263,37 +273,17 @@ function class:lalr1_kernels(set_of_items, transitions)
           local symbol = production.body[dot]
           local la = item.la
           if symbol ~= nil then
-            local to_i = assert(transitions:get({ from = i, symbol = symbol }))
-            local to_j = assert(map_of_items:get({ i = to_i, item = { id = id, dot = dot + 1 } }))
+            local to_i = assert(transitions[{ from = i, symbol = symbol }])
+            local to_j = assert(map_of_kernel_items[{ i = to_i, item = { id = id, dot = dot + 1 } }])
             if la == marker_la then
               propagated:push({ from_i = i, from_j = j, to_i = to_i, to_j = to_j })
             else
-              generated:push({ i = to_i, j = to_j, la = la })
+              set_of_kernel_items[to_i][to_j].la:insert(la)
             end
           end
         end
       end
     end
-  end
-
-  local set_of_kernel_items = sequence()
-
-  for items in set_of_items:each() do
-    local kernel_items = sequence()
-    for item in items:each() do
-      if self:is_kernel_item(item) then
-        local kernel_item = { id = item.id, dot = item.dot, la = linked_hash_table() }
-        if productions[item.id].head == self.start_symbol and item.dot == 1 then
-          kernel_item.la:insert(marker_end)
-        end
-        kernel_items:push(kernel_item)
-      end
-    end
-    set_of_kernel_items:push(kernel_items)
-  end
-
-  for op in generated:each() do
-    set_of_kernel_items[op.i][op.j].la:insert(op.la)
   end
 
   repeat
@@ -328,31 +318,30 @@ function class:lr1_construct_table(set_of_items, transitions)
   local symbols = self.symbols
   local start_symbol = self.start_symbol
 
-  local actions = hash_table()
-  local gotos = hash_table()
+  local max_state = #set_of_items
+  local max_symbol = start_symbol - 1
+
+  local table = {}
+  for i = 1, (max_state + 1) * max_symbol do
+    table[i] = 0
+  end
 
   for i, items in ipairs(set_of_items) do
     for item in items:each() do
       local id = item.id
-      local production = productions[id]
-      local dot = item.dot
-      local symbol = production.body[dot]
-      local la = item.la
+      local symbol = productions[id].body[item.dot]
       if symbol == nil then
-        if production.head == start_symbol and la == marker_end then
-          local action = { "accept" }
-          local result = actions:insert({ state = i, symbol = la }, action)
-          assert(result == nil or equal(result, action))
-        else
-          local action = { "reduce", id }
-          local result = actions:insert({ state = i, symbol = la }, action)
-          assert(result == nil or equal(result, action))
-        end
+        local reduce = max_state + id
+        local index = i * max_symbol + item.la
+        local current = table[index]
+        assert(current == 0 or current == reduce)
+        table[index] = reduce
       elseif self:is_terminal_symbol(symbol) then
-        local j = assert(transitions:get({ from = i, symbol = symbol }))
-        local action = { "shift", j }
-        local result = actions:insert({ state = i, symbol = symbol }, action)
-        assert(result == nil or equal(result, action))
+        local shift = assert(transitions[{ from = i, symbol = symbol }])
+        local index = i * max_symbol + symbol
+        local current = table[index]
+        assert(current == 0 or current == shift)
+        table[index] = shift
       end
     end
   end
@@ -360,12 +349,19 @@ function class:lr1_construct_table(set_of_items, transitions)
   for transition, to in transitions:each() do
     local symbol = transition.symbol
     if self:is_nonterminal_symbol(symbol) then
-      local result = gotos:insert(transition, to)
-      assert(result == nil or result == to)
+      assert(symbol <= max_symbol)
+      local index = transition.from * max_symbol + symbol
+      local current = table[index]
+      assert(current == 0)
+      table[index] = to
     end
   end
 
-  return actions, gotos
+  return {
+    max_state = max_state;
+    max_symbol = max_symbol;
+    table = table;
+  }
 end
 
 class.metatable = {
