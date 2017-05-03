@@ -248,7 +248,7 @@ function class:lalr1_kernels(set_of_items, transitions)
     local kernel_items = sequence()
     for j, item in ipairs(items) do
       if self:is_kernel_item(item) then
-        map_of_kernel_items:insert({ i = i, item = item }, j)
+        map_of_kernel_items[{ i = i, item = item }] = j
         local la = linked_hash_table()
         if item.id == start_id and item.dot == 1 then
           la:insert(marker_end)
@@ -297,7 +297,7 @@ function class:lalr1_kernels(set_of_items, transitions)
     end
   until done
 
-  local result = sequence()
+  local expanded_set_of_kernel_items = sequence()
   for items in set_of_kernel_items:each() do
     local expanded_items = sequence()
     for item in items:each() do
@@ -307,10 +307,10 @@ function class:lalr1_kernels(set_of_items, transitions)
         expanded_items:push({ id = id, dot = dot, la = la })
       end
     end
-    result:push(expanded_items)
+    expanded_set_of_kernel_items:push(expanded_items)
   end
 
-  return result
+  return expanded_set_of_kernel_items
 end
 
 function class:lr1_construct_table(set_of_items, transitions)
