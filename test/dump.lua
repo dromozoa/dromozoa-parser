@@ -21,20 +21,13 @@ local xml = require "dromozoa.commons.xml"
 
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
-local EOF = "$"
 local LOOKAHEAD = "#"
 
 local class = {}
 
 function class.la(out, g, la)
   local symbols = g.symbols
-  if la == 0 then
-    out:write(EOF)
-  elseif la == -2 then
-    out:write(LOOKAHEAD)
-  else
-    out:write(symbols[la])
-  end
+  out:write(symbols[la])
 end
 
 function class.item(out, g, item)

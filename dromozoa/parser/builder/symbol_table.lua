@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local pairs = require "dromozoa.commons.pairs"
+local ipairs = require "dromozoa.commons.ipairs"
 
 local class = {}
 
@@ -32,6 +32,7 @@ function class:symbol(name)
   if id == nil then
     id = self.n + 1
     self.n = id
+    self[id] = name
     map[name] = id
   end
   return id
@@ -43,7 +44,7 @@ end
 
 function class:each()
   return coroutine.wrap(function ()
-    for name, id in pairs(self.map) do
+    for id, name in ipairs(self) do
       coroutine.yield(id, name)
     end
   end)

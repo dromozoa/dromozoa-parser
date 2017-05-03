@@ -20,17 +20,17 @@ local grammar = require "dromozoa.parser.builder.grammar"
 
 local _ = grammar()
 
-_"expression"
-    (_"expression", "+", _"term")
-    (_"expression", "-", _"term")
-    (_"term")
-_"term"
-    (_"term", "*", _"factor")
-    (_"term", "/", _"factor")
-    (_"factor")
-_"factor"
-    ("(", _"expression", ")")
-    ("id")
+_"expression"(
+    _"expression", "+", _"term")(
+    _"expression", "-", _"term")(
+    _"term")
+_"term"(
+    _"term", "*", _"factor")(
+    _"term", "/", _"factor")(
+    _"factor")
+_"factor"(
+    "(", _"expression", ")")(
+    "id")
 
-local g = _():argument()
-print(dumper.encode(g, { pretty = true }))
+local g = _()
+print(dumper.encode(g, { pretty = true, stable = true }))

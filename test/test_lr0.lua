@@ -26,7 +26,7 @@ _"E" (_"E", "+", _"T") (_"T")
 _"T" (_"T", "*", _"F") (_"F")
 _"F" ("(", _"E", ")") ("id")
 
-local g = _():argument()
+local g = _()
 -- print("--")
 -- print(dumper.encode(g, { pretty = true }))
 
