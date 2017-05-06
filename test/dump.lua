@@ -78,13 +78,13 @@ end
 function class.items(out, g, items)
   for item in items:each() do
     class.item(out, g, item)
-    io.write("\n")
+    out:write("\n")
   end
 end
 
 function class.set_of_items(out, g, set_of_items)
   for i, items in ipairs(set_of_items) do
-    io.write("======== I_", i, " ==========\n")
+    out:write("======== I_", i, " ==========\n")
     class.items(out, g, items)
   end
 end
@@ -117,6 +117,70 @@ node [shape=plaintext]
   end
 
   out:write("}\n")
+  out:close()
+end
+
+function class.write_table(filename, g, data)
+  local max_state = data.max_state
+  local max_symbol = data.max_symbol
+  local table = data.table
+  local symbols = g.symbols
+
+  local out = assert(io.open(filename, "w"))
+
+  out:write([[
+  <style>
+    td {
+      border: 1px solid #ccc;
+    }
+  </style>
+  <table>
+  ]])
+
+  out:write("  <tr>\n")
+  out:write("    <td rowspan=\"2\">STATE</td>\n")
+  out:write("    <td colspan=\"", g.max_terminal_symbol, "\">ACTION</td>\n")
+  out:write("    <td colspan=\"", max_symbol - g.max_terminal_symbol, "\">GOTO</td>\n")
+  out:write("  </tr>\n")
+
+  out:write("  <tr>\n")
+  for symbol = 1, max_symbol do
+    out:write("    <td>", xml.escape(symbols[symbol]), "</td>\n")
+  end
+  out:write("  </tr>\n")
+
+  for state = 1, max_state do
+    out:write("  <tr>\n")
+    out:write("    <td>", state, "</td>\n")
+    for symbol = 1, max_symbol do
+      local index = state * max_symbol + symbol
+      if g:is_terminal_symbol(symbol) then
+        local action = table[index]
+        if action == 0 then
+          out:write("    <td></td>\n")
+        elseif action <= max_state then
+          out:write("    <td>s", action, "</td>\n")
+        else
+          local reduce = action - max_state
+          if reduce == 1 then
+            out:write("    <td>acc</td>\n")
+          else
+            out:write("    <td>r", reduce, "</td>\n")
+          end
+        end
+      else
+        local to = table[index]
+        if to == 0 then
+          out:write("    <td></td>\n")
+        else
+          out:write("    <td>", to, "</td>\n")
+        end
+      end
+    end
+    out:write("  </tr>\n")
+  end
+
+  out:write("</table>\n")
   out:close()
 end
 

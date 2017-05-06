@@ -341,14 +341,29 @@ function class:lr1_construct_table(set_of_items, transitions)
         local reduce = max_state + id
         local index = i * max_symbol + item.la
         local current = table[index]
-        assert(current == 0 or current == reduce)
-        table[index] = reduce
+        if current == 0 or current == reduce then
+          table[index] = reduce
+        else
+          if current <= max_state then
+            io.write(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, item.la))
+          else
+            io.write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, item.la))
+            if reduce < current then
+              table[index] = reduce
+            end
+          end
+        end
       elseif self:is_terminal_symbol(symbol) then
         local shift = assert(transitions[{ from = i, symbol = symbol }])
         local index = i * max_symbol + symbol
         local current = table[index]
-        assert(current == 0 or current == shift)
-        table[index] = shift
+        if current == 0 or current == shift then
+          table[index] = shift
+        else
+          assert(current > max_state)
+          io.write(("reduce(%d) / shift(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, shift, i, symbol))
+          table[index] = shift
+        end
       end
     end
   end
