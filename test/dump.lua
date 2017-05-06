@@ -30,6 +30,14 @@ function class.la(out, g, la)
   out:write(symbols[la])
 end
 
+function class.production(out, g, production)
+  local symbols = g.symbols
+  out:write(symbols[production.head], " ", TO)
+  for symbol in production.body:each() do
+    out:write(" ", symbols[symbol])
+  end
+end
+
 function class.item(out, g, item)
   local productions = g.productions
   local symbols = g.symbols
