@@ -33,7 +33,11 @@ function class.new(grammar, data)
   }
 end
 
-function class:parse(symbol, f)
+function class:parse(symbol)
+  if symbol == nil then
+    symbol = { code = 1 }
+  end
+
   local states = self.states
   local symbols = self.symbols
 
@@ -43,28 +47,35 @@ function class:parse(symbol, f)
   local table = self.table
 
   local state = states:top()
-  local action = table[state * max_symbol + symbol]
+  local action = table[state * max_symbol + symbol.code]
   if action == 0 then
     error("parse error")
   elseif action <= max_state then
-    print("shift")
     states:push(action)
+    symbols:push(symbol)
   else
     local reduce = action - max_state
     if reduce == 1 then
-      print("accept")
-      return true
+      assert(#symbols == 1)
+      return symbols:pop()
     else
       local production = productions[reduce]
+      local body = sequence()
+      local m = #symbols
+      local n = #production.body
+      for i = 1, n do
+        local j = m - n + i
+        body[i] = symbols[j]
+        symbols[j] = nil
+      end
       for i = 1, #production.body do
         states:pop()
+        -- symbols:pop()
       end
       local state = states:top()
       states:push(table[state * max_symbol + production.head])
-      io.write("reduce ")
-      f(io.stdout, self.grammar, production)
-      io.write("\n")
-      self:parse(symbol, f)
+      symbols:push({ code = production.head, body = body })
+      return self:parse(symbol, value)
     end
   end
 end

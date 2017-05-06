@@ -16,13 +16,14 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
+local driver = require "dromozoa.parser.driver"
 local grammar = require "dromozoa.parser.builder.grammar"
 local dump = require "test.dump"
 
 local _ = grammar()
 
--- _"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("id")
-_"S" ("i", _"S", "e", _"S") ("i", _"S") ("a")
+_"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("id")
+-- _"S" ("i", _"S", "e", _"S") ("i", _"S") ("a")
 
 local g = _()
 -- print(dumper.encode(g, { pretty = true, stable = true }))
@@ -33,3 +34,16 @@ dump.write_graph("test.dot", g, set_of_items, transitions)
 
 local data = g:lr1_construct_table(set_of_items, transitions)
 dump.write_table("test.html", g, data)
+
+local _ = {}
+for i, name in ipairs(g.symbols) do
+  _[name] = i
+end
+
+local d = driver(g, data)
+d:parse(_["id"], dump.production)
+d:parse(_["+"],  dump.production)
+d:parse(_["id"], dump.production)
+d:parse(_["*"],  dump.production)
+d:parse(_["id"], dump.production)
+d:parse(1, dump.production)

@@ -17,6 +17,7 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local ipairs = require "dromozoa.commons.ipairs"
+local xml = require "dromozoa.commons.xml"
 local driver = require "dromozoa.parser.driver"
 local grammar = require "dromozoa.parser.builder.grammar"
 local dump = require "test.dump"
@@ -39,11 +40,64 @@ for i, name in ipairs(g.symbols) do
 end
 
 local d = driver(g, data)
-d:parse(_["("],  dump.production)
-d:parse(_["id"], dump.production)
-d:parse(_["+"],  dump.production)
-d:parse(_["id"], dump.production)
-d:parse(_[")"],  dump.production)
-d:parse(_["*"],  dump.production)
-d:parse(_["id"], dump.production)
-d:parse(1, dump.production)
+-- d:parse({ code = _["("] })
+d:parse({ code = _["id"], value = 17 })
+d:parse({ code = _["+"] })
+d:parse({ code = _["id"], value = 23 })
+-- d:parse({ code = _[")"] })
+d:parse({ code = _["+"] })
+d:parse({ code = _["id"], value = 37 })
+local r = d:parse()
+
+function dump.write_tree(filename, g, root)
+  local out = assert(io.open(filename, "w"))
+  out:write([[
+digraph g {
+graph [rankdir=TB];
+node [shape=plaintext]
+]])
+
+  dump.write_tree_node(out, g, root, 1)
+  dump.write_tree_edge(out, g, root)
+
+  out:write("}\n")
+  out:close()
+end
+
+function dump.write_tree_node(out, g, node, id)
+  local symbols = g.symbols
+  node.id = id
+  local code = node.code
+  if g:is_terminal_symbol(code) then
+    out:write(("%d [label=<<table border=\"0\" cellborder=\"1\" cellpadding=\"0\" cellspacing=\"0\" margin=\"0\">"):format(id))
+    out:write(("<tr><td>%s</td></tr>"):format(xml.escape(symbols[code])))
+    local value = node.value
+    if value then
+      out:write(("<tr><td>%s</td></tr>"):format(xml.escape(value)))
+    end
+    out:write("</table>>]\n")
+    return id
+  else
+    out:write(("%d [label=<<table border=\"0\" cellborder=\"1\" cellpadding=\"0\" cellspacing=\"0\" margin=\"0\">"):format(id))
+    out:write(("<tr><td>%s</td></tr>"):format(xml.escape(symbols[code])))
+    out:write("</table>>]\n")
+    for node in node.body:each() do
+      id = dump.write_tree_node(out, g, node, id + 1)
+    end
+    return id
+  end
+end
+
+function dump.write_tree_edge(out, g, node)
+  local code = node.code
+  local id = node.id
+  if g:is_nonterminal_symbol(code) then
+    for node in node.body:each() do
+      out:write(("%d -> %d\n"):format(id, node.id))
+      dump.write_tree_edge(out, g, node)
+    end
+  end
+end
+
+dump.write_tree("test.dot", g, r)
+
