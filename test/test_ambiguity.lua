@@ -22,11 +22,12 @@ local dump = require "test.dump"
 
 local _ = grammar()
 
-_"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("id")
+-- _"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("id")
+_"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("+", _"E") ("id")
 -- _"S" ("i", _"S", "e", _"S") ("i", _"S") ("a")
 
 local g = _()
--- print(dumper.encode(g, { pretty = true, stable = true }))
+print(dumper.encode(g, { pretty = true, stable = true }))
 
 local set_of_items, transitions = g:lalr1_items()
 dump.set_of_items(io.stdout, g, set_of_items)
@@ -41,9 +42,14 @@ for i, name in ipairs(g.symbols) do
 end
 
 local d = driver(g, data)
-d:parse(_["id"], dump.production)
-d:parse(_["+"],  dump.production)
-d:parse(_["id"], dump.production)
-d:parse(_["*"],  dump.production)
-d:parse(_["id"], dump.production)
-d:parse(1, dump.production)
+d:parse({ code = _["("] })
+d:parse({ code = _["id"], value = 17 })
+d:parse({ code = _["+"] })
+d:parse({ code = _["+"] })
+d:parse({ code = _["id"], value = 23 })
+d:parse({ code = _[")"] })
+d:parse({ code = _["*"] })
+d:parse({ code = _["id"], value = 37 })
+local r = d:parse()
+
+dump.write_tree("test.dot", g, r)

@@ -47,7 +47,7 @@ function class:parse(symbol)
   local table = self.table
 
   local state = states:top()
-  local action = table[state * max_symbol + symbol.code]
+  local action = table[state * max_symbol + assert(symbol.code)]
   if action == 0 then
     error("parse error")
   elseif action <= max_state then
@@ -70,7 +70,6 @@ function class:parse(symbol)
       end
       for i = 1, #production.body do
         states:pop()
-        -- symbols:pop()
       end
       local state = states:top()
       states:push(table[state * max_symbol + production.head])
