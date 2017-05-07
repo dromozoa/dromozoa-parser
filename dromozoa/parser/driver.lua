@@ -15,66 +15,84 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
+local tree = require "dromozoa.tree"
 
+local marker_end = 1
 local start_state = 1
 
 local class = {}
 
 function class.new(grammar, data)
   return {
-    grammar = grammar;
-    states = sequence():push(start_state);
-    symbols = sequence();
     productions = grammar.productions;
     max_state = data.max_state;
     max_symbol = data.max_symbol;
     table = data.table;
+    states = sequence():push(start_state);
+    symbols = sequence();
+    tree = tree();
+    nodes = sequence();
   }
 end
 
-function class:parse(symbol)
+function class:parse(symbol, data)
+  local node
   if symbol == nil then
-    symbol = { code = 1 }
+    node = { symbol = marker_end }
+  else
+    node = self.tree:create_node()
+    node.symbol = symbol
   end
+  if data then
+    for k, v in pairs(data) do
+      node[k] = v
+    end
+  end
+  return self:parse_node(node)
+end
 
-  local states = self.states
-  local symbols = self.symbols
-
-  local productions = self.productions
+function class:parse_node(node)
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
+  local states = self.states
+  local nodes = self.nodes
 
   local state = states:top()
-  local action = table[state * max_symbol + assert(symbol.code)]
+  local action = table[state * max_symbol + node.symbol]
   if action == 0 then
-    error("parse error")
+    return false, "parse error", state, node
   elseif action <= max_state then
     states:push(action)
-    symbols:push(symbol)
+    nodes:push(node)
+    return true
   else
     local reduce = action - max_state
     if reduce == 1 then
-      assert(#symbols == 1)
-      return symbols:pop()
+      states:pop()
+      return nodes:pop()
     else
-      local production = productions[reduce]
-      local body = sequence()
-      local m = #symbols
+      local production = self.productions[reduce]
+      local symbol = production.head
+      local reduced_node = self.tree:create_node()
+      reduced_node.symbol = symbol
+
       local n = #production.body
-      for i = 1, n do
-        local j = m - n + i
-        body[i] = symbols[j]
-        symbols[j] = nil
+      local m = #nodes
+      for i = m - n + 1, m do
+        reduced_node:append_child(nodes[i])
+        nodes[i] = nil
       end
-      for i = 1, #production.body do
-        states:pop()
+      local m = #states
+      for i = m - n + 1, m do
+        states[i] = nil
       end
-      local state = states:top()
-      states:push(table[state * max_symbol + production.head])
-      symbols:push({ code = production.head, body = body })
-      return self:parse(symbol, value)
+
+      states:push(table[states:top() * max_symbol + symbol])
+      nodes:push(reduced_node)
+      return self:parse_node(node)
     end
   end
 end

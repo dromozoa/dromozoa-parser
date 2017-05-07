@@ -23,12 +23,12 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
 
-local class = {}
-
 local epsilon = 0
 local marker_end = 1
 local marker_la = -1
 local start_id = 1
+
+local class = {}
 
 function class.new(productions, symbols, max_terminal_symbol, start_symbol)
   return {
@@ -40,11 +40,11 @@ function class.new(productions, symbols, max_terminal_symbol, start_symbol)
 end
 
 function class:is_terminal_symbol(symbol)
-  return symbol ~= nil and symbol <= self.max_terminal_symbol
+  return symbol <= self.max_terminal_symbol
 end
 
 function class:is_nonterminal_symbol(symbol)
-  return symbol ~= nil and symbol > self.max_terminal_symbol
+  return symbol > self.max_terminal_symbol
 end
 
 function class:each_production(head)
@@ -58,9 +58,7 @@ function class:each_production(head)
 end
 
 function class:is_kernel_item(item)
-  local production = self.productions[item.id]
-  local dot = item.dot
-  return production.head == self.start_symbol or dot > 1
+  return self.productions[item.id].head == self.start_symbol or item.dot > 1
 end
 
 function class:first_symbol(symbol)
@@ -98,7 +96,7 @@ function class:lr0_closure(items)
     local done = true
     for item in items:each() do
       local symbol = productions[item.id].body[item.dot]
-      if self:is_nonterminal_symbol(symbol) and not added[symbol] then
+      if symbol ~= nil and self:is_nonterminal_symbol(symbol) and not added[symbol] then
         for id in self:each_production(symbol) do
           items:push({ id = id, dot = 1 })
           done = false
@@ -168,7 +166,7 @@ function class:lr1_closure(items)
       local body = productions[item.id].body
       local dot = item.dot
       local symbol = body[dot]
-      if self:is_nonterminal_symbol(symbol) then
+      if symbol ~= nil and self:is_nonterminal_symbol(symbol) then
         local symbols = sequence():copy(body, dot + 1):push(item.la)
         local first = self:first_symbols(symbols)
         for id in self:each_production(symbol) do
@@ -271,8 +269,8 @@ function class:lalr1_kernels(set_of_items, transitions)
           local symbol = production.body[dot]
           local la = item.la
           if symbol ~= nil then
-            local to_i = assert(transitions[{ from = i, symbol = symbol }])
-            local to_j = assert(map_of_kernel_items[{ i = to_i, item = { id = id, dot = dot + 1 } }])
+            local to_i = transitions[{ from = i, symbol = symbol }]
+            local to_j = map_of_kernel_items[{ i = to_i, item = { id = id, dot = dot + 1 } }]
             if la == marker_la then
               propagated:push({ from_i = i, from_j = j, to_i = to_i, to_j = to_j })
             else
@@ -320,7 +318,7 @@ function class:lalr1_items()
   return set_of_items, transitions
 end
 
-function class:lr1_construct_table(set_of_items, transitions)
+function class:lr1_construct_table(set_of_items, transitions, out)
   local productions = self.productions
   local symbols = self.symbols
   local start_symbol = self.start_symbol
@@ -338,31 +336,37 @@ function class:lr1_construct_table(set_of_items, transitions)
       local id = item.id
       local symbol = productions[id].body[item.dot]
       if symbol == nil then
-        local reduce = max_state + id
-        local index = i * max_symbol + item.la
+        local action = max_state + id
+        local la = item.la
+        local index = i * max_symbol + la
         local current = table[index]
-        if current == 0 or current == reduce then
-          table[index] = reduce
-        else
+        if current == 0 then
+          table[index] = action
+        elseif current ~= action then
           if current <= max_state then
-            io.write(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, item.la))
+            if out then
+              out:write(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, la))
+            end
           else
-            io.write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, item.la))
-            if reduce < current then
-              table[index] = reduce
+            if out then
+              out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, la))
+            end
+            if action < current then
+              table[index] = action
             end
           end
         end
       elseif self:is_terminal_symbol(symbol) then
-        local shift = assert(transitions[{ from = i, symbol = symbol }])
+        local action = transitions[{ from = i, symbol = symbol }]
         local index = i * max_symbol + symbol
         local current = table[index]
-        if current == 0 or current == shift then
-          table[index] = shift
-        else
-          assert(current > max_state)
-          io.write(("reduce(%d) / shift(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, shift, i, symbol))
-          table[index] = shift
+        if current == 0 then
+          table[index] = action
+        elseif current ~= action then
+          if out then
+            out:write(("reduce(%d) / shift(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, action, i, symbol))
+          end
+          table[index] = action
         end
       end
     end
@@ -371,10 +375,8 @@ function class:lr1_construct_table(set_of_items, transitions)
   for transition, to in transitions:each() do
     local symbol = transition.symbol
     if self:is_nonterminal_symbol(symbol) then
-      assert(symbol <= max_symbol)
       local index = transition.from * max_symbol + symbol
       local current = table[index]
-      assert(current == 0)
       table[index] = to
     end
   end

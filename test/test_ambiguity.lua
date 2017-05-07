@@ -33,7 +33,7 @@ local set_of_items, transitions = g:lalr1_items()
 dump.set_of_items(io.stdout, g, set_of_items)
 dump.write_graph("test.dot", g, set_of_items, transitions)
 
-local data = g:lr1_construct_table(set_of_items, transitions)
+local data = g:lr1_construct_table(set_of_items, transitions, io.stdout)
 dump.write_table("test.html", g, data)
 
 local _ = {}
@@ -42,14 +42,13 @@ for i, name in ipairs(g.symbols) do
 end
 
 local d = driver(g, data)
-d:parse({ code = _["("] })
-d:parse({ code = _["id"], value = 17 })
-d:parse({ code = _["+"] })
-d:parse({ code = _["+"] })
-d:parse({ code = _["id"], value = 23 })
-d:parse({ code = _[")"] })
-d:parse({ code = _["*"] })
-d:parse({ code = _["id"], value = 37 })
-local r = d:parse()
-
-dump.write_tree("test.dot", g, r)
+assert(d:parse(_["("]))
+assert(d:parse(_["id"], { value = 17 }))
+assert(d:parse(_["+"]))
+assert(d:parse(_["+"]))
+assert(d:parse(_["id"], { value = 23 }))
+assert(d:parse(_[")"]))
+assert(d:parse(_["*"]))
+assert(d:parse(_["id"], { value = 37 }))
+assert(d:parse())
+dump.write_tree("test.dot", g, d.tree)
