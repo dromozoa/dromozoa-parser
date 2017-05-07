@@ -41,13 +41,12 @@ for i, name in ipairs(g.symbols) do
 end
 
 local d = driver(g, data)
-d:parse(_["("])
-d:parse(_["id"], { value = 17 })
-d:parse(_["+"])
-d:parse(_["id"], { value = 23 })
-d:parse(_[")"])
-d:parse(_["+"])
-d:parse(_["id"], { value = 37 })
-d:parse()
-
+assert(d:parse(_["("]))
+assert(d:parse(_["id"], { value = 17 }))
+assert(d:parse(_["+"]))
+assert(d:parse(_["id"], { value = 23 }))
+assert(d:parse(_[")"]))
+assert(d:parse(_["+"]))
+assert(d:parse(_["id"], { value = 37 }))
+assert(d:parse())
 dump.write_tree("test.dot", g, d.tree)

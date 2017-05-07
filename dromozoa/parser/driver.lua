@@ -54,58 +54,47 @@ function class:parse(symbol, data)
 end
 
 function class:parse_node(node)
-  local productions = self.productions
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
   local states = self.states
-  local tree = self.tree
   local nodes = self.nodes
 
   local state = states:top()
   local action = table[state * max_symbol + node.symbol]
   if action == 0 then
-    error("parse error")
+    return false, "parse error", state, node
   elseif action <= max_state then
     states:push(action)
     nodes:push(node)
+    return true
   else
     local reduce = action - max_state
     if reduce == 1 then
-      for i, state in ipairs(states) do
-        print("s", i, state)
-      end
-      for i, node in ipairs(nodes) do
-        print("n", i, node.symbol)
-      end
-      -- return nodes:pop()
+      states:pop()
+      return nodes:pop()
     else
-      local production = productions[reduce]
-      local head = production.head
-      local reduce_node = tree:create_node()
-      reduce_node.symbol = head
+      local production = self.productions[reduce]
+      local symbol = production.head
+      local reduced_node = self.tree:create_node()
+      reduced_node.symbol = symbol
 
       local n = #production.body
-
-      local m = #nodes - n
-      for i = 1, n do
-        local j = m + i
-        reduce_node:append_child(nodes[j])
-        nodes[j] = nil
+      local m = #nodes
+      for i = m - n + 1, m do
+        reduced_node:append_child(nodes[i])
+        nodes[i] = nil
       end
-
       local m = #states
       for i = m - n + 1, m do
         states[i] = nil
       end
 
-      local state = states:top()
-      states:push(table[state * max_symbol + head])
-      nodes:push(reduce_node)
+      states:push(table[states:top() * max_symbol + symbol])
+      nodes:push(reduced_node)
       return self:parse_node(node)
     end
   end
-
 end
 
 class.metatable = {
