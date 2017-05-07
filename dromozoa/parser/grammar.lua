@@ -269,8 +269,8 @@ function class:lalr1_kernels(set_of_items, transitions)
           local symbol = production.body[dot]
           local la = item.la
           if symbol ~= nil then
-            local to_i = assert(transitions[{ from = i, symbol = symbol }])
-            local to_j = assert(map_of_kernel_items[{ i = to_i, item = { id = id, dot = dot + 1 } }])
+            local to_i = transitions[{ from = i, symbol = symbol }]
+            local to_j = map_of_kernel_items[{ i = to_i, item = { id = id, dot = dot + 1 } }]
             if la == marker_la then
               propagated:push({ from_i = i, from_j = j, to_i = to_i, to_j = to_j })
             else
@@ -352,13 +352,12 @@ function class:lr1_construct_table(set_of_items, transitions)
           end
         end
       elseif self:is_terminal_symbol(symbol) then
-        local shift = assert(transitions[{ from = i, symbol = symbol }])
+        local shift = transitions[{ from = i, symbol = symbol }]
         local index = i * max_symbol + symbol
         local current = table[index]
         if current == 0 or current == shift then
           table[index] = shift
         else
-          assert(current > max_state)
           io.write(("reduce(%d) / shift(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, shift, i, symbol))
           table[index] = shift
         end
@@ -369,10 +368,8 @@ function class:lr1_construct_table(set_of_items, transitions)
   for transition, to in transitions:each() do
     local symbol = transition.symbol
     if self:is_nonterminal_symbol(symbol) then
-      assert(symbol <= max_symbol)
       local index = transition.from * max_symbol + symbol
       local current = table[index]
-      assert(current == 0)
       table[index] = to
     end
   end
