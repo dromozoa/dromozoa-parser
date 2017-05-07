@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
 local tree = require "dromozoa.tree"
 
@@ -32,51 +33,71 @@ function class.new(grammar, data)
     states = sequence():push(start_state);
     symbols = sequence();
     tree = tree();
+    nodes = sequence();
   }
 end
 
 function class:parse(symbol)
   if symbol == nil then
-    symbol = { code = marker_end }
+    return self:parse_node({ code = marker_end })
+  else
+    local tree = self.tree
+    local node = tree:create_node()
+    for k, v in pairs(symbol) do
+      node[k] = v
+    end
+    return self:parse_node(node)
   end
+end
 
+function class:parse_node(node)
   local productions = self.productions
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
   local states = self.states
-  local symbols = self.symbols
+  local tree = self.tree
+  local nodes = self.nodes
 
   local state = states:top()
-  local action = table[state * max_symbol + symbol.code]
+  local action = table[state * max_symbol + node.code]
   if action == 0 then
     error("parse error")
   elseif action <= max_state then
     states:push(action)
-    symbols:push(symbol)
+    nodes:push(node)
   else
     local reduce = action - max_state
     if reduce == 1 then
-      return symbols:pop()
+      -- return nodes:pop()
     else
       local production = productions[reduce]
-      local body = sequence()
-      local m = #symbols
+      local head = production.head
+      local reduce_node = tree:create_node()
+      reduce_node.code = head
+
       local n = #production.body
+
+      local m = #nodes
       for i = 1, n do
         local j = m - n + i
-        body[i] = symbols[j]
-        symbols[j] = nil
+        reduce_node:append_child(nodes[j])
+        nodes[j] = nil
       end
-      for i = 1, #production.body do
-        states:pop()
+
+      local m = #states
+      for i = 1, n do
+        local j = m - n + i
+        states[j] = nil
       end
+
       local state = states:top()
-      states:push(table[state * max_symbol + production.head])
-      symbols:push({ code = production.head, body = body })
-      return self:parse(symbol)
+      states:push(table[state * max_symbol + head])
+      nodes:push(reduce_node)
+      return self:parse_node(node)
     end
   end
+
 end
 
 class.metatable = {

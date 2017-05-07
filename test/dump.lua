@@ -234,4 +234,29 @@ function class.write_tree_edge(out, g, node)
   end
 end
 
+function class.write_tree(filename, g, t)
+  local symbols = g.symbols
+
+  local out = assert(io.open(filename, "w"))
+  t:write_graphviz(out, {
+    default_node_attributes = function ()
+      return {
+        shape = "box";
+      }
+    end;
+    node_attributes = function (_, u)
+      if u.value then
+        return {
+          label = "<" .. xml.escape(symbols[u.code]) .. " / " .. xml.escape(u.value) .. ">";
+        }
+      else
+        return {
+          label = "<" .. xml.escape(symbols[u.code]) .. ">";
+        }
+      end
+    end;
+  })
+  out:close()
+end
+
 return class

@@ -47,6 +47,6 @@ d:parse({ code = _["id"], value = 23 })
 -- d:parse({ code = _[")"] })
 d:parse({ code = _["+"] })
 d:parse({ code = _["id"], value = 37 })
-local r = d:parse()
+d:parse()
 
-dump.write_tree("test.dot", g, r)
+dump.write_tree("test.dot", g, d.tree)
