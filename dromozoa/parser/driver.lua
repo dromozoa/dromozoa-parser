@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local sequence = require "dromozoa.commons.sequence"
+local tree = require "dromozoa.tree"
 
 local marker_end = 1
 local start_state = 1
@@ -24,13 +25,13 @@ local class = {}
 
 function class.new(grammar, data)
   return {
-    grammar = grammar;
-    states = sequence():push(start_state);
-    symbols = sequence();
     productions = grammar.productions;
     max_state = data.max_state;
     max_symbol = data.max_symbol;
     table = data.table;
+    states = sequence():push(start_state);
+    symbols = sequence();
+    tree = tree();
   }
 end
 
@@ -39,13 +40,12 @@ function class:parse(symbol)
     symbol = { code = marker_end }
   end
 
-  local states = self.states
-  local symbols = self.symbols
-
   local productions = self.productions
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
+  local states = self.states
+  local symbols = self.symbols
 
   local state = states:top()
   local action = table[state * max_symbol + assert(symbol.code)]
@@ -75,7 +75,7 @@ function class:parse(symbol)
       local state = states:top()
       states:push(table[state * max_symbol + production.head])
       symbols:push({ code = production.head, body = body })
-      return self:parse(symbol, value)
+      return self:parse(symbol)
     end
   end
 end
