@@ -30,6 +30,14 @@ function class.la(out, g, la)
   out:write(symbols[la])
 end
 
+function class.production(out, g, production)
+  local symbols = g.symbols
+  out:write(symbols[production.head], " ", TO)
+  for symbol in production.body:each() do
+    out:write(" ", symbols[symbol])
+  end
+end
+
 function class.item(out, g, item)
   local productions = g.productions
   local symbols = g.symbols
@@ -70,13 +78,13 @@ end
 function class.items(out, g, items)
   for item in items:each() do
     class.item(out, g, item)
-    io.write("\n")
+    out:write("\n")
   end
 end
 
 function class.set_of_items(out, g, set_of_items)
   for i, items in ipairs(set_of_items) do
-    io.write("======== I_", i, " ==========\n")
+    out:write("======== I_", i, " ==========\n")
     class.items(out, g, items)
   end
 end
@@ -110,6 +118,120 @@ node [shape=plaintext]
 
   out:write("}\n")
   out:close()
+end
+
+function class.write_table(filename, g, data)
+  local max_state = data.max_state
+  local max_symbol = data.max_symbol
+  local table = data.table
+  local symbols = g.symbols
+
+  local out = assert(io.open(filename, "w"))
+
+  out:write([[
+  <style>
+    td {
+      border: 1px solid #ccc;
+    }
+  </style>
+  <table>
+  ]])
+
+  out:write("  <tr>\n")
+  out:write("    <td rowspan=\"2\">STATE</td>\n")
+  out:write("    <td colspan=\"", g.max_terminal_symbol, "\">ACTION</td>\n")
+  out:write("    <td colspan=\"", max_symbol - g.max_terminal_symbol, "\">GOTO</td>\n")
+  out:write("  </tr>\n")
+
+  out:write("  <tr>\n")
+  for symbol = 1, max_symbol do
+    out:write("    <td>", xml.escape(symbols[symbol]), "</td>\n")
+  end
+  out:write("  </tr>\n")
+
+  for state = 1, max_state do
+    out:write("  <tr>\n")
+    out:write("    <td>", state, "</td>\n")
+    for symbol = 1, max_symbol do
+      local index = state * max_symbol + symbol
+      if g:is_terminal_symbol(symbol) then
+        local action = table[index]
+        if action == 0 then
+          out:write("    <td></td>\n")
+        elseif action <= max_state then
+          out:write("    <td>s", action, "</td>\n")
+        else
+          local reduce = action - max_state
+          if reduce == 1 then
+            out:write("    <td>acc</td>\n")
+          else
+            out:write("    <td>r", reduce, "</td>\n")
+          end
+        end
+      else
+        local to = table[index]
+        if to == 0 then
+          out:write("    <td></td>\n")
+        else
+          out:write("    <td>", to, "</td>\n")
+        end
+      end
+    end
+    out:write("  </tr>\n")
+  end
+
+  out:write("</table>\n")
+  out:close()
+end
+
+function class.write_tree(filename, g, root)
+  local out = assert(io.open(filename, "w"))
+  out:write([[
+digraph g {
+graph [rankdir=TB];
+node [shape=plaintext]
+]])
+
+  class.write_tree_node(out, g, root, 1)
+  class.write_tree_edge(out, g, root)
+
+  out:write("}\n")
+  out:close()
+end
+
+function class.write_tree_node(out, g, node, id)
+  local symbols = g.symbols
+  node.id = id
+  local code = node.code
+  if g:is_terminal_symbol(code) then
+    out:write(("%d [label=<<table border=\"0\" cellborder=\"1\" cellpadding=\"0\" cellspacing=\"0\" margin=\"0\">"):format(id))
+    out:write(("<tr><td>%s</td></tr>"):format(xml.escape(symbols[code])))
+    local value = node.value
+    if value then
+      out:write(("<tr><td>%s</td></tr>"):format(xml.escape(value)))
+    end
+    out:write("</table>>]\n")
+    return id
+  else
+    out:write(("%d [label=<<table border=\"0\" cellborder=\"1\" cellpadding=\"0\" cellspacing=\"0\" margin=\"0\">"):format(id))
+    out:write(("<tr><td>%s</td></tr>"):format(xml.escape(symbols[code])))
+    out:write("</table>>]\n")
+    for node in node.body:each() do
+      id = class.write_tree_node(out, g, node, id + 1)
+    end
+    return id
+  end
+end
+
+function class.write_tree_edge(out, g, node)
+  local code = node.code
+  local id = node.id
+  if g:is_nonterminal_symbol(code) then
+    for node in node.body:each() do
+      out:write(("%d -> %d\n"):format(id, node.id))
+      class.write_tree_edge(out, g, node)
+    end
+  end
 end
 
 return class
