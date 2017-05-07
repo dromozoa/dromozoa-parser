@@ -37,17 +37,20 @@ function class.new(grammar, data)
   }
 end
 
-function class:parse(symbol)
+function class:parse(symbol, data)
+  local node
   if symbol == nil then
-    return self:parse_node({ code = marker_end })
+    node = { symbol = marker_end }
   else
-    local tree = self.tree
-    local node = tree:create_node()
-    for k, v in pairs(symbol) do
+    node = self.tree:create_node()
+    node.symbol = symbol
+  end
+  if data then
+    for k, v in pairs(data) do
       node[k] = v
     end
-    return self:parse_node(node)
   end
+  return self:parse_node(node)
 end
 
 function class:parse_node(node)
@@ -60,7 +63,7 @@ function class:parse_node(node)
   local nodes = self.nodes
 
   local state = states:top()
-  local action = table[state * max_symbol + node.code]
+  local action = table[state * max_symbol + node.symbol]
   if action == 0 then
     error("parse error")
   elseif action <= max_state then
@@ -69,26 +72,31 @@ function class:parse_node(node)
   else
     local reduce = action - max_state
     if reduce == 1 then
+      for i, state in ipairs(states) do
+        print("s", i, state)
+      end
+      for i, node in ipairs(nodes) do
+        print("n", i, node.symbol)
+      end
       -- return nodes:pop()
     else
       local production = productions[reduce]
       local head = production.head
       local reduce_node = tree:create_node()
-      reduce_node.code = head
+      reduce_node.symbol = head
 
       local n = #production.body
 
-      local m = #nodes
+      local m = #nodes - n
       for i = 1, n do
-        local j = m - n + i
+        local j = m + i
         reduce_node:append_child(nodes[j])
         nodes[j] = nil
       end
 
       local m = #states
-      for i = 1, n do
-        local j = m - n + i
-        states[j] = nil
+      for i = m - n + 1, m do
+        states[i] = nil
       end
 
       local state = states:top()

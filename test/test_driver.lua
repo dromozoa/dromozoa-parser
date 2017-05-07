@@ -33,6 +33,7 @@ print(dumper.encode(g, { pretty = true, stable = true }))
 
 local data = g:lr1_construct_table(g:lalr1_items())
 print(dumper.encode(data, { stable = true }))
+dump.write_table("test.html", g, data)
 
 local _ = {}
 for i, name in ipairs(g.symbols) do
@@ -40,13 +41,13 @@ for i, name in ipairs(g.symbols) do
 end
 
 local d = driver(g, data)
--- d:parse({ code = _["("] })
-d:parse({ code = _["id"], value = 17 })
-d:parse({ code = _["+"] })
-d:parse({ code = _["id"], value = 23 })
--- d:parse({ code = _[")"] })
-d:parse({ code = _["+"] })
-d:parse({ code = _["id"], value = 37 })
+d:parse(_["("])
+d:parse(_["id"], { value = 17 })
+d:parse(_["+"])
+d:parse(_["id"], { value = 23 })
+d:parse(_[")"])
+d:parse(_["+"])
+d:parse(_["id"], { value = 37 })
 d:parse()
 
 dump.write_tree("test.dot", g, d.tree)

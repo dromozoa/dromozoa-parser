@@ -199,41 +199,6 @@ node [shape=plaintext]
   out:close()
 end
 
-function class.write_tree_node(out, g, node, id)
-  local symbols = g.symbols
-  node.id = id
-  local code = node.code
-  if g:is_terminal_symbol(code) then
-    out:write(("%d [label=<<table border=\"0\" cellborder=\"1\" cellpadding=\"0\" cellspacing=\"0\" margin=\"0\">"):format(id))
-    out:write(("<tr><td>%s</td></tr>"):format(xml.escape(symbols[code])))
-    local value = node.value
-    if value then
-      out:write(("<tr><td>%s</td></tr>"):format(xml.escape(value)))
-    end
-    out:write("</table>>]\n")
-    return id
-  else
-    out:write(("%d [label=<<table border=\"0\" cellborder=\"1\" cellpadding=\"0\" cellspacing=\"0\" margin=\"0\">"):format(id))
-    out:write(("<tr><td>%s</td></tr>"):format(xml.escape(symbols[code])))
-    out:write("</table>>]\n")
-    for node in node.body:each() do
-      id = class.write_tree_node(out, g, node, id + 1)
-    end
-    return id
-  end
-end
-
-function class.write_tree_edge(out, g, node)
-  local code = node.code
-  local id = node.id
-  if g:is_nonterminal_symbol(code) then
-    for node in node.body:each() do
-      out:write(("%d -> %d\n"):format(id, node.id))
-      class.write_tree_edge(out, g, node)
-    end
-  end
-end
-
 function class.write_tree(filename, g, t)
   local symbols = g.symbols
 
@@ -247,11 +212,11 @@ function class.write_tree(filename, g, t)
     node_attributes = function (_, u)
       if u.value then
         return {
-          label = "<" .. xml.escape(symbols[u.code]) .. " / " .. xml.escape(u.value) .. ">";
+          label = "<" .. xml.escape(symbols[u.symbol]) .. " / " .. xml.escape(u.value) .. ">";
         }
       else
         return {
-          label = "<" .. xml.escape(symbols[u.code]) .. ">";
+          label = "<" .. xml.escape(symbols[u.symbol]) .. ">";
         }
       end
     end;
