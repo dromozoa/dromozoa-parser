@@ -96,7 +96,7 @@ function class:lr0_closure(items)
     local done = true
     for item in items:each() do
       local symbol = productions[item.id].body[item.dot]
-      if self:is_nonterminal_symbol(symbol) and not added[symbol] then
+      if symbol ~= nil and self:is_nonterminal_symbol(symbol) and not added[symbol] then
         for id in self:each_production(symbol) do
           items:push({ id = id, dot = 1 })
           done = false
@@ -166,7 +166,7 @@ function class:lr1_closure(items)
       local body = productions[item.id].body
       local dot = item.dot
       local symbol = body[dot]
-      if self:is_nonterminal_symbol(symbol) then
+      if symbol ~= nil and self:is_nonterminal_symbol(symbol) then
         local symbols = sequence():copy(body, dot + 1):push(item.la)
         local first = self:first_symbols(symbols)
         for id in self:each_production(symbol) do
