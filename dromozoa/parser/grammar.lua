@@ -23,12 +23,12 @@ local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
 
-local class = {}
-
 local epsilon = 0
 local marker_end = 1
 local marker_la = -1
 local start_id = 1
+
+local class = {}
 
 function class.new(productions, symbols, max_terminal_symbol, start_symbol)
   return {
@@ -40,11 +40,11 @@ function class.new(productions, symbols, max_terminal_symbol, start_symbol)
 end
 
 function class:is_terminal_symbol(symbol)
-  return symbol ~= nil and symbol <= self.max_terminal_symbol
+  return symbol <= self.max_terminal_symbol
 end
 
 function class:is_nonterminal_symbol(symbol)
-  return symbol ~= nil and symbol > self.max_terminal_symbol
+  return symbol > self.max_terminal_symbol
 end
 
 function class:each_production(head)
@@ -58,9 +58,7 @@ function class:each_production(head)
 end
 
 function class:is_kernel_item(item)
-  local production = self.productions[item.id]
-  local dot = item.dot
-  return production.head == self.start_symbol or dot > 1
+  return self.productions[item.id].head == self.start_symbol or item.dot > 1
 end
 
 function class:first_symbol(symbol)

@@ -17,6 +17,7 @@
 
 local sequence = require "dromozoa.commons.sequence"
 
+local marker_end = 1
 local start_state = 1
 
 local class = {}
@@ -35,7 +36,7 @@ end
 
 function class:parse(symbol)
   if symbol == nil then
-    symbol = { code = 1 }
+    symbol = { code = marker_end }
   end
 
   local states = self.states
