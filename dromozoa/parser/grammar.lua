@@ -318,7 +318,7 @@ function class:lalr1_items()
   return set_of_items, transitions
 end
 
-function class:lr1_construct_table(set_of_items, transitions)
+function class:lr1_construct_table(set_of_items, transitions, out)
   local productions = self.productions
   local symbols = self.symbols
   local start_symbol = self.start_symbol
@@ -336,30 +336,37 @@ function class:lr1_construct_table(set_of_items, transitions)
       local id = item.id
       local symbol = productions[id].body[item.dot]
       if symbol == nil then
-        local reduce = max_state + id
-        local index = i * max_symbol + item.la
+        local action = max_state + id
+        local la = item.la
+        local index = i * max_symbol + la
         local current = table[index]
-        if current == 0 or current == reduce then
-          table[index] = reduce
-        else
+        if current == 0 then
+          table[index] = action
+        elseif current ~= action then
           if current <= max_state then
-            io.write(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, item.la))
+            if out then
+              out:write(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, la))
+            end
           else
-            io.write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, item.la))
-            if reduce < current then
-              table[index] = reduce
+            if out then
+              out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, la))
+            end
+            if action < current then
+              table[index] = action
             end
           end
         end
       elseif self:is_terminal_symbol(symbol) then
-        local shift = transitions[{ from = i, symbol = symbol }]
+        local action = transitions[{ from = i, symbol = symbol }]
         local index = i * max_symbol + symbol
         local current = table[index]
-        if current == 0 or current == shift then
-          table[index] = shift
-        else
-          io.write(("reduce(%d) / shift(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, shift, i, symbol))
-          table[index] = shift
+        if current == 0 then
+          table[index] = action
+        elseif current ~= action then
+          if out then
+            out:write(("reduce(%d) / shift(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, action, i, symbol))
+          end
+          table[index] = action
         end
       end
     end

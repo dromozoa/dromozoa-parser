@@ -33,7 +33,7 @@ local set_of_items, transitions = g:lalr1_items()
 dump.set_of_items(io.stdout, g, set_of_items)
 dump.write_graph("test.dot", g, set_of_items, transitions)
 
-local data = g:lr1_construct_table(set_of_items, transitions)
+local data = g:lr1_construct_table(set_of_items, transitions, io.stdout)
 dump.write_table("test.html", g, data)
 
 local _ = {}
