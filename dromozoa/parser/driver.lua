@@ -72,16 +72,15 @@ function class:parse_node(node)
     nodes:push(node)
     return true
   else
-    local reduce = action - max_state
-    if reduce == 1 then
+    local symbol = heads[action]
+    if symbol == 0 then
       states:pop()
       return nodes:pop()
     else
-      local symbol = heads[reduce]
       local reduce_node = self.tree:create_node()
       reduce_node.symbol = symbol
 
-      local n = sizes[reduce]
+      local n = sizes[action]
       local m = #nodes
       for i = m - n + 1, m do
         reduce_node:append_child(nodes[i])
