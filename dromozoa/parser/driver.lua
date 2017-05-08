@@ -63,37 +63,38 @@ function class:parse_node(node)
   local states = self.states
   local nodes = self.nodes
 
-  local state = states:top()
-  local action = table[state * max_symbol + node.symbol]
-  if action == 0 then
-    return false, "parse error", state, node
-  elseif action <= max_state then
-    states:push(action)
-    nodes:push(node)
-    return true
-  else
-    local symbol = heads[action]
-    if symbol == 0 then
-      states:pop()
-      return nodes:pop()
+  while true do
+    local state = states:top()
+    local action = table[state * max_symbol + node.symbol]
+    if action == 0 then
+      return nil, "parse error", state, node
+    elseif action <= max_state then
+      states:push(action)
+      nodes:push(node)
+      return true
     else
-      local reduce_node = self.tree:create_node()
-      reduce_node.symbol = symbol
+      local symbol = heads[action]
+      if symbol == 0 then
+        states:pop()
+        return nodes:pop()
+      else
+        local reduce_node = self.tree:create_node()
+        reduce_node.symbol = symbol
 
-      local n = sizes[action]
-      local m = #states
-      for i = m - n + 1, m do
-        states[i] = nil
-      end
-      local m = #nodes
-      for i = m - n + 1, m do
-        reduce_node:append_child(nodes[i])
-        nodes[i] = nil
-      end
+        local n = sizes[action]
+        local m = #states
+        for i = m - n + 1, m do
+          states[i] = nil
+        end
+        local m = #nodes
+        for i = m - n + 1, m do
+          reduce_node:append_child(nodes[i])
+          nodes[i] = nil
+        end
 
-      states:push(table[states:top() * max_symbol + symbol])
-      nodes:push(reduce_node)
-      return self:parse_node(node)
+        states:push(table[states:top() * max_symbol + symbol])
+        nodes:push(reduce_node)
+      end
     end
   end
 end
