@@ -19,18 +19,16 @@ local dumper = require "dromozoa.commons.dumper"
 local grammar = require "dromozoa.parser.builder.grammar"
 
 local _ = grammar()
-
-_"expression"(
-    _"expression", "+", _"term")(
-    _"expression", "-", _"term")(
-    _"term")
-_"term"(
-    _"term", "*", _"factor")(
-    _"term", "/", _"factor")(
-    _"factor")
-_"factor"(
-    "(", _"expression", ")")(
-    "id")
-
+_"expression"
+    :_(_"expression", "+", _"term")
+    :_(_"expression", "-", _"term")
+    :_(_"term")
+_"term"
+    :_(_"term", "*", _"factor")
+    :_(_"term", "/", _"factor")
+    :_(_"factor")
+_"factor"
+    :_("(", _"expression", ")")
+    :_("id")
 local g = _()
 print(dumper.encode(g, { pretty = true, stable = true }))

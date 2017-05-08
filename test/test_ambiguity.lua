@@ -21,11 +21,12 @@ local grammar = require "dromozoa.parser.builder.grammar"
 local dump = require "test.dump"
 
 local _ = grammar()
-
--- _"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("id")
-_"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("+", _"E") ("id")
--- _"S" ("i", _"S", "e", _"S") ("i", _"S") ("a")
-
+_"E"
+    :_(_"E", "+", _"E")
+    :_(_"E", "*", _"E")
+    :_("(", _"E", ")")
+    :_("+", _"E")
+    :_("id")
 local g = _()
 print(dumper.encode(g, { pretty = true, stable = true }))
 

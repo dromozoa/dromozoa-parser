@@ -24,7 +24,7 @@ function class.new(id, grammar)
   }
 end
 
-function class:body(...)
+function class:_(...)
   self.grammar:production(self, ...)
   return self
 end
@@ -35,7 +35,6 @@ end
 
 class.metatable = {
   __index = class;
-  __call = class.body;
 }
 
 return setmetatable(class, {

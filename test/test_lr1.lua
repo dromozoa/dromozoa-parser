@@ -21,10 +21,11 @@ local grammar = require "dromozoa.parser.builder.grammar"
 local dump = require "test.dump"
 
 local _ = grammar()
-
-_"S" (_"C", _"C")
-_"C" ("c", _"C") ("d")
-
+_"S"
+    :_(_"C", _"C")
+_"C"
+    :_("c", _"C")
+    :_("d")
 local g = _()
 print(dumper.encode(g, { pretty = true, stable = true }))
 
