@@ -28,7 +28,7 @@ end
 function class:lit(literal)
   local item = {
     name = literal;
-    code = { "lit", literal };
+    match = { "lit", literal };
   }
   self.items:push(item)
   return self
@@ -37,7 +37,7 @@ end
 function class:pat(pattern)
   local item = {
     name = pattern;
-    code = { "pat", pattern };
+    match = { "pat", pattern };
   }
   self.items:push(item)
   return self
@@ -55,6 +55,17 @@ end
 
 function class:call(name)
   self.items:top().action = { "call", name }
+  return self
+end
+
+function class:build(terminal_symbols, env)
+  for item in self.items:each() do
+    item.symbol = terminal_symbols:symbol(item.name)
+    local action = item.action
+    if action and action[1] == "call" then
+      action[2] = assert(env[action[2]])
+    end
+  end
   return self
 end
 

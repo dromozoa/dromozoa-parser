@@ -34,5 +34,5 @@ _"string"
   :lit "\\\""
   :pat "[^\\\"]"
 
-local s = _()
+local t, s = _()
 print(dumper.encode(s, { pretty = true, stable = true }))
