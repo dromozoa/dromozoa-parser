@@ -42,7 +42,7 @@ for i, name in ipairs(g.symbols) do
   _[name] = i
 end
 
-local d = driver(g, data)
+local d = driver(data)
 assert(d:parse(_["("]))
 assert(d:parse(_["id"], { value = 17 }))
 assert(d:parse(_["+"]))

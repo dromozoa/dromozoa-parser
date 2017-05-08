@@ -381,10 +381,20 @@ function class:lr1_construct_table(set_of_items, transitions, out)
     end
   end
 
+  local heads = {}
+  local sizes = {}
+
+  for i, production in ipairs(productions) do
+    heads[i] = production.head
+    sizes[i] = #production.body
+  end
+
   return {
     max_state = max_state;
     max_symbol = max_symbol;
     table = table;
+    heads = heads;
+    sizes = sizes;
   }
 end
 

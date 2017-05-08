@@ -24,12 +24,13 @@ local start_state = 1
 
 local class = {}
 
-function class.new(grammar, data)
+function class.new(data)
   return {
-    productions = grammar.productions;
     max_state = data.max_state;
     max_symbol = data.max_symbol;
     table = data.table;
+    heads = data.heads;
+    sizes = data.sizes;
     states = sequence():push(start_state);
     symbols = sequence();
     tree = tree();
@@ -57,6 +58,8 @@ function class:parse_node(node)
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
+  local heads = self.heads
+  local sizes = self.sizes
   local states = self.states
   local nodes = self.nodes
 
@@ -74,12 +77,11 @@ function class:parse_node(node)
       states:pop()
       return nodes:pop()
     else
-      local production = self.productions[reduce]
-      local symbol = production.head
+      local symbol = heads[reduce]
       local reduce_node = self.tree:create_node()
       reduce_node.symbol = symbol
 
-      local n = #production.body
+      local n = sizes[reduce]
       local m = #nodes
       for i = m - n + 1, m do
         reduce_node:append_child(nodes[i])
@@ -102,7 +104,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, grammar, data)
-    return setmetatable(class.new(grammar, data), class.metatable)
+  __call = function (_, data)
+    return setmetatable(class.new(data), class.metatable)
   end;
 })
