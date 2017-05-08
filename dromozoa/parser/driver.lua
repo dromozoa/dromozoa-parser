@@ -81,14 +81,14 @@ function class:parse_node(node)
       reduce_node.symbol = symbol
 
       local n = sizes[action]
+      local m = #states
+      for i = m - n + 1, m do
+        states[i] = nil
+      end
       local m = #nodes
       for i = m - n + 1, m do
         reduce_node:append_child(nodes[i])
         nodes[i] = nil
-      end
-      local m = #states
-      for i = m - n + 1, m do
-        states[i] = nil
       end
 
       states:push(table[states:top() * max_symbol + symbol])
