@@ -15,32 +15,57 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local sequence = require "dromozoa.commons.sequence"
+
 local class = {}
 
-function class.new(id, grammar)
+function class.new()
   return {
-    id = id;
-    grammar = grammar;
+    items = sequence();
   }
 end
 
-function class:body(...)
-  self.grammar:production(self, ...)
+function class:lit(literal)
+  local item = {
+    name = literal;
+    code = { "lit", literal };
+  }
+  self.items:push(item)
   return self
 end
 
-function class:translate(max_terminal_symbol)
-  return self.id + max_terminal_symbol
+function class:pat(pattern)
+  local item = {
+    name = pattern;
+    code = { "pat", pattern };
+  }
+  self.items:push(item)
+  return self
 end
 
-class._ = class.body
+function class:as(name)
+  self.items:top().name = name
+  return self
+end
+
+function class:nullary_action(action)
+  self.items:top().action = { action }
+  return self
+end
+
+function class:call(name)
+  self.items:top().action = { "call", name }
+  return self
+end
+
+class._ = class.nullary_action
 
 class.metatable = {
   __index = class;
 }
 
 return setmetatable(class, {
-  __call = function (_, id, grammar)
-    return setmetatable(class.new(id, grammar), class.metatable)
+  __call = function ()
+    return setmetatable(class.new(), class.metatable)
   end;
 })

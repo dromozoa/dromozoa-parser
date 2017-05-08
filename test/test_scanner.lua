@@ -15,32 +15,24 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
+local dumper = require "dromozoa.commons.dumper"
+local scanners = require "dromozoa.parser.builder.scanners"
 
-function class.new(id, grammar)
-  return {
-    id = id;
-    grammar = grammar;
-  }
-end
+local _ = scanners()
 
-function class:body(...)
-  self.grammar:production(self, ...)
-  return self
-end
+_"main"
+  :pat "%s+" :_"ignore"
+  :lit "*"
+  :lit "+"
+  :lit "("
+  :lit ")"
+  :pat "[1-9]%d*" :as "integer"
+  :lit "\"" :call "string"
 
-function class:translate(max_terminal_symbol)
-  return self.id + max_terminal_symbol
-end
+_"string"
+  :pat "\"" :_"return"
+  :lit "\\\""
+  :pat "[^\\\"]"
 
-class._ = class.body
-
-class.metatable = {
-  __index = class;
-}
-
-return setmetatable(class, {
-  __call = function (_, id, grammar)
-    return setmetatable(class.new(id, grammar), class.metatable)
-  end;
-})
+local s = _()
+print(dumper.encode(s, { pretty = true, stable = true }))
