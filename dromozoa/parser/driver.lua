@@ -76,13 +76,13 @@ function class:parse_node(node)
     else
       local production = self.productions[reduce]
       local symbol = production.head
-      local reduced_node = self.tree:create_node()
-      reduced_node.symbol = symbol
+      local reduce_node = self.tree:create_node()
+      reduce_node.symbol = symbol
 
       local n = #production.body
       local m = #nodes
       for i = m - n + 1, m do
-        reduced_node:append_child(nodes[i])
+        reduce_node:append_child(nodes[i])
         nodes[i] = nil
       end
       local m = #states
@@ -91,7 +91,7 @@ function class:parse_node(node)
       end
 
       states:push(table[states:top() * max_symbol + symbol])
-      nodes:push(reduced_node)
+      nodes:push(reduce_node)
       return self:parse_node(node)
     end
   end
