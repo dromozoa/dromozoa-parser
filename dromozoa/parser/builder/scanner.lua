@@ -28,7 +28,7 @@ end
 function class:lit(literal)
   local item = {
     name = literal;
-    match = { "lit", literal };
+    match = "^" .. literal:gsub("%W", "%%%0");
   }
   self.items:push(item)
   return self
@@ -37,7 +37,7 @@ end
 function class:pat(pattern)
   local item = {
     name = pattern;
-    match = { "pat", pattern };
+    match = "^" .. pattern;
   }
   self.items:push(item)
   return self
@@ -59,14 +59,16 @@ function class:call(name)
 end
 
 function class:build(terminal_symbols, env)
+  local data = sequence()
   for item in self.items:each() do
     item.symbol = terminal_symbols:symbol(item.name)
     local action = item.action
     if action and action[1] == "call" then
       action[2] = assert(env[action[2]])
     end
+    data:push(item)
   end
-  return self
+  return data
 end
 
 class._ = class.nullary_action

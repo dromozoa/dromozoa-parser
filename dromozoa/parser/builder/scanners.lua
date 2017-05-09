@@ -18,6 +18,7 @@
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
+local scanners = require "dromozoa.parser.scanners"
 local scanner = require "dromozoa.parser.builder.scanner"
 local symbol_table = require "dromozoa.parser.builder.symbol_table"
 
@@ -47,12 +48,12 @@ function class:build()
     env[name] = i
   end
 
-  local scanners = sequence()
+  local data = sequence()
   for _, scanner in pairs(self.scanners) do
-    scanners:push(scanner:build(terminal_symbols, env))
+    data:push(scanner:build(terminal_symbols, env))
   end
 
-  return terminal_symbols, scanners
+  return scanners(data), terminal_symbols
 end
 
 class.metatable = {

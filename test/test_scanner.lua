@@ -32,7 +32,20 @@ _"main"
 _"string"
   :pat "\"" :_"return"
   :lit "\\\""
-  :pat "[^\\\"]"
+  :pat "[^\\\"]+"
 
-local t, s = _()
+local s, t = _()
 print(dumper.encode(s, { pretty = true, stable = true }))
+
+local data = [[
+( 17 + 23 * 37 ) + "abc\"def"
+]]
+local position = 1
+while true do
+  local symbol, i, j = s(data, position)
+  print(symbol, t[symbol], i, j, data:sub(i, j))
+  if symbol == 1 then
+    break
+  end
+  position = j + 1
+end
