@@ -24,10 +24,12 @@ local terminal_symbol = require "dromozoa.parser.builder.terminal_symbol"
 
 local class = {}
 
-function class.new()
-  local terminal_symbols = symbol_table()
-  terminal_symbols.n = 1
-  terminal_symbols[1] = "$"
+function class.new(terminal_symbols)
+  if terminal_symbols == nil then
+    terminal_symbols = symbol_table()
+    terminal_symbols.n = 1
+    terminal_symbols[1] = "$"
+  end
   return {
     terminal_symbols = terminal_symbols;
     nonterminal_symbols = symbol_table();
@@ -106,7 +108,7 @@ function class.metatable:__call(symbol)
 end
 
 return setmetatable(class, {
-  __call = function ()
-    return setmetatable(class.new(), class.metatable)
+  __call = function (_, terminal_symbols)
+    return setmetatable(class.new(terminal_symbols), class.metatable)
   end;
 })
