@@ -19,7 +19,7 @@ local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
 local grammar = require "dromozoa.parser.grammar"
-local scanners = require "dromozoa.parser.scanners"
+local scanner = require "dromozoa.parser.scanner"
 local dump = require "test.dump"
 
 local _ = builder()
@@ -73,7 +73,7 @@ local parser = grammar:lr1_construct_table(set_of_items, transitions, io.stdout)
 dump.write_table("test.html", grammar, parser)
 
 local driver = driver(parser)
-local scanner = scanners(data.scanners)
+local scanner = scanner(data.scanners)
 
 local source = [[
 17 + - 23 * 37 - 42
