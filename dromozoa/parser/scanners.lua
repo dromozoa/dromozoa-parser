@@ -60,7 +60,7 @@ function class:scan(s, init)
         return self:scan(s, result_j + 1)
       elseif op == "call" then
         scanners:push(action[2])
-      elseif op == "return" then
+      elseif op == "ret" then
         scanners:pop()
       end
     end

@@ -19,7 +19,7 @@ local class = {}
 
 function class.new()
   return {
-    precedences = {};
+    map = {};
     precedence = 0
   }
 end
@@ -38,10 +38,10 @@ function class:right(name)
   return self(name)
 end
 
-function class:noassoc(name)
+function class:nonassoc(name)
   local precedence = self.precedence + 1
   self.precedence = precedence
-  self.associativity = "right"
+  self.associativity = "nonassoc"
   return self(name)
 end
 
@@ -50,7 +50,7 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  self.precedences[name] = {
+  self.map[name] = {
     precedence = self.precedence;
     associativity = self.associativity;
   }

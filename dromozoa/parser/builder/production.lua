@@ -20,23 +20,23 @@ local precedence = require "dromozoa.parser.builder.precedence"
 
 local class = {}
 
-function class.new(builder, name)
+function class.new(productions, name)
   return {
-    builder = builder;
+    productions = productions;
     head = name;
   }
 end
 
 function class:_(name)
-  self.builder.productions:push({
+  self.productions:push({
     head = self.head;
-    body = sequence();
+    body = sequence():push(name);
   })
   return self
 end
 
 function class:prec(name)
-  self.builder.productions:top().precedence = name
+  self.productions:top().precedence = name
   return self
 end
 
@@ -45,12 +45,12 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  self.builder.productions:top().body:push(name)
+  self.productions:top().body:push(name)
   return self
 end
 
 return setmetatable(class, {
-  __call = function (_, builder, name)
-    return setmetatable(class.new(builder, name), class.metatable)
+  __call = function (_, productions, name)
+    return setmetatable(class.new(productions, name), class.metatable)
   end;
 })

@@ -24,6 +24,8 @@ _ :lit "+"
   :lit "-"
   :lit "*"
   :lit "/"
+  :lit "("
+  :lit ")"
   :pat "[%a_][%w_]*" :as "id"
 
 _ :left "+" "-"
@@ -57,4 +59,6 @@ _ "factor"
 --     :_("(", _"expression", ")")
 --     :_("id")
 -- local g = _()
+
 print(dumper.encode(_, { pretty = true, stable = true }))
+print(dumper.encode(_:build(), { pretty = true, stable = true }))
