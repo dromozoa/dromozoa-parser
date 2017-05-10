@@ -83,14 +83,17 @@ function class:build(start_name)
       scanner_table[name] = i
     end
     for rule in scanner:each() do
-      local name = rule.name
-      -- [TODO] do not check or check in this scanner
-      if symbol_table[name] ~= nil then
-        error(("symbol %q already defined"):format(name))
+      local action = rule.action
+      if action == nil or action[1] ~= "ignore" then
+        local name = rule.name
+        -- [TODO] do not check or check in this scanner
+        if symbol_table[name] ~= nil then
+          error(("symbol %q already defined"):format(name))
+        end
+        n = n + 1
+        symbols[n] = name
+        symbol_table[name] = n
       end
-      n = n + 1
-      symbols[n] = name
-      symbol_table[name] = n
     end
   end
 
