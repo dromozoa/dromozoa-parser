@@ -84,7 +84,7 @@ function class:build(start_name)
     if name ~= nil then
       scanner_table[name] = i
     end
-    for rule in scanner:each() do
+    for rule in scanner.items:each() do
       local action = rule.action
       if action == nil or action[1] ~= "ignore" then
         local name = rule.name
@@ -139,7 +139,7 @@ function class:build(start_name)
   local result_scanners = sequence()
   for scanner in scanners:each() do
     local result_scanner = sequence()
-    for rule in scanner:each() do
+    for rule in scanner.items:each() do
       local name = rule.name
       local action = rule.action
       local result_action
@@ -157,7 +157,7 @@ function class:build(start_name)
       end
       result_scanner:push({
         symbol = symbol_table[name];
-        match = rule.match;
+        pattern = rule.pattern;
         action = result_action;
       })
     end
@@ -165,15 +165,16 @@ function class:build(start_name)
   end
 
   local symbol_precedences = {}
-  for name, precedence in pairs(precedence.map) do
+  for item in precedence.items:each() do
+    local name = item.name
     local symbol = symbol_table[name]
     if symbol ~= nil then
       if symbol > max_terminal_symbol then
         error(("symbol %q must be a terminal symbol"):format(name))
       end
       symbol_precedences[symbol] = {
-        precedence = precedence.precedence;
-        is_left = precedence.associativity == "left";
+        precedence = item.precedence;
+        is_left = item.is_left;
       }
     end
   end
@@ -196,7 +197,7 @@ function class:build(start_name)
     })
     local name = production.precedence
     if name ~= nil then
-      local precedence = precedence.map[name]
+      local precedence = precedence.table[name]
       if precedence == nil then
         error(("production precedence %q not defined"):format(name))
       end

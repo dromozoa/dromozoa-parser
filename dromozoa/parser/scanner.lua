@@ -41,7 +41,7 @@ function class:scan(s, init)
   local result_item
   local result_j
   for item in scanner:each() do
-    local i, j = s:find(item.match, init)
+    local i, j = s:find(item.pattern, init)
     if i == init then
       if result_j == nil then
         result_item = item

@@ -15,34 +15,35 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local sequence = require "dromozoa.commons.sequence"
+
+local function precedence(self, name, is_left)
+  local precedence = self.precedence + 1
+  self.precedence = precedence
+  self.is_left = is_left
+  return self(name)
+end
+
 local class = {}
 
 function class.new()
   return {
-    map = {};
+    items = sequence();
+    table = {};
     precedence = 0
   }
 end
 
 function class:left(name)
-  local precedence = self.precedence + 1
-  self.precedence = precedence
-  self.associativity = "left"
-  return self(name)
+  return precedence(self, name, true)
 end
 
 function class:right(name)
-  local precedence = self.precedence + 1
-  self.precedence = precedence
-  self.associativity = "right"
-  return self(name)
+  return precedence(self, name)
 end
 
 function class:nonassoc(name)
-  local precedence = self.precedence + 1
-  self.precedence = precedence
-  self.associativity = "nonassoc"
-  return self(name)
+  return precedence(self, name)
 end
 
 class.metatable = {
@@ -50,10 +51,17 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  self.map[name] = {
+  local table = self.table
+  if table[name] ~= nil then
+    error(("precedence %q already defined"):format(name))
+  end
+  local item = {
+    name = name;
     precedence = self.precedence;
-    associativity = self.associativity;
+    is_left = self.is_left;
   }
+  self.items:push(item)
+  table[name] = item
   return self
 end
 

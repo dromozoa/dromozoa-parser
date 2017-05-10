@@ -17,62 +17,49 @@
 
 local sequence = require "dromozoa.commons.sequence"
 
-local super = sequence
 local class = {}
 
 function class.new(name)
   return {
     name = name;
+    items = sequence();
   }
 end
 
 function class:lit(literal)
-  self:push({
+  self.items:push({
     name = literal;
-    match = "^" .. literal:gsub("%W", "%%%0");
+    pattern = "^" .. literal:gsub("%W", "%%%0");
   })
   return self
 end
 
 function class:pat(pattern)
-  self:push({
+  self.items:push({
     name = pattern;
-    match = "^" .. pattern;
+    pattern = "^" .. pattern;
   })
   return self
 end
 
 function class:as(name)
-  self:top().name = name
+  self.items:top().name = name
   return self
 end
 
 function class:ignore()
-  self:top().action = { "ignore" }
+  self.items:top().action = { "ignore" }
   return self
 end
 
 function class:call(name)
-  self:top().action = { "call", name }
+  self.items:top().action = { "call", name }
   return self
 end
 
 function class:ret()
-  self:top().action = { "ret" }
+  self.items:top().action = { "ret" }
   return self
-end
-
-function class:build(terminal_symbols, env)
-  local data = sequence()
-  for rule in self:each() do
-    rule.symbol = terminal_symbols:symbol(rule.name)
-    local action = rule.action
-    if action and action[1] == "call" then
-      action[2] = assert(env[action[2]])
-    end
-    data:push(rule)
-  end
-  return data
 end
 
 class.metatable = {
@@ -80,7 +67,6 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __index = super;
   __call = function (_, name)
     return setmetatable(class.new(name), class.metatable)
   end;
