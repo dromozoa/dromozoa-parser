@@ -24,12 +24,13 @@ local start_state = 1
 
 local class = {}
 
-function class.new(grammar, data)
+function class.new(data)
   return {
-    productions = grammar.productions;
     max_state = data.max_state;
     max_symbol = data.max_symbol;
     table = data.table;
+    heads = data.heads;
+    sizes = data.sizes;
     states = sequence():push(start_state);
     symbols = sequence();
     tree = tree();
@@ -57,42 +58,43 @@ function class:parse_node(node)
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
+  local heads = self.heads
+  local sizes = self.sizes
   local states = self.states
   local nodes = self.nodes
 
-  local state = states:top()
-  local action = table[state * max_symbol + node.symbol]
-  if action == 0 then
-    return false, "parse error", state, node
-  elseif action <= max_state then
-    states:push(action)
-    nodes:push(node)
-    return true
-  else
-    local reduce = action - max_state
-    if reduce == 1 then
-      states:pop()
-      return nodes:pop()
+  while true do
+    local state = states:top()
+    local action = table[state * max_symbol + node.symbol]
+    if action == 0 then
+      return nil, "parse error", state, node
+    elseif action <= max_state then
+      states:push(action)
+      nodes:push(node)
+      return true
     else
-      local production = self.productions[reduce]
-      local symbol = production.head
-      local reduced_node = self.tree:create_node()
-      reduced_node.symbol = symbol
+      local symbol = heads[action]
+      if symbol == 0 then
+        states:pop()
+        return nodes:pop()
+      else
+        local reduce_node = self.tree:create_node()
+        reduce_node.symbol = symbol
 
-      local n = #production.body
-      local m = #nodes
-      for i = m - n + 1, m do
-        reduced_node:append_child(nodes[i])
-        nodes[i] = nil
-      end
-      local m = #states
-      for i = m - n + 1, m do
-        states[i] = nil
-      end
+        local n = sizes[action]
+        local m = #states
+        for i = m - n + 1, m do
+          states[i] = nil
+        end
+        local m = #nodes
+        for i = m - n + 1, m do
+          reduce_node:append_child(nodes[i])
+          nodes[i] = nil
+        end
 
-      states:push(table[states:top() * max_symbol + symbol])
-      nodes:push(reduced_node)
-      return self:parse_node(node)
+        states:push(table[states:top() * max_symbol + symbol])
+        nodes:push(reduce_node)
+      end
     end
   end
 end
@@ -102,7 +104,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, grammar, data)
-    return setmetatable(class.new(grammar, data), class.metatable)
+  __call = function (_, data)
+    return setmetatable(class.new(data), class.metatable)
   end;
 })

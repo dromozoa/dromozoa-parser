@@ -23,11 +23,15 @@ local grammar = require "dromozoa.parser.builder.grammar"
 local dump = require "test.dump"
 
 local _ = grammar()
-
-_"E" (_"E", "+", _"T") (_"T")
-_"T" (_"T", "*", _"F") (_"F")
-_"F" ("(", _"E", ")") ("id")
-
+_"E"
+    :_(_"E", "+", _"T")
+    :_(_"T")
+_"T"
+    :_(_"T", "*", _"F")
+    :_(_"F")
+_"F"
+    :_("(", _"E", ")")
+    :_("id")
 local g = _()
 print(dumper.encode(g, { pretty = true, stable = true }))
 
@@ -40,7 +44,7 @@ for i, name in ipairs(g.symbols) do
   _[name] = i
 end
 
-local d = driver(g, data)
+local d = driver(data)
 assert(d:parse(_["("]))
 assert(d:parse(_["id"], { value = 17 }))
 assert(d:parse(_["+"]))
