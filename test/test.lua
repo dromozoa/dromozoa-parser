@@ -21,7 +21,6 @@ local driver = require "dromozoa.parser.driver"
 local dump = require "test.dump"
 
 local _ = scanners()
-
 _"main"
   :pat "%s+" :_"ignore"
   :pat "[1-9]%d*" :as "decimal"
@@ -37,12 +36,16 @@ _"main"
 local scanners, terminal_symbols = _()
 
 local _ = grammar(terminal_symbols)
+_ :left("+", "-")
+  :left("*", "/")
+
 _"E"
   :_(_"E", "-", _"E")
   :_(_"E", "+", _"E")
   :_(_"E", "*", _"E")
   :_(_"E", "/", _"E")
   :_("(", _"E", ")")
+  :_("-", _"E")
   :_("decimal")
   :_("octal")
   :_("hexadecimal")
@@ -53,7 +56,7 @@ local data = grammar:lr1_construct_table(set_of_items, transitions, io.stdout)
 
 local driver = driver(data)
 local source = [[
-17 + (23 * 37) - 42
+17 + - 23 * 37 - 42
 ]]
 
 local position = 1
