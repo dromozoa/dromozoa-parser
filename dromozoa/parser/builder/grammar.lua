@@ -35,13 +35,16 @@ function class.new(terminal_symbols)
     nonterminal_symbols = symbol_table();
     productions = sequence();
     precedence = 0;
+    precedence_n = 0;
+    precedence_names = {};
     precedences = {};
     associativities = {};
   }
 end
 
-function class:left(...)
+function class:precedence_impl(associativity, ...)
   local terminal_symbols = self.terminal_symbols
+  local precedence_names = self.precedence_names
   local precedences = self.precedences
   local associativities = self.associativities
 
@@ -50,12 +53,31 @@ function class:left(...)
 
   local names = sequence():push(...)
   for name in names:each() do
-    local id = terminal_symbols:symbol(name)
+    local id = precedence_names[name]
+    if id == nil then
+      id = terminal_symbols:symbol(name)
+      precedence_names[name] = id
+    end
     precedences[id] = precedence
-    associativities[id] = "left"
+    associativities[id] = associativity
   end
 
   return self
+end
+
+function class:prec(name)
+  local n = self.precedence_n - 1
+  self.precedence_n = n
+  self.precedence_names[name] = n
+  return name
+end
+
+function class:left(...)
+  return self:precedence_impl("left", ...)
+end
+
+function class:right(...)
+  return self:precedence_impl("right", ...)
 end
 
 function class:terminal_symbol(name)
@@ -77,6 +99,13 @@ function class:production(head, ...)
   return self
 end
 
+function class:prec_production(name)
+  local production = self.productions:top()
+  local id = assert(self.precedence_names[name])
+  production.precedence = self.precedences[id]
+  production.associativity = self.associativities[id]
+end
+
 function class:build(start_symbol)
   local terminal_symbols = self.terminal_symbols
   local nonterminal_symbols = self.nonterminal_symbols
@@ -93,16 +122,22 @@ function class:build(start_symbol)
 
   local max_terminal_symbol = terminal_symbols:max()
 
+  local production_precedences = {}
+  local production_associativities = {}
+
   local head = argumented_start_symbol:translate(max_terminal_symbol)
   local body = sequence():push(start_symbol:translate(max_terminal_symbol))
   local productions = sequence():push({ head = head, body = body })
-  for production in self.productions:each() do
+  for id, production in ipairs(self.productions) do
     local head = production.head:translate(max_terminal_symbol)
     local body = sequence()
     for symbol in production.body:each() do
       body:push(symbol:translate(max_terminal_symbol))
     end
     productions:push({ head = head, body = body })
+    -- inc for extended
+    production_precedences[id + 1] = production.precedence
+    production_associativities[id + 1] = production.associativity
   end
 
   local symbols = sequence()
@@ -119,7 +154,9 @@ function class:build(start_symbol)
       max_terminal_symbol,
       argumented_start_symbol:translate(max_terminal_symbol),
       self.precedences,
-      self.associativities)
+      self.associativities,
+      production_precedences,
+      production_associativities)
 end
 
 class.metatable = {

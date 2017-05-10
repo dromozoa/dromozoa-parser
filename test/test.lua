@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
 local grammar = require "dromozoa.parser.builder.grammar"
 local scanners = require "dromozoa.parser.builder.scanners"
 local driver = require "dromozoa.parser.driver"
@@ -38,6 +39,7 @@ local scanners, terminal_symbols = _()
 local _ = grammar(terminal_symbols)
 _ :left("+", "-")
   :left("*", "/")
+  :right(_:prec "UMINUS")
 
 _"E"
   :_(_"E", "-", _"E")
@@ -45,14 +47,17 @@ _"E"
   :_(_"E", "*", _"E")
   :_(_"E", "/", _"E")
   :_("(", _"E", ")")
-  :_("-", _"E")
+  :_("-", _"E") :prec "UMINUS"
   :_("decimal")
   :_("octal")
   :_("hexadecimal")
 local grammar = _()
+print(dumper.encode(grammar, { pretty = true, stable = true }))
 
 local set_of_items, transitions = grammar:lalr1_items()
+dump.write_graph("test-graph.dot", grammar, set_of_items, transitions)
 local data = grammar:lr1_construct_table(set_of_items, transitions, io.stdout)
+dump.write_table("test.html", grammar, data)
 
 local driver = driver(data)
 local source = [[
@@ -72,4 +77,4 @@ while true do
   position = j + 1
 end
 
-dump.write_tree("test.dot", grammar, driver.tree)
+dump.write_tree("test-tree.dot", grammar, driver.tree)

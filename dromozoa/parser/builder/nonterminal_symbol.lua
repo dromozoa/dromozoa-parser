@@ -29,6 +29,11 @@ function class:body(...)
   return self
 end
 
+function class:prec(name)
+  self.grammar:prec_production(name)
+  return self
+end
+
 function class:translate(max_terminal_symbol)
   return self.id + max_terminal_symbol
 end

@@ -30,7 +30,7 @@ local start_id = 1
 
 local class = {}
 
-function class.new(productions, symbols, max_terminal_symbol, start_symbol, precedences, associativities)
+function class.new(productions, symbols, max_terminal_symbol, start_symbol, precedences, associativities, production_precedences, production_associativities)
   return {
     productions = productions;
     symbols = symbols;
@@ -38,6 +38,8 @@ function class.new(productions, symbols, max_terminal_symbol, start_symbol, prec
     start_symbol = start_symbol;
     precedences = precedences;
     associativities = associativities;
+    production_precedences = production_precedences;
+    production_associativities = production_associativities;
   }
 end
 
@@ -99,7 +101,12 @@ function class:symbol_precedence(symbol)
   return precedence, self.associativities[symbol] == "left"
 end
 
-function class:production_precedence(production)
+function class:production_precedence(id)
+  local precedence = self.production_precedences[id]
+  if precedence then
+    return precedence, self.production_associativities[id] == "left"
+  end
+  local production = self.productions[id]
   local body = production.body
   for i = #body, 1, -1 do
     local symbol = body[i]
@@ -366,7 +373,7 @@ function class:lr1_construct_table(set_of_items, transitions, out)
           table[index] = action
         elseif current ~= action then
           if current <= max_state then
-            local production_precedence, production_is_left = self:production_precedence(production)
+            local production_precedence, production_is_left = self:production_precedence(id)
             local symbol_precedence = self:symbol_precedence(la)
             if out then
               out:write(
@@ -402,7 +409,7 @@ function class:lr1_construct_table(set_of_items, transitions, out)
           table[index] = action
         elseif current ~= action then
           local reduce = current - max_state
-          local production_precedence, production_is_left = self:production_precedence(productions[reduce])
+          local production_precedence, production_is_left = self:production_precedence(reduce)
           local symbol_precedence = self:symbol_precedence(symbol)
           if out then
             out:write(
@@ -462,7 +469,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities)
-    return setmetatable(class.new(start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities), class.metatable)
+  __call = function (_, start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities, production_precedences, production_associativities)
+    return setmetatable(class.new(start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities, production_precedences, production_associativities), class.metatable)
   end;
 })
