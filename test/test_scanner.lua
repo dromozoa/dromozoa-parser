@@ -16,19 +16,38 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local grammar = require "dromozoa.parser.builder.grammar"
+local scanners = require "dromozoa.parser.builder.scanners"
 
-local _ = grammar()
-_"expression"
-    :_(_"expression", "+", _"term")
-    :_(_"expression", "-", _"term")
-    :_(_"term")
-_"term"
-    :_(_"term", "*", _"factor")
-    :_(_"term", "/", _"factor")
-    :_(_"factor")
-_"factor"
-    :_("(", _"expression", ")")
-    :_("id")
-local g = _()
-print(dumper.encode(g, { pretty = true, stable = true }))
+local _ = scanners()
+
+_"main"
+  :pat "%s+" :_"ignore"
+  :lit "*"
+  :lit "+"
+  :lit "("
+  :lit ")"
+  :pat "[1-9]%d*" :as "integer"
+  :lit "\"" :call "string"
+  :lit "abc"
+  :pat "[a-z]+" :as "identifier"
+
+_"string"
+  :pat "\"" :_"return"
+  :lit "\\\""
+  :pat "[^\\\"]+"
+
+local s, t = _()
+print(dumper.encode(s, { pretty = true, stable = true }))
+
+local data = [[
+( 17 + 23 * 37 ) + "abc\"def" abc abcd
+]]
+local position = 1
+while true do
+  local symbol, i, j = s(data, position)
+  print(symbol, t[symbol], i, j, data:sub(i, j))
+  if symbol == 1 then
+    break
+  end
+  position = j + 1
+end

@@ -21,17 +21,14 @@ local grammar = require "dromozoa.parser.builder.grammar"
 local dump = require "test.dump"
 
 local _ = grammar()
-
--- _"E" (_"E", "+", _"T")
--- _"E" (_"T")
--- _"T" (_"T", "*", _"F")
--- _"T" (_"F")
--- _"F" ("(", _"E", ")")
--- _"F" ("id")
-
-_"S" (_"C", _"C")
-_"C" ("c", _"C") ("d")
-
+-- _"E":_(_"E", "+", _"T")
+-- _"E":_(_"T")
+-- _"T":_(_"T", "*", _"F")
+-- _"T":_(_"F")
+-- _"F":_("(", _"E", ")")
+-- _"F":_("id")
+_"S":_(_"C", _"C")
+_"C":_("c", _"C"):_("d")
 local g = _()
 
 local symbols = g.symbols

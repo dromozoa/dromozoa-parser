@@ -21,11 +21,14 @@ local grammar = require "dromozoa.parser.builder.grammar"
 local dump = require "test.dump"
 
 local _ = grammar()
+_:left("+")
+ :left("*")
 
--- _"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("id")
-_"E" (_"E", "+", _"E") (_"E", "*", _"E") ("(", _"E", ")") ("+", _"E") ("id")
--- _"S" ("i", _"S", "e", _"S") ("i", _"S") ("a")
-
+_"E"
+    :_(_"E", "*", _"E")
+    :_(_"E", "+", _"E")
+    :_("(", _"E", ")")
+    :_("id")
 local g = _()
 print(dumper.encode(g, { pretty = true, stable = true }))
 
@@ -41,14 +44,15 @@ for i, name in ipairs(g.symbols) do
   _[name] = i
 end
 
-local d = driver(g, data)
-assert(d:parse(_["("]))
+local d = driver(data)
 assert(d:parse(_["id"], { value = 17 }))
 assert(d:parse(_["+"]))
-assert(d:parse(_["+"]))
 assert(d:parse(_["id"], { value = 23 }))
-assert(d:parse(_[")"]))
-assert(d:parse(_["*"]))
+assert(d:parse(_["+"]))
 assert(d:parse(_["id"], { value = 37 }))
+assert(d:parse(_["*"]))
+assert(d:parse(_["id"], { value = 42 }))
+assert(d:parse(_["+"]))
+assert(d:parse(_["id"], { value = 69 }))
 assert(d:parse())
 dump.write_tree("test.dot", g, d.tree)
