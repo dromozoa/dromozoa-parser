@@ -19,7 +19,7 @@ local ipairs = require "dromozoa.commons.ipairs"
 local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
 local precedence = require "dromozoa.parser.builder.precedence"
-local production = require "dromozoa.parser.builder.production"
+local production_builder = require "dromozoa.parser.production_builder"
 local scanner_builder = require "dromozoa.parser.scanner_builder"
 
 local class = {}
@@ -224,7 +224,7 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  return production(self.productions, name)
+  return production_builder(self.productions, name)
 end
 
 return setmetatable(class, {

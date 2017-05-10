@@ -16,7 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local sequence = require "dromozoa.commons.sequence"
-local precedence = require "dromozoa.parser.builder.precedence"
 
 local class = {}
 
