@@ -47,18 +47,5 @@ _ "factor"
   :_ "-" "id" :prec "UMINUS"
   :_ "id"
 
--- _"expression"
---     :_(_"expression", "+", _"term")
---     :_(_"expression", "-", _"term")
---     :_(_"term")
--- _"term"
---     :_(_"term", "*", _"factor")
---     :_(_"term", "/", _"factor")
---     :_(_"factor")
--- _"factor"
---     :_("(", _"expression", ")")
---     :_("id")
--- local g = _()
-
 print(dumper.encode(_, { pretty = true, stable = true }))
 print(dumper.encode(_:build(), { pretty = true, stable = true }))

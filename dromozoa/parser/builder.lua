@@ -84,6 +84,7 @@ function class:build(start_name)
     end
     for rule in scanner:each() do
       local name = rule.name
+      -- [TODO] do not check or check in this scanner
       if symbol_table[name] ~= nil then
         error(("symbol %q already defined"):format(name))
       end
@@ -173,7 +174,7 @@ function class:build(start_name)
   end
 
   local result_productions = sequence():push({
-    head = max_terminal_symbol;
+    head = max_nonterminal_symbol;
     body = sequence():push(start_symbol);
   })
 
@@ -201,7 +202,7 @@ function class:build(start_name)
     end
   end
 
-  -- check unused terminal symbol
+  -- [TODO] check unused terminal symbol
 
   return {
     symbols = symbols;
@@ -210,6 +211,8 @@ function class:build(start_name)
     production_precedences = production_precedences;
     scanners = result_scanners;
     productions = result_productions;
+    max_terminal_symbol = max_terminal_symbol;
+    max_nonterminal_symbol = max_nonterminal_symbol;
   }
 end
 

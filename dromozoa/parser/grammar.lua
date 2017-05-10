@@ -30,16 +30,14 @@ local start_id = 1
 
 local class = {}
 
-function class.new(productions, symbols, max_terminal_symbol, start_symbol, precedences, associativities, production_precedences, production_associativities)
+function class.new(symbols, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
   return {
+    symbols = symbols; -- [TODO] remove (only for dump and debug)
     productions = productions;
-    symbols = symbols;
     max_terminal_symbol = max_terminal_symbol;
     start_symbol = start_symbol;
-    precedences = precedences;
-    associativities = associativities;
+    symbol_precedences = symbol_precedences;
     production_precedences = production_precedences;
-    production_associativities = production_associativities;
   }
 end
 
@@ -94,17 +92,18 @@ function class:first_symbols(symbols)
 end
 
 function class:symbol_precedence(symbol)
-  local precedence = self.precedences[symbol]
+  local precedence = self.symbol_precedences[symbol]
   if precedence == nil then
-    precedence = 0
+    return 0, false
+  else
+    return precedence.precedence, precedence.is_left
   end
-  return precedence, self.associativities[symbol] == "left"
 end
 
 function class:production_precedence(id)
   local precedence = self.production_precedences[id]
   if precedence then
-    return precedence, self.production_associativities[id] == "left"
+    return precedence.precedence, precedence.is_left
   end
   local production = self.productions[id]
   local body = production.body
@@ -348,7 +347,6 @@ end
 
 function class:lr1_construct_table(set_of_items, transitions, out)
   local productions = self.productions
-  local symbols = self.symbols
   local start_symbol = self.start_symbol
 
   local max_state = #set_of_items
@@ -469,7 +467,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities, production_precedences, production_associativities)
-    return setmetatable(class.new(start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities, production_precedences, production_associativities), class.metatable)
+  __call = function (_, symbols, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
+    return setmetatable(class.new(symbols, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences), class.metatable)
   end;
 })
