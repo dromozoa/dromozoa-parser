@@ -16,19 +16,45 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local grammar = require "dromozoa.parser.builder.grammar"
+local builder = require "dromozoa.parser.builder"
 
-local _ = grammar()
-_"expression"
-    :_(_"expression", "+", _"term")
-    :_(_"expression", "-", _"term")
-    :_(_"term")
-_"term"
-    :_(_"term", "*", _"factor")
-    :_(_"term", "/", _"factor")
-    :_(_"factor")
-_"factor"
-    :_("(", _"expression", ")")
-    :_("id")
-local g = _()
-print(dumper.encode(g, { pretty = true, stable = true }))
+local _ = builder()
+
+_ :lit "+"
+  :lit "-"
+  :lit "*"
+  :lit "/"
+  :pat "[%a_][%w_]*" :as "id"
+
+_ :left "+" "-"
+  :left "*" "/"
+  :right "UMINUS"
+
+_ "expression"
+  :_ "expression" "+" "term"
+  :_ "expression" "-" "term"
+  :_ "term"
+
+_ "term"
+  :_ "term" "*" "factor"
+  :_ "term" "/" "factor"
+  :_ "factor"
+
+_ "factor"
+  :_ "(" "expression" ")"
+  :_ "-" "id" :prec "UMINUS"
+  :_ "id"
+
+-- _"expression"
+--     :_(_"expression", "+", _"term")
+--     :_(_"expression", "-", _"term")
+--     :_(_"term")
+-- _"term"
+--     :_(_"term", "*", _"factor")
+--     :_(_"term", "/", _"factor")
+--     :_(_"factor")
+-- _"factor"
+--     :_("(", _"expression", ")")
+--     :_("id")
+-- local g = _()
+print(dumper.encode(_, { pretty = true, stable = true }))

@@ -15,38 +15,42 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-local builder = require "dromozoa.parser.builder"
+local sequence = require "dromozoa.commons.sequence"
+local precedence = require "dromozoa.parser.builder.precedence"
 
-local _ = builder()
+local class = {}
 
-_ :pat "%s+" :ignore()
-  :lit "*"
-  :lit "+"
-  :lit "("
-  :lit ")"
-  :pat "[1-9]%d*" :as "integer"
-  :lit "\"" :call "string"
-  :lit "abc"
-  :pat "[a-z]+" :as "identifier"
+function class.new(builder, name)
+  return {
+    builder = builder;
+    head = name;
+  }
+end
 
-_:scanner "string"
-  :pat "\"" :ret()
-  :lit "\\\""
-  :pat "[^\\\"]+"
+function class:_(name)
+  self.builder.productions:push({
+    head = self.head;
+    body = sequence();
+  })
+  return self
+end
 
--- local s, t = _:build()
-print(dumper.encode(_, { pretty = true, stable = true }))
+function class:prec(name)
+  self.builder.productions:top().precedence = name
+  return self
+end
 
--- local data = [[
--- ( 17 + 23 * 37 ) + "abc\"def" abc abcd
--- ]]
--- local position = 1
--- while true do
---   local symbol, i, j = s(data, position)
---   print(symbol, t[symbol], i, j, data:sub(i, j))
---   if symbol == 1 then
---     break
---   end
---   position = j + 1
--- end
+class.metatable = {
+  __index = class;
+}
+
+function class.metatable:__call(name)
+  self.builder.productions:top().body:push(name)
+  return self
+end
+
+return setmetatable(class, {
+  __call = function (_, builder, name)
+    return setmetatable(class.new(builder, name), class.metatable)
+  end;
+})

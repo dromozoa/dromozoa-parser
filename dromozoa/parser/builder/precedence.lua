@@ -15,68 +15,47 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
-
 local class = {}
 
 function class.new()
   return {
-    rules = sequence();
+    precedences = {};
+    precedence = 0
   }
 end
 
-function class:lit(literal)
-  self.rules:push({
-    name = literal;
-    match = "^" .. literal:gsub("%W", "%%%0");
-  })
-  return self
+function class:left(name)
+  local precedence = self.precedence + 1
+  self.precedence = precedence
+  self.associativity = "left"
+  return self(name)
 end
 
-function class:pat(pattern)
-  self.rules:push({
-    name = pattern;
-    match = "^" .. pattern;
-  })
-  return self
+function class:right(name)
+  local precedence = self.precedence + 1
+  self.precedence = precedence
+  self.associativity = "right"
+  return self(name)
 end
 
-function class:as(name)
-  self.rules:top().name = name
-  return self
-end
-
-function class:ignore()
-  self.rules:top().action = { "ignore" }
-  return self
-end
-
-function class:call(name)
-  self.rules:top().action = { "call", name }
-  return self
-end
-
-function class:ret()
-  self.rules:top().action = { "ret" }
-  return self
-end
-
-function class:build(terminal_symbols, env)
-  local data = sequence()
-  for rule in self.rules:each() do
-    rule.symbol = terminal_symbols:symbol(rule.name)
-    local action = rule.action
-    if action and action[1] == "call" then
-      action[2] = assert(env[action[2]])
-    end
-    data:push(rule)
-  end
-  return data
+function class:noassoc(name)
+  local precedence = self.precedence + 1
+  self.precedence = precedence
+  self.associativity = "right"
+  return self(name)
 end
 
 class.metatable = {
   __index = class;
 }
+
+function class.metatable:__call(name)
+  self.precedences[name] = {
+    precedence = self.precedence;
+    associativity = self.associativity;
+  }
+  return self
+end
 
 return setmetatable(class, {
   __call = function ()

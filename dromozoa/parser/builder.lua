@@ -16,67 +16,66 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local sequence = require "dromozoa.commons.sequence"
+local precedence = require "dromozoa.parser.builder.precedence"
+local production = require "dromozoa.parser.builder.production"
+local scanner = require "dromozoa.parser.builder.scanner"
 
 local class = {}
 
 function class.new()
   return {
-    rules = sequence();
+    scanners = {
+      scanner();
+      n = 1;
+    };
+    precedence = precedence();
+    productions = sequence();
   }
 end
 
+function class:scanner(name)
+  local scanners = self.scanners
+  if name == nil then
+    return scanners[1]
+  end
+  local that = scanners[name]
+  if that == nil then
+    that = scanner()
+    local n = scanners.n + 1
+    scanners[n] = that
+    scanners[name] = that
+    scanners.n = n
+  end
+  return that
+end
+
 function class:lit(literal)
-  self.rules:push({
-    name = literal;
-    match = "^" .. literal:gsub("%W", "%%%0");
-  })
-  return self
+  return self:scanner():lit(literal)
 end
 
 function class:pat(pattern)
-  self.rules:push({
-    name = pattern;
-    match = "^" .. pattern;
-  })
-  return self
+  return self:scanner():pat(pattern)
 end
 
-function class:as(name)
-  self.rules:top().name = name
-  return self
+function class:left(name)
+  return self.precedence:left(name)
 end
 
-function class:ignore()
-  self.rules:top().action = { "ignore" }
-  return self
+function class:right(name)
+  return self.precedence:right(name)
 end
 
-function class:call(name)
-  self.rules:top().action = { "call", name }
-  return self
-end
-
-function class:ret()
-  self.rules:top().action = { "ret" }
-  return self
-end
-
-function class:build(terminal_symbols, env)
-  local data = sequence()
-  for rule in self.rules:each() do
-    rule.symbol = terminal_symbols:symbol(rule.name)
-    local action = rule.action
-    if action and action[1] == "call" then
-      action[2] = assert(env[action[2]])
-    end
-    data:push(rule)
-  end
-  return data
+function class:noassoc(name)
+  return self.precedence:noassoc(name)
 end
 
 class.metatable = {
   __index = class;
 }
+
+function class.metatable:__call(name)
+  return production(self, name)
+end
 
 return setmetatable(class, {
   __call = function ()
