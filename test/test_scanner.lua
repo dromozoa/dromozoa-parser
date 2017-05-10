@@ -28,6 +28,8 @@ _"main"
   :lit ")"
   :pat "[1-9]%d*" :as "integer"
   :lit "\"" :call "string"
+  :lit "abc"
+  :pat "[a-z]+" :as "identifier"
 
 _"string"
   :pat "\"" :_"return"
@@ -38,7 +40,7 @@ local s, t = _()
 print(dumper.encode(s, { pretty = true, stable = true }))
 
 local data = [[
-( 17 + 23 * 37 ) + "abc\"def"
+( 17 + 23 * 37 ) + "abc\"def" abc abcd
 ]]
 local position = 1
 while true do

@@ -38,25 +38,36 @@ function class:scan(s, init)
   local scanners = self.scanners
 
   local scanner = data[scanners:top()]
+  local result_item
+  local result_j
   for item in scanner:each() do
     local i, j = s:find(item.match, init)
     if i == init then
-      local action = item.action
-      if action then
-        local op = action[1]
-        if op == "ignore" then
-          return self:scan(s, j + 1)
-        elseif op == "call" then
-          scanners:push(action[2])
-        elseif op == "return" then
-          scanners:pop()
-        end
+      if result_j == nil then
+        result_item = item
+        result_j = j
+      elseif result_j < j then
+        result_item = item
+        result_j = j
       end
-      return item.symbol, i, j
     end
   end
-
-  return nil, "scanner error", init
+  if result_item then
+    local action = result_item.action
+    if action then
+      local op = action[1]
+      if op == "ignore" then
+        return self:scan(s, result_j + 1)
+      elseif op == "call" then
+        scanners:push(action[2])
+      elseif op == "return" then
+        scanners:pop()
+      end
+    end
+    return result_item.symbol, init, result_j
+  else
+    return nil, "scanner error", init
+  end
 end
 
 class.metatable = {
