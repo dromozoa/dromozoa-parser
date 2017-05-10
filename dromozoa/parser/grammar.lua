@@ -355,7 +355,8 @@ function class:lr1_construct_table(set_of_items, transitions, out)
   for i, items in ipairs(set_of_items) do
     for item in items:each() do
       local id = item.id
-      local symbol = productions[id].body[item.dot]
+      local production = productions[id]
+      local symbol = production.body[item.dot]
       if symbol == nil then
         local action = max_state + id
         local la = item.la
@@ -365,7 +366,25 @@ function class:lr1_construct_table(set_of_items, transitions, out)
           table[index] = action
         elseif current ~= action then
           if current <= max_state then
-            error(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, la))
+            local production_precedence, production_is_left = self:production_precedence(production)
+            local symbol_precedence = self:symbol_precedence(la)
+            if out then
+              out:write(
+                  ("shift(%d) prcedence(%d) / reduce(%d) prcedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
+                      current, symbol_precedence,
+                      id, production_precedence, production_is_left,
+                      i, la))
+            end
+            if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_is_left then
+              if out then
+                out:write(("reduce(%d) is chosen\n"):format(id))
+              end
+              table[index] = action
+            else
+              if out then
+                out:write(("shift(%d) is chosen\n"):format(current))
+              end
+            end
           else
             if out then
               out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, la))
@@ -390,14 +409,16 @@ function class:lr1_construct_table(set_of_items, transitions, out)
                 ("reduce(%d) prcedence(%d,%s) / shift(%d) prcedence(%d) conflict at state(%d) symbol(%d)\n"):format(
                     reduce, production_precedence, production_is_left,
                     action, symbol_precedence,
-                    i,
-                    symbol))
+                    i, symbol))
           end
           if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_is_left then
             if out then
               out:write(("reduce(%d) is chosen\n"):format(reduce))
             end
           else
+            if out then
+              out:write(("shift(%d) is chosen\n"):format(action))
+            end
             table[index] = action
           end
         end
