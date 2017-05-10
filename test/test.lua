@@ -18,8 +18,6 @@
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
-local grammar = require "dromozoa.parser.grammar"
-local scanner = require "dromozoa.parser.scanner"
 local dump = require "test.dump"
 
 local _ = builder()
@@ -50,18 +48,9 @@ _ "E"
   :_ "octal"
   :_ "hexadecimal"
 
-local data = _:build()
+local scanner, grammar = _:build()
 
-print(dumper.encode(data, { pretty = true, stable = true }))
-
-local grammar = grammar(
-    data.symbols,
-    data.productions,
-    data.max_terminal_symbol,
-    data.max_nonterminal_symbol,
-    data.symbol_precedences,
-    data.production_precedences)
-
+print(dumper.encode(scanner, { pretty = true, stable = true }))
 print(dumper.encode(grammar, { pretty = true, stable = true }))
 
 local set_of_items, transitions = grammar:lalr1_items()
@@ -69,11 +58,10 @@ print(dumper.encode(set_of_items, { pretty = true, stable = true }))
 print(dumper.encode(transitions, { pretty = true, stable = true }))
 
 dump.write_graph("test-graph.dot", grammar, set_of_items, transitions)
-local parser = grammar:lr1_construct_table(set_of_items, transitions, io.stdout)
-dump.write_table("test.html", grammar, parser)
+local data = grammar:lr1_construct_table(set_of_items, transitions, io.stdout)
+dump.write_table("test.html", grammar, data)
 
-local driver = driver(parser)
-local scanner = scanner(data.scanners)
+local driver = driver(data)
 
 local source = [[
 17 + - 23 * 37 - 42
@@ -82,7 +70,7 @@ local source = [[
 local position = 1
 while true do
   local symbol, i, j = scanner(source, position)
-  print(symbol, data.symbols[symbol], i, j, source:sub(i, j))
+  print(symbol, grammar.symbols[symbol], i, j, source:sub(i, j))
   if symbol == 1 then
     assert(driver:parse())
     break

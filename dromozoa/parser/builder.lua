@@ -20,6 +20,8 @@ local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
 local precedence_builder = require "dromozoa.parser.precedence_builder"
 local production_builder = require "dromozoa.parser.production_builder"
+local grammar = require "dromozoa.parser.grammar"
+local scanner = require "dromozoa.parser.scanner"
 local scanner_builder = require "dromozoa.parser.scanner_builder"
 
 local class = {}
@@ -207,16 +209,15 @@ function class:build(start_name)
 
   -- [TODO] check unused terminal symbol
 
-  return {
-    symbols = symbols;
-    symbol_table = symbol_table;
-    symbol_precedences = symbol_precedences;
-    production_precedences = production_precedences;
-    scanners = result_scanners;
-    productions = result_productions;
-    max_terminal_symbol = max_terminal_symbol;
-    max_nonterminal_symbol = max_nonterminal_symbol;
-  }
+  local scanner = scanner(result_scanners)
+  local grammar = grammar(
+     symbols,
+     result_productions,
+     max_terminal_symbol,
+     max_nonterminal_symbol,
+     symbol_precedences,
+     production_precedences)
+  return scanner, grammar
 end
 
 class.metatable = {
