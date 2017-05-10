@@ -34,7 +34,28 @@ function class.new(terminal_symbols)
     terminal_symbols = terminal_symbols;
     nonterminal_symbols = symbol_table();
     productions = sequence();
+    precedence = 0;
+    precedences = {};
+    associativities = {};
   }
+end
+
+function class:left(...)
+  local terminal_symbols = self.terminal_symbols
+  local precedences = self.precedences
+  local associativities = self.associativities
+
+  local precedence = self.precedence + 1
+  self.precedence = precedence
+
+  local names = sequence():push(...)
+  for name in names:each() do
+    local id = terminal_symbols:symbol(name)
+    precedences[id] = precedence
+    associativities[id] = "left"
+  end
+
+  return self
 end
 
 function class:terminal_symbol(name)
@@ -92,7 +113,13 @@ function class:build(start_symbol)
     symbols[id + max_terminal_symbol] = name
   end
 
-  return grammar(productions, symbols, max_terminal_symbol, argumented_start_symbol:translate(max_terminal_symbol))
+  return grammar(
+      productions,
+      symbols,
+      max_terminal_symbol,
+      argumented_start_symbol:translate(max_terminal_symbol),
+      self.precedences,
+      self.associativities)
 end
 
 class.metatable = {

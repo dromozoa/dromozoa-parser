@@ -30,12 +30,14 @@ local start_id = 1
 
 local class = {}
 
-function class.new(productions, symbols, max_terminal_symbol, start_symbol)
+function class.new(productions, symbols, max_terminal_symbol, start_symbol, precedences, associativities)
   return {
     productions = productions;
     symbols = symbols;
     max_terminal_symbol = max_terminal_symbol;
     start_symbol = start_symbol;
+    precedences = precedences;
+    associativities = associativities;
   }
 end
 
@@ -87,6 +89,25 @@ function class:first_symbols(symbols)
   end
   first:insert(epsilon)
   return first
+end
+
+function class:symbol_precedence(symbol)
+  local precedence = self.precedences[symbol]
+  if precedence == nil then
+    precedence = 0
+  end
+  return precedence, self.associativities[symbol] == "left"
+end
+
+function class:production_precedence(production)
+  local body = production.body
+  for i = #body, 1, -1 do
+    local symbol = body[i]
+    if self:is_terminal_symbol(symbol) then
+      return self:symbol_precedence(symbol)
+    end
+  end
+  return 0, false
 end
 
 function class:lr0_closure(items)
@@ -344,9 +365,7 @@ function class:lr1_construct_table(set_of_items, transitions, out)
           table[index] = action
         elseif current ~= action then
           if current <= max_state then
-            if out then
-              out:write(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, la))
-            end
+            error(("shift(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current, id, i, la))
           else
             if out then
               out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, la))
@@ -363,10 +382,24 @@ function class:lr1_construct_table(set_of_items, transitions, out)
         if current == 0 then
           table[index] = action
         elseif current ~= action then
+          local reduce = current - max_state
+          local production_precedence, production_is_left = self:production_precedence(productions[reduce])
+          local symbol_precedence = self:symbol_precedence(symbol)
           if out then
-            out:write(("reduce(%d) / shift(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, action, i, symbol))
+            out:write(
+                ("reduce(%d) prcedence(%d,%s) / shift(%d) prcedence(%d) conflict at state(%d) symbol(%d)\n"):format(
+                    reduce, production_precedence, production_is_left,
+                    action, symbol_precedence,
+                    i,
+                    symbol))
           end
-          table[index] = action
+          if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_is_left then
+            if out then
+              out:write(("reduce(%d) is chosen\n"):format(reduce))
+            end
+          else
+            table[index] = action
+          end
         end
       end
     end
@@ -408,7 +441,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, start_symbol, max_terminal_symbol, productions, symbols)
-    return setmetatable(class.new(start_symbol, max_terminal_symbol, productions, symbols), class.metatable)
+  __call = function (_, start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities)
+    return setmetatable(class.new(start_symbol, max_terminal_symbol, productions, symbols, precedences, associativities), class.metatable)
   end;
 })
