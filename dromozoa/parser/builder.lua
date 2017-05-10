@@ -20,13 +20,13 @@ local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
 local precedence = require "dromozoa.parser.builder.precedence"
 local production = require "dromozoa.parser.builder.production"
-local scanner = require "dromozoa.parser.builder.scanner"
+local scanner_builder = require "dromozoa.parser.scanner_builder"
 
 local class = {}
 
 function class.new()
   return {
-    scanners = sequence():push(scanner());
+    scanners = sequence():push(scanner_builder());
     precedence = precedence();
     productions = sequence();
   }
@@ -37,7 +37,7 @@ function class:scanner(name)
   if name == nil then
     return scanners[1]
   end
-  local scanner = scanner(name)
+  local scanner = scanner_builder(name)
   scanners:push(scanner)
   return scanner
 end
