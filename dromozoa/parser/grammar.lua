@@ -384,7 +384,6 @@ function class:lr1_construct_table(set_of_items, transitions)
               { action = "error" };
               { action = "reduce", argument = id };
             })
-            -- conflicts:push(("error at state(%d) symbol(%d)\n"):format(i, symbol))
           else
             table[index] = action
           end
@@ -394,51 +393,44 @@ function class:lr1_construct_table(set_of_items, transitions)
             symbol = symbol;
           }
           local resolved
-          local chosen
           if current <= max_state then
             local symbol_precedence = self:symbol_precedence(symbol)
             local production_precedence, production_associativity = self:production_precedence(id)
             conflict[1] = { action = "shift", argument = current, precedence = symbol_precedence }
             conflict[2] = { action = "reduce", argument = id, precedence = production_precedence, associativity = production_associativity }
-            -- conflicts:push(
-            --     ("shift(%d) prcedence(%d) / reduce(%d) prcedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
-            --         current, symbol_precedence,
-            --         id, production_precedence, production_associativity,
-            --         i, symbol))
             if production_precedence == symbol_precedence then
               if production_associativity == "left" then
                 resolved = true
-                chosen = 2
+                conflict.chosen = 2
                 table[index] = action
               elseif production_associativity == "right" then
                 resolved = true
-                chosen = 1
+                conflict.chosen = 1
               elseif production_associativity == "nonassoc" then
                 resolved = true
-                chosen = 0
+                conflict.chosen = 0
                 error_table[symbol] = true
                 table[index] = 0
               end
             elseif production_precedence > symbol_precedence then
               resolved = true
-              chosen = 2
+              conflict.chosen = 2
               table[index] = action
             end
             if not resolved then
-              chosen = 1
+              conflict.chosen = 1
             end
           else
             conflict[1] = { action = "reduce", argument = current - max_state }
             conflict[2] = { action = "reduce", argument = id }
             if action < current then
-              chosen = 2
+              conflict.chosen = 2
               table[index] = action
             else
-              chosen = 1
+              conflict.chosen = 1
             end
           end
           conflict.resolved = resolved
-          conflict.chosen = chosen
           conflicts:push(conflict)
         end
       end
