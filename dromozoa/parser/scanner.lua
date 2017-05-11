@@ -54,15 +54,12 @@ function class:scan(s, init)
   end
   if result_item then
     local action = result_item.action
-    if action then
-      local op = action[1]
-      if op == "ignore" then
-        return self:scan(s, result_j + 1)
-      elseif op == "call" then
-        scanners:push(action[2])
-      elseif op == "ret" then
-        scanners:pop()
-      end
+    if action == "ignore" then
+      return self:scan(s, result_j + 1)
+    elseif action == "call" then
+      scanners:push(result_item.arguments[1])
+    elseif action == "ret" then
+      scanners:pop()
     end
     return result_item.symbol, init, result_j
   else

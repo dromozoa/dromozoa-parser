@@ -17,6 +17,14 @@
 
 local sequence = require "dromozoa.commons.sequence"
 
+local function rule(self, name, pattern)
+  self.items:push({
+    name = name;
+    pattern = "^" .. pattern;
+  })
+  return self
+end
+
 local class = {}
 
 function class.new(name)
@@ -27,19 +35,11 @@ function class.new(name)
 end
 
 function class:lit(literal)
-  self.items:push({
-    name = literal;
-    pattern = "^" .. literal:gsub("%W", "%%%0");
-  })
-  return self
+  return rule(self, literal, literal:gsub("%W", "%%%0"))
 end
 
 function class:pat(pattern)
-  self.items:push({
-    name = pattern;
-    pattern = "^" .. pattern;
-  })
-  return self
+  return rule(self, pattern, pattern)
 end
 
 function class:as(name)
@@ -48,17 +48,19 @@ function class:as(name)
 end
 
 function class:ignore()
-  self.items:top().action = { "ignore" }
+  self.items:top().action = "ignore"
   return self
 end
 
 function class:call(name)
-  self.items:top().action = { "call", name }
+  local item = self.items:top()
+  item.action = "call"
+  item.arguments = { name }
   return self
 end
 
 function class:ret()
-  self.items:top().action = { "ret" }
+  self.items:top().action = "ret"
   return self
 end
 

@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local clone = require "dromozoa.commons.clone"
 local ipairs = require "dromozoa.commons.ipairs"
 local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
@@ -28,20 +29,20 @@ local class = {}
 
 function class.new()
   return {
-    scanners = sequence():push(scanner_builder());
-    precedence = precedence_builder();
+    scanner_builders = sequence():push(scanner_builder());
+    precedence_builder = precedence_builder();
     productions = sequence();
   }
 end
 
 function class:scanner(name)
-  local scanners = self.scanners
+  local scanner_builders = self.scanner_builders
   if name == nil then
-    return scanners[1]
+    return scanner_builders[1]
   end
-  local scanner = scanner_builder(name)
-  scanners:push(scanner)
-  return scanner
+  local scanner_builder = scanner_builder(name)
+  scanner_builders:push(scanner_builder)
+  return scanner_builder
 end
 
 function class:lit(literal)
@@ -53,48 +54,52 @@ function class:pat(pattern)
 end
 
 function class:left(name)
-  return self.precedence:left(name)
+  return self.precedence_builder:left(name)
 end
 
 function class:right(name)
-  return self.precedence:right(name)
+  return self.precedence_builder:right(name)
 end
 
 function class:nonassoc(name)
-  return self.precedence:nonassoc(name)
+  return self.precedence_builder:nonassoc(name)
 end
 
 function class:build(start_name)
-  local scanners = self.scanners
-  local precedence = self.precedence
+  local scanner_builders = self.scanner_builders
+  local precedence_builder = self.precedence_builder
   local productions = self.productions
 
   if start_name == nil then
     start_name = productions[1].head
   end
 
-  local scanner_table = {}
-
   local n = 1
-  local symbols = { "$" }
+  local symbol_names = { "$" }
   local symbol_table = {}
 
-  for i, scanner in ipairs(scanners) do
-    local name = scanner.name
+  local scanner_names = {}
+  local scanner_table = {}
+
+  for i, scanner_builder in ipairs(scanner_builders) do
+    local name = scanner_builder.name
     if name ~= nil then
+      scanner_names[i] = name
       scanner_table[name] = i
     end
-    for rule in scanner.items:each() do
-      local action = rule.action
-      if action == nil or action[1] ~= "ignore" then
-        local name = rule.name
-        -- [TODO] do not check or check in this scanner
-        if symbol_table[name] ~= nil then
-          error(("symbol %q already defined"):format(name))
+    local check_table = {}
+    for item in scanner_builder.items:each() do
+      if item.action ~= "ignore" then
+        local name = item.name
+        if check_table[name] ~= nil then
+          error(("terminal symbol %q already defined"):format(name))
         end
-        n = n + 1
-        symbols[n] = name
-        symbol_table[name] = n
+        check_table[name] = true
+        if symbol_table[name] == nil then
+          n = n + 1
+          symbol_names[n] = name
+          symbol_table[name] = n
+        end
       end
     end
   end
@@ -102,24 +107,34 @@ function class:build(start_name)
   local max_terminal_symbol = n
 
   for production in productions:each() do
-    local head = production.head
-    local symbol = symbol_table[head]
+    local name = production.head
+    local symbol = symbol_table[name]
     if symbol == nil then
       n = n + 1
-      symbols[n] = head
-      symbol_table[head] = n
+      symbol_names[n] = name
+      symbol_table[name] = n
     else
       if symbol <= max_terminal_symbol then
-        error(("head %q must be a nonterminal symbol"):format(head))
+        error(("symbol %q must be a nonterminal symbol"):format(name))
       end
     end
   end
 
+  local check_table = {}
+
   for production in productions:each() do
     for name in production.body:each() do
-      if symbol_table[name] == nil then
+      local symbol = symbol_table[name]
+      if symbol == nil then
         error(("symbol %q not defined"):format(name))
       end
+      check_table[symbol] = true
+    end
+  end
+
+  for i = 2, max_terminal_symbol do
+    if not check_table[i] then
+      error(("terminal symbol %q not used"):format(symbol_names[i]))
     end
   end
 
@@ -132,40 +147,33 @@ function class:build(start_name)
   end
 
   n = n + 1
-  symbols[n] = start_name .. "'"
+  symbol_names[n] = start_name .. "'"
 
   local max_nonterminal_symbol = n -- argumented_start_symbol
 
-  local result_scanners = sequence()
-  for scanner in scanners:each() do
-    local result_scanner = sequence()
-    for rule in scanner.items:each() do
-      local name = rule.name
-      local action = rule.action
-      local result_action
-      if action ~= nil then
-        if action[1] == "call" then
-          local name = action[2]
-          local id = scanner_table[action[2]]
-          if id == nil then
-            error(("scanner %q not defined"):format(name))
-          end
-          result_action = { "call", id }
-        else
-          result_action = { action[1] }
+  local scanners = sequence()
+  for scanner_builder in scanner_builders:each() do
+    local scanner = sequence()
+    for item in scanner_builder.items:each() do
+      local item = clone(item)
+      item.symbol = symbol_table[item.name]
+      item.name = nil
+      if item.action == "call" then
+        local arguments = item.arguments
+        local name = arguments[1]
+        local id = scanner_table[name]
+        if id == nil then
+          error(("scanner %q not defined"):format(name))
         end
+        arguments[1] = id
       end
-      result_scanner:push({
-        symbol = symbol_table[name];
-        pattern = rule.pattern;
-        action = result_action;
-      })
+      scanner:push(item)
     end
-    result_scanners:push(result_scanner)
+    scanners:push(scanner)
   end
 
   local symbol_precedences = {}
-  for item in precedence.items:each() do
+  for item in precedence_builder.items:each() do
     local name = item.name
     local symbol = symbol_table[name]
     if symbol ~= nil then
@@ -179,7 +187,7 @@ function class:build(start_name)
     end
   end
 
-  local result_productions = sequence():push({
+  local translated_productions = sequence():push({
     head = max_nonterminal_symbol;
     body = sequence():push(start_symbol);
   })
@@ -191,34 +199,26 @@ function class:build(start_name)
     for name in production.body:each() do
       body:push(symbol_table[name])
     end
-    result_productions:push({
+    translated_productions:push({
       head = symbol_table[production.head];
       body = body;
     })
     local name = production.precedence
     if name ~= nil then
-      local precedence = precedence.table[name]
-      if precedence == nil then
+      local item = precedence_builder.table[name]
+      if item == nil then
         error(("production precedence %q not defined"):format(name))
       end
-      production_precedences[#result_productions] = {
-        precedence = precedence.precedence;
-        is_left = precedence.associativity == "left";
+      production_precedences[#translated_productions] = {
+        precedence = item.precedence;
+        is_left = item.is_left;
       }
     end
   end
 
-  -- [TODO] check unused terminal symbol
-
-  local scanner = scanner(result_scanners)
-  local grammar = grammar(
-     symbols,
-     result_productions,
-     max_terminal_symbol,
-     max_nonterminal_symbol,
-     symbol_precedences,
-     production_precedences)
-  return scanner, grammar
+  local scanner = scanner(scanners)
+  local grammar = grammar(translated_productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
+  return scanner, grammar, symbol_names
 end
 
 class.metatable = {

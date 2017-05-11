@@ -30,9 +30,8 @@ local start_id = 1
 
 local class = {}
 
-function class.new(symbols, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
+function class.new(productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
   return {
-    symbols = symbols; -- [TODO] remove (only for dump and debug)
     productions = productions;
     max_terminal_symbol = max_terminal_symbol;
     start_symbol = start_symbol;
@@ -467,7 +466,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, symbols, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
-    return setmetatable(class.new(symbols, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences), class.metatable)
+  __call = function (_, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
+    return setmetatable(class.new(productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences), class.metatable)
   end;
 })

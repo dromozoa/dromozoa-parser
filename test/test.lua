@@ -38,24 +38,29 @@ _ :left "+" "-"
   :right "UMINUS"
 
 _ "E"
-  :_ "E" "-" "E"
-  :_ "E" "+" "E"
   :_ "E" "*" "E"
   :_ "E" "/" "E"
+  :_ "E" "+" "E"
+  :_ "E" "-" "E"
   :_ "(" "E" ")"
   :_ "-" "E" :prec "UMINUS"
   :_ "decimal"
   :_ "octal"
   :_ "hexadecimal"
 
-local scanner, grammar = _:build()
+local scanner, grammar, symbol_names = _:build()
 
-print(dumper.encode(scanner, { pretty = true, stable = true }))
-print(dumper.encode(grammar, { pretty = true, stable = true }))
+-- print(dumper.encode(scanner, { pretty = true, stable = true }))
+-- print(dumper.encode(grammar, { pretty = true, stable = true }))
+-- print(dumper.encode(symbol_names, { pretty = true, stable = true }))
+
+grammar.symbols = symbol_names
 
 local set_of_items, transitions = grammar:lalr1_items()
-print(dumper.encode(set_of_items, { pretty = true, stable = true }))
-print(dumper.encode(transitions, { pretty = true, stable = true }))
+-- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
+-- for from, to in pairs(transitions) do
+--   print(dumper.encode({ from = from, to = to }))
+-- end
 
 dump.write_graph("test-graph.dot", grammar, set_of_items, transitions)
 local data = grammar:lr1_construct_table(set_of_items, transitions, io.stdout)
