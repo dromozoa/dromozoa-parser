@@ -394,25 +394,25 @@ function class:lr1_construct_table(set_of_items, transitions)
           }
           local resolved
           if current <= max_state then
-            local symbol_precedence = self:symbol_precedence(symbol)
-            local production_precedence, production_associativity = self:production_precedence(id)
-            conflict[1] = { action = "shift", argument = current, precedence = symbol_precedence }
-            conflict[2] = { action = "reduce", argument = id, precedence = production_precedence, associativity = production_associativity }
-            if production_precedence == symbol_precedence then
-              if production_associativity == "left" then
+            local shift_precedence = self:symbol_precedence(symbol)
+            local precedence, associativity = self:production_precedence(id)
+            conflict[1] = { action = "shift", argument = current, precedence = shift_precedence }
+            conflict[2] = { action = "reduce", argument = id, precedence = precedence, associativity = associativity }
+            if precedence == shift_precedence then
+              if associativity == "left" then
                 resolved = true
                 conflict.chosen = 2
                 table[index] = action
-              elseif production_associativity == "right" then
+              elseif associativity == "right" then
                 resolved = true
                 conflict.chosen = 1
-              elseif production_associativity == "nonassoc" then
+              elseif associativity == "nonassoc" then
                 resolved = true
                 conflict.chosen = 0
                 error_table[symbol] = true
                 table[index] = 0
               end
-            elseif production_precedence > symbol_precedence then
+            elseif precedence > shift_precedence then
               resolved = true
               conflict.chosen = 2
               table[index] = action
