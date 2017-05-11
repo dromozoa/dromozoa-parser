@@ -344,7 +344,7 @@ function class:lalr1_items()
   return set_of_items, transitions
 end
 
-function class:lr1_construct_table(set_of_items, transitions, out)
+function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
   local max_nonterminal_symbol = self.max_nonterminal_symbol
 
@@ -352,11 +352,11 @@ function class:lr1_construct_table(set_of_items, transitions, out)
   local max_symbol = max_nonterminal_symbol - 1
 
   local table = {}
+  local conflicts = sequence()
+
   for i = 1, (max_state + 1) * max_symbol do
     table[i] = 0
   end
-
-  local error_table = {}
 
   for i, items in ipairs(set_of_items) do
     local terminal_symbol_table = {}
@@ -364,13 +364,10 @@ function class:lr1_construct_table(set_of_items, transitions, out)
       local symbol = productions[item.id].body[item.dot]
       if symbol ~= nil and self:is_terminal_symbol(symbol) and not terminal_symbol_table[symbol] then
         terminal_symbol_table[symbol] = true
-        local action = transitions[{ from = i, symbol = symbol }]
-        local index = i * max_symbol + symbol
-        local current = table[index]
-        assert(current == 0)
-        table[index] = action
+        table[i * max_symbol + symbol] = transitions[{ from = i, symbol = symbol }]
       end
     end
+    local error_table = {}
     for item in items:each() do
       local id = item.id
       local symbol = productions[id].body[item.dot]
@@ -380,188 +377,73 @@ function class:lr1_construct_table(set_of_items, transitions, out)
         local index = i * max_symbol + symbol
         local current = table[index]
         if current == 0 then
-          if not error_table[index] then
-            table[index] = action
+          if error_table[index] then
+            conflicts:push({
+              state = i;
+              symbol = symbol;
+              { action = "error" };
+              { action = "reduce", argument = id };
+            })
+            -- conflicts:push(("error at state(%d) symbol(%d)\n"):format(i, symbol))
           else
-            if out then
-              out:write(("error at state(%d) symbol(%d)\n"):format(i, symbol))
-            end
+            table[index] = action
           end
         else
-          assert(current ~= action)
+          local conflict = {
+            state = i;
+            symbol = symbol;
+          }
+          local resolved
+          local chosen
           if current <= max_state then
-            local production_precedence, production_associativity = self:production_precedence(id)
             local symbol_precedence = self:symbol_precedence(symbol)
-            if out then
-              out:write(
-                  ("shift(%d) prcedence(%d) / reduce(%d) prcedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
-                      current, symbol_precedence,
-                      id, production_precedence, production_associativity,
-                      i, symbol))
-            end
-            if production_precedence == symbol_precedence then
-              if production_associativity == "left" then
-                if out then
-                  out:write("reduce is chosen\n")
-                end
-                table[index] = action
-              elseif production_associativity == "right" then
-                if out then
-                  out:write("shift is chosen\n")
-                end
-              elseif production_associativity == "nonassoc" then
-                if out then
-                  out:write("error is chosen\n")
-                end
-                error_table[index] = true
-                table[index] = 0
-              end
-            elseif production_precedence > symbol_precedence then
-              if out then
-                out:write("reduce is chosen\n")
-              end
-              table[index] = action
-            else
-              if out then
-                out:write("shift is chosen\n")
-              end
-            end
-          else
-            if out then
-              out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, symbol))
-            end
-            if action < current then
-              table[index] = action
-            end
-          end
-        end
-      end
-    end
-  end
-
---[====[
-  for i, items in ipairs(set_of_items) do
-    local terminal_symbol_table = {}
-    for item in items:each() do
-      local id = item.id
-      local production = productions[id]
-      local symbol = production.body[item.dot]
-      if symbol == nil then
-        local action = max_state + id
-        local la = item.la
-        local index = i * max_symbol + la
-        local current = table[index]
-        if current == 0 then
-          if not error_table[index] then
-            table[index] = action
-          else
-            if out then
-              out:write(("error at state(%d) symbol(%d)\n"):format(i, la))
-            end
-          end
-        elseif current ~= action then
-          if current <= max_state then
             local production_precedence, production_associativity = self:production_precedence(id)
-            local symbol_precedence = self:symbol_precedence(la)
-            if out then
-              out:write(
-                  ("shift(%d) prcedence(%d) / reduce(%d) prcedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
-                      current, symbol_precedence,
-                      id, production_precedence, production_associativity,
-                      i, la))
-            end
+            conflict[1] = { action = "shift", argument = current, precedence = symbol_precedence }
+            conflict[2] = { action = "reduce", argument = id, precedence = production_precedence, associativity = production_associativity }
+            -- conflicts:push(
+            --     ("shift(%d) prcedence(%d) / reduce(%d) prcedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
+            --         current, symbol_precedence,
+            --         id, production_precedence, production_associativity,
+            --         i, symbol))
             if production_precedence == symbol_precedence then
               if production_associativity == "left" then
-                if out then
-                  out:write("reduce is chosen\n")
-                end
+                resolved = true
+                chosen = 2
                 table[index] = action
               elseif production_associativity == "right" then
-                if out then
-                  out:write("shift is chosen\n")
-                end
+                resolved = true
+                chosen = 1
               elseif production_associativity == "nonassoc" then
-                if out then
-                  out:write("error is chosen\n")
-                end
-                error_table[index] = true
+                resolved = true
+                chosen = 0
+                error_table[symbol] = true
                 table[index] = 0
               end
             elseif production_precedence > symbol_precedence then
-              if out then
-                out:write("reduce is chosen\n")
-              end
+              resolved = true
+              chosen = 2
+              table[index] = action
+            end
+            if not resolved then
+              chosen = 1
+            end
+          else
+            conflict[1] = { action = "reduce", argument = current - max_state }
+            conflict[2] = { action = "reduce", argument = id }
+            if action < current then
+              chosen = 2
               table[index] = action
             else
-              if out then
-                out:write("shift is chosen\n")
-              end
-            end
-          else
-            if out then
-              out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(current - max_state, id, i, la))
-            end
-            if action < current then
-              table[index] = action
+              chosen = 1
             end
           end
-        end
-      elseif self:is_terminal_symbol(symbol) and not terminal_symbol_table[symbol] then
-        terminal_symbol_table[symbol] = true
-        local action = transitions[{ from = i, symbol = symbol }]
-        local index = i * max_symbol + symbol
-        local current = table[index]
-        if current == 0 then
-          if not error_table[index] then
-            table[index] = action
-          else
-            if out then
-              out:write(("error at state(%d) symbol(%d)\n"):format(i, symbol))
-            end
-          end
-        elseif current ~= action then
-          local reduce = current - max_state
-          local production_precedence, production_associativity = self:production_precedence(reduce)
-          local symbol_precedence = self:symbol_precedence(symbol)
-          if out then
-            out:write(
-                ("shift(%d) prcedence(%d) / reduce(%d) prcedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
-                    action, symbol_precedence,
-                    reduce, production_precedence, production_associativity,
-                    i, symbol))
-          end
-          if production_precedence == symbol_precedence then
-            if production_associativity == "left" then
-              if out then
-                out:write("reduce is chosen\n")
-              end
-            elseif production_associativity == "right" then
-              if out then
-                out:write("shift is chosen\n")
-              end
-              table[index] = action
-            elseif production_associativity == "nonassoc" then
-              if out then
-                out:write("error is chosen\n")
-              end
-              error_table[index] = true
-              table[index] = 0
-            end
-          elseif production_precedence > symbol_precedence then
-            if out then
-              out:write("reduce is chosen\n")
-            end
-          else
-            if out then
-              out:write("shift is chosen\n")
-            end
-            table[index] = action
-          end
+          conflict.resolved = resolved
+          conflict.chosen = chosen
+          conflicts:push(conflict)
         end
       end
     end
   end
-]====]
 
   for transition, to in transitions:each() do
     local symbol = transition.symbol
@@ -591,7 +473,7 @@ function class:lr1_construct_table(set_of_items, transitions, out)
     table = table;
     heads = heads;
     sizes = sizes;
-  }
+  }, conflicts
 end
 
 class.metatable = {

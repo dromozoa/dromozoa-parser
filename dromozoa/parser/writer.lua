@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local ipairs = require "dromozoa.commons.ipairs"
+local json = require "dromozoa.commons.json"
 local xml = require "dromozoa.commons.xml"
 
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
@@ -191,6 +192,42 @@ function class:write_tree(out, tree)
       end
     end;
   })
+  return out
+end
+
+function class:write_conflict(out, conflict)
+  local state = conflict.state
+  local symbol = conflict.symbol
+  local action1 = conflict[1].action
+  if action1 == "error" then
+    out:write(("error at state (%d) symbol(%d)\n"):format(state, symbol))
+  elseif action1 == "shift" then
+    out:write(("shift(%d) precedence(%d) / reduce(%d) precedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
+        conflict[1].argument, conflict[1].precedence,
+        conflict[2].argument, conflict[2].precedence, conflict[2].associativity,
+        state, symbol))
+    local chosen = conflict.chosen
+    if chosen == 0 then
+      out:write("error is chosen\n")
+    elseif chosen == 1 then
+      out:write("shift is chosen\n")
+    elseif chosen == 2 then
+      out:write("reduce is chosen\n")
+    else
+      error("undefined chosen" .. chosen)
+    end
+  elseif action1 == "reduce" then
+    out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(
+        conflict[1].argument,
+        conflict[2].argument,
+        state, symbol))
+  end
+end
+
+function class:write_conflicts(out, conflicts)
+  for conflict in conflicts:each() do
+    self:write_conflict(out, conflict)
+  end
   return out
 end
 
