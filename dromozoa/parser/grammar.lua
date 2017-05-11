@@ -356,6 +356,8 @@ function class:lr1_construct_table(set_of_items, transitions, out)
     table[i] = 0
   end
 
+  local error_table = {}
+
   for i, items in ipairs(set_of_items) do
     for item in items:each() do
       local id = item.id
@@ -367,7 +369,9 @@ function class:lr1_construct_table(set_of_items, transitions, out)
         local index = i * max_symbol + la
         local current = table[index]
         if current == 0 then
-          table[index] = action
+          if not error_table[index] then
+            table[index] = action
+          end
         elseif current ~= action then
           if current <= max_state then
             local production_precedence, production_associativity = self:production_precedence(id)
@@ -379,7 +383,24 @@ function class:lr1_construct_table(set_of_items, transitions, out)
                       id, production_precedence, production_associativity,
                       i, la))
             end
-            if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_associativity == "left" then
+            if production_precedence == symbol_precedence then
+              if production_associativity == "left" then
+                if out then
+                  out:write(("reduce(%d) is chosen\n"):format(reduce))
+                end
+                table[index] = action
+              elseif production_associativity == "right" then
+                if out then
+                  out:write(("shift(%d) is chosen\n"):format(action))
+                end
+              elseif production_associativity == "nonassoc" then
+                if out then
+                  out:write("error is chosen\n")
+                end
+                error_table[index] = true
+                table[index] = 0
+              end
+            elseif production_precedence > symbol_precedence then
               if out then
                 out:write(("reduce(%d) is chosen\n"):format(id))
               end
@@ -403,7 +424,9 @@ function class:lr1_construct_table(set_of_items, transitions, out)
         local index = i * max_symbol + symbol
         local current = table[index]
         if current == 0 then
-          table[index] = action
+          if not error_table[index] then
+            table[index] = action
+          end
         elseif current ~= action then
           local reduce = current - max_state
           local production_precedence, production_associativity = self:production_precedence(reduce)
@@ -415,7 +438,24 @@ function class:lr1_construct_table(set_of_items, transitions, out)
                     action, symbol_precedence,
                     i, symbol))
           end
-          if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_associativity == "left" then
+          if production_precedence == symbol_precedence then
+            if production_associativity == "left" then
+              if out then
+                out:write(("reduce(%d) is chosen\n"):format(reduce))
+              end
+            elseif production_associativity == "right" then
+              if out then
+                out:write(("shift(%d) is chosen\n"):format(action))
+              end
+              table[index] = action
+            elseif production_associativity == "nonassoc" then
+              if out then
+                out:write("error is chosen\n")
+              end
+              error_table[index] = true
+              table[index] = 0
+            end
+          elseif production_precedence > symbol_precedence then
             if out then
               out:write(("reduce(%d) is chosen\n"):format(reduce))
             end
