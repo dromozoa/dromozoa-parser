@@ -17,13 +17,13 @@
 
 local clone = require "dromozoa.commons.clone"
 local ipairs = require "dromozoa.commons.ipairs"
-local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
+local grammar = require "dromozoa.parser.grammar"
 local precedence_builder = require "dromozoa.parser.precedence_builder"
 local production_builder = require "dromozoa.parser.production_builder"
-local grammar = require "dromozoa.parser.grammar"
 local scanner = require "dromozoa.parser.scanner"
 local scanner_builder = require "dromozoa.parser.scanner_builder"
+local writer = require "dromozoa.parser.writer"
 
 local class = {}
 
@@ -218,7 +218,8 @@ function class:build(start_name)
 
   local scanner = scanner(scanners)
   local grammar = grammar(translated_productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
-  return scanner, grammar, symbol_names
+  local writer = writer(symbol_names, translated_productions)
+  return scanner, grammar, writer
 end
 
 class.metatable = {
