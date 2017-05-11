@@ -30,22 +30,14 @@ local start_id = 1
 
 local class = {}
 
-function class.new(productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
+function class.new(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
   return {
     productions = productions;
     max_terminal_symbol = max_terminal_symbol;
-    start_symbol = start_symbol;
+    max_nonterminal_symbol = max_nonterminal_symbol;
     symbol_precedences = symbol_precedences;
     production_precedences = production_precedences;
   }
-end
-
-function class:is_terminal_symbol(symbol)
-  return symbol <= self.max_terminal_symbol
-end
-
-function class:is_nonterminal_symbol(symbol)
-  return symbol > self.max_terminal_symbol
 end
 
 function class:each_production(head)
@@ -58,8 +50,16 @@ function class:each_production(head)
   end)
 end
 
+function class:is_terminal_symbol(symbol)
+  return symbol <= self.max_terminal_symbol
+end
+
+function class:is_nonterminal_symbol(symbol)
+  return symbol > self.max_terminal_symbol
+end
+
 function class:is_kernel_item(item)
-  return self.productions[item.id].head == self.start_symbol or item.dot > 1
+  return self.productions[item.id].head == self.max_nonterminal_symbol or item.dot > 1
 end
 
 function class:first_symbol(symbol)
@@ -91,18 +91,18 @@ function class:first_symbols(symbols)
 end
 
 function class:symbol_precedence(symbol)
-  local precedence = self.symbol_precedences[symbol]
-  if precedence == nil then
+  local item = self.symbol_precedences[symbol]
+  if item == nil then
     return 0, false
   else
-    return precedence.precedence, precedence.is_left
+    return item.precedence, item.is_left
   end
 end
 
 function class:production_precedence(id)
-  local precedence = self.production_precedences[id]
-  if precedence then
-    return precedence.precedence, precedence.is_left
+  local item = self.production_precedences[id]
+  if item ~= nil then
+    return item.precedence, item.is_left
   end
   local production = self.productions[id]
   local body = production.body
@@ -346,10 +346,10 @@ end
 
 function class:lr1_construct_table(set_of_items, transitions, out)
   local productions = self.productions
-  local start_symbol = self.start_symbol
+  local max_nonterminal_symbol = self.max_nonterminal_symbol
 
   local max_state = #set_of_items
-  local max_symbol = start_symbol - 1
+  local max_symbol = max_nonterminal_symbol - 1
 
   local table = {}
   for i = 1, (max_state + 1) * max_symbol do
@@ -466,7 +466,7 @@ class.metatable = {
 }
 
 return setmetatable(class, {
-  __call = function (_, productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences)
-    return setmetatable(class.new(productions, max_terminal_symbol, start_symbol, symbol_precedences, production_precedences), class.metatable)
+  __call = function (_, productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
+    return setmetatable(class.new(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences), class.metatable)
   end;
 })
