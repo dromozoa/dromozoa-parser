@@ -61,7 +61,7 @@ _ "F"
   :_ "id"
 
 local scanner, grammar = _:build()
-print(dumper.encode(grammar, { pretty = true }))
+print(dumper.encode(grammar, { pretty = true, stable = true }))
 
 local N = _.symbol_names
 local T = _.symbol_table

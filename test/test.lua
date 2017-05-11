@@ -56,7 +56,7 @@ local scanner, grammar, writer = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
 -- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
 -- for from, to in pairs(transitions) do
---   print(dumper.encode({ from = from, to = to }))
+--   print(dumper.encode({ from = from, to = to }, { stable = true }))
 -- end
 writer:write_set_of_items(io.stdout, set_of_items)
 

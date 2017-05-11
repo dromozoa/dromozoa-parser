@@ -359,6 +359,7 @@ function class:lr1_construct_table(set_of_items, transitions, out)
   local error_table = {}
 
   for i, items in ipairs(set_of_items) do
+    local terminal_symbol_table = {}
     for item in items:each() do
       local id = item.id
       local production = productions[id]
@@ -371,6 +372,10 @@ function class:lr1_construct_table(set_of_items, transitions, out)
         if current == 0 then
           if not error_table[index] then
             table[index] = action
+          else
+            if out then
+              out:write(("error at state(%d) symbol(%d)\n"):format(i, la))
+            end
           end
         elseif current ~= action then
           if current <= max_state then
@@ -419,13 +424,18 @@ function class:lr1_construct_table(set_of_items, transitions, out)
             end
           end
         end
-      elseif self:is_terminal_symbol(symbol) then
+      elseif self:is_terminal_symbol(symbol) and not terminal_symbol_table[symbol] then
+        terminal_symbol_table[symbol] = true
         local action = transitions[{ from = i, symbol = symbol }]
         local index = i * max_symbol + symbol
         local current = table[index]
         if current == 0 then
           if not error_table[index] then
             table[index] = action
+          else
+            if out then
+              out:write(("error at state(%d) symbol(%d)\n"):format(i, symbol))
+            end
           end
         elseif current ~= action then
           local reduce = current - max_state
