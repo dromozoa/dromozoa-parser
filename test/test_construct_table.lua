@@ -16,24 +16,21 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local xml = require "dromozoa.commons.xml"
-local grammar = require "dromozoa.parser.builder.grammar"
-local dump = require "test.dump"
+local builder = require "dromozoa.parser.builder"
 
-local _ = grammar()
--- _"E":_(_"E", "+", _"T")
--- _"E":_(_"T")
--- _"T":_(_"T", "*", _"F")
--- _"T":_(_"F")
--- _"F":_("(", _"E", ")")
--- _"F":_("id")
-_"S":_(_"C", _"C")
-_"C":_("c", _"C"):_("d")
-local g = _()
+local _ = builder()
 
-local symbols = g.symbols
-local set_of_items, transitions = g:lalr1_items()
-local data = g:lr1_construct_table(set_of_items, transitions)
--- print(dumper.encode(data, { stable = true }))
+_ :lit "c"
+  :lit "d"
 
-dump.write_table("test.html", g, data)
+_ "S"
+  :_ "C" "C"
+_ "C"
+  :_ "c" "C"
+  :_ "d"
+
+local scanner, grammar, writer = _:build()
+
+local data = grammar:lr1_construct_table(grammar:lalr1_items())
+print(dumper.encode(data, { stable = true }))
+writer:write_table(assert(io.open("test.html", "w")), data):close()

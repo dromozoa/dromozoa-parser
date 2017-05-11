@@ -216,6 +216,11 @@ function class:build(start_name)
     end
   end
 
+  self.symbol_names = symbol_names
+  self.symbol_table = symbol_table
+  self.scanner_names = scanner_names
+  self.scanner_table = scanner_table
+
   local scanner = scanner(scanners)
   local grammar = grammar(translated_productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
   local writer = writer(symbol_names, translated_productions, max_terminal_symbol)
