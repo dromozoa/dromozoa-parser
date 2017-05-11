@@ -53,6 +53,8 @@ _ "S"
 local scanner, grammar, symbol_names = _:build()
 print(dumper.encode(scanner, { pretty = true, stable = true }))
 
+local symbol_names = _.symbol_names
+
 local source = [[
 ( 17 + 23 * 37 ) + "123\"456" ra r
 ]]
