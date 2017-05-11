@@ -218,7 +218,7 @@ function class:build(start_name)
 
   local scanner = scanner(scanners)
   local grammar = grammar(translated_productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
-  local writer = writer(symbol_names, translated_productions)
+  local writer = writer(symbol_names, translated_productions, max_terminal_symbol)
   return scanner, grammar, writer
 end
 
