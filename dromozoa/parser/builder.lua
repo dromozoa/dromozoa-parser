@@ -182,7 +182,7 @@ function class:build(start_name)
       end
       symbol_precedences[symbol] = {
         precedence = item.precedence;
-        is_left = item.is_left;
+        associativity = item.associativity;
       }
     end
   end
@@ -211,7 +211,7 @@ function class:build(start_name)
       end
       production_precedences[#translated_productions] = {
         precedence = item.precedence;
-        is_left = item.is_left;
+        associativity = item.associativity;
       }
     end
   end

@@ -95,14 +95,14 @@ function class:symbol_precedence(symbol)
   if item == nil then
     return 0, false
   else
-    return item.precedence, item.is_left
+    return item.precedence, item.associativity
   end
 end
 
 function class:production_precedence(id)
   local item = self.production_precedences[id]
   if item ~= nil then
-    return item.precedence, item.is_left
+    return item.precedence, item.associativity
   end
   local production = self.productions[id]
   local body = production.body
@@ -370,16 +370,16 @@ function class:lr1_construct_table(set_of_items, transitions, out)
           table[index] = action
         elseif current ~= action then
           if current <= max_state then
-            local production_precedence, production_is_left = self:production_precedence(id)
+            local production_precedence, production_associativity = self:production_precedence(id)
             local symbol_precedence = self:symbol_precedence(la)
             if out then
               out:write(
                   ("shift(%d) prcedence(%d) / reduce(%d) prcedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
                       current, symbol_precedence,
-                      id, production_precedence, production_is_left,
+                      id, production_precedence, production_associativity,
                       i, la))
             end
-            if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_is_left then
+            if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_associativity == "left" then
               if out then
                 out:write(("reduce(%d) is chosen\n"):format(id))
               end
@@ -406,16 +406,16 @@ function class:lr1_construct_table(set_of_items, transitions, out)
           table[index] = action
         elseif current ~= action then
           local reduce = current - max_state
-          local production_precedence, production_is_left = self:production_precedence(reduce)
+          local production_precedence, production_associativity = self:production_precedence(reduce)
           local symbol_precedence = self:symbol_precedence(symbol)
           if out then
             out:write(
                 ("reduce(%d) prcedence(%d,%s) / shift(%d) prcedence(%d) conflict at state(%d) symbol(%d)\n"):format(
-                    reduce, production_precedence, production_is_left,
+                    reduce, production_precedence, production_associativity,
                     action, symbol_precedence,
                     i, symbol))
           end
-          if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_is_left then
+          if production_precedence > symbol_precedence or production_precedence == symbol_precedence and production_associativity == "left" then
             if out then
               out:write(("reduce(%d) is chosen\n"):format(reduce))
             end

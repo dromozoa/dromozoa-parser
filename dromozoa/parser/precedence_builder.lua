@@ -17,10 +17,10 @@
 
 local sequence = require "dromozoa.commons.sequence"
 
-local function precedence(self, name, is_left)
+local function precedence(self, name, associativity)
   local precedence = self.precedence + 1
   self.precedence = precedence
-  self.is_left = is_left
+  self.associativity = associativity
   return self(name)
 end
 
@@ -35,15 +35,15 @@ function class.new()
 end
 
 function class:left(name)
-  return precedence(self, name, true)
+  return precedence(self, name, "left")
 end
 
 function class:right(name)
-  return precedence(self, name)
+  return precedence(self, name, "right")
 end
 
 function class:nonassoc(name)
-  return precedence(self, name)
+  return precedence(self, name, "nonassoc")
 end
 
 class.metatable = {
@@ -58,7 +58,7 @@ function class.metatable:__call(name)
   local item = {
     name = name;
     precedence = self.precedence;
-    is_left = self.is_left;
+    associativity = self.associativity;
   }
   self.items:push(item)
   table[name] = item
