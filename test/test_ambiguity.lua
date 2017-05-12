@@ -16,43 +16,49 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
+local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
-local grammar = require "dromozoa.parser.builder.grammar"
-local dump = require "test.dump"
 
-local _ = grammar()
-_:left("+")
- :left("*")
+local _ = builder()
 
-_"E"
-    :_(_"E", "*", _"E")
-    :_(_"E", "+", _"E")
-    :_("(", _"E", ")")
-    :_("id")
-local g = _()
+_ :pat "%s+" :ignore ()
+  :lit "*"
+  :lit "+"
+  :lit "("
+  :lit ")"
+  :pat "%a+" :as "id"
+
+_ :left("+")
+  :left("*")
+
+_ "E"
+  :_ "E" "*" "E"
+  :_ "E" "+" "E"
+  :_ "(" "E" ")"
+  :_ "id"
+
+local scanner, grammar, writer = _:build()
 print(dumper.encode(g, { pretty = true, stable = true }))
 
-local set_of_items, transitions = g:lalr1_items()
-dump.set_of_items(io.stdout, g, set_of_items)
-dump.write_graph("test.dot", g, set_of_items, transitions)
+local set_of_items, transitions = grammar:lalr1_items()
+writer:write_set_of_items(io.stdout, set_of_items)
+writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
 
-local data = g:lr1_construct_table(set_of_items, transitions, io.stdout)
-dump.write_table("test.html", g, data)
+local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+writer:write_conflicts(io.stdout, conflicts, true)
+writer:write_table(assert(io.open("test.html", "w")), data):close()
 
-local _ = {}
-for i, name in ipairs(g.symbols) do
-  _[name] = i
-end
+local _ = _.symbol_table
 
-local d = driver(data)
-assert(d:parse(_["id"], { value = 17 }))
-assert(d:parse(_["+"]))
-assert(d:parse(_["id"], { value = 23 }))
-assert(d:parse(_["+"]))
-assert(d:parse(_["id"], { value = 37 }))
-assert(d:parse(_["*"]))
-assert(d:parse(_["id"], { value = 42 }))
-assert(d:parse(_["+"]))
-assert(d:parse(_["id"], { value = 69 }))
-assert(d:parse())
-dump.write_tree("test.dot", g, d.tree)
+local driver = driver(data)
+assert(driver:parse(_["id"], { value = 17 }))
+assert(driver:parse(_["+"]))
+assert(driver:parse(_["id"], { value = 23 }))
+assert(driver:parse(_["+"]))
+assert(driver:parse(_["id"], { value = 37 }))
+assert(driver:parse(_["*"]))
+assert(driver:parse(_["id"], { value = 42 }))
+assert(driver:parse(_["+"]))
+assert(driver:parse(_["id"], { value = 69 }))
+assert(driver:parse())
+writer:write_tree(assert(io.open("test-tree.dot", "w")), driver.tree):close()

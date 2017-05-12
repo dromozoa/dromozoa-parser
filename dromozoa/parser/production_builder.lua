@@ -15,47 +15,41 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local ipairs = require "dromozoa.commons.ipairs"
+local sequence = require "dromozoa.commons.sequence"
 
 local class = {}
 
-function class.new()
+function class.new(productions, name)
   return {
-    n = 0;
-    map = {};
+    productions = productions;
+    head = name;
   }
 end
 
-function class:symbol(name)
-  local map = self.map
-  local id = map[name]
-  if id == nil then
-    id = self.n + 1
-    self.n = id
-    self[id] = name
-    map[name] = id
-  end
-  return id
+function class:_(name)
+  self.productions:push({
+    head = self.head;
+    body = sequence():push(name);
+  })
+  return self
 end
 
-function class:max()
-  return self.n
-end
-
-function class:each()
-  return coroutine.wrap(function ()
-    for id, name in ipairs(self) do
-      coroutine.yield(id, name)
-    end
-  end)
+function class:prec(name)
+  self.productions:top().precedence = name
+  return self
 end
 
 class.metatable = {
   __index = class;
 }
 
+function class.metatable:__call(name)
+  self.productions:top().body:push(name)
+  return self
+end
+
 return setmetatable(class, {
-  __call = function ()
-    return setmetatable(class.new(), class.metatable)
+  __call = function (_, productions, name)
+    return setmetatable(class.new(productions, name), class.metatable)
   end;
 })

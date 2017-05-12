@@ -16,36 +16,52 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local scanners = require "dromozoa.parser.builder.scanners"
+local builder = require "dromozoa.parser.builder"
 
-local _ = scanners()
+local _ = builder()
 
-_"main"
-  :pat "%s+" :_"ignore"
+_ :pat "%s+" :ignore()
   :lit "*"
   :lit "+"
   :lit "("
   :lit ")"
-  :pat "[1-9]%d*" :as "integer"
-  :lit "\"" :call "string"
-  :lit "abc"
+  :pat "[0-9]%d*" :as "integer"
+  :lit '"' :call "string"
+  :lit "r"
   :pat "[a-z]+" :as "identifier"
 
-_"string"
-  :pat "\"" :_"return"
-  :lit "\\\""
-  :pat "[^\\\"]+"
+_:scanner "string"
+  :lit '"' :ret()
+  :lit '\\"'
+  :pat '[^\\"]+' :as "string_content"
 
-local s, t = _()
-print(dumper.encode(s, { pretty = true, stable = true }))
+_ "E"
+  :_ "E" "*" "E"
+  :_ "E" "+" "E"
+  :_ "(" "E" ")"
+  :_ "integer"
+  :_ '"' "S" '"'
+  :_ "r"
+  :_ "identifier"
 
-local data = [[
-( 17 + 23 * 37 ) + "abc\"def" abc abcd
+_ "S"
+  :_ ()
+  :_ "S" "string_content"
+  :_ "\\\""
+  :_ "string_content"
+
+local scanner, grammar, symbol_names = _:build()
+print(dumper.encode(scanner, { pretty = true, stable = true }))
+
+local symbol_names = _.symbol_names
+
+local source = [[
+( 17 + 23 * 37 ) + "123\"456" ra r
 ]]
 local position = 1
 while true do
-  local symbol, i, j = s(data, position)
-  print(symbol, t[symbol], i, j, data:sub(i, j))
+  local symbol, i, j = assert(scanner(source, position))
+  print(symbol, symbol_names[symbol], i, j, source:sub(i, j))
   if symbol == 1 then
     break
   end

@@ -16,15 +16,14 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local grammar = require "dromozoa.parser.builder.grammar"
+local builder = require "dromozoa.parser.builder"
 
 local EPSILON = string.char(0xCE, 0xB5) -- U+03B5 GREEK SMALL LETTER EPSILON
 
-local function dump_first(g, f)
-  local symbols = g.symbols
+local function dump_first(symbol_names, first)
   local count = 0
   io.write("{")
-  for symbol in f:each() do
+  for symbol in first:each() do
     count = count + 1
     if count > 1 then
       io.write(", ")
@@ -32,31 +31,42 @@ local function dump_first(g, f)
     if symbol == 0 then
       io.write(EPSILON)
     else
-      io.write(symbols[symbol])
+      io.write(symbol_names[symbol])
     end
   end
   io.write("}\n")
 end
 
-local _ = grammar()
-_"E"
-    :_(_"T", _"E'")
-_"E'"
-    :_("+", _"T", _"E'")
-    :_()
-_"T"
-    :_(_"F", _"T'")
-_"T'"
-    :_("*", _"F", _"T'")
-    :_()
-_"F"
-    :_("(", _"E", ")")
-    :_("id")
-local g = _()
--- print(dumper.encode(g, { pretty = true }))
+local _ = builder()
 
-dump_first(g, g:first_symbol(9)) -- FIRST(F) -> (, id
-dump_first(g, g:first_symbol(7)) -- FIRST(T) -> (, id
-dump_first(g, g:first_symbol(6)) -- FIRST(E) -> (, id
-dump_first(g, g:first_symbol(8)) -- FIRST(E') -> +, epsilon
-dump_first(g, g:first_symbol(10)) -- FIRST(T') -> *, epsilon
+_ :pat "%s+" :ignore ()
+  :pat "%a+" :as "id"
+  :lit "+"
+  :lit "*"
+  :lit "("
+  :lit ")"
+
+_ "E"
+  :_ "T" "E'"
+_ "E'"
+  :_ "+" "T" "E'"
+  :_ ()
+_ "T"
+  :_ "F" "T'"
+_ "T'"
+  :_ "*" "F" "T'"
+  :_ ()
+_ "F"
+  :_ "(" "E" ")"
+  :_ "id"
+
+local scanner, grammar = _:build()
+print(dumper.encode(grammar, { pretty = true, stable = true }))
+
+local N = _.symbol_names
+local T = _.symbol_table
+dump_first(N, grammar:first_symbol(T["F"])) -- FIRST(F) -> (, id
+dump_first(N, grammar:first_symbol(T["T"])) -- FIRST(T) -> (, id
+dump_first(N, grammar:first_symbol(T["E"])) -- FIRST(E) -> (, id
+dump_first(N, grammar:first_symbol(T["E'"])) -- FIRST(E') -> +, epsilon
+dump_first(N, grammar:first_symbol(T["T'"])) -- FIRST(T') -> *, epsilon

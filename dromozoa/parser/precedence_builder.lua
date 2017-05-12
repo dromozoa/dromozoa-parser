@@ -15,45 +15,35 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local pairs = require "dromozoa.commons.pairs"
 local sequence = require "dromozoa.commons.sequence"
-local scanners = require "dromozoa.parser.scanners"
-local scanner = require "dromozoa.parser.builder.scanner"
-local symbol_table = require "dromozoa.parser.builder.symbol_table"
+
+local function precedence(self, name, associativity)
+  local precedence = self.precedence + 1
+  self.precedence = precedence
+  self.associativity = associativity
+  return self(name)
+end
 
 local class = {}
 
 function class.new()
   return {
-    scanners = linked_hash_table()
+    items = sequence();
+    table = {};
+    precedence = 0
   }
 end
 
-function class:scanner(name)
-  local that = scanner()
-  self.scanners[name] = that
-  return that
+function class:left(name)
+  return precedence(self, name, "left")
 end
 
-function class:build()
-  local terminal_symbols = symbol_table()
-  terminal_symbols.n = 1
-  terminal_symbols[1] = "$"
+function class:right(name)
+  return precedence(self, name, "right")
+end
 
-  local env = {}
-  local i = 0
-  for name in pairs(self.scanners) do
-    i = i + 1
-    env[name] = i
-  end
-
-  local data = sequence()
-  for _, scanner in pairs(self.scanners) do
-    data:push(scanner:build(terminal_symbols, env))
-  end
-
-  return scanners(data), terminal_symbols
+function class:nonassoc(name)
+  return precedence(self, name, "nonassoc")
 end
 
 class.metatable = {
@@ -61,11 +51,18 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  if name then
-    return self:scanner(name)
-  else
-    return self:build()
+  local table = self.table
+  if table[name] ~= nil then
+    error(("precedence %q already defined"):format(name))
   end
+  local item = {
+    name = name;
+    precedence = self.precedence;
+    associativity = self.associativity;
+  }
+  self.items:push(item)
+  table[name] = item
+  return self
 end
 
 return setmetatable(class, {
