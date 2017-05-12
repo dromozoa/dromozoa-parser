@@ -391,6 +391,7 @@ function class:lr1_construct_table(set_of_items, transitions)
           local conflict = {
             state = i;
             symbol = symbol;
+            resolution = 1;
           }
           if current <= max_state then
             local shift_precedence = self:symbol_precedence(symbol)
@@ -399,34 +400,26 @@ function class:lr1_construct_table(set_of_items, transitions)
             conflict[2] = { action = "reduce", argument = id, precedence = precedence, associativity = associativity }
             if precedence > 0 then
               conflict.resolved = true
-              if precedence == shift_precedence then
+              if shift_precedence == precedence then
                 if associativity == "left" then
-                  conflict.chosen = 2
+                  conflict.resolution = 2
                   table[index] = action
-                elseif associativity == "right" then
-                  conflict.chosen = 1
                 elseif associativity == "nonassoc" then
-                  conflict.chosen = 0
-                  error_table[symbol] = true
+                  conflict.resolution = 0
+                  error_table[index] = action
                   table[index] = 0
                 end
-              elseif precedence > shift_precedence then
-                conflict.chosen = 2
+              elseif shift_precedence < precedence then
+                conflict.resolution = 2
                 table[index] = action
-              else
-                conflict.chosen = 1
               end
-            else
-              conflict.chosen = 1
             end
           else
             conflict[1] = { action = "reduce", argument = current - max_state }
             conflict[2] = { action = "reduce", argument = id }
             if action < current then
-              conflict.chosen = 2
+              conflict.resolution = 2
               table[index] = action
-            else
-              conflict.chosen = 1
             end
           end
           conflicts:push(conflict)

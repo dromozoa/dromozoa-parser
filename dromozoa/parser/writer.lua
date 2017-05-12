@@ -17,6 +17,7 @@
 
 local ipairs = require "dromozoa.commons.ipairs"
 local json = require "dromozoa.commons.json"
+local sequence_writer = require "dromozoa.commons.sequence_writer"
 local xml = require "dromozoa.commons.xml"
 
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
@@ -195,38 +196,51 @@ function class:write_tree(out, tree)
   return out
 end
 
-function class:write_conflict(out, conflict)
+function class:write_conflict(out, conflict, verbose)
+  local symbol_names = self.symbol_names
+  local productions = self.productions
+
+  if conflict.resolved and not verbose then
+    return
+  end
+
   local state = conflict.state
   local symbol = conflict.symbol
-  local action1 = conflict[1].action
-  if action1 == "error" then
-    out:write(("error at state (%d) symbol(%d)\n"):format(state, symbol))
-  elseif action1 == "shift" then
-    out:write(("shift(%d) precedence(%d) / reduce(%d) precedence(%d,%s) conflict at state(%d) symbol(%d)\n"):format(
-        conflict[1].argument, conflict[1].precedence,
-        conflict[2].argument, conflict[2].precedence, conflict[2].associativity,
-        state, symbol))
-    local chosen = conflict.chosen
-    if chosen == 0 then
-      out:write("error is chosen\n")
-    elseif chosen == 1 then
-      out:write("shift is chosen\n")
-    elseif chosen == 2 then
-      out:write("reduce is chosen\n")
-    else
-      error("undefined chosen" .. chosen)
+  local action = conflict[1].action
+
+  if action == "error" then
+    out:write(("error / reduce(%d) conflict resolved as an error"):format(conflict[2].argument))
+  elseif action == "shift" then
+    out:write(("shift(%d) / reduce(%d) conflict"):format(conflict[1].argument, conflict[2].argument))
+    local resolution = conflict.resolution
+    if resolution == 0 then
+      out:write(" resolved as an error")
+    elseif resolution == 1 then
+      out:write(" resolved as shift")
+    elseif resolution == 2 then
+      out:write(" resolved as reduce")
     end
-  elseif action1 == "reduce" then
-    out:write(("reduce(%d) / reduce(%d) conflict at state(%d) symbol(%d)\n"):format(
-        conflict[1].argument,
-        conflict[2].argument,
-        state, symbol))
+    local shift_precedence = conflict[1].precedence
+    local precedence = conflict[2].precedence
+    local associativity = conflict[2].associativity
+    if precedence > 0 then
+      if shift_precedence == precedence then
+        out:write((": precedence %d == %d associativity %s"):format(shift_precedence, precedence, associativity))
+      elseif shift_precedence < precedence then
+        out:write((": precedence %d < %d"):format(shift_precedence, precedence))
+      else
+        out:write((": precedence %d > %d"):format(shift_precedence, precedence))
+      end
+    end
+  elseif action == "reduce" then
+    out:write(("reduce(%d) / reduce(%d) conflict"):format(conflict[1].argument, conflict[2].argument))
   end
+  out:write((" at state(%d) symbol(%q)\n"):format(state, symbol_names[symbol]))
 end
 
-function class:write_conflicts(out, conflicts)
+function class:write_conflicts(out, conflicts, verbose)
   for conflict in conflicts:each() do
-    self:write_conflict(out, conflict)
+    self:write_conflict(out, conflict, verbose)
   end
   return out
 end
