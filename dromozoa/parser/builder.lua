@@ -31,7 +31,7 @@ function class.new()
   return {
     scanner_builders = sequence():push(scanner_builder());
     precedence_builder = precedence_builder();
-    productions = sequence();
+    production_builders = sequence();
   }
 end
 
@@ -68,10 +68,10 @@ end
 function class:build(start_name)
   local scanner_builders = self.scanner_builders
   local precedence_builder = self.precedence_builder
-  local productions = self.productions
+  local production_builders = self.production_builders
 
   if start_name == nil then
-    start_name = productions[1].head
+    start_name = production_builders[1].head
   end
 
   local n = 1
@@ -106,7 +106,7 @@ function class:build(start_name)
 
   local max_terminal_symbol = n
 
-  for production in productions:each() do
+  for production in production_builders:each() do
     local name = production.head
     local symbol = symbol_table[name]
     if symbol == nil then
@@ -122,7 +122,7 @@ function class:build(start_name)
 
   local check_table = {}
 
-  for production in productions:each() do
+  for production in production_builders:each() do
     for name in production.body:each() do
       local symbol = symbol_table[name]
       if symbol == nil then
@@ -187,19 +187,19 @@ function class:build(start_name)
     end
   end
 
-  local translated_productions = sequence():push({
+  local productions = sequence():push({
     head = max_nonterminal_symbol;
     body = sequence():push(start_symbol);
   })
 
   local production_precedences = {}
 
-  for production in productions:each() do
+  for production in production_builders:each() do
     local body = sequence()
     for name in production.body:each() do
       body:push(symbol_table[name])
     end
-    translated_productions:push({
+    productions:push({
       head = symbol_table[production.head];
       body = body;
     })
@@ -209,7 +209,7 @@ function class:build(start_name)
       if item == nil then
         error(("production precedence %q not defined"):format(name))
       end
-      production_precedences[#translated_productions] = {
+      production_precedences[#productions] = {
         precedence = item.precedence;
         associativity = item.associativity;
       }
@@ -222,8 +222,8 @@ function class:build(start_name)
   self.scanner_table = scanner_table
 
   local scanner = scanner(scanners)
-  local grammar = grammar(translated_productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
-  local writer = writer(symbol_names, translated_productions, max_terminal_symbol)
+  local grammar = grammar(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
+  local writer = writer(symbol_names, productions, max_terminal_symbol)
   return scanner, grammar, writer
 end
 
@@ -232,7 +232,7 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  return production_builder(self.productions, name)
+  return production_builder(self.production_builders, name)
 end
 
 return setmetatable(class, {

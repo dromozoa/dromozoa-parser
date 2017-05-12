@@ -19,15 +19,15 @@ local sequence = require "dromozoa.commons.sequence"
 
 local class = {}
 
-function class.new(productions, name)
+function class.new(items, name)
   return {
-    productions = productions;
+    items = items;
     head = name;
   }
 end
 
 function class:_(name)
-  self.productions:push({
+  self.items:push({
     head = self.head;
     body = sequence():push(name);
   })
@@ -35,7 +35,7 @@ function class:_(name)
 end
 
 function class:prec(name)
-  self.productions:top().precedence = name
+  self.items:top().precedence = name
   return self
 end
 
@@ -44,12 +44,12 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  self.productions:top().body:push(name)
+  self.items:top().body:push(name)
   return self
 end
 
 return setmetatable(class, {
-  __call = function (_, productions, name)
-    return setmetatable(class.new(productions, name), class.metatable)
+  __call = function (_, items, name)
+    return setmetatable(class.new(items, name), class.metatable)
   end;
 })
