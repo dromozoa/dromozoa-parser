@@ -16,14 +16,12 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local grammar = require "dromozoa.parser.builder.grammar"
-local scanners = require "dromozoa.parser.builder.scanners"
+local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
-local dump = require "test.dump"
 
-local _ = scanners()
-_"main"
-  :pat "%s+" :_"ignore"
+local _ = builder()
+
+_ :pat "%s+" :ignore ()
   :pat "[1-9]%d*" :as "decimal"
   :pat "0[0-7]*" :as "octal"
   :pat "0x%x+" :as "hexadecimal"
@@ -34,40 +32,49 @@ _"main"
   :lit "("
   :lit ")"
 
-local scanners, terminal_symbols = _()
+_ :left "+" "-"
+  :left "*" "/"
+  :right "UMINUS"
 
-local _ = grammar(terminal_symbols)
-_ :left("+", "-")
-  :left("*", "/")
-  :right(_:prec "UMINUS")
+_ "E"
+  :_ "E" "*" "E"
+  :_ "E" "/" "E"
+  :_ "E" "+" "E"
+  :_ "E" "-" "E"
+  :_ "(" "E" ")"
+  :_ "-" "E" :prec "UMINUS"
+  :_ "decimal"
+  :_ "octal"
+  :_ "hexadecimal"
 
-_"E"
-  :_(_"E", "-", _"E")
-  :_(_"E", "+", _"E")
-  :_(_"E", "*", _"E")
-  :_(_"E", "/", _"E")
-  :_("(", _"E", ")")
-  :_("-", _"E") :prec "UMINUS"
-  :_("decimal")
-  :_("octal")
-  :_("hexadecimal")
-local grammar = _()
-print(dumper.encode(grammar, { pretty = true, stable = true }))
+local scanner, grammar, writer = _:build()
+
+-- print(dumper.encode(scanner, { pretty = true, stable = true }))
+-- print(dumper.encode(grammar, { pretty = true, stable = true }))
+-- print(dumper.encode(writer, { pretty = true, stable = true }))
 
 local set_of_items, transitions = grammar:lalr1_items()
-dump.write_graph("test-graph.dot", grammar, set_of_items, transitions)
-local data = grammar:lr1_construct_table(set_of_items, transitions, io.stdout)
-dump.write_table("test.html", grammar, data)
+-- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
+-- for from, to in pairs(transitions) do
+--   print(dumper.encode({ from = from, to = to }, { stable = true }))
+-- end
+writer:write_set_of_items(io.stdout, set_of_items)
+
+writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+writer:write_conflicts(io.stdout, conflicts)
+writer:write_table(assert(io.open("test.html", "w")), data):close()
 
 local driver = driver(data)
+
 local source = [[
-17 + - 23 * 37 - 42
+17 + - 23 * 37 - 42 / 0x69
 ]]
 
 local position = 1
 while true do
-  local symbol, i, j = scanners(source, position)
-  print(symbol, terminal_symbols[symbol], i, j, source:sub(i, j))
+  local symbol, i, j = scanner(source, position)
+  print(symbol, writer.symbol_names[symbol], i, j, source:sub(i, j))
   if symbol == 1 then
     assert(driver:parse())
     break
@@ -77,4 +84,4 @@ while true do
   position = j + 1
 end
 
-dump.write_tree("test-tree.dot", grammar, driver.tree)
+writer:write_tree(assert(io.open("test-tree.dot", "w")), driver.tree):close()

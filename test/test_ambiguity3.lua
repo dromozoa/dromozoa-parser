@@ -17,20 +17,46 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
+local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
 
-_ :lit "c"
-  :lit "d"
+_ :pat "%s+" :ignore ()
+  :lit "=="
+  :lit "!="
+  :lit "<"
+  :lit "<="
+  :lit ">"
+  :lit ">="
+  :lit "id"
 
-_ "S"
-  :_ "C" "C"
-_ "C"
-  :_ "c" "C"
-  :_ "d"
+_ :nonassoc "==" "!="
+  :nonassoc "<" "<=" ">" ">="
+
+_ "E"
+  :_ "E" "==" "E"
+  :_ "E" "!=" "E"
+  :_ "E" "<" "E"
+  :_ "E" "<=" "E"
+  :_ "E" ">" "E"
+  :_ "E" ">=" "E"
+  :_ "id"
 
 local scanner, grammar, writer = _:build()
 
-local data = grammar:lr1_construct_table(grammar:lalr1_items())
-print(dumper.encode(data, { stable = true }))
+local set_of_items, transitions = grammar:lalr1_items()
+
+writer:write_set_of_items(io.stdout, set_of_items)
+writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+
+local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+writer:write_conflicts(io.stdout, conflicts, true)
 writer:write_table(assert(io.open("test.html", "w")), data):close()
+
+local _ = _.symbol_table
+
+local driver = driver(data)
+assert(driver:parse(_["id"]))
+assert(driver:parse(_["<"]))
+assert(driver:parse(_["id"]))
+assert(not driver:parse(_["<"]))
