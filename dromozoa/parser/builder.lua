@@ -106,6 +106,10 @@ function class:build(start_name)
 
   local max_terminal_symbol = n
 
+  -- argumented start symbol
+  n = n + 1
+  symbol_names[n] = start_name .. "'"
+
   for production in production_builders:each() do
     local name = production.head
     local symbol = symbol_table[name]
@@ -146,10 +150,7 @@ function class:build(start_name)
     error(("start symbol %q must be a nonterminal symbol"):format(start_name))
   end
 
-  n = n + 1
-  symbol_names[n] = start_name .. "'"
-
-  local max_nonterminal_symbol = n -- argumented_start_symbol
+  local max_nonterminal_symbol = n
 
   local scanners = sequence()
   for scanner_builder in scanner_builders:each() do
@@ -188,7 +189,7 @@ function class:build(start_name)
   end
 
   local productions = sequence():push({
-    head = max_nonterminal_symbol;
+    head = max_terminal_symbol + 1;
     body = sequence():push(start_symbol);
   })
 

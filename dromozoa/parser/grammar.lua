@@ -59,7 +59,34 @@ function class:is_nonterminal_symbol(symbol)
 end
 
 function class:is_kernel_item(item)
-  return self.productions[item.id].head == self.max_nonterminal_symbol or item.dot > 1
+  return self.productions[item.id].head == self.max_terminal_symbol + 1 or item.dot > 1
+end
+
+function class:remove_left_recursion()
+  local min_nonterminal_symbol = self.max_terminal_symbol + 1
+  local max_nonterminal_symbol = self.max_nonterminal_symbol
+
+  -- local map_of_productions = {}
+  -- for i = min_nonterminal_symbol, max_nonterminal_symbol do
+  --   local productions = {}
+  --   for id, body in self:each_production(i) do
+  --     local j = body[1]
+  --     if min_nonterminal_symbol <= j and j < i then
+  --       for production in map_of_productions[j]:each() do
+  --         
+  --       end
+
+  --       productions:push({
+  --         head = i;
+  --         body = sequence():push(
+  --       })
+  --     end
+  --   end
+
+  --   for j = min_nonterminal_symbol, i - 1 do
+  --     -- Ai -> Aj ...
+  --   end
+  -- end
 end
 
 function class:first_symbol(symbol)
@@ -349,7 +376,7 @@ function class:lr1_construct_table(set_of_items, transitions)
   local max_nonterminal_symbol = self.max_nonterminal_symbol
 
   local max_state = #set_of_items
-  local max_symbol = max_nonterminal_symbol - 1
+  local max_symbol = max_nonterminal_symbol
 
   local table = {}
   local conflicts = sequence()
