@@ -138,12 +138,17 @@ function class:first_symbol(symbol)
   if self:is_terminal_symbol(symbol) then
     first:insert(symbol)
   else
-    for _, body in self:each_production(symbol) do
-      if empty(body) then
-        first:insert(epsilon)
-      else
-        set.union(first, self:first_symbols(body))
+    local first_table = self.first_table
+    if first_table == nil then
+      for _, body in self:each_production(symbol) do
+        if empty(body) then
+          first:insert(epsilon)
+        else
+          set.union(first, self:first_symbols(body))
+        end
       end
+    else
+      return assert(first_table[symbol], "not found " .. symbol)
     end
   end
   return first
