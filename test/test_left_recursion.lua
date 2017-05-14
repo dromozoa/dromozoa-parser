@@ -36,8 +36,11 @@ _ "A"
   :_ ()
 
 local scanner, grammar, writer = _:build()
+
+-- writer:write_first(io.stdout, grammar:first_symbol(_.symbol_table["A"])):write("\n")
+
 local elr_symbol_names = clone(_.symbol_names)
-local elr_productions = grammar:eliminate_left_recursions(elr_symbol_names)
+local elr_productions = grammar:eliminate_left_recursion(elr_symbol_names)
 
 -- print(dumper.encode(productions, { pretty = true, stable = true }))
 -- print(dumper.encode(symbol_names, { pretty = true, stable = true }))
@@ -51,3 +54,8 @@ for i, production in ipairs(elr_productions) do
   io.write("\n")
 end
 
+io.write("--\n")
+local elr_grammar = clone(grammar)
+elr_grammar.productions = elr_productions
+elr_writer:write_first(io.stdout, elr_grammar:first_symbol(_.symbol_table["S"])):write("\n")
+elr_writer:write_first(io.stdout, elr_grammar:first_symbol(_.symbol_table["A"])):write("\n")

@@ -23,6 +23,7 @@ local xml = require "dromozoa.commons.xml"
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
 local LA = "#"
+local EPSILON = string.char(0xCE, 0xB5) -- U+03B5 GREEK SMALL LETTER EPSILON
 
 local class = {}
 
@@ -96,6 +97,26 @@ function class:write_set_of_items(out, set_of_items)
     out:write("======== I_", i, " ==========\n")
     self:write_items(out, items)
   end
+end
+
+function class:write_first(out, symbols)
+  local symbol_names = self.symbol_names
+  out:write("{")
+  local first = true
+  for symbol in symbols:each() do
+    if first then
+      first = false
+    else
+      out:write(", ")
+    end
+    if symbol == 0 then
+      out:write(EPSILON)
+    else
+      out:write(symbol_names[symbol])
+    end
+  end
+  out:write("}")
+  return out
 end
 
 function class:write_table(out, data)

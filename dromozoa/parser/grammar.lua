@@ -63,7 +63,7 @@ function class:is_kernel_item(item)
   return self.productions[item.id].head == self.min_nonterminal_symbol or item.dot > 1
 end
 
-function class:eliminate_left_recursions(symbol_names)
+function class:eliminate_left_recursion(symbol_names)
   local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
 
@@ -78,17 +78,19 @@ function class:eliminate_left_recursions(symbol_names)
       if symbol ~= nil and min_nonterminal_symbol <= symbol and symbol < i then
         for production in map_of_productions[symbol]:each() do
           local body = sequence():copy(production.body):copy(body, 2)
+          local production = { head = i, body = body }
           if i == body[1] then
-            left_rescursions:push({ head = i, body = body })
+            left_rescursions:push(production)
           else
-            no_left_recursions:push({ head = i, body = body })
+            no_left_recursions:push(production)
           end
         end
       else
+        local production = { head = i, body = body }
         if i == body[1] then
-          left_rescursions:push({ head = i, body = body })
+          left_rescursions:push(production)
         else
-          no_left_recursions:push({ head = i, body = body })
+          no_left_recursions:push(production)
         end
       end
     end
