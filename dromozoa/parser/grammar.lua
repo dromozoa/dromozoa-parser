@@ -34,6 +34,7 @@ function class.new(productions, max_terminal_symbol, max_nonterminal_symbol, sym
   return {
     productions = productions;
     max_terminal_symbol = max_terminal_symbol;
+    min_nonterminal_symbol = max_terminal_symbol + 1;
     max_nonterminal_symbol = max_nonterminal_symbol;
     symbol_precedences = symbol_precedences;
     production_precedences = production_precedences;
@@ -55,11 +56,11 @@ function class:is_terminal_symbol(symbol)
 end
 
 function class:is_nonterminal_symbol(symbol)
-  return symbol > self.max_terminal_symbol
+  return symbol >= self.min_nonterminal_symbol
 end
 
 function class:is_kernel_item(item)
-  return self.productions[item.id].head == self.max_terminal_symbol + 1 or item.dot > 1
+  return self.productions[item.id].head == self.min_nonterminal_symbol or item.dot > 1
 end
 
 function class:remove_left_recursion()
@@ -373,10 +374,9 @@ end
 
 function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
-  local max_nonterminal_symbol = self.max_nonterminal_symbol
 
   local max_state = #set_of_items
-  local max_symbol = max_nonterminal_symbol
+  local max_symbol = self.max_nonterminal_symbol
 
   local table = {}
   local conflicts = sequence()
