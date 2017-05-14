@@ -63,31 +63,75 @@ function class:is_kernel_item(item)
   return self.productions[item.id].head == self.min_nonterminal_symbol or item.dot > 1
 end
 
-function class:remove_left_recursion()
-  local min_nonterminal_symbol = self.max_terminal_symbol + 1
+function class:eliminate_left_recursions(symbol_names)
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
 
-  -- local map_of_productions = {}
-  -- for i = min_nonterminal_symbol, max_nonterminal_symbol do
-  --   local productions = {}
-  --   for id, body in self:each_production(i) do
-  --     local j = body[1]
-  --     if min_nonterminal_symbol <= j and j < i then
-  --       for production in map_of_productions[j]:each() do
-  --         
-  --       end
+  local map_of_productions = linked_hash_table()
 
-  --       productions:push({
-  --         head = i;
-  --         body = sequence():push(
-  --       })
-  --     end
-  --   end
+  for i = min_nonterminal_symbol, max_nonterminal_symbol do
+    local productions = sequence()
+    for _, body in self:each_production(i) do
+      local j = body[1]
+      if j ~= nil and min_nonterminal_symbol <= j and j < i then
+        for production in map_of_productions[j]:each() do
+          productions:push({
+            head = i;
+            body = sequence():copy(production.body):copy(body, 2);
+          })
+        end
+      else
+        productions:push({
+          head = i;
+          body = body;
+        })
+      end
+    end
+    local left_rescursions = sequence()
+    local no_left_recursions = sequence()
+    for production in productions:each() do
+      if production.head == production.body[1] then
+        left_rescursions:push(production)
+      else
+        no_left_recursions:push(production)
+      end
+    end
+    if empty(left_rescursions) then
+      map_of_productions[i] = no_left_recursions
+    else
+      local symbol = #symbol_names + 1
+      symbol_names[symbol] = symbol_names[i] .. "'"
+      local productions = sequence()
+      for production in no_left_recursions:each() do
+        productions:push({
+          head = i;
+          body = sequence():copy(production.body):push(symbol);
+        })
+      end
+      map_of_productions[i] = productions
+      local productions = sequence()
+      for production in left_rescursions:each() do
+        productions:push({
+          head = symbol;
+          body = sequence():copy(production.body, 2):push(symbol);
+        })
+      end
+      productions:push({
+        head = symbol;
+        body = sequence();
+      })
+      map_of_productions[symbol] = productions
+    end
+  end
 
-  --   for j = min_nonterminal_symbol, i - 1 do
-  --     -- Ai -> Aj ...
-  --   end
-  -- end
+  local set_of_productions = sequence()
+  for _, productions in pairs(map_of_productions) do
+    for production in productions:each() do
+      set_of_productions:push(production)
+    end
+  end
+
+  return set_of_productions
 end
 
 function class:first_symbol(symbol)
