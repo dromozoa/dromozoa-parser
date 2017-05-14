@@ -70,32 +70,29 @@ function class:eliminate_left_recursions(symbol_names)
   local map_of_productions = linked_hash_table()
 
   for i = min_nonterminal_symbol, max_nonterminal_symbol do
-    local productions = sequence()
-    for _, body in self:each_production(i) do
-      local j = body[1]
-      if j ~= nil and min_nonterminal_symbol <= j and j < i then
-        for production in map_of_productions[j]:each() do
-          productions:push({
-            head = i;
-            body = sequence():copy(production.body):copy(body, 2);
-          })
-        end
-      else
-        productions:push({
-          head = i;
-          body = body;
-        })
-      end
-    end
     local left_rescursions = sequence()
     local no_left_recursions = sequence()
-    for production in productions:each() do
-      if production.head == production.body[1] then
-        left_rescursions:push(production)
+
+    for _, body in self:each_production(i) do
+      local symbol = body[1]
+      if symbol ~= nil and min_nonterminal_symbol <= symbol and symbol < i then
+        for production in map_of_productions[symbol]:each() do
+          local body = sequence():copy(production.body):copy(body, 2)
+          if i == body[1] then
+            left_rescursions:push({ head = i, body = body })
+          else
+            no_left_recursions:push({ head = i, body = body })
+          end
+        end
       else
-        no_left_recursions:push(production)
+        if i == body[1] then
+          left_rescursions:push({ head = i, body = body })
+        else
+          no_left_recursions:push({ head = i, body = body })
+        end
       end
     end
+
     if empty(left_rescursions) then
       map_of_productions[i] = no_left_recursions
     else

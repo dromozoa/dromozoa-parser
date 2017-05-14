@@ -36,18 +36,18 @@ _ "A"
   :_ ()
 
 local scanner, grammar, writer = _:build()
-local symbol_names = clone(_.symbol_names)
-local productions = grammar:eliminate_left_recursions(symbol_names)
+local elr_symbol_names = clone(_.symbol_names)
+local elr_productions = grammar:eliminate_left_recursions(elr_symbol_names)
 
 -- print(dumper.encode(productions, { pretty = true, stable = true }))
 -- print(dumper.encode(symbol_names, { pretty = true, stable = true }))
 
-local writer = clone(writer)
-writer.symbol_names = symbol_names
-writer.productions = productions
-for i, production in ipairs(productions) do
+local elr_writer = clone(writer)
+elr_writer.symbol_names = elr_symbol_names
+elr_writer.productions = elr_productions
+for i, production in ipairs(elr_productions) do
   io.write(i, ": ")
-  writer:write_production(io.stdout, production)
+  elr_writer:write_production(io.stdout, production)
   io.write("\n")
 end
 
