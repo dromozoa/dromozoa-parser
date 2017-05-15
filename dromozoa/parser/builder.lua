@@ -224,6 +224,7 @@ function class:build(start_name)
 
   local scanner = scanner(scanners)
   local grammar = grammar(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
+  grammar.first_table = grammar:eliminate_left_recursion():first()
   local writer = writer(symbol_names, productions, max_terminal_symbol)
   return scanner, grammar, writer
 end
