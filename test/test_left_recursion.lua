@@ -52,11 +52,7 @@ io.write("--\n")
 elr_writer:write_first(io.stdout, elr_grammar:first_symbol(_.symbol_table["S"])):write("\n")
 elr_writer:write_first(io.stdout, elr_grammar:first_symbol(_.symbol_table["A"])):write("\n")
 
-local first_table = {}
-for symbol = 1, grammar.max_nonterminal_symbol do
-  first_table[symbol] = elr_grammar:first_symbol(symbol)
-end
-grammar.first_table = first_table
+grammar.first_table = elr_grammar:first()
 
 local set_of_items, transitions = grammar:lalr1_items()
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)

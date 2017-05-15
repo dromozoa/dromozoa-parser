@@ -185,6 +185,14 @@ function class:first_symbols(symbols)
   return first
 end
 
+function class:first()
+  local first_table = {}
+  for symbol = self.min_nonterminal_symbol, self.max_nonterminal_symbol do
+    first_table[symbol] = self:first_symbol(symbol)
+  end
+  return first_table
+end
+
 function class:symbol_precedence(symbol)
   local item = self.symbol_precedences[symbol]
   if item == nil then
