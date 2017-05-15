@@ -1,8 +1,8 @@
 package = "dromozoa-parser"
-version = "1.2-1"
+version = "1.3-1"
 source = {
-  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.2.tar.gz";
-  file = "dromozoa-parser-1.2.tar.gz";
+  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.3.tar.gz";
+  file = "dromozoa-parser-1.3.tar.gz";
 }
 description = {
   summary = "LALR(1) parser generator";

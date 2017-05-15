@@ -15,41 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
+local name = ...
 
-local class = {}
-
-function class.new(items, name)
-  return {
-    items = items;
-    head = name;
-  }
-end
-
-function class:_(name)
-  self.items:push({
-    head = self.head;
-    body = sequence():push(name);
-  })
-  return self
-end
-
-function class:prec(name)
-  self.items:top().precedence = name
-  return self
-end
-
-class.metatable = {
-  __index = class;
-}
-
-function class.metatable:__call(name)
-  self.items:top().body:push(name)
-  return self
-end
-
-return setmetatable(class, {
-  __call = function (_, items, name)
-    return setmetatable(class.new(items, name), class.metatable)
-  end;
-})
+collectgarbage()
+collectgarbage()
+local size1 = collectgarbage("count")
+local data = require(name)
+collectgarbage()
+collectgarbage()
+local size2 = collectgarbage("count")
+print(size2 - size1)

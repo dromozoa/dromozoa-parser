@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local clone = require "dromozoa.commons.clone"
 local empty = require "dromozoa.commons.empty"
 local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
@@ -22,6 +23,7 @@ local keys = require "dromozoa.commons.keys"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
+local writer = require "dromozoa.parser.writer"
 
 local epsilon = 0
 local marker_end = 1
@@ -34,6 +36,7 @@ function class.new(productions, max_terminal_symbol, max_nonterminal_symbol, sym
   return {
     productions = productions;
     max_terminal_symbol = max_terminal_symbol;
+    min_nonterminal_symbol = max_terminal_symbol + 1;
     max_nonterminal_symbol = max_nonterminal_symbol;
     symbol_precedences = symbol_precedences;
     production_precedences = production_precedences;
@@ -55,11 +58,98 @@ function class:is_terminal_symbol(symbol)
 end
 
 function class:is_nonterminal_symbol(symbol)
-  return symbol > self.max_terminal_symbol
+  return symbol >= self.min_nonterminal_symbol
 end
 
 function class:is_kernel_item(item)
-  return self.productions[item.id].head == self.max_nonterminal_symbol or item.dot > 1
+  return self.productions[item.id].head == self.min_nonterminal_symbol or item.dot > 1
+end
+
+function class:eliminate_left_recursion(symbol_names)
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
+  local max_nonterminal_symbol = self.max_nonterminal_symbol
+
+  local map_of_productions = linked_hash_table()
+
+  local n = max_nonterminal_symbol
+
+  local symbol_names = clone(symbol_names)
+
+  for i = min_nonterminal_symbol, max_nonterminal_symbol do
+    local left_rescursions = sequence()
+    local no_left_recursions = sequence()
+
+    for _, body in self:each_production(i) do
+      local symbol = body[1]
+      if symbol ~= nil and min_nonterminal_symbol <= symbol and symbol < i then
+        for production in map_of_productions[symbol]:each() do
+          local body = sequence():copy(production.body):copy(body, 2)
+          local production = { head = i, body = body }
+          if i == body[1] then
+            left_rescursions:push(production)
+          else
+            no_left_recursions:push(production)
+          end
+        end
+      else
+        local production = { head = i, body = body }
+        if i == body[1] then
+          left_rescursions:push(production)
+        else
+          no_left_recursions:push(production)
+        end
+      end
+    end
+
+    if empty(left_rescursions) then
+      map_of_productions[i] = no_left_recursions
+    else
+      n = n + 1
+      local symbol = n
+      if symbol_names ~= nil then
+        symbol_names[symbol] = symbol_names[i] .. "'"
+      end
+      local productions = sequence()
+      for production in no_left_recursions:each() do
+        productions:push({
+          head = i;
+          body = sequence():copy(production.body):push(symbol);
+        })
+      end
+      map_of_productions[i] = productions
+      local productions = sequence()
+      for production in left_rescursions:each() do
+        productions:push({
+          head = symbol;
+          body = sequence():copy(production.body, 2):push(symbol);
+        })
+      end
+      productions:push({
+        head = symbol;
+        body = sequence();
+      })
+      map_of_productions[symbol] = productions
+    end
+  end
+
+  local elr_productions = sequence()
+  for _, productions in pairs(map_of_productions) do
+    for production in productions:each() do
+      elr_productions:push(production)
+    end
+  end
+
+  local grammar = class(
+      elr_productions,
+      self.max_terminal_symbol,
+      n,
+      self.symbol_precedences,
+      self.production_precedences)
+  if symbol_names == nil then
+    return grammar
+  else
+    return grammar, writer(symbol_names, elr_productions, self.max_terminal_symbol)
+  end
 end
 
 function class:first_symbol(symbol)
@@ -67,12 +157,17 @@ function class:first_symbol(symbol)
   if self:is_terminal_symbol(symbol) then
     first:insert(symbol)
   else
-    for _, body in self:each_production(symbol) do
-      if empty(body) then
-        first:insert(epsilon)
-      else
-        set.union(first, self:first_symbols(body))
+    local first_table = self.first_table
+    if first_table == nil then
+      for _, body in self:each_production(symbol) do
+        if empty(body) then
+          first:insert(epsilon)
+        else
+          set.union(first, self:first_symbols(body))
+        end
       end
+    else
+      return assert(first_table[symbol], "not found " .. symbol)
     end
   end
   return first
@@ -88,6 +183,14 @@ function class:first_symbols(symbols)
   end
   first:insert(epsilon)
   return first
+end
+
+function class:first()
+  local first_table = {}
+  for symbol = self.min_nonterminal_symbol, self.max_nonterminal_symbol do
+    first_table[symbol] = self:first_symbol(symbol)
+  end
+  return first_table
 end
 
 function class:symbol_precedence(symbol)
@@ -346,10 +449,9 @@ end
 
 function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
-  local max_nonterminal_symbol = self.max_nonterminal_symbol
 
   local max_state = #set_of_items
-  local max_symbol = max_nonterminal_symbol - 1
+  local max_symbol = self.max_nonterminal_symbol
 
   local table = {}
   local conflicts = sequence()

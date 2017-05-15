@@ -18,25 +18,6 @@
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
-local EPSILON = string.char(0xCE, 0xB5) -- U+03B5 GREEK SMALL LETTER EPSILON
-
-local function dump_first(symbol_names, first)
-  local count = 0
-  io.write("{")
-  for symbol in first:each() do
-    count = count + 1
-    if count > 1 then
-      io.write(", ")
-    end
-    if symbol == 0 then
-      io.write(EPSILON)
-    else
-      io.write(symbol_names[symbol])
-    end
-  end
-  io.write("}\n")
-end
-
 local _ = builder()
 
 _ :pat "%s+" :ignore ()
@@ -45,6 +26,17 @@ _ :pat "%s+" :ignore ()
   :lit "*"
   :lit "("
   :lit ")"
+
+-- left recursive
+-- _ "E"
+--   :_ "E" "+" "T"
+--   :_ "T"
+-- _ "T"
+--   :_ "T" "*" "F"
+--   :_ "F"
+-- _ "F"
+--   :_ "(" "E" ")"
+--   :_ "id"
 
 _ "E"
   :_ "T" "E'"
@@ -60,13 +52,12 @@ _ "F"
   :_ "(" "E" ")"
   :_ "id"
 
-local scanner, grammar = _:build()
+local scanner, grammar, writer = _:build()
 print(dumper.encode(grammar, { pretty = true, stable = true }))
 
-local N = _.symbol_names
-local T = _.symbol_table
-dump_first(N, grammar:first_symbol(T["F"])) -- FIRST(F) -> (, id
-dump_first(N, grammar:first_symbol(T["T"])) -- FIRST(T) -> (, id
-dump_first(N, grammar:first_symbol(T["E"])) -- FIRST(E) -> (, id
-dump_first(N, grammar:first_symbol(T["E'"])) -- FIRST(E') -> +, epsilon
-dump_first(N, grammar:first_symbol(T["T'"])) -- FIRST(T') -> *, epsilon
+local _ = _.symbol_table
+writer:write_first(io.stdout, grammar:first_symbol(_["F"])):write("\n") -- (, id
+writer:write_first(io.stdout, grammar:first_symbol(_["T"])):write("\n") -- (, id
+writer:write_first(io.stdout, grammar:first_symbol(_["E"])):write("\n") -- (, id
+writer:write_first(io.stdout, grammar:first_symbol(_["E'"])):write("\n") -- +, epsilon
+writer:write_first(io.stdout, grammar:first_symbol(_["T'"])):write("\n") -- *, epsilon
