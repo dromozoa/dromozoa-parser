@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local clone = require "dromozoa.commons.clone"
 local empty = require "dromozoa.commons.empty"
 local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
@@ -22,6 +23,7 @@ local keys = require "dromozoa.commons.keys"
 local linked_hash_table = require "dromozoa.commons.linked_hash_table"
 local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
+local writer = require "dromozoa.parser.writer"
 
 local epsilon = 0
 local marker_end = 1
@@ -69,6 +71,10 @@ function class:eliminate_left_recursion(symbol_names)
 
   local map_of_productions = linked_hash_table()
 
+  local n = max_nonterminal_symbol
+
+  local symbol_names = clone(symbol_names)
+
   for i = min_nonterminal_symbol, max_nonterminal_symbol do
     local left_rescursions = sequence()
     local no_left_recursions = sequence()
@@ -98,8 +104,11 @@ function class:eliminate_left_recursion(symbol_names)
     if empty(left_rescursions) then
       map_of_productions[i] = no_left_recursions
     else
-      local symbol = #symbol_names + 1
-      symbol_names[symbol] = symbol_names[i] .. "'"
+      n = n + 1
+      local symbol = n
+      if symbol_names ~= nil then
+        symbol_names[symbol] = symbol_names[i] .. "'"
+      end
       local productions = sequence()
       for production in no_left_recursions:each() do
         productions:push({
@@ -123,14 +132,24 @@ function class:eliminate_left_recursion(symbol_names)
     end
   end
 
-  local set_of_productions = sequence()
+  local elr_productions = sequence()
   for _, productions in pairs(map_of_productions) do
     for production in productions:each() do
-      set_of_productions:push(production)
+      elr_productions:push(production)
     end
   end
 
-  return set_of_productions
+  local grammar = class(
+      elr_productions,
+      self.max_terminal_symbol,
+      n,
+      self.symbol_precedences,
+      self.production_precedences)
+  if symbol_names == nil then
+    return grammar
+  else
+    return grammar, writer(symbol_names, elr_productions, self.max_terminal_symbol)
+  end
 end
 
 function class:first_symbol(symbol)
