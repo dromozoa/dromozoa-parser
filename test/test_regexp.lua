@@ -22,11 +22,11 @@ local P = regexp_builder.P
 local R = regexp_builder.R
 local S = regexp_builder.S
 
--- [A-Z]|[13579]abcdef|"xyz"*
-local p1 = R "AZaz09" + S "13579" * P "abcdef" + P "xyz" ^0
+-- [A-Z]|[13579]abcdef|(xyz)*
+local p1 = R "AZaz09" + S "13579" * "abcdef" + P "xyz" ^0
 -- [^a-z]^{1,2}
-local p2 = -R"AZ"^{1,2}
+local p2 = (-R"AZ") ^{1,2}
 -- (abc)?def
 local p3 = P "abc" ^-1 * "def"
 
-print(dumper.encode(p3, { pretty = true }))
+print(dumper.encode(p1, { pretty = true }))

@@ -18,25 +18,25 @@
 local class = {}
 
 function class.new(...)
-  return { ... }
+  return {...}
 end
 
-function class.P(v)
-  if type(v) == "string" then
+function class.P(that)
+  if type(that) == "string" then
     local this = class("concat")
-    for i = 1, #v do
-      this[i + 1] = class("[", { [v:byte(i)] = true })
+    for i = 1, #that do
+      this[i + 1] = class("[", { [that:byte(i)] = true })
     end
     return this
   else
-    return v
+    return that
   end
 end
 
-function class.R(v)
+function class.R(that)
   local set = {}
-  for i = 1, #v, 2 do
-    local a, b = v:byte(i, i + 1)
+  for i = 1, #that, 2 do
+    local a, b = that:byte(i, i + 1)
     for j = a, b do
       set[j] = true
     end
@@ -44,10 +44,10 @@ function class.R(v)
   return class("[", set)
 end
 
-function class.S(v)
+function class.S(that)
   local set = {}
-  for i = 1, #v do
-    set[v:byte(i)] = true
+  for i = 1, #that do
+    set[that:byte(i)] = true
   end
   return class("[", set)
 end
@@ -56,45 +56,49 @@ class.metatable = {
   __index = class;
 }
 
+local P = class.P
+
 function class.metatable:__add(that)
-  return class("|", class.P(self), class.P(that))
+  return class("|", P(self), P(that))
 end
 
 function class.metatable:__mul(that)
-  return class("concat", class.P(self), class.P(that))
+  return class("concat", P(self), P(that))
 end
 
 function class.metatable:__pow(that)
+  if that == 0 or that == "*" then
+    return class("*", self)
+  elseif that == 1 or that == "+" then
+    return class("+", self)
+  elseif that == -1 or that == "?" then
+    return class("?", self)
+  end
   if type(that) == "number" then
-    if that == 0 then
-      return class("*", class.P(self))
-    elseif that == 1 then
-      return class("+", class.P(self))
-    elseif that < 0 then
-      return class("?", class.P(self))
+    if that < 0 then
+      return class("{m,n}", self, 0, -that)
     else
-      return class("{m,}", class.P(self), that)
+      return class("{m,}", self, that)
     end
   else
     local m = that[1]
     local n = that[2]
     if n == nil then
-      return class("{m}", class.P(self), m)
+      return class("{m}", self, m)
     else
-      return class("{m,n}", class.P(self), m, n)
+      return class("{m,n}", self, m, n)
     end
   end
 end
 
 function class.metatable:__unm()
-  if self[1] == "[" then
-    local set = self[2]
-    for i = 0, 255 do
-      if set[i] then
-        set[i] = nil
-      else
-        set[i] = true
-      end
+  assert(self[1] == "[")
+  local set = self[2]
+  for i = 0, 255 do
+    if set[i] then
+      set[i] = nil
+    else
+      set[i] = true
     end
   end
   return self
