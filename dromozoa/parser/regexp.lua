@@ -64,15 +64,16 @@ function class.new(root)
   return {}
 end
 
-function class.tree_to_nfa(node)
+function class.tree_to_nfa(root)
   local n = 0
   local transitions = {}
-  for i = -2, 255 do
+  local epsilons = { {}, {} }
+  for i = 0, 255 do
     transitions[i] = {}
   end
 
   -- dfs finish vertex
-  local stack1 = { node }
+  local stack1 = { root }
   local stack2 = {}
 
   while true do
@@ -104,8 +105,8 @@ function class.tree_to_nfa(node)
           end
         end
       elseif tag == 2 then
-        assert(transitions[-1][a.v] == nil)
-        transitions[-1][a.v] = b.u
+        assert(epsilons[1][a.v] == nil)
+        epsilons[1][a.v] = b.u
         node.u = a.u
         node.v = b.v
       elseif tag == 3 then
@@ -114,14 +115,14 @@ function class.tree_to_nfa(node)
         n = n + 1
         local v = n
         assert(b.v)
-        assert(transitions[-1][u] == nil)
-        assert(transitions[-2][u] == nil)
-        assert(transitions[-1][a.v] == nil)
-        assert(transitions[-1][b.v] == nil)
-        transitions[-1][u] = a.u
-        transitions[-2][u] = b.u
-        transitions[-1][a.v] = v
-        transitions[-1][b.v] = v
+        assert(epsilons[1][u] == nil)
+        assert(epsilons[2][u] == nil)
+        assert(epsilons[1][a.v] == nil)
+        assert(epsilons[1][b.v] == nil)
+        epsilons[1][u] = a.u
+        epsilons[2][u] = b.u
+        epsilons[1][a.v] = v
+        epsilons[1][b.v] = v
         node.u = u
         node.v = v
       elseif tag == 4 then
@@ -131,14 +132,14 @@ function class.tree_to_nfa(node)
         local v = n
         local au = a.u
         local av = a.v
-        assert(transitions[-1][u] == nil)
-        assert(transitions[-2][u] == nil)
-        assert(transitions[-1][a.v] == nil)
-        assert(transitions[-2][a.v] == nil)
-        transitions[-1][u] = au
-        transitions[-2][u] = v
-        transitions[-1][av] = v
-        transitions[-2][av] = au
+        assert(epsilons[1][u] == nil)
+        assert(epsilons[2][u] == nil)
+        assert(epsilons[1][a.v] == nil)
+        assert(epsilons[2][a.v] == nil)
+        epsilons[1][u] = au
+        epsilons[2][u] = v
+        epsilons[1][av] = v
+        epsilons[2][av] = au
         node.u = u
         node.v = v
       elseif tag == 5 then
@@ -148,12 +149,12 @@ function class.tree_to_nfa(node)
         local v = n
         local au = a.u
         local av = a.v
-        assert(transitions[-1][u] == nil)
-        assert(transitions[-2][u] == nil)
-        assert(transitions[-1][a.v] == nil)
-        transitions[-1][u] = au
-        transitions[-2][u] = v
-        transitions[-1][av] = v
+        assert(epsilons[1][u] == nil)
+        assert(epsilons[2][u] == nil)
+        assert(epsilons[1][a.v] == nil)
+        epsilons[1][u] = au
+        epsilons[2][u] = v
+        epsilons[1][av] = v
         node.u = u
         node.v = v
       end
@@ -172,7 +173,7 @@ function class.tree_to_nfa(node)
     end
   end
 
-  return transitions, n
+  return transitions, epsilons, n
 end
 
 class.metatable = {

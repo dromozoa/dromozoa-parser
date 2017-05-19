@@ -126,14 +126,15 @@ local P = regexp_builder.P
 local R = regexp_builder.R
 local S = regexp_builder.S
 
-local p = P"abc" ^ "?"
+local p = (P"X" ^{2,4}) ^"*"
+-- local p = P"abcdef"
 print(dumper.encode(p, { pretty = true, stable = ture }))
 print("--")
 dfs_recursive(p)
 print("--")
 dfs_stack(p)
 
-local transitions, n = regexp.tree_to_nfa(p)
+local transitions, epsilons, n = regexp.tree_to_nfa(p)
 print(dumper.encode(transitions, { pretty = true, stable = ture }))
 
 local out = assert(io.open("test.dot", "w"))
@@ -142,8 +143,8 @@ digraph g {
 graph [rankdir=LR];
 ]])
 for i = 1, n do
-  local e1 = transitions[-1][i]
-  local e2 = transitions[-2][i]
+  local e1 = epsilons[1][i]
+  local e2 = epsilons[2][i]
   if e1 then
     out:write(("%d->%d;\n"):format(i, e1))
   end
