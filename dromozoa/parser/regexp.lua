@@ -42,12 +42,10 @@ end
 
 function class.tree_to_nfa(root)
   local n = 0
-  local transitions = {}
   local epsilons1 = {}
   local epsilons2 = {}
-  for i = 0, 255 do
-    transitions[i] = {}
-  end
+  local conditions = {}
+  local transitions = {}
 
   local stack1 = { root }
   local stack2 = {}
@@ -78,11 +76,8 @@ function class.tree_to_nfa(root)
         local v = n
         node.v = v
         if tag == 1 then -- "["
-          for i = 0, 255 do
-            if a[i] then
-              transitions[i][u] = v
-            end
-          end
+          conditions[u] = a
+          transitions[u] = v
         elseif tag == 3 then -- "|"
           epsilons1[u] = a.u
           epsilons2[u] = b.u
@@ -115,6 +110,7 @@ function class.tree_to_nfa(root)
   return {
     epsilons1 = epsilons1;
     epsilons2 = epsilons2;
+    conditions = conditions;
     transitions = transitions;
     max_state = n;
     start_state = root.u;
