@@ -129,10 +129,10 @@ local S = regexp_builder.S
 local p = (P"X" ^{2,4}) ^"*"
 -- local p = P"abcdef"
 print(dumper.encode(p, { pretty = true, stable = ture }))
-print("--")
-dfs_recursive(p)
-print("--")
-dfs_stack(p)
+-- print("--")
+-- dfs_recursive(p)
+-- print("--")
+-- dfs_stack(p)
 
 local data = regexp.tree_to_nfa(p)
 local transitions = data.transitions
