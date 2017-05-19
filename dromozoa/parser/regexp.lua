@@ -36,30 +36,6 @@ local class = {
   max_terminal_tag = max_terminal_tag;
 }
 
-local function dfs_finish_edge(u, fn)
-  local tag = u[1]
-  if tag > max_terminal_tag then
-    for i = 2, #u do
-      local v = u[i]
-      dfs_finish_edge(v, fn)
-      fn(u, v)
-    end
-  end
-end
-
-local function node_to_nfa(node, self)
-  local tag = node[1]
-  local a = node[2]
-  local b = node[3]
-  if tag > max_terminal_tag then
-    node_to_nfa(a, self)
-    if b then
-      node_to_nfa(b, self)
-    end
-  end
-  print(tag_names[tag])
-end
-
 function class.new(root)
   return {}
 end
@@ -67,12 +43,12 @@ end
 function class.tree_to_nfa(root)
   local n = 0
   local transitions = {}
-  local epsilons = { {}, {} }
+  local epsilons1 = {}
+  local epsilons2 = {}
   for i = 0, 255 do
     transitions[i] = {}
   end
 
-  -- dfs finish vertex
   local stack1 = { root }
   local stack2 = {}
 
@@ -84,84 +60,47 @@ function class.tree_to_nfa(root)
       break
     end
     local tag = node[1]
+    local a = node[2]
+    local b = node[3]
     if node == stack2[n2] then
       stack1[n1] = nil
       stack2[n2] = nil
-
-      -- process node
-      local a = node[2]
-      local b = node[3]
-      if tag == 1 then
-        n = n + 1
-        local u = n
-        n = n + 1
-        local v = n
-        node.u = u
-        node.v = v
-        local set = node[2]
-        for i = 0, 255 do
-          if a[i] then
-            transitions[i][u] = v
-          end
-        end
-      elseif tag == 2 then
-        assert(epsilons[1][a.v] == nil)
-        epsilons[1][a.v] = b.u
+      -- finish vertex
+      if tag == 2 then -- "concat"
         node.u = a.u
         node.v = b.v
-      elseif tag == 3 then
+        epsilons1[a.v] = b.u
+      else
         n = n + 1
         local u = n
+        node.u = u
         n = n + 1
         local v = n
-        assert(b.v)
-        assert(epsilons[1][u] == nil)
-        assert(epsilons[2][u] == nil)
-        assert(epsilons[1][a.v] == nil)
-        assert(epsilons[1][b.v] == nil)
-        epsilons[1][u] = a.u
-        epsilons[2][u] = b.u
-        epsilons[1][a.v] = v
-        epsilons[1][b.v] = v
-        node.u = u
         node.v = v
-      elseif tag == 4 then
-        n = n + 1
-        local u = n
-        n = n + 1
-        local v = n
-        local au = a.u
-        local av = a.v
-        assert(epsilons[1][u] == nil)
-        assert(epsilons[2][u] == nil)
-        assert(epsilons[1][a.v] == nil)
-        assert(epsilons[2][a.v] == nil)
-        epsilons[1][u] = au
-        epsilons[2][u] = v
-        epsilons[1][av] = v
-        epsilons[2][av] = au
-        node.u = u
-        node.v = v
-      elseif tag == 5 then
-        n = n + 1
-        local u = n
-        n = n + 1
-        local v = n
-        local au = a.u
-        local av = a.v
-        assert(epsilons[1][u] == nil)
-        assert(epsilons[2][u] == nil)
-        assert(epsilons[1][a.v] == nil)
-        epsilons[1][u] = au
-        epsilons[2][u] = v
-        epsilons[1][av] = v
-        node.u = u
-        node.v = v
+        if tag == 1 then -- "["
+          for i = 0, 255 do
+            if a[i] then
+              transitions[i][u] = v
+            end
+          end
+        elseif tag == 3 then -- "|"
+          epsilons1[u] = a.u
+          epsilons2[u] = b.u
+          epsilons1[a.v] = v
+          epsilons1[b.v] = v
+        else -- "*" or "?"
+          local au = a.u
+          local av = a.v
+          epsilons1[u] = au
+          epsilons2[u] = v
+          epsilons1[av] = v
+          if tag == 4 then -- "*"
+            epsilons2[av] = au
+          end
+        end
       end
     else
       if tag > max_terminal_tag then
-        local a = node[2]
-        local b = node[3]
         if b then
           stack1[n1 + 1] = b
           stack1[n1 + 2] = a
@@ -173,7 +112,24 @@ function class.tree_to_nfa(root)
     end
   end
 
-  return transitions, epsilons, n
+  return {
+    epsilons1 = epsilons1;
+    epsilons2 = epsilons2;
+    transitions = transitions;
+    max_state = n;
+    start_state = root.u;
+    accept_state = root.v;
+  }
+end
+
+function class.nfa_to_dfa(nfa)
+  local stack = { nfa.start_state }
+  local color = {}
+
+  while true do
+    -- dfs discover vertex
+
+  end
 end
 
 class.metatable = {

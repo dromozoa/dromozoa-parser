@@ -146,14 +146,14 @@ end
 
 function class.metatable:__unm()
   assert(self[1] == regexp.tag_table["["])
-  local set = self[2]
+  local set1 = self[2]
+  local set2 = {}
   for i = 0, 255 do
-    if set[i] then
-      set[i] = nil
-    else
-      set[i] = true
+    if not set1[i] then
+      set2[i] = true
     end
   end
+  self[2] = set2
   return self
 end
 

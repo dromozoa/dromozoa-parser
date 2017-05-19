@@ -134,7 +134,10 @@ dfs_recursive(p)
 print("--")
 dfs_stack(p)
 
-local transitions, epsilons, n = regexp.tree_to_nfa(p)
+local data = regexp.tree_to_nfa(p)
+local transitions = data.transitions
+local epsilons = { data.epsilons1, data.epsilons2 }
+local n = data.max_state
 print(dumper.encode(transitions, { pretty = true, stable = ture }))
 
 local out = assert(io.open("test.dot", "w"))
