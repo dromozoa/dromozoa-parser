@@ -46,7 +46,7 @@ local function dump(p)
     io.write(("  "):rep(depth), tag_name)
     if tag_name == "[" then
       local set = node[2]
-      for i = 0, 255 do
+      for i = 20, 126 do
         if set[i] then
           io.write(string.char(i))
         end
@@ -116,4 +116,10 @@ print("----")
 local a = dump(P"a"^{3,6})
 print("--")
 local b = dump(P"a" * "a" * "a" * P"a"^"?" * P"a"^"?" * P"a"^"?")
+assert(equal(a, b))
+
+print("----")
+local a = dump(P(1)^{4})
+print("--")
+local b = dump(P(4))
 assert(equal(a, b))

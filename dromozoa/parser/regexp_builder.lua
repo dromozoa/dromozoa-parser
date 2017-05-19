@@ -18,6 +18,11 @@
 local clone = require "dromozoa.commons.clone"
 local regexp = require "dromozoa.parser.regexp"
 
+local any = {}
+for i = 0, 255 do
+  any[i] = true
+end
+
 local function concat(items, i)
   if i == 1 then
     return items[i]
@@ -33,7 +38,14 @@ function class.new(tag_name, ...)
 end
 
 function class.P(that)
-  if type(that) == "string" then
+  local t = type(that)
+  if t == "number" then
+    local items = {}
+    for i = 1, that do
+      items[i] = class("[", any)
+    end
+    return concat(items, that)
+  elseif t == "string" then
     local items = {}
     local n = #that
     for i = 1, n do

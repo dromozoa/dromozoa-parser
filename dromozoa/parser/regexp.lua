@@ -47,18 +47,132 @@ local function dfs_finish_edge(u, fn)
   end
 end
 
+local function node_to_nfa(node, self)
+  local tag = node[1]
+  local a = node[2]
+  local b = node[3]
+  if tag > max_terminal_tag then
+    node_to_nfa(a, self)
+    if b then
+      node_to_nfa(b, self)
+    end
+  end
+  print(tag_names[tag])
+end
+
 function class.new(root)
   return {}
 end
 
-function class.tree_to_nfa(root)
+function class.tree_to_nfa(node)
   local n = 0
-  local epsilons = {}
   local transitions = {}
+  for i = -2, 255 do
+    transitions[i] = {}
+  end
 
-  dfs_finish_edge(root, function (u, v)
-    print(tag_names[u[1]], tag_names[v[1]])
-  end)
+  -- dfs finish vertex
+  local stack1 = { node }
+  local stack2 = {}
+
+  while true do
+    local n1 = #stack1
+    local n2 = #stack2
+    local node = stack1[n1]
+    if node == nil then
+      break
+    end
+    local tag = node[1]
+    if node == stack2[n2] then
+      stack1[n1] = nil
+      stack2[n2] = nil
+
+      -- process node
+      local a = node[2]
+      local b = node[3]
+      if tag == 1 then
+        n = n + 1
+        local u = n
+        n = n + 1
+        local v = n
+        node.u = u
+        node.v = v
+        local set = node[2]
+        for i = 0, 255 do
+          if a[i] then
+            transitions[i][u] = v
+          end
+        end
+      elseif tag == 2 then
+        assert(transitions[-1][a.v] == nil)
+        transitions[-1][a.v] = b.u
+        node.u = a.u
+        node.v = b.v
+      elseif tag == 3 then
+        n = n + 1
+        local u = n
+        n = n + 1
+        local v = n
+        assert(b.v)
+        assert(transitions[-1][u] == nil)
+        assert(transitions[-2][u] == nil)
+        assert(transitions[-1][a.v] == nil)
+        assert(transitions[-1][b.v] == nil)
+        transitions[-1][u] = a.u
+        transitions[-2][u] = b.u
+        transitions[-1][a.v] = v
+        transitions[-1][b.v] = v
+        node.u = u
+        node.v = v
+      elseif tag == 4 then
+        n = n + 1
+        local u = n
+        n = n + 1
+        local v = n
+        local au = a.u
+        local av = a.v
+        assert(transitions[-1][u] == nil)
+        assert(transitions[-2][u] == nil)
+        assert(transitions[-1][a.v] == nil)
+        assert(transitions[-2][a.v] == nil)
+        transitions[-1][u] = au
+        transitions[-2][u] = v
+        transitions[-1][av] = v
+        transitions[-2][av] = au
+        node.u = u
+        node.v = v
+      elseif tag == 5 then
+        n = n + 1
+        local u = n
+        n = n + 1
+        local v = n
+        local au = a.u
+        local av = a.v
+        assert(transitions[-1][u] == nil)
+        assert(transitions[-2][u] == nil)
+        assert(transitions[-1][a.v] == nil)
+        transitions[-1][u] = au
+        transitions[-2][u] = v
+        transitions[-1][av] = v
+        node.u = u
+        node.v = v
+      end
+    else
+      if tag > max_terminal_tag then
+        local a = node[2]
+        local b = node[3]
+        if b then
+          stack1[n1 + 1] = b
+          stack1[n1 + 2] = a
+        else
+          stack1[n1 + 1] = a
+        end
+      end
+      stack2[n2 + 1] = node
+    end
+  end
+
+  return transitions, n
 end
 
 class.metatable = {
