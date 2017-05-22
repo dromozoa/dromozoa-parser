@@ -15,9 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-local equal = require "dromozoa.commons.equal"
-
 local tag_names = {
   "[",
   "concat",
@@ -283,8 +280,6 @@ function class.minimize_dfa(dfa)
     end
   end
 
-  print("partitions", dumper.encode(partitions))
-
   repeat
     local new_partitions = {}
     local new_partition_table = {}
@@ -305,19 +300,15 @@ function class.minimize_dfa(dfa)
               break
             end
           end
-          -- x and y is same group
-          -- print(same_group, x, y)
           if same_group then
             local gx = new_partition_table[x]
             local gy = new_partition_table[y]
             if gx ~= nil then
-              -- assert(gy == nil, ("x,y,gx,gy=%d,%d,%d,%d"):format(x, y, gx, gy))
               if gy == nil then
                 local partition = new_partitions[gx]
                 partition[#partition + 1] = y
                 new_partition_table[y] = gx
               else
-                print(("x,y,gx,gy=%d,%d,%d,%d"):format(x, y, gx, gy))
                 assert(gx == gy)
               end
             elseif gy ~= nil then
@@ -350,8 +341,6 @@ function class.minimize_dfa(dfa)
     local done = #partitions == #new_partitions
     partitions = new_partitions
     partition_table = new_partition_table
-
-    print("partitions", dumper.encode(partitions))
   until done
 
   local new_transitions = {}
