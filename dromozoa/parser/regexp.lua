@@ -110,8 +110,7 @@ function class.tree_to_nfa(root)
   end
 
   return {
-    epsilons1 = epsilons1;
-    epsilons2 = epsilons2;
+    epsilons = { epsilons1, epsilons2 };
     transitions = transitions;
     max_state = n;
     start_state = root.u;
@@ -155,8 +154,8 @@ local function insert(map, key, value)
 end
 
 function class.nfa_to_dfa(nfa)
-  local nfa_epsilons1 = nfa.epsilons1
-  local nfa_epsilons2 = nfa.epsilons2
+  local nfa_epsilons1 = nfa.epsilons[1]
+  local nfa_epsilons2 = nfa.epsilons[2]
   local nfa_transitions = nfa.transitions
   local nfa_max_state = nfa.max_state
   local nfa_start_state = nfa.start_state

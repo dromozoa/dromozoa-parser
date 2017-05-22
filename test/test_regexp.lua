@@ -143,11 +143,11 @@ print(dumper.encode(p, { pretty = true, stable = ture }))
 
 local data = regexp.tree_to_nfa(p)
 local transitions = data.transitions
-local epsilons = { data.epsilons1, data.epsilons2 }
+local epsilons = data.epsilons
 local n = data.max_state
 -- print(dumper.encode(transitions, { pretty = true, stable = ture }))
 
-print(data.start_state, data.accept_state)
+print(data.start_state, dumper.encode(data.accept_states))
 
 local dfa, epsilon_closures = regexp.nfa_to_dfa(data)
 local dfa_transitions = dfa.transitions
