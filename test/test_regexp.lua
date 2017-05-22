@@ -147,7 +147,12 @@ local n = data.max_state
 
 print(data.start_state, data.accept_state)
 
-local epsilon_closures, dfa_transitions, max_dfa, dfa_accepts = regexp.nfa_to_dfa(data)
+local dfa, epsilon_closures = regexp.nfa_to_dfa(data)
+local dfa_transitions = dfa.transitions
+local max_dfa = dfa.max_state
+local dfa_accepts = dfa.accept_states
+
+-- local epsilon_closures, dfa_transitions, max_dfa, dfa_accepts = regexp.nfa_to_dfa(data)
 -- print(dumper.encode(dfa_transitions, { pretty = true, stable = true }))
 print(dumper.encode(dfa_accepts, { pretty = true, stable = true }))
 

@@ -248,7 +248,12 @@ function class.nfa_to_dfa(nfa)
     end
   end
 
-  return epsilon_closures, transitions, n, accept_states
+  return {
+    transitions = transitions;
+    max_state = n;
+    start_state = 1;
+    accept_states = accept_states;
+  }, epsilon_closures
 end
 
 class.metatable = {
