@@ -118,7 +118,7 @@ function class.tree_to_nfa(root)
   }
 end
 
-local function set_to_key(set)
+local function set_to_seq(set)
   local n = 0
   local key = {}
   for k in pairs(set) do
@@ -154,8 +154,16 @@ local function insert(map, key, value)
 end
 
 function class.nfa_to_dfa(nfa)
+  local nfa_epsilons1 = nfa.epsilons1
+  local nfa_epsilons2 = nfa.epsilons2
+  local nfa_conditions = nfa.conditions
+  local nfa_transitions = nfa.transitions
+  local nfa_max_state = nfa.max_state
+  local nfa_start_state = nfa.start_state
+  local nfa_accept_state = nfa.accept_state
+
   local epsilon_closures = {}
-  for state = 1, nfa.max_state do
+  for state = 1, nfa_max_state do
     local stack = { state }
     local color = { [state] = true }
     local epsilon_closure = {}
@@ -165,17 +173,17 @@ function class.nfa_to_dfa(nfa)
       if u == nil then
         break
       end
-      epsilon_closure[u] = true
       stack[n] = nil
-      local v = nfa.epsilons1[u]
-      if v ~= nil then
+      epsilon_closure[u] = true
+      local v = nfa_epsilons1[u]
+      if v then
         if not color[v] then
           stack[n] = v
           color[v] = true
           n = n + 1
         end
-        local v = nfa.epsilons2[u]
-        if v ~= nil and not color[v] then
+        local v = nfa_epsilons2[u]
+        if v and not color[v] then
           stack[n] = v
           color[v] = true
         end
@@ -185,61 +193,62 @@ function class.nfa_to_dfa(nfa)
   end
 
   local map = {}
-  local s = set_to_key(epsilon_closures[nfa.start_state])
-  insert(map, s, 1)
 
-  local stack = { s }
-  local dfa = 1
+  local n = 1
+  local set = epsilon_closures[nfa_start_state]
+  local seq = set_to_seq(set)
+  insert(map, seq, n)
 
   local transitions = {}
   for i = 0, 255 do
     transitions[i] = {}
   end
 
-  local dfa_accepts = {}
-  if epsilon_closures[nfa.start_state][nfa.accept_state] then
-    dfa_accepts[1] = true
+  local accept_states = {}
+  if set[nfa_accept_state] then
+    accept_states[n] = true
   end
+
+  local stack = { seq }
 
   while true do
-    local n = #stack
-    local u = stack[n]
-    if u == nil then
+    local m = #stack
+    local useq = stack[m]
+    if useq == nil then
       break
     end
-    stack[n] = nil
-    local from = find(map, u)
-    for char = 0, 255 do
-      local to_states = {}
-      for i = 1, #u do
-        local state = u[i]
-        local condition = nfa.conditions[state]
-        if condition and condition[char] then
-          local to_closure = epsilon_closures[nfa.transitions[state]]
-          for k in pairs(to_closure) do
-            to_states[k] = true
+    stack[m] = nil
+    local u = find(map, useq)
+    for i = 0, 255 do
+      local vset = {}
+      for j = 1, #useq do
+        local w = useq[j]
+        local condition = nfa_conditions[w]
+        if condition and condition[i] then
+          for k in pairs(epsilon_closures[nfa_transitions[w]]) do
+            vset[k] = true
           end
         end
       end
-      local to = set_to_key(to_states)
-      if #to > 0 then
-        local to_state = find(map, to)
-        if to_state == nil then
-          dfa = dfa + 1
-          to_state = dfa
-          insert(map, to, to_state)
-          stack[#stack + 1] = to
-          if to_states[nfa.accept_state] then
-            dfa_accepts[to_state] = true
+      local vseq = set_to_seq(vset)
+      if #vseq > 0 then
+        local v = find(map, vseq)
+        if v == nil then
+          n = n + 1
+          v = n
+          insert(map, vseq, v)
+          stack[m] = vseq
+          m = m + 1
+          if vset[nfa_accept_state] then
+            accept_states[v] = true
           end
         end
-        print(from, table.concat(u, ","), to_state, table.concat(to, ","))
-        transitions[char][from] = to_state
+        transitions[i][u] = v
       end
     end
   end
 
-  return epsilon_closures, transitions, dfa, dfa_accepts
+  return epsilon_closures, transitions, n, accept_states
 end
 
 class.metatable = {

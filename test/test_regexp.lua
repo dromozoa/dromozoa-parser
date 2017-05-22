@@ -127,8 +127,8 @@ local P = regexp_builder.P
 local R = regexp_builder.R
 local S = regexp_builder.S
 
-local p = P"a"^"*"
--- local p = (P"X" ^{2,4}) ^"*"
+-- local p = P"a"^"*"
+local p = (P"X" ^{2,4}) ^"*"
 -- local p = P"abcdef"
 -- local p = (S"ab"^"*" * P"c"^"?")^"*"
 -- local p = (P"a"^"*")^"*"
