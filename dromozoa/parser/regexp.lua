@@ -115,7 +115,7 @@ function class.tree_to_nfa(root)
     transitions = transitions;
     max_state = n;
     start_state = root.u;
-    accept_state = root.v;
+    accept_states = { [root.v] = true };
   }
 end
 
@@ -160,7 +160,7 @@ function class.nfa_to_dfa(nfa)
   local nfa_transitions = nfa.transitions
   local nfa_max_state = nfa.max_state
   local nfa_start_state = nfa.start_state
-  local nfa_accept_state = nfa.accept_state
+  local nfa_accept_states = nfa.accept_states
 
   local epsilon_closures = {}
   for state = 1, nfa_max_state do
@@ -205,8 +205,11 @@ function class.nfa_to_dfa(nfa)
   end
 
   local accept_states = {}
-  if set[nfa_accept_state] then
-    accept_states[n] = true
+  for k in pairs(set) do
+    if nfa_accept_states[k] then
+      accept_states[n] = true
+      break
+    end
   end
 
   local stack = { seq }
@@ -239,8 +242,11 @@ function class.nfa_to_dfa(nfa)
           insert(map, vseq, v)
           stack[m] = vseq
           m = m + 1
-          if vset[nfa_accept_state] then
-            accept_states[v] = true
+          for k in pairs(vset) do
+            if nfa_accept_states[k] then
+              accept_states[v] = true
+              break
+            end
           end
         end
         transitions[i][u] = v
