@@ -15,6 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
+local equal = require "dromozoa.commons.equal"
+
 local tag_names = {
   "[",
   "concat",
@@ -254,6 +257,130 @@ function class.nfa_to_dfa(nfa)
     start_state = 1;
     accept_states = accept_states;
   }, epsilon_closures
+end
+
+function class.minimize_dfa(dfa)
+  local transitions = dfa.transitions
+  local max_state = dfa.max_state
+  local accept_states = dfa.accept_states
+
+  local partitions = { {} }
+  local partition_table = {}
+
+  for i = 1, max_state do
+    if accept_states[i] then
+      local partition = partitions[1]
+      partition[#partition + 1] = i
+      partition_table[i] = 1
+    else
+      local partition = partitions[2]
+      if partition == nil then
+        partition = {}
+        partitions[2] = partition
+      end
+      partition[#partition + 1] = i
+      partition_table[i] = 2
+    end
+  end
+
+  print("partitions", dumper.encode(partitions))
+
+  repeat
+    local new_partitions = {}
+    local new_partition_table = {}
+
+    for i = 1, #partitions do
+      local partition = partitions[i]
+      for i = 1, #partition do
+        local x = partition[i]
+        for j = 1, i - 1 do
+          local y = partition[j]
+          local same_group = true
+          for char = 0, 255 do
+            local tx = transitions[char][x]
+            local ty = transitions[char][y]
+            if partition_table[tx] ~= partition_table[ty] then
+              same_group = false
+              break
+            end
+          end
+          -- x and y is same group
+          -- print(same_group, x, y)
+          if same_group then
+            local gx = new_partition_table[x]
+            local gy = new_partition_table[y]
+            if gx ~= nil then
+              -- assert(gy == nil, ("x,y,gx,gy=%d,%d,%d,%d"):format(x, y, gx, gy))
+              if gy == nil then
+                local partition = new_partitions[gx]
+                partition[#partition + 1] = y
+                new_partition_table[y] = gx
+              else
+                assert(gx == gy)
+              end
+            elseif gy ~= nil then
+              assert(gx == nil)
+              local partition = new_partitions[gy]
+              partition[#partition + 1] = x
+              new_partition_table[x] = gy
+            else
+              local g = #new_partitions + 1
+              new_partitions[g] = { x, y }
+              new_partition_table[x] = g
+              new_partition_table[y] = g
+            end
+          end
+        end
+      end
+
+      for i = 1, #partition do
+        local x = partition[i]
+        local gx = new_partition_table[x]
+        if gx == nil then
+          local g = #new_partitions + 1
+          new_partitions[g] = { x }
+          new_partition_table[x] = g
+        end
+      end
+
+    end
+
+    local done = #partitions == #new_partitions
+    partitions = new_partitions
+    partition_table = new_partition_table
+
+    print("partitions", dumper.encode(partitions))
+  until done
+
+  local new_transitions = {}
+  for char = 0, 255 do
+    new_transitions[char] = {}
+  end
+  local new_accept_states = {}
+
+  local n = #partitions
+  for i = 1, n do
+    local p = partitions[i]
+    local j = partition_table[p[1]]
+    for k = 2, #p do
+      assert(partition_table[p[k]] == j)
+    end
+    for char = 0, 255 do
+      local t = transitions[char][p[1]]
+      if t then
+        new_transitions[char][i] = partition_table[t]
+      end
+    end
+    if accept_states[p[1]] then
+      new_accept_states[i] = true
+    end
+  end
+  return {
+    transitions = new_transitions,
+    max_state = n;
+    start_state = partition_table[start_state];
+    accept_states = new_accept_states;
+  }, partitions
 end
 
 class.metatable = {
