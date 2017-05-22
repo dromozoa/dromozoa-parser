@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local keys = require "dromozoa.commons.keys"
 local dumper = require "dromozoa.commons.dumper"
 local unpack = require "dromozoa.commons.unpack"
 local regexp = require "dromozoa.parser.regexp"
@@ -126,8 +127,11 @@ local P = regexp_builder.P
 local R = regexp_builder.R
 local S = regexp_builder.S
 
-local p = (P"X" ^{2,4}) ^"*"
+local p = P"a"^"*"
+-- local p = (P"X" ^{2,4}) ^"*"
 -- local p = P"abcdef"
+-- local p = (S"ab"^"*" * P"c"^"?")^"*"
+-- local p = (P"a"^"*")^"*"
 print(dumper.encode(p, { pretty = true, stable = ture }))
 -- print("--")
 -- dfs_recursive(p)
@@ -141,12 +145,21 @@ local epsilons = { data.epsilons1, data.epsilons2 }
 local n = data.max_state
 -- print(dumper.encode(transitions, { pretty = true, stable = ture }))
 
-local out = assert(io.open("test.dot", "w"))
+print(data.start_state, data.accept_state)
+
+local epsilon_closures, dfa_transitions, max_dfa, dfa_accepts = regexp.nfa_to_dfa(data)
+-- print(dumper.encode(dfa_transitions, { pretty = true, stable = true }))
+print(dumper.encode(dfa_accepts, { pretty = true, stable = true }))
+
+local out = assert(io.open("test-nfa.dot", "w"))
 out:write([[
 digraph g {
 graph [rankdir=LR];
 ]])
 for i = 1, n do
+  local c = keys(epsilon_closures[i])
+  table.sort(c)
+  out:write(("%d [label=<%d / {%s}>];\n"):format(i, i, table.concat(c,",")))
   local e1 = epsilons[1][i]
   local e2 = epsilons[2][i]
   if e1 then
@@ -168,3 +181,83 @@ for i = 1, n do
 end
 out:write("}\n")
 out:close()
+
+local out = assert(io.open("test-dfa.dot", "w"))
+out:write([[
+digraph g {
+graph [rankdir=LR];
+]])
+for i = 1, max_dfa do
+  if dfa_accepts[i] then
+    out:write(("%d[peripheries=2];\n"):format(i))
+  end
+  local transition = {}
+  for j = 0, 255 do
+    local t = dfa_transitions[j][i]
+    if t then
+      local x = transition[t]
+      if not x then
+        x = {}
+        transition[t] = x
+      end
+      x[#x + 1] = j
+    end
+  end
+  for k, v in pairs(transition) do
+    out:write(("%d->%d[label=<%s>];\n"):format(i, k, string.char(unpack(v))))
+  end
+end
+out:write("}\n")
+out:close()
+
+-- finish vertexでepsilon closure
+--
+local function graph_dfs_stack(data, u)
+  local epsilons1 = data.epsilons1
+  local epsilons2 = data.epsilons2
+  local conditions = data.conditions
+  local transitions = data.transitions
+
+  local stack1 = { u }
+  local stack2 = {}
+  local color = { [u] = true }
+
+  while true do
+    local u = stack1[#stack1]
+    if u == nil then
+      break
+    end
+
+    -- stack1[#stack1] = nil
+
+    if u == stack2[#stack2] then
+      stack1[#stack1] = nil
+      stack2[#stack2] = nil
+      print("u", u)
+    else
+      local t = {}
+      local v = transitions[u]
+      if v then
+        t[#t + 1] = v
+      end
+      local v = epsilons1[u]
+      if v then
+        t[#t + 1] = v
+      end
+      local v = epsilons2[u]
+      if v then
+        t[#t + 1] = v
+      end
+      for i = 1, #t do
+        local v = t[i]
+        if not color[v] then
+          color[v] = true
+          stack1[#stack1 + 1] = v
+        end
+      end
+      stack2[#stack2 + 1] = u
+    end
+  end
+end
+
+-- graph_dfs_stack(data, data.start_state)
