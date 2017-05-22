@@ -63,7 +63,6 @@ function class.tree_to_nfa(root)
     if node == stack2[n2] then
       stack1[n1] = nil
       stack2[n2] = nil
-      -- finish vertex
       if tag == 2 then -- "concat"
         node.u = a.u
         node.v = b.v
