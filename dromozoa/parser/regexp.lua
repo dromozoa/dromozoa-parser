@@ -291,9 +291,10 @@ function class.minimize_dfa(dfa)
 
     for i = 1, #partitions do
       local partition = partitions[i]
-      for i = 1, #partition do
+      local n = #partition
+      for i = 1, n - 1 do
         local x = partition[i]
-        for j = 1, i - 1 do
+        for j = i + 1, n do
           local y = partition[j]
           local same_group = true
           for char = 0, 255 do
@@ -316,6 +317,7 @@ function class.minimize_dfa(dfa)
                 partition[#partition + 1] = y
                 new_partition_table[y] = gx
               else
+                print(("x,y,gx,gy=%d,%d,%d,%d"):format(x, y, gx, gy))
                 assert(gx == gy)
               end
             elseif gy ~= nil then
