@@ -142,7 +142,6 @@ print(dumper.encode(p, { pretty = true, stable = ture }))
 -- dfs_stack(p)
 
 local data = regexp.tree_to_nfa(p)
-local conditions = data.conditions
 local transitions = data.transitions
 local epsilons = { data.epsilons1, data.epsilons2 }
 local n = data.max_state
@@ -186,15 +185,20 @@ for i = 1, n do
   if e2 then
     out:write(("%d->%d;\n"):format(i, e2))
   end
-  local condition = conditions[i]
-  if condition then
-    local label = {}
-    for j = 0, 255 do
-      if condition[j] then
-        label[#label + 1] = j
+  local transition = {}
+  for j = 0, 255 do
+    local t = transitions[j][i]
+    if t then
+      local x = transition[t]
+      if not x then
+        x = {}
+        transition[t] = x
       end
+      x[#x + 1] = j
     end
-    out:write(("%d->%d[label=<%s>];\n"):format(i, transitions[i], string.char(unpack(label))))
+  end
+  for k, v in pairs(transition) do
+    out:write(("%d->%d[label=<%s>];\n"):format(i, k, string.char(unpack(v))))
   end
 end
 out:write("}\n")

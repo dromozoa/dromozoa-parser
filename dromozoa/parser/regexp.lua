@@ -44,8 +44,10 @@ function class.tree_to_nfa(root)
   local n = 0
   local epsilons1 = {}
   local epsilons2 = {}
-  local conditions = {}
   local transitions = {}
+  for char = 0, 255 do
+    transitions[char] = {}
+  end
 
   local stack1 = { root }
   local stack2 = {}
@@ -75,8 +77,9 @@ function class.tree_to_nfa(root)
         local v = n
         node.v = v
         if tag == 1 then -- "["
-          conditions[u] = a
-          transitions[u] = v
+          for char in pairs(a) do
+            transitions[char][u] = v
+          end
         elseif tag == 3 then -- "|"
           epsilons1[u] = a.u
           epsilons2[u] = b.u
@@ -109,7 +112,6 @@ function class.tree_to_nfa(root)
   return {
     epsilons1 = epsilons1;
     epsilons2 = epsilons2;
-    conditions = conditions;
     transitions = transitions;
     max_state = n;
     start_state = root.u;
@@ -155,7 +157,6 @@ end
 function class.nfa_to_dfa(nfa)
   local nfa_epsilons1 = nfa.epsilons1
   local nfa_epsilons2 = nfa.epsilons2
-  local nfa_conditions = nfa.conditions
   local nfa_transitions = nfa.transitions
   local nfa_max_state = nfa.max_state
   local nfa_start_state = nfa.start_state
@@ -222,9 +223,9 @@ function class.nfa_to_dfa(nfa)
       local vset = {}
       for j = 1, #useq do
         local w = useq[j]
-        local condition = nfa_conditions[w]
-        if condition and condition[i] then
-          for k in pairs(epsilon_closures[nfa_transitions[w]]) do
+        local transition = nfa_transitions[i][w]
+        if transition then
+          for k in pairs(epsilon_closures[transition]) do
             vset[k] = true
           end
         end
