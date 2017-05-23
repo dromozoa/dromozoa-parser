@@ -406,7 +406,7 @@ function class.minimize_dfa(dfa)
   return {
     transitions = new_transitions,
     max_state = max_state;
-    start_state = partition_table[start_state];
+    start_state = partition_table[dfa.start_state];
     accept_states = new_accept_states;
   }, partitions
 end

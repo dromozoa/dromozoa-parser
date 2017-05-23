@@ -20,6 +20,7 @@ local dumper = require "dromozoa.commons.dumper"
 local unpack = require "dromozoa.commons.unpack"
 local regexp = require "dromozoa.parser.regexp"
 local regexp_builder = require "dromozoa.parser.regexp_builder"
+local regexp_writer = require "dromozoa.parser.regexp_writer"
 
 local function dfs_recursive(node)
   local tag = node[1]
@@ -159,78 +160,20 @@ local dfa_accepts = dfa.accept_states
 -- print(dumper.encode(dfa_transitions, { pretty = true, stable = true }))
 -- print(dumper.encode(dfa_accepts, { pretty = true, stable = true }))
 
+regexp_writer.write_automaton(assert(io.open("test-dfa1.dot", "w")), dfa):close()
+
 dfa, partitions = regexp.minimize_dfa(dfa)
 local dfa_transitions = dfa.transitions
 local max_dfa = dfa.max_state
 local dfa_accepts = dfa.accept_states
 
 -- print("--")
--- print(dumper.encode(partitions, { pretty = true, stable = true }))
+print(dumper.encode(dfa, { pretty = true, stable = true }))
 -- print(dumper.encode(dfa_accepts, { pretty = true, stable = true }))
 
-local out = assert(io.open("test-nfa.dot", "w"))
-out:write([[
-digraph g {
-graph [rankdir=LR];
-]])
-for i = 1, n do
-  local c = keys(epsilon_closures[i])
-  table.sort(c)
-  out:write(("%d [label=<%d / {%s}>];\n"):format(i, i, table.concat(c,",")))
-  local e1 = epsilons[1][i]
-  local e2 = epsilons[2][i]
-  if e1 then
-    out:write(("%d->%d;\n"):format(i, e1))
-  end
-  if e2 then
-    out:write(("%d->%d;\n"):format(i, e2))
-  end
-  local transition = {}
-  for j = 0, 255 do
-    local t = transitions[j][i]
-    if t then
-      local x = transition[t]
-      if not x then
-        x = {}
-        transition[t] = x
-      end
-      x[#x + 1] = j
-    end
-  end
-  for k, v in pairs(transition) do
-    out:write(("%d->%d[label=<%s>];\n"):format(i, k, string.char(unpack(v))))
-  end
-end
-out:write("}\n")
-out:close()
+regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), data):close()
 
-local out = assert(io.open("test-dfa.dot", "w"))
-out:write([[
-digraph g {
-graph [rankdir=LR];
-]])
-for i = 1, max_dfa do
-  if dfa_accepts[i] then
-    out:write(("%d[peripheries=2];\n"):format(i))
-  end
-  local transition = {}
-  for j = 0, 255 do
-    local t = dfa_transitions[j][i]
-    if t then
-      local x = transition[t]
-      if not x then
-        x = {}
-        transition[t] = x
-      end
-      x[#x + 1] = j
-    end
-  end
-  for k, v in pairs(transition) do
-    out:write(("%d->%d[label=<%s>];\n"):format(i, k, string.char(unpack(v))))
-  end
-end
-out:write("}\n")
-out:close()
+regexp_writer.write_automaton(assert(io.open("test-dfa2.dot", "w")), dfa):close()
 
 -- finish vertexでepsilon closure
 --
