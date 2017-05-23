@@ -202,22 +202,22 @@ function class.nfa_to_dfa(nfa)
     epsilon_closures[state] = epsilon_closure
   end
 
-  local n = 1
+  local max_state = 1
 
   local uset = epsilon_closures[nfa.start_state]
   local useq = set_to_seq(uset)
   local maps = {}
-  insert(maps, useq, n)
+  insert(maps, useq, max_state)
 
   local new_transitions = {}
-  for i = 0, 255 do
+  for i = min_char, max_char do
     new_transitions[i] = {}
   end
 
   local new_accept_states = {}
   for k in pairs(uset) do
     if accept_states[k] then
-      new_accept_states[n] = true
+      new_accept_states[max_state] = true
       break
     end
   end
@@ -225,32 +225,35 @@ function class.nfa_to_dfa(nfa)
   local stack = { useq }
 
   while true do
-    local m = #stack
-    local useq = stack[m]
+    local n = #stack
+    local useq = stack[n]
     if useq == nil then
       break
     end
-    stack[m] = nil
+    stack[n] = nil
     local u = find(maps, useq)
-    for char = 0, 255 do
-      local vset = {}
+    for char = min_char, max_char do
+      local vset
       for i = 1, #useq do
         local transition = transitions[char][useq[i]]
         if transition then
           for k in pairs(epsilon_closures[transition]) do
+            if vset == nil then
+              vset = {}
+            end
             vset[k] = true
           end
         end
       end
-      local vseq = set_to_seq(vset)
-      if #vseq > 0 then
+      if vset then
+        local vseq = set_to_seq(vset)
         local v = find(maps, vseq)
         if v == nil then
-          n = n + 1
-          v = n
+          max_state = max_state + 1
+          v = max_state
           insert(maps, vseq, v)
-          stack[m] = vseq
-          m = m + 1
+          stack[n] = vseq
+          n = n + 1
           for k in pairs(vset) do
             if accept_states[k] then
               new_accept_states[v] = true
@@ -265,7 +268,7 @@ function class.nfa_to_dfa(nfa)
 
   return {
     transitions = new_transitions;
-    max_state = n;
+    max_state = max_state;
     start_state = 1;
     accept_states = new_accept_states;
   }, epsilon_closures
@@ -307,7 +310,7 @@ function class.minimize_dfa(dfa)
         for j = i + 1, n do
           local y = partition[j]
           local same_group = true
-          for char = 0, 255 do
+          for char = min_char, max_char do
             local tx = transitions[char][x]
             local ty = transitions[char][y]
             if partition_table[tx] ~= partition_table[ty] then
@@ -359,7 +362,7 @@ function class.minimize_dfa(dfa)
   until done
 
   local new_transitions = {}
-  for char = 0, 255 do
+  for char = min_char, max_char do
     new_transitions[char] = {}
   end
   local new_accept_states = {}
@@ -371,7 +374,7 @@ function class.minimize_dfa(dfa)
     for k = 2, #p do
       assert(partition_table[p[k]] == j)
     end
-    for char = 0, 255 do
+    for char = min_char, max_char do
       local t = transitions[char][p[1]]
       if t then
         new_transitions[char][i] = partition_table[t]
