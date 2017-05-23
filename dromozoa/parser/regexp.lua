@@ -154,8 +154,9 @@ local function insert(map, key, value)
 end
 
 function class.nfa_to_dfa(nfa)
-  local nfa_epsilons1 = nfa.epsilons[1]
-  local nfa_epsilons2 = nfa.epsilons[2]
+  local nfa_epsilons = nfa.epsilons
+  local nfa_epsilons1 = nfa_epsilons[1]
+  local nfa_epsilons2 = nfa_epsilons[2]
   local nfa_transitions = nfa.transitions
   local nfa_max_state = nfa.max_state
   local nfa_start_state = nfa.start_state
