@@ -88,7 +88,7 @@ function class.new(root)
 end
 
 function class.tree_to_nfa(root)
-  local n = 0
+  local max_state = 0
   local epsilons1 = {}
   local epsilons2 = {}
   local transitions = {}
@@ -117,11 +117,11 @@ function class.tree_to_nfa(root)
         node.v = b.v
         epsilons1[a.v] = b.u
       else
-        n = n + 1
-        local u = n
+        max_state = max_state + 1
+        local u = max_state
         node.u = u
-        n = n + 1
-        local v = n
+        max_state = max_state + 1
+        local v = max_state
         node.v = v
         if tag == 1 then -- "["
           for char in pairs(a) do
@@ -157,9 +157,9 @@ function class.tree_to_nfa(root)
   end
 
   return {
+    max_state = max_state;
     epsilons = { epsilons1, epsilons2 };
     transitions = transitions;
-    max_state = n;
     start_state = root.u;
     accept_states = { [root.v] = true };
   }
