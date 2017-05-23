@@ -202,12 +202,12 @@ function class.nfa_to_dfa(nfa)
     epsilon_closures[state] = epsilon_closure
   end
 
-  local map = {}
-
   local n = 1
-  local set = epsilon_closures[nfa_start_state]
-  local seq = set_to_seq(set)
-  insert(map, seq, n)
+
+  local uset = epsilon_closures[nfa_start_state]
+  local useq = set_to_seq(uset)
+  local maps = {}
+  insert(maps, useq, n)
 
   local transitions = {}
   for i = 0, 255 do
@@ -215,14 +215,14 @@ function class.nfa_to_dfa(nfa)
   end
 
   local accept_states = {}
-  for k in pairs(set) do
+  for k in pairs(uset) do
     if nfa_accept_states[k] then
       accept_states[n] = true
       break
     end
   end
 
-  local stack = { seq }
+  local stack = { useq }
 
   while true do
     local m = #stack
@@ -231,12 +231,11 @@ function class.nfa_to_dfa(nfa)
       break
     end
     stack[m] = nil
-    local u = find(map, useq)
-    for i = 0, 255 do
+    local u = find(maps, useq)
+    for char = 0, 255 do
       local vset = {}
-      for j = 1, #useq do
-        local w = useq[j]
-        local transition = nfa_transitions[i][w]
+      for i = 1, #useq do
+        local transition = nfa_transitions[char][useq[i]]
         if transition then
           for k in pairs(epsilon_closures[transition]) do
             vset[k] = true
@@ -245,11 +244,11 @@ function class.nfa_to_dfa(nfa)
       end
       local vseq = set_to_seq(vset)
       if #vseq > 0 then
-        local v = find(map, vseq)
+        local v = find(maps, vseq)
         if v == nil then
           n = n + 1
           v = n
-          insert(map, vseq, v)
+          insert(maps, vseq, v)
           stack[m] = vseq
           m = m + 1
           for k in pairs(vset) do
@@ -259,7 +258,7 @@ function class.nfa_to_dfa(nfa)
             end
           end
         end
-        transitions[i][u] = v
+        transitions[char][u] = v
       end
     end
   end
