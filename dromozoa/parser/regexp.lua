@@ -77,6 +77,19 @@ local function insert(maps, key, value)
   map[key[n]] = value
 end
 
+local function merge_accept_state(accept_states, set)
+  local accept
+  for k in pairs(set) do
+    local v = accept_states[k]
+    if v then
+      if accept == nil or accept > v then
+        accept = v
+      end
+    end
+  end
+  return accept
+end
+
 local class = {
   tag_names = tag_names;
   tag_table = tag_table;
@@ -87,7 +100,11 @@ function class.new(root)
   return {}
 end
 
-function class.tree_to_nfa(root)
+function class.tree_to_nfa(root, accept)
+  if accept == nil then
+    accept = 1
+  end
+
   local max_state = 0
   local epsilons1 = {}
   local epsilons2 = {}
@@ -161,7 +178,7 @@ function class.tree_to_nfa(root)
     epsilons = { epsilons1, epsilons2 };
     transitions = transitions;
     start_state = root.u;
-    accept_states = { [root.v] = true };
+    accept_states = { [root.v] = accept };
   }
 end
 
@@ -213,13 +230,9 @@ function class.nfa_to_dfa(nfa)
   for char = min_char, max_char do
     new_transitions[char] = {}
   end
-  local new_accept_states = {}
-  for k in pairs(uset) do
-    if accept_states[k] then
-      new_accept_states[max_state] = true
-      break
-    end
-  end
+  local new_accept_states = {
+    [max_state] = merge_accept_state(accept_states, uset);
+  }
 
   local stack = { useq }
 
@@ -253,12 +266,7 @@ function class.nfa_to_dfa(nfa)
           insert(maps, vseq, v)
           stack[n] = vseq
           n = n + 1
-          for k in pairs(vset) do
-            if accept_states[k] then
-              new_accept_states[v] = true
-              break
-            end
-          end
+          new_accept_states[v] = merge_accept_state(accept_states, vset)
         end
         new_transitions[char][u] = v
       end
@@ -277,22 +285,41 @@ function class.minimize_dfa(dfa)
   local transitions = dfa.transitions
   local accept_states = dfa.accept_states
 
-  local partitions = { {} }
-  local partition_table = {}
+  local max_partition = 0
+  local accept_partitions = {}
+  local partition
 
   for state = 1, dfa.max_state do
-    if accept_states[state] then
-      local partition = partitions[1]
-      partition[#partition + 1] = state
-      partition_table[state] = 1
-    else
-      local partition = partitions[2]
+    local accept = accept_states[state]
+    if accept then
+      local partition = accept_partitions[accept]
       if partition == nil then
+        max_partition = max_partition + 1
         partition = {}
-        partitions[2] = partition
+        accept_partitions[accept] = partition
       end
       partition[#partition + 1] = state
-      partition_table[state] = 2
+    else
+      if partition == nil then
+        partition = {}
+      end
+      partition[#partition + 1] = state
+    end
+  end
+
+  local partitions = {}
+  for _, partition in pairs(accept_partitions) do
+    partitions[#partitions + 1] = partition
+  end
+  if partition then
+    partitions[#partitions + 1] = partition
+  end
+
+  local partition_table = {}
+  for i = 1, #partitions do
+    local partition = partitions[i]
+    for j = 1, #partition do
+      partition_table[partition[j]] = i
     end
   end
 
@@ -373,9 +400,7 @@ function class.minimize_dfa(dfa)
         new_transitions[char][i] = partition_table[transition]
       end
     end
-    if accept_states[state] then
-      new_accept_states[i] = true
-    end
+    new_accept_states[i] = accept_states[state]
   end
 
   return {
