@@ -129,19 +129,29 @@ local function set_to_seq(set)
   return key
 end
 
-local function find(map, key)
-  for i = 1, #key do
-    local k = key[i]
-    map = map[k]
+local function find(maps, key)
+  local n = #key
+  local map = maps[n]
+  if map == nil then
+    return
+  end
+  for i = 1, n - 1 do
+    map = map[key[i]]
     if map == nil then
       return
     end
   end
-  return map[0]
+  return map[key[n]]
 end
 
-local function insert(map, key, value)
-  for i = 1, #key do
+local function insert(maps, key, value)
+  local n = #key
+  local map = maps[n]
+  if map == nil then
+    map = {}
+    maps[n] = map
+  end
+  for i = 1, n - 1 do
     local k = key[i]
     local m = map[k]
     if m == nil then
@@ -150,7 +160,7 @@ local function insert(map, key, value)
     end
     map = m
   end
-  map[0] = value
+  map[key[n]] = value
 end
 
 function class.nfa_to_dfa(nfa)
