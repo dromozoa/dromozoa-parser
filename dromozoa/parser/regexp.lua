@@ -189,7 +189,6 @@ function class.nfa_to_dfa(nfa)
   local transitions = nfa.transitions
   local accept_states = nfa.accept_states
 
-  -- [TODO] compute ondemand
   local epsilon_closures = {}
   for state = 1, nfa.max_state do
     local stack = { state }
