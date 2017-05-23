@@ -267,8 +267,8 @@ function class.nfa_to_dfa(nfa)
   end
 
   return {
-    transitions = new_transitions;
     max_state = max_state;
+    transitions = new_transitions;
     start_state = 1;
     accept_states = new_accept_states;
   }, epsilon_closures
