@@ -210,10 +210,9 @@ function class.nfa_to_dfa(nfa)
   insert(maps, useq, max_state)
 
   local new_transitions = {}
-  for i = min_char, max_char do
-    new_transitions[i] = {}
+  for char = min_char, max_char do
+    new_transitions[char] = {}
   end
-
   local new_accept_states = {}
   for k in pairs(uset) do
     if accept_states[k] then
@@ -276,25 +275,24 @@ end
 
 function class.minimize_dfa(dfa)
   local transitions = dfa.transitions
-  local max_state = dfa.max_state
   local accept_states = dfa.accept_states
 
   local partitions = { {} }
   local partition_table = {}
 
-  for i = 1, max_state do
-    if accept_states[i] then
+  for state = 1, dfa.max_state do
+    if accept_states[state] then
       local partition = partitions[1]
-      partition[#partition + 1] = i
-      partition_table[i] = 1
+      partition[#partition + 1] = state
+      partition_table[state] = 1
     else
       local partition = partitions[2]
       if partition == nil then
         partition = {}
         partitions[2] = partition
       end
-      partition[#partition + 1] = i
-      partition_table[i] = 2
+      partition[#partition + 1] = state
+      partition_table[state] = 2
     end
   end
 
@@ -330,7 +328,6 @@ function class.minimize_dfa(dfa)
                 assert(gx == gy)
               end
             elseif gy ~= nil then
-              assert(gx == nil)
               local partition = new_partitions[gy]
               partition[#partition + 1] = x
               new_partition_table[x] = gy
@@ -353,7 +350,6 @@ function class.minimize_dfa(dfa)
           new_partition_table[x] = g
         end
       end
-
     end
 
     local done = #partitions == #new_partitions
@@ -361,32 +357,30 @@ function class.minimize_dfa(dfa)
     partition_table = new_partition_table
   until done
 
+  local max_state = #partitions
   local new_transitions = {}
   for char = min_char, max_char do
     new_transitions[char] = {}
   end
   local new_accept_states = {}
 
-  local n = #partitions
-  for i = 1, n do
-    local p = partitions[i]
-    local j = partition_table[p[1]]
-    for k = 2, #p do
-      assert(partition_table[p[k]] == j)
-    end
+  for i = 1, max_state do
+    local partition = partitions[i]
+    local state = partition[1]
     for char = min_char, max_char do
-      local t = transitions[char][p[1]]
-      if t then
-        new_transitions[char][i] = partition_table[t]
+      local transition = transitions[char][state]
+      if transition then
+        new_transitions[char][i] = partition_table[transition]
       end
     end
-    if accept_states[p[1]] then
+    if accept_states[state] then
       new_accept_states[i] = true
     end
   end
+
   return {
     transitions = new_transitions,
-    max_state = n;
+    max_state = max_state;
     start_state = partition_table[start_state];
     accept_states = new_accept_states;
   }, partitions
