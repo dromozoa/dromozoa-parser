@@ -29,6 +29,53 @@ for i = 1, #tag_names do
 end
 
 local max_terminal_tag = 1
+local min_char = 0
+local max_char = 255
+
+local function set_to_seq(set)
+  local n = 0
+  local key = {}
+  for k in pairs(set) do
+    n = n + 1
+    key[n] = k
+  end
+  table.sort(key)
+  return key
+end
+
+local function find(maps, key)
+  local n = #key
+  local map = maps[n]
+  if map == nil then
+    return
+  end
+  for i = 1, n - 1 do
+    map = map[key[i]]
+    if map == nil then
+      return
+    end
+  end
+  return map[key[n]]
+end
+
+local function insert(maps, key, value)
+  local n = #key
+  local map = maps[n]
+  if map == nil then
+    map = {}
+    maps[n] = map
+  end
+  for i = 1, n - 1 do
+    local k = key[i]
+    local m = map[k]
+    if m == nil then
+      m = {}
+      map[k] = m
+    end
+    map = m
+  end
+  map[key[n]] = value
+end
 
 local class = {
   tag_names = tag_names;
@@ -45,7 +92,7 @@ function class.tree_to_nfa(root)
   local epsilons1 = {}
   local epsilons2 = {}
   local transitions = {}
-  for char = 0, 255 do
+  for char = min_char, max_char do
     transitions[char] = {}
   end
 
@@ -116,51 +163,6 @@ function class.tree_to_nfa(root)
     start_state = root.u;
     accept_states = { [root.v] = true };
   }
-end
-
-local function set_to_seq(set)
-  local n = 0
-  local key = {}
-  for k in pairs(set) do
-    n = n + 1
-    key[n] = k
-  end
-  table.sort(key)
-  return key
-end
-
-local function find(maps, key)
-  local n = #key
-  local map = maps[n]
-  if map == nil then
-    return
-  end
-  for i = 1, n - 1 do
-    map = map[key[i]]
-    if map == nil then
-      return
-    end
-  end
-  return map[key[n]]
-end
-
-local function insert(maps, key, value)
-  local n = #key
-  local map = maps[n]
-  if map == nil then
-    map = {}
-    maps[n] = map
-  end
-  for i = 1, n - 1 do
-    local k = key[i]
-    local m = map[k]
-    if m == nil then
-      m = {}
-      map[k] = m
-    end
-    map = m
-  end
-  map[key[n]] = value
 end
 
 function class.nfa_to_dfa(nfa)
