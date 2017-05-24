@@ -21,11 +21,17 @@ local sequence = require "dromozoa.commons.sequence"
 local grammar = require "dromozoa.parser.grammar"
 local precedence_builder = require "dromozoa.parser.precedence_builder"
 local production_builder = require "dromozoa.parser.production_builder"
+local regexp = require "dromozoa.parser.regexp"
+local regexp_builder = require "dromozoa.parser.regexp_builder"
 local scanner = require "dromozoa.parser.scanner"
 local scanner_builder = require "dromozoa.parser.scanner_builder"
 local writer = require "dromozoa.parser.writer"
 
-local class = {}
+local class = {
+  P = regexp_builder.P;
+  R = regexp_builder.R;
+  S = regexp_builder.S;
+}
 
 function class.new()
   return {
@@ -158,6 +164,10 @@ function class:build(start_name)
     for item in scanner_builder.items:each() do
       local item = clone(item)
       item.symbol = symbol_table[item.name]
+      if item.symbol == nil then
+        assert(item.action == "ignore")
+        item.symbol = 0
+      end
       item.name = nil
       if item.action == "call" then
         local arguments = item.arguments
@@ -170,7 +180,29 @@ function class:build(start_name)
       end
       scanner:push(item)
     end
-    scanners:push(scanner)
+    local nfa = regexp.tree_to_nfa(scanner[1].tree, scanner[1].symbol)
+    for i = 2, #scanner do
+      regexp.union(nfa, regexp.tree_to_nfa(scanner[i].tree, scanner[i].symbol))
+    end
+    local dfa = regexp.nfa_to_dfa(nfa)
+    local dfa = regexp.minimize_dfa(dfa)
+
+    --  1 ignore
+    --  2 ret
+    -- >2 call
+
+    local actions = {}
+    for item in scanner:each() do
+      if item.action == "ignore" then
+        actions[0] = 1
+      elseif item.action == "ret" then
+        actions[item.symbol] = 2
+      elseif item.action == "call" then
+        actions[item.symbol] = 2 + item.arguments[1]
+      end
+    end
+
+    scanners:push({ dfa = dfa, actions = actions })
   end
 
   local symbol_precedences = {}

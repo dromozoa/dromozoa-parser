@@ -38,32 +38,38 @@ function class:scan(s, init)
   local scanners = self.scanners
 
   local scanner = data[scanners:top()]
-  local result_item
-  local result_j
-  for item in scanner:each() do
-    local i, j = s:find(item.pattern, init)
-    if i == init then
-      if result_j == nil then
-        result_item = item
-        result_j = j
-      elseif result_j < j then
-        result_item = item
-        result_j = j
+  local dfa = scanner.dfa
+  local transitions = dfa.transitions
+  local accept_states = dfa.accept_states
+  local actions = scanner.actions
+
+  local state = dfa.start_state
+  for i = init, #s + 1 do
+    local n
+    if i <= #s then
+      local c = s:byte(i)
+      n = transitions[c][state]
+    end
+    if n == nil then
+      local a = accept_states[state]
+      if a then
+        local action = actions[a]
+        if action then
+          if action == 1 then -- ignore
+            return self:scan(s, i)
+          elseif action == 2 then -- ret
+            scanners:pop()
+          else -- call
+            scanners:push(action - 2)
+          end
+        end
+        return a, init, i - 1
+      else
+        return nil, "scanner error", init
       end
+    else
+      state = n
     end
-  end
-  if result_item then
-    local action = result_item.action
-    if action == "ignore" then
-      return self:scan(s, result_j + 1)
-    elseif action == "call" then
-      scanners:push(result_item.arguments[1])
-    elseif action == "ret" then
-      scanners:pop()
-    end
-    return result_item.symbol, init, result_j
-  else
-    return nil, "scanner error", init
   end
 end
 

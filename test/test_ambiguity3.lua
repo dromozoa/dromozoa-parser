@@ -21,7 +21,9 @@ local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
 
-_ :pat "%s+" :ignore ()
+local S = builder.S
+
+_ :pat(S" \t\n\v\f\r"^"+") :ignore()
   :lit "=="
   :lit "!="
   :lit "<"

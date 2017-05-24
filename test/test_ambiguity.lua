@@ -20,13 +20,16 @@ local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
+local P = builder.P
+local R = builder.R
+local S = builder.S
 
-_ :pat "%s+" :ignore ()
+_ :pat(S" \t\n\v\f\r"^"+") :ignore()
   :lit "*"
   :lit "+"
   :lit "("
   :lit ")"
-  :pat "%a+" :as "id"
+  :pat(R"09"^"+") :as "id"
 
 _ :left("+")
   :left("*")
