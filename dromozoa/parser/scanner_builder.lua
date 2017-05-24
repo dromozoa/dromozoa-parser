@@ -16,11 +16,14 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local sequence = require "dromozoa.commons.sequence"
+local regexp_builder = require "dromozoa.parser.regexp_builder"
 
-local function rule(self, name, pattern)
+local P = regexp_builder.P
+
+local function rule(self, name, tree)
   self.items:push({
     name = name;
-    pattern = "^" .. pattern;
+    tree = tree;
   })
   return self
 end
@@ -35,11 +38,11 @@ function class.new(name)
 end
 
 function class:lit(literal)
-  return rule(self, literal, literal:gsub("%W", "%%%0"))
+  return rule(self, literal, P(literal))
 end
 
 function class:pat(pattern)
-  return rule(self, pattern, pattern)
+  return rule(self, nil, P(pattern))
 end
 
 function class:as(name)

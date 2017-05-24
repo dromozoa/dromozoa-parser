@@ -17,23 +17,28 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
+local regexp_writer = require "dromozoa.parser.regexp_writer"
 
 local _ = builder()
+local P = builder.P
+local R = builder.R
+local S = builder.S
 
-_ :pat "%s+" :ignore()
+_:scanner ()
+  :pat(S" \t\n\v\f\r"^"+") :ignore()
   :lit "*"
   :lit "+"
   :lit "("
   :lit ")"
-  :pat "[0-9]%d*" :as "integer"
+  :pat(R"09"^"+") :as "integer"
   :lit '"' :call "string"
   :lit "r"
-  :pat "[a-z]+" :as "identifier"
+  :pat(R"az"^"+") :as "identifier"
 
 _:scanner "string"
   :lit '"' :ret()
   :lit '\\"'
-  :pat '[^\\"]+' :as "string_content"
+  :pat((-S'\\"')^"+") :as "string_content"
 
 _ "E"
   :_ "E" "*" "E"
@@ -51,7 +56,11 @@ _ "S"
   :_ "string_content"
 
 local scanner, grammar, symbol_names = _:build()
-print(dumper.encode(scanner, { pretty = true, stable = true }))
+-- print(dumper.encode(scanner, { pretty = true, stable = true }))
+
+for i = 1, #scanner.data do
+  regexp_writer.write_automaton(assert(io.open("test-dfa" .. i .. ".dot", "w")), scanner.data[i].dfa):close()
+end
 
 local symbol_names = _.symbol_names
 

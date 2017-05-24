@@ -20,8 +20,7 @@ local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
 
-_ :pat "%s+" :ignore ()
-  :pat "%a+" :as "id"
+_ :lit "id"
   :lit "+"
   :lit "*"
   :lit "("

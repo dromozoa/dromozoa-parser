@@ -411,6 +411,49 @@ function class.minimize_dfa(dfa)
   }, partitions
 end
 
+function class:union(that)
+  local max_state = self.max_state
+  local epsilons = self.epsilons
+  if epsilons == nil then
+    epsilons = {}
+    self.epsilons = {}
+  end
+  local epsilons1 = epsilons[1]
+  local epsilons2 = epsilons[2]
+  local transitions = self.transitions
+  local accept_states = self.accept_states
+
+  max_state = max_state + 1
+  local start_state = max_state
+  epsilons1[start_state] = self.start_state
+  epsilons2[start_state] = that.start_state + max_state
+
+  local that_epsilons = that.epsilons
+  if that_epsilons then
+    for from, to in pairs(that_epsilons[1]) do
+      epsilons1[from + max_state] = to + max_state
+    end
+    for from, to in pairs(that_epsilons[2]) do
+      epsilons2[from + max_state] = to + max_state
+    end
+  end
+
+  local that_transitions = that.transitions
+  for char = min_char, max_char do
+    local transition = transitions[char]
+    for from, to in pairs(that_transitions[char]) do
+      transition[from + max_state] = to + max_state
+    end
+  end
+
+  for state, accept in pairs(that.accept_states) do
+    accept_states[state + max_state] = accept
+  end
+
+  self.max_state = max_state + that.max_state
+  self.start_state = start_state
+end
+
 class.metatable = {
   __index = class;
 }
