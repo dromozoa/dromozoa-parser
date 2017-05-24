@@ -157,10 +157,6 @@ function class.metatable:__unm()
   return self
 end
 
-function class:build()
-  return regexp.tree_to_nfa(self)
-end
-
 return setmetatable(class, {
   __call = function (_, ...)
     return setmetatable(class.new(...), class.metatable)

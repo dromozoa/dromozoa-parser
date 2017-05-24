@@ -20,11 +20,14 @@ local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
+local P = builder.P
+local R = builder.R
+local S = builder.S
 
-_ :pat "%s+" :ignore ()
-  :pat "[1-9]%d*" :as "decimal"
-  :pat "0[0-7]*" :as "octal"
-  :pat "0x%x+" :as "hexadecimal"
+_ :pat(S" \t\n\v\f\r"^"+") :ignore()
+  :pat(R"19" * R"09"^"*") :as "decimal"
+  :pat(P"0" * R"07"^"*") :as "octal"
+  :pat(P"0x" * R"09A-Fa-f"^"*") :as "hexadecimal"
   :lit "*"
   :lit "/"
   :lit "+"
