@@ -16,15 +16,24 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local builder = require "dromozoa.parser.builder_v2"
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
-local _ = builder()
+local class = {}
 
-_:lexer {
-  (S" \t\n\v\f\r" ^ "+") { "skip" };
-  (R"19" * R"09"^"*") :as "decimal";
-  (P"0" * R"07"^"*") :as "octal";
-}
+function class.new(name)
+  return {
+    name = name;
+  }
+end
+
+class.metatable = {}
+
+function class.metatable:__call(that)
+
+  print(dumper.encode(that))
+end
+
+return setmetatable(class, {
+  __call = function (_, name)
+    return setmetatable(class.new(name), class.metatable)
+  end;
+})

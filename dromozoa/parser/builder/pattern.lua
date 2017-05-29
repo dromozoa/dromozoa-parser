@@ -46,6 +46,11 @@ function class.concat(items)
   return concat(items, #items)
 end
 
+function class:as(name)
+  self.name = name
+  return self
+end
+
 class.metatable = {
   __index = class;
 }
@@ -102,6 +107,11 @@ function class.metatable:__pow(that)
     end
     return class.concat(items, n)
   end
+end
+
+function class.metatable:__call(that)
+  self.action = that
+  return self
 end
 
 return setmetatable(class, {
