@@ -29,9 +29,6 @@ for i = 1, #tag_names do
 end
 
 local function concat(items, i)
-  if i == nil then
-    i = #items
-  end
   if i == 1 then
     return items[i]
   else
@@ -45,13 +42,8 @@ function class.new(tag_name, ...)
   return { tag_table[tag_name], ... }
 end
 
-function class.literal(that)
-  local items = {}
-  local n = #that
-  for i = 1, #that do
-    items[i] = class.super.pattern(that:sub(i, i))
-  end
-  return concat(items)
+function class.concat(items)
+  return concat(items, #items)
 end
 
 class.metatable = {
@@ -86,14 +78,14 @@ function class.metatable:__pow(that)
       for i = 1, -that do
         items[i] = self^-1
       end
-      return concat(items)
+      return class.concat(items)
     else
       local items = {}
       for i = 1, that do
         items[i] = self
       end
       items[that + 1] = self^0
-      return concat(items)
+      return class.concat(items)
     end
   else
     local m = that[1]
@@ -108,7 +100,7 @@ function class.metatable:__pow(that)
     for i = m + 1, n do
       items[i] = self^-1
     end
-    return concat(items, n)
+    return class.concat(items, n)
   end
 end
 

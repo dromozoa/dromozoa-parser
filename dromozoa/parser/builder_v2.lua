@@ -18,7 +18,10 @@
 local atom = require "dromozoa.parser.builder.atom"
 local pattern = require "dromozoa.parser.builder.pattern"
 
-local class = {}
+local class = {
+  range = atom.range;
+  set = atom.set;
+}
 
 function class.pattern(that)
   local t = type(that)
@@ -26,25 +29,27 @@ function class.pattern(that)
     if that == 1 then
       return atom.any()
     else
-      return pattern.any(that)
+      local any = atom.any()
+      local items = {}
+      for i = 1, that do
+        items[i] = any
+      end
+      return pattern.concat(items)
     end
   elseif t == "string" then
     if #that == 1 then
       return atom.char(that)
     else
-      return pattern.literal(that)
+      local char = atom.char
+      local items = {}
+      for i = 1, #that do
+        items[i] = char(that:sub(i, i))
+      end
+      return pattern.concat(items)
     end
   else
     return that
   end
-end
-
-function class.range(that)
-  return atom.range(that)
-end
-
-function class.set(that)
-  return atom.set(that)
 end
 
 pattern.super = class
