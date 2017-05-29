@@ -2,17 +2,21 @@
 
 Parser generator toolkit.
 
-## DSL
+## Regular Expression DSL
 
-Operator | Type | Example | Regexp | Description
-----|----|----|----|----
-`P(1)` | atom | `P(1)` | `.` | any
-`P(char)` | atom | `P"x"` | `x` | one character
-`S(set)` | atom | `S"abc"` | `[abc]` | set
-`R(range)` | atom | `R"a-z"` | `[a-z]` | range
-`-atom` | atom | `-P"x"` | `[^x]` | negative
-`atom + atom` | atom | `P"0" + P"9"` | `[09]` | union
-
-
-
-
+| Operator            | Example            | Regular Expression        | Description              |
+|---------------------|--------------------|---------------------------|--------------------------|
+| `P(n)`              | `P(1)`             | `.`                       | any                      |
+| `P(string)`         | `P"abc"`           | `abc`                     | literal                  |
+| `S(set)`            | `S"02468"`         | `[02468]`                 | set                      |
+| `R(range)`          | `R"09af"`          | `[0-9a-f]`                | range                    |
+| `-atom`             | `-R"09af"`         | `[^0-9a-f]`               | character level negation |
+| `pattern * pattern` | `R"az" * R"09az""` | `[a-z][0-9a-z]`           | concatenation            |
+| `pattern + pattern` | `P"abc" + P"def"`  | <code>abc&#124;def</code> | union                    |
+| `pattern^"*"`       | `P"abc"^"*"`       | `(abc)*`                  | `0` or more repetition   |
+| `pattern^"+"`       | `P"abc"^"+"`       | `(abc)+`                  | `1` or more repetition   |
+| `pattern^"?"`       | `P"abc"^"?"`       | `(abc)?`                  | optional                 |
+| `pattern^n`         | `P"abc"^3`         | `(abc){3,}`               | `n` or more repetition   |
+| `pattern^-n`        | `P"abc"^-3`        | `(abc){0,3}`              | `0` to `n` repetition    |
+| `pattern^{n}`       | `P"abc"^{3}`       | `(abc){3}`                | `n` repetition           |
+| `pattern^{m,n}`     | `P"abc"^{3,5}`     | `(abc){3,5}`              | `m` to `n` repetition    |

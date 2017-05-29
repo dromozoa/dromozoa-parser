@@ -21,14 +21,21 @@ local builder = require "dromozoa.parser.builder_v2"
 local P = builder.pattern
 local R = builder.range
 local S = builder.set
+local _ = builder()
 
 local data = {
   -- P(1);
   P"a";
-  P"a" + P"c";
+  P"a" + "c";
+  "b" + P"z";
+  P"a" * P"b";
   -- -P"1";
   -- -R"09azAZ";
+  P"abc"^"+";
+  P"a"^-4
 }
 
-print(dumper.encode(data, { pretty = true, stable = true }))
+_ {
+  P"abc" :as "abc";
+}
 

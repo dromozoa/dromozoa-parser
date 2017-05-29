@@ -25,10 +25,14 @@ function class.pattern(that)
   if t == "number" then
     if that == 1 then
       return atom.any()
+    else
+      return pattern.any(that)
     end
   elseif t == "string" then
     if #that == 1 then
       return atom.char(that)
+    else
+      return pattern.literal(that)
     end
   else
     return that
@@ -42,5 +46,7 @@ end
 function class.set(that)
   return atom.set(that)
 end
+
+pattern.super = class
 
 return class

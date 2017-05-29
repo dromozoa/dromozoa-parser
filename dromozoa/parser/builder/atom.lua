@@ -26,7 +26,7 @@ local class = {}
 local super = pattern
 
 function class.new(set)
-  return { 1, set }
+  return super("[", set)
 end
 
 function class.any()
@@ -56,9 +56,15 @@ function class.set(that)
   return class(set)
 end
 
-class.metatable = {}
+class.metatable = {
+  __mul = super.metatable.__mul;
+  __pow = super.metatable.__pow;
+}
 
 function class.metatable:__add(that)
+  local pattern = class.super.pattern
+  local self = pattern(self)
+  local that = pattern(that)
   if getmetatable(that) == class.metatable then
     local set = {}
     for char in pairs(self[2]) do

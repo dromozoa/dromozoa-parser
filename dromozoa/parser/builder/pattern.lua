@@ -15,18 +15,101 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local tag_names = {
+  "[";
+  "concat";
+  "|";
+  "*";
+  "?";
+}
+
+local tag_table = {}
+for i = 1, #tag_names do
+  tag_table[tag_names[i]] = i
+end
+
+local function concat(items, i)
+  if i == nil then
+    i = #items
+  end
+  if i == 1 then
+    return items[i]
+  else
+    return concat(items, i - 1) * items[i]
+  end
+end
+
 local class = {}
 
 function class.new(tag_name, ...)
-  return { tag_name, ... }
+  return { tag_table[tag_name], ... }
+end
+
+function class.literal(that)
+  local items = {}
+  local n = #that
+  for i = 1, #that do
+    items[i] = class.super.pattern(that:sub(i, i))
+  end
+  return concat(items)
 end
 
 class.metatable = {
   __index = class;
 }
 
-function class.metatable.__add(that)
+function class.metatable:__add(that)
+  local pattern = class.super.pattern
+  local self = pattern(self)
+  local that = pattern(that)
   return class("|", self, that)
+end
+
+function class.metatable:__mul(that)
+  local pattern = class.super.pattern
+  local self = pattern(self)
+  local that = pattern(that)
+  return class("concat", self, that)
+end
+
+function class.metatable:__pow(that)
+  if that == 0 or that == "*" then
+    return class("*", self)
+  elseif that == 1 or that == "+" then
+    return self * class("*", self)
+  elseif that == -1 or that == "?" then
+    return class("?", self)
+  end
+  if type(that) == "number" then
+    if that < 0 then
+      local items = {}
+      for i = 1, -that do
+        items[i] = self^-1
+      end
+      return concat(items)
+    else
+      local items = {}
+      for i = 1, that do
+        items[i] = self
+      end
+      items[that + 1] = self^0
+      return concat(items)
+    end
+  else
+    local m = that[1]
+    local n = that[2]
+    if n == nil then
+      n = m
+    end
+    local items = {}
+    for i = 1, m do
+      items[i] = self
+    end
+    for i = m + 1, n do
+      items[i] = self^-1
+    end
+    return concat(items, n)
+  end
 end
 
 return setmetatable(class, {
