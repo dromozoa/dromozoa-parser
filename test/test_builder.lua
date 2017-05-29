@@ -26,8 +26,8 @@ local data = {
   -- P(1);
   P"a";
   P"a" + P"c";
-  -P"1";
-  -R"09azAZ";
+  -- -P"1";
+  -- -R"09azAZ";
 }
 
 print(dumper.encode(data, { pretty = true, stable = true }))

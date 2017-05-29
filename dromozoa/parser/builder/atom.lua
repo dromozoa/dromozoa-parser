@@ -25,16 +25,16 @@ end
 local class = {}
 local super = pattern
 
-function class.new(tag_name, ...)
-  return super(tag_name, ...)
+function class.new(set)
+  return { 1, set }
 end
 
 function class.any()
-  return class("[", any)
+  return class(any)
 end
 
 function class.char(that)
-  return class("[", { [that:byte()] = true })
+  return class({ [that:byte()] = true })
 end
 
 function class.range(that)
@@ -45,7 +45,7 @@ function class.range(that)
       set[j] = true
     end
   end
-  return class("[", set)
+  return class(set)
 end
 
 function class.set(that)
@@ -53,13 +53,13 @@ function class.set(that)
   for i = 1, #that do
     set[that:byte(i)] = true
   end
-  return class("[", set)
+  return class(set)
 end
 
 class.metatable = {}
 
 function class.metatable:__add(that)
-  if that[1] == "[" then
+  if getmetatable(that) == class.metatable then
     local set = {}
     for char in pairs(self[2]) do
       set[char] = true
@@ -67,7 +67,7 @@ function class.metatable:__add(that)
     for char in pairs(that[2]) do
       set[char] = true
     end
-    return class("[", set)
+    return class(set)
   else
     return super.metatable.__add(self, that)
   end
@@ -81,12 +81,12 @@ function class.metatable:__unm()
       neg[char] = true
     end
   end
-  return class("[", neg)
+  return class(neg)
 end
 
 return setmetatable(class, {
   __index = super;
-  __call = function (_, tag_name, ...)
-    return setmetatable(class.new(tag_name, ...), class.metatable)
+  __call = function (_, set)
+    return setmetatable(class.new(set), class.metatable)
   end;
 })

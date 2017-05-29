@@ -25,6 +25,10 @@ class.metatable = {
   __index = class;
 }
 
+function class.metatable.__add(that)
+  return class("|", self, that)
+end
+
 return setmetatable(class, {
   __call = function (_, tag_name, ...)
     return setmetatable(class.new(tag_name, ...), class.metatable)
