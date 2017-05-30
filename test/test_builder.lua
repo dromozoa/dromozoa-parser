@@ -46,22 +46,3 @@ local data = _:build()
 
 print(dumper.encode(_, { pretty = true, stable = true }))
 print(dumper.encode(data, { pretty = true, stable = true }))
-
---[[
-print(dumper.encode(_.lexers[1], { pretty = true, stable = true }))
-print(dumper.encode(_.lexers[1], { pretty = true, stable = true }))
-print(dumper.encode(_.precedence, { pretty = true, stable = true }))
-
-_:left "*"
-_;left "+"
-
-_"E"
-  :_ "E" "*" "E"
-
-_"E"
-  :_ "E" "*" "E"
-  :_ "E" "+" "E"
-  :_ "(" "E" ")"
-  :_ "decimal"
-  :_ "octal"
-]]
