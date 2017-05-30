@@ -29,7 +29,7 @@ local class = {
 function class.new()
   return {
     lexers = { lexer() };
-    precedence = precedence();
+    precedences = {};
     productions = {};
   }
 end
@@ -74,16 +74,26 @@ function class:lexer(name)
   end
 end
 
+function class:precedence(name, associativity)
+  local precedences = self.precedences
+  local items = {}
+  precedences[#precedences + 1] = {
+    associativity = associativity;
+    items = items
+  }
+  return precedence(self, items)(name)
+end
+
 function class:left(name)
-  return self.precedence:left(name)
+  return self:precedence(name, "left")
 end
 
 function class:right(name)
-  return self.precedence:right(name)
+  return self:precedence(name, "right")
 end
 
 function class:nonassoc(name)
-  return self.precedence:nonassoc(name)
+  return self:precedence(name, "nonassoc")
 end
 
 lexer.super = class

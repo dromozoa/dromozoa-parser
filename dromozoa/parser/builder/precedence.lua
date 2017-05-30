@@ -15,32 +15,25 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function precedence(self, name, associativity)
-  local precedence = self.precedence + 1
-  self.precedence = precedence
-  self.associativity = associativity
-  return self(name)
-end
-
 local class = {}
 
-function class.new()
+function class.new(builder, items)
   return {
-    items = {};
-    precedence = 0;
+    builder = builder;
+    items = items;
   }
 end
 
 function class:left(name)
-  return precedence(self, name, "left")
+  return self.builder:left(name)
 end
 
 function class:right(name)
-  return precedence(self, name, "right")
+  return self.builder:right(name)
 end
 
 function class:nonassoc(name)
-  return precedence(self, name, "nonassoc")
+  return self.builder:nonassoc(name)
 end
 
 class.metatable = {
@@ -49,16 +42,12 @@ class.metatable = {
 
 function class.metatable:__call(name)
   local items = self.items
-  items[#items + 1] = {
-    name = name;
-    precedence = self.precedence;
-    associativity = self.associativity;
-  }
+  items[#items + 1] = name
   return self
 end
 
 return setmetatable(class, {
-  __call = function ()
-    return setmetatable(class.new(), class.metatable)
+  __call = function (_, builder, items)
+    return setmetatable(class.new(builder, items), class.metatable)
   end;
 })
