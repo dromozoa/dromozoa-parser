@@ -42,7 +42,9 @@ _"E"
   :_ "decimal"
   :_ "octal"
 
-print(dumper.encode(_, { pretty = true, stable = true }))
+local data = _()
+
+print(dumper.encode(data, { pretty = true, stable = true }))
 
 --[[
 print(dumper.encode(_.lexers[1], { pretty = true, stable = true }))

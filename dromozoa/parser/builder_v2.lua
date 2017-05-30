@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local atom = require "dromozoa.parser.builder.atom"
+local build = require "dromozoa.parser.builder.build"
 local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
 local precedence = require "dromozoa.parser.builder.precedence"
@@ -104,7 +105,11 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  return production(self.productions, name)
+  if name == nil then
+    return build(self)
+  else
+    return production(self.productions, name)
+  end
 end
 
 return setmetatable(class, {
