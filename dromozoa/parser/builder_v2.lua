@@ -59,17 +59,18 @@ function class.pattern(that)
   end
 end
 
-function class:lexer(that)
+function class:lexer(name)
   local lexers = self.lexers
-  if type(that) == "string" then
-    local lexer = lexer(that)
+  if name == nil then
+    return lexers[1]
+  else
+    local lexer = lexer(name)
     lexers[#lexers + 1] = lexer
     return lexer
-  else
-    return lexers[1](that)
   end
 end
 
+lexer.super = class
 pattern.super = class
 
 class.metatable = {

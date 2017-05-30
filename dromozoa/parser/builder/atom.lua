@@ -57,6 +57,7 @@ function class.set(that)
 end
 
 class.metatable = {
+  __index = class;
   __mul = super.metatable.__mul;
   __pow = super.metatable.__pow;
 }

@@ -22,14 +22,39 @@ local class = {}
 function class.new(name)
   return {
     name = name;
+    items = {};
   }
 end
 
-class.metatable = {}
+function class:_(that)
+  local items = self.items
+  if type(that) == "string" then
+    items[#items + 1] = {
+      name = that;
+      pattern = class.super.pattern(that);
+    }
+  else
+    items[#items + 1] = {
+      pattern = that;
+    }
+  end
+  return self
+end
 
-function class.metatable:__call(that)
+function class:as(name)
+  local items = self.items
+  items[#items].name = name
+  return self
+end
 
-  print(dumper.encode(that))
+class.metatable = {
+  __index = class;
+}
+
+function class.metatable:__call(action)
+  local items = self.items
+  items[#items].action = action
+  return self
 end
 
 return setmetatable(class, {

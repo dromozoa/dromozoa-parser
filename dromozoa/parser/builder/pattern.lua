@@ -46,11 +46,6 @@ function class.concat(items)
   return concat(items, #items)
 end
 
-function class:as(name)
-  self.name = name
-  return self
-end
-
 class.metatable = {
   __index = class;
 }

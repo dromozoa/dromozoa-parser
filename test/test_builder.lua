@@ -23,8 +23,30 @@ local R = builder.range
 local S = builder.set
 local _ = builder()
 
-_:lexer {
-  (S" \t\n\v\f\r" ^ "+") { "skip" };
-  (R"19" * R"09"^"*") :as "decimal";
-  (P"0" * R"07"^"*") :as "octal";
-}
+_:lexer ()
+  :_(S" \t\n\v\f\r"^"+") { "skip" }
+  :_(R"09"^"+") :as "integer"
+  :_"*"
+  :_"+"
+  :_"("
+  :_")"
+
+print(dumper.encode(_.lexers[1], { pretty = true, stable = true }))
+
+--[[
+_ :left "*"
+  :left "+"
+
+_:left "*"
+_;left "+"
+
+_"E"
+  :_ "E" "*" "E"
+
+_"E"
+  :_ "E" "*" "E"
+  :_ "E" "+" "E"
+  :_ "(" "E" ")"
+  :_ "decimal"
+  :_ "octal"
+]]
