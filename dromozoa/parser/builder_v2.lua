@@ -97,6 +97,10 @@ function class:nonassoc(name)
   return self:precedence(name, "nonassoc")
 end
 
+function class:build(start_name)
+  return build(self, start_name)
+end
+
 lexer.super = class
 pattern.super = class
 
@@ -105,11 +109,7 @@ class.metatable = {
 }
 
 function class.metatable:__call(name)
-  if name == nil then
-    return build(self)
-  else
-    return production(self.productions, name)
-  end
+  return production(self.productions, name)
 end
 
 return setmetatable(class, {

@@ -24,7 +24,7 @@ local S = builder.set
 local _ = builder()
 
 _:lexer ()
-  :_(S" \t\n\v\f\r"^"+") { "skip" }
+  :_(S" \t\n\v\f\r"^"+") {}
   :_(R"09"^"+") :as "integer"
   :_"*"
   :_"+"
@@ -42,8 +42,9 @@ _"E"
   :_ "decimal"
   :_ "octal"
 
-local data = _()
+local data = _:build()
 
+print(dumper.encode(_, { pretty = true, stable = true }))
 print(dumper.encode(data, { pretty = true, stable = true }))
 
 --[[
