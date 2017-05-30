@@ -18,6 +18,7 @@
 local atom = require "dromozoa.parser.builder.atom"
 local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
+local precedence = require "dromozoa.parser.builder.precedence"
 
 local class = {
   range = atom.range;
@@ -27,6 +28,7 @@ local class = {
 function class.new()
   return {
     lexers = { lexer() };
+    precedence = precedence();
   }
 end
 
@@ -68,6 +70,18 @@ function class:lexer(name)
     lexers[#lexers + 1] = lexer
     return lexer
   end
+end
+
+function class:left(name)
+  return self.precedence:left(name)
+end
+
+function class:right(name)
+  return self.precedence:right(name)
+end
+
+function class:nonassoc(name)
+  return self.precedence:nonassoc(name)
 end
 
 lexer.super = class

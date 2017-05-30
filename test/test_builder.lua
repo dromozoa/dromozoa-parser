@@ -31,12 +31,13 @@ _:lexer ()
   :_"("
   :_")"
 
+_ :left "*" "/"
+  :left "+" "-"
+
 print(dumper.encode(_.lexers[1], { pretty = true, stable = true }))
+print(dumper.encode(_.precedence, { pretty = true, stable = true }))
 
 --[[
-_ :left "*"
-  :left "+"
-
 _:left "*"
 _;left "+"
 
