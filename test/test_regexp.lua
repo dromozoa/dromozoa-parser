@@ -18,6 +18,7 @@
 local keys = require "dromozoa.commons.keys"
 local dumper = require "dromozoa.commons.dumper"
 local unpack = require "dromozoa.commons.unpack"
+local builder = require "dromozoa.parser.builder_v2"
 local regexp = require "dromozoa.parser.regexp"
 local regexp_builder = require "dromozoa.parser.regexp_builder"
 local regexp_writer = require "dromozoa.parser.regexp_writer"
@@ -124,9 +125,9 @@ local function dfs_stack(u)
   end
 end
 
-local P = regexp_builder.P
-local R = regexp_builder.R
-local S = regexp_builder.S
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
 
 -- local p = P"a"^"*"
 -- local p = (P"X" ^{2,4}) ^"*"
