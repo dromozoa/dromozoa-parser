@@ -414,12 +414,16 @@ end
 function class:union(that)
   local max_state = self.max_state
   local epsilons = self.epsilons
+  local epsilons1
+  local epsilons2
   if epsilons == nil then
-    epsilons = {}
-    self.epsilons = {}
+    epsilons1 = {}
+    epsilons2 = {}
+    self.epsilons = { epsilons1, epsilons2 }
+  else
+    epsilons1 = epsilons[1]
+    epsilons2 = epsilons[2]
   end
-  local epsilons1 = epsilons[1]
-  local epsilons2 = epsilons[2]
   local transitions = self.transitions
   local accept_states = self.accept_states
 
@@ -452,6 +456,7 @@ function class:union(that)
 
   self.max_state = max_state + that.max_state
   self.start_state = start_state
+  return self
 end
 
 class.metatable = {
