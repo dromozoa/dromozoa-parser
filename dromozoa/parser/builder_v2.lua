@@ -19,6 +19,7 @@ local atom = require "dromozoa.parser.builder.atom"
 local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
 local precedence = require "dromozoa.parser.builder.precedence"
+local production = require "dromozoa.parser.builder.production"
 
 local class = {
   range = atom.range;
@@ -29,6 +30,7 @@ function class.new()
   return {
     lexers = { lexer() };
     precedence = precedence();
+    productions = {};
   }
 end
 
@@ -90,6 +92,10 @@ pattern.super = class
 class.metatable = {
   __index = class;
 }
+
+function class.metatable:__call(name)
+  return production(self.productions, name)
+end
 
 return setmetatable(class, {
   __call = function ()

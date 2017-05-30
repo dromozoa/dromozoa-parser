@@ -33,11 +33,22 @@ _:lexer ()
 
 _ :left "*" "/"
   :left "+" "-"
+  :right "UMINUS"
 
+_"E"
+  :_ "E" "*" "E"
+  :_ "E" "+" "E"
+  :_ "(" "E" ")"
+  :_ "decimal"
+  :_ "octal"
+
+print(dumper.encode(_.productions, { pretty = true, stable = true }))
+
+--[[
+print(dumper.encode(_.lexers[1], { pretty = true, stable = true }))
 print(dumper.encode(_.lexers[1], { pretty = true, stable = true }))
 print(dumper.encode(_.precedence, { pretty = true, stable = true }))
 
---[[
 _:left "*"
 _;left "+"
 

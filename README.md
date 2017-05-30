@@ -20,3 +20,21 @@ Parser generator toolkit.
 | `pattern^-n`      | `P"abc"^-3`     | `(abc){0,3}`              | `0` to `n` repetition    |
 | `pattern^{n}`     | `P"abc"^{3}`    | `(abc){3}`                | `n` repetition           |
 | `pattern^{m,n}`   | `P"abc"^{3,5}`  | `(abc){3,5}`              | `m` to `n` repetition    |
+
+## Syntax Tree
+
+| Operator            | Operand |
+|---------------------|---------|
+| `[`                 | a       |
+| `concat`            | ab      |
+| <code>&#124;</code> | ab      |
+| `*`                 | a       |
+| `?`                 | a       |
+| `lexer`             |         |
+| `left`              |         |
+| `right`             |         |
+| `nonassoc`          |         |
+| `:`                 | ab      |
+
+
+
