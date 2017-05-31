@@ -26,7 +26,7 @@ local class = {}
 local super = pattern
 
 function class.new(set)
-  return super("[", set)
+  return super(1, set) -- character class
 end
 
 function class.any()
@@ -54,6 +54,10 @@ function class.set(that)
     set[that:byte(i)] = true
   end
   return class(set)
+end
+
+function class:clone()
+  return class(self[2])
 end
 
 class.metatable = {

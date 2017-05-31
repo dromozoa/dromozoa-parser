@@ -24,11 +24,11 @@ Parser generator toolkit.
 
 ## Regular Expression AST
 
-| Code | Operator            | Operand |
-|-----:|---------------------|---------|
-|    1 | `[`                 | `c`     |
-|    2 | `concat`            | `ab`    |
-|    3 | <code>&#124;</code> | `ab`    |
-|    4 | `*`                 | `a`     |
-|    5 | `?`                 | `a`     |
-|    6 | `-`                 | `ab`    |
+| Code | Operator            | Operand | Description            |
+|-----:|---------------------|---------|------------------------|
+|    1 | `[`                 | `a`     | character class        |
+|    2 | `concat`            | `ab`    | concatenation          |
+|    3 | <code>&#124;</code> | `ab`    | union                  |
+|    4 | `*`                 | `a`     | `0` or more repetition |
+|    5 | `?`                 | `a`     | optional               |
+|    6 | `-`                 | `ab`    | difference             |

@@ -15,19 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local tag_names = {
-  "[";
-  "concat";
-  "|";
-  "*";
-  "?";
-}
-
-local tag_table = {}
-for i = 1, #tag_names do
-  tag_table[tag_names[i]] = i
-end
-
 local function concat(items, i)
   if i == 1 then
     return items[i]
@@ -38,12 +25,21 @@ end
 
 local class = {}
 
-function class.new(tag_name, ...)
-  return { tag_table[tag_name], ... }
+function class.new(...)
+  return { ... }
 end
 
 function class.concat(items)
   return concat(items, #items)
+end
+
+function class:clone()
+  local that = self[3]
+  if that == nil then
+    return class(self[1], self[2]:clone())
+  else
+    return class(self[1], self[2]:clone(), that:clone())
+  end
 end
 
 class.metatable = {
@@ -54,37 +50,37 @@ function class.metatable:__add(that)
   local pattern = class.super.pattern
   local self = pattern(self)
   local that = pattern(that)
-  return class("|", self, that)
+  return class(3, self, that) -- union
 end
 
 function class.metatable:__mul(that)
   local pattern = class.super.pattern
   local self = pattern(self)
   local that = pattern(that)
-  return class("concat", self, that)
+  return class(2, self, that) -- concatenation
 end
 
 function class.metatable:__pow(that)
   if that == 0 or that == "*" then
-    return class("*", self)
+    return class(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
-    return self * class("*", self)
+    return self * self:clone()^"*"
   elseif that == -1 or that == "?" then
-    return class("?", self)
+    return class(5, self) -- optional
   end
   if type(that) == "number" then
     if that < 0 then
-      local items = {}
-      for i = 1, -that do
-        items[i] = self^-1
+      local items = { self^-1 }
+      for i = 2, -that do
+        items[i] = self:clone()^-1
       end
       return class.concat(items)
     else
-      local items = {}
-      for i = 1, that do
-        items[i] = self
+      local items = { self }
+      for i = 2, that do
+        items[i] = self:clone()
       end
-      items[that + 1] = self^0
+      items[that + 1] = self:clone()^"*"
       return class.concat(items)
     end
   else
@@ -93,14 +89,22 @@ function class.metatable:__pow(that)
     if n == nil then
       n = m
     end
-    local items = {}
-    for i = 1, m do
-      items[i] = self
+    if m == 0 then
+      local items = { self^-1 }
+      for i = 2, n do
+        items[i] = self:clone()^-1
+      end
+      return class.concat(items)
+    else
+      local items = { self }
+      for i = 2, m do
+        items[i] = self:clone()
+      end
+      for i = m + 1, n do
+        items[i] = self:clone()^-1
+      end
+      return class.concat(items)
     end
-    for i = m + 1, n do
-      items[i] = self^-1
-    end
-    return class.concat(items, n)
   end
 end
 
@@ -110,7 +114,7 @@ function class.metatable:__call(that)
 end
 
 return setmetatable(class, {
-  __call = function (_, tag_name, ...)
-    return setmetatable(class.new(tag_name, ...), class.metatable)
+  __call = function (_, ...)
+    return setmetatable(class.new(...), class.metatable)
   end;
 })

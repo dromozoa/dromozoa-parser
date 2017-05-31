@@ -459,6 +459,52 @@ function class:union(that)
   return self
 end
 
+function class:merge(that)
+  local max_state = self.max_state
+  local epsilons = self.epsilons
+  local epsilons1
+  local epsilons2
+  if epsilons == nil then
+    epsilons1 = {}
+    epsilons2 = {}
+    self.epsilons = { epsilons1, epsilons2 }
+  else
+    epsilons1 = epsilons[1]
+    epsilons2 = epsilons[2]
+  end
+  local transitions = self.transitions
+
+  local that_epsilons = that.epsilons
+  if that_epsilons then
+    for from_state, to_state in pairs(that_epsilons[1]) do
+      epsilons1[from_state + max_state] = to_state + max_state
+    end
+    for from_state, to_state in pairs(that_epsilons[2]) do
+      epsilons2[from_state + max_state] = to_state + max_state
+    end
+  end
+
+  local that_transitions = that.transitions
+  for char = 0, 255 do
+    local transition = transitions[char]
+    for from_state, to_state in pairs(that_transitions[char]) do
+      transition[from_state + max_state] = to_state + max_state
+    end
+  end
+
+  local accept_states = {}
+  for state, accept in pairs(that.accept_states) do
+    accept_states[state + max_state] = accept
+  end
+
+  self.max_state = max_state + that.max_state
+
+  return {
+    start_state = that.start_state + max_state;
+    accept_states = accept_states
+  }
+end
+
 class.metatable = {
   __index = class;
 }
