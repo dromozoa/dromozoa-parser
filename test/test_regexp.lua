@@ -29,11 +29,11 @@ local S = builder.set
 
 -- local p = P"a"^"*"
 -- local p = (P"X" ^{2,4}) ^"*"
-local p = P"abcdef"
+-- local p = P"abcdef"
 -- local p = (S"ab"^"*" * P"c"^"?")^"*"
 -- local p = (P"a"^"*")^"*"
 -- local p = (P"a"*P"b")^{1,3}
--- local p = P"abcd" + P"aacd"
+local p = P"abcd" + P"aacd"
 -- local p = P"if" + "elseif" + "then" + "end" + "while"
 
 print(dumper.encode(p, { pretty = true, stable = ture }))

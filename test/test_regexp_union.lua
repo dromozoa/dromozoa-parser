@@ -28,11 +28,11 @@ local nfa2 = regexp.tree_to_nfa(P"aaaa", 2)
 local nfa3 = regexp.tree_to_nfa(P"x"^"*", 3)
 local nfa4 = regexp.tree_to_nfa(R("ad")^"+", 4)
 
--- regexp.union(nfa1, nfa2)
+regexp.union(nfa1, nfa2)
 regexp.union(nfa1, nfa3)
--- regexp.union(nfa1, nfa4)
+regexp.union(nfa1, nfa4)
 
-regexp_writer.write_automaton(assert(io.open("test-nfa0.dot", "w")), nfa3):close()
+-- regexp_writer.write_automaton(assert(io.open("test-nfa0.dot", "w")), nfa3):close()
 
 regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa1):close()
 
