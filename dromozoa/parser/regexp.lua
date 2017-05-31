@@ -129,7 +129,7 @@ function class.tree_to_nfa(root, accept)
     if node == stack2[n2] then
       stack1[n1] = nil
       stack2[n2] = nil
-      if tag == 2 then -- "concat"
+      if tag == 2 then -- concatenation
         node.u = a.u
         node.v = b.v
         epsilons1[a.v] = b.u
@@ -140,22 +140,24 @@ function class.tree_to_nfa(root, accept)
         max_state = max_state + 1
         local v = max_state
         node.v = v
-        if tag == 1 then -- "["
+        if tag == 1 then -- character class
           for char in pairs(a) do
             transitions[char][u] = v
           end
-        elseif tag == 3 then -- "|"
+        elseif tag == 3 then -- union
           epsilons1[u] = a.u
           epsilons2[u] = b.u
           epsilons1[a.v] = v
           epsilons1[b.v] = v
-        else -- "*" or "?"
+        elseif tag == 6 then -- difference
+          error("not implemented")
+        else -- 0 or more repetition / optional
           local au = a.u
           local av = a.v
           epsilons1[u] = au
           epsilons2[u] = v
           epsilons1[av] = v
-          if tag == 4 then -- "*"
+          if tag == 4 then -- 0 or more repetition
             epsilons2[av] = au
           end
         end
@@ -412,49 +414,23 @@ function class.minimize_dfa(dfa)
 end
 
 function class:union(that)
-  local max_state = self.max_state
-  local epsilons = self.epsilons
-  local epsilons1
-  local epsilons2
-  if epsilons == nil then
-    epsilons1 = {}
-    epsilons2 = {}
-    self.epsilons = { epsilons1, epsilons2 }
-  else
-    epsilons1 = epsilons[1]
-    epsilons2 = epsilons[2]
-  end
-  local transitions = self.transitions
-  local accept_states = self.accept_states
+  local that = class.merge(self, that)
 
-  max_state = max_state + 1
+  local max_state = self.max_state + 1
   local start_state = max_state
+
+  local epsilons = self.epsilons
+  local epsilons1 = epsilons[1]
+  local epsilons2 = epsilons[2]
   epsilons1[start_state] = self.start_state
-  epsilons2[start_state] = that.start_state + max_state
+  epsilons2[start_state] = that.start_state
 
-  local that_epsilons = that.epsilons
-  if that_epsilons then
-    for from, to in pairs(that_epsilons[1]) do
-      epsilons1[from + max_state] = to + max_state
-    end
-    for from, to in pairs(that_epsilons[2]) do
-      epsilons2[from + max_state] = to + max_state
-    end
-  end
-
-  local that_transitions = that.transitions
-  for char = min_char, max_char do
-    local transition = transitions[char]
-    for from, to in pairs(that_transitions[char]) do
-      transition[from + max_state] = to + max_state
-    end
-  end
-
+  local accept_states = self.accept_states
   for state, accept in pairs(that.accept_states) do
-    accept_states[state + max_state] = accept
+    accept_states[state] = accept
   end
 
-  self.max_state = max_state + that.max_state
+  self.max_state = max_state
   self.start_state = start_state
   return self
 end

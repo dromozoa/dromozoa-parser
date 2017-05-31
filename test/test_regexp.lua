@@ -32,8 +32,9 @@ local S = builder.set
 -- local p = P"abcdef"
 -- local p = (S"ab"^"*" * P"c"^"?")^"*"
 -- local p = (P"a"^"*")^"*"
--- local p = P"abcd" + P"aacd"
-local p = P"if" + "elseif" + "then" + "end" + "while"
+-- local p = (P"a"*P"b")^{1,3}
+local p = P"abcd" + P"aacd"
+-- local p = P"if" + "elseif" + "then" + "end" + "while"
 
 print(dumper.encode(p, { pretty = true, stable = ture }))
 
@@ -43,7 +44,7 @@ local epsilons = data.epsilons
 local n = data.max_state
 -- print(dumper.encode(transitions, { pretty = true, stable = ture }))
 
-print(data.start_state, dumper.encode(data.accept_states))
+-- print(data.start_state, dumper.encode(data.accept_states))
 
 local dfa, epsilon_closures = regexp.nfa_to_dfa(data)
 local dfa_transitions = dfa.transitions
@@ -63,7 +64,7 @@ local max_dfa = dfa.max_state
 local dfa_accepts = dfa.accept_states
 
 -- print("--")
-print(dumper.encode(dfa, { pretty = true, stable = true }))
+-- print(dumper.encode(dfa, { pretty = true, stable = true }))
 -- print(dumper.encode(dfa_accepts, { pretty = true, stable = true }))
 
 regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), data):close()
