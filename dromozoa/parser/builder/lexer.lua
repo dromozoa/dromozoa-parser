@@ -16,33 +16,49 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local builder = require "dromozoa.parser.builder_v2"
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
-local _ = builder()
+local class = {}
 
-_:lexer ()
-  :_(S" \t\n\v\f\r"^"+") {}
-  :_(R"09"^"+") :as "integer"
-  :_"*"
-  :_"+"
-  :_"("
-  :_")"
+function class.new(name)
+  return {
+    name = name;
+    items = {};
+  }
+end
 
-_ :left "*" "/"
-  :left "+" "-"
-  :right "UMINUS"
+function class:_(that)
+  local items = self.items
+  if type(that) == "string" then
+    items[#items + 1] = {
+      name = that;
+      pattern = class.super.pattern(that);
+    }
+  else
+    items[#items + 1] = {
+      pattern = that;
+    }
+  end
+  return self
+end
 
-_"E"
-  :_ "E" "*" "E"
-  :_ "E" "+" "E"
-  :_ "(" "E" ")"
-  :_ "decimal"
-  :_ "octal"
+function class:as(name)
+  local items = self.items
+  items[#items].name = name
+  return self
+end
 
-local data = _:build()
+class.metatable = {
+  __index = class;
+}
 
-print(dumper.encode(_, { pretty = true, stable = true }))
-print(dumper.encode(data, { pretty = true, stable = true }))
+function class.metatable:__call(action)
+  local items = self.items
+  items[#items].action = action
+  return self
+end
+
+return setmetatable(class, {
+  __call = function (_, name)
+    return setmetatable(class.new(name), class.metatable)
+  end;
+})

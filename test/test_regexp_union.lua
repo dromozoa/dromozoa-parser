@@ -15,22 +15,24 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local builder = require "dromozoa.parser.builder_v2"
 local regexp = require "dromozoa.parser.regexp"
-local regexp_builder = require "dromozoa.parser.regexp_builder"
 local regexp_writer = require "dromozoa.parser.regexp_writer"
 
-local P = regexp_builder.P
-local R = regexp_builder.R
-local S = regexp_builder.S
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
 
 local nfa1 = regexp.tree_to_nfa(P"abcd", 1)
 local nfa2 = regexp.tree_to_nfa(P"aaaa", 2)
-local nfa3 = regexp.tree_to_nfa(P"a"^"+", 3)
+local nfa3 = regexp.tree_to_nfa(P"x"^"*", 3)
 local nfa4 = regexp.tree_to_nfa(R("ad")^"+", 4)
 
-regexp.union(nfa1, nfa2)
+-- regexp.union(nfa1, nfa2)
 regexp.union(nfa1, nfa3)
-regexp.union(nfa1, nfa4)
+-- regexp.union(nfa1, nfa4)
+
+regexp_writer.write_automaton(assert(io.open("test-nfa0.dot", "w")), nfa3):close()
 
 regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa1):close()
 

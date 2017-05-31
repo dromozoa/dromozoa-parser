@@ -15,34 +15,43 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-local builder = require "dromozoa.parser.builder_v2"
+local class = {}
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
-local _ = builder()
+function class.new(items, name)
+  return {
+    items = items;
+    head = name;
+  }
+end
 
-_:lexer ()
-  :_(S" \t\n\v\f\r"^"+") {}
-  :_(R"09"^"+") :as "integer"
-  :_"*"
-  :_"+"
-  :_"("
-  :_")"
+function class:_(name)
+  local items = self.items
+  items[#items + 1] = {
+    head = self.head;
+    body = { name };
+  }
+  return self
+end
 
-_ :left "*" "/"
-  :left "+" "-"
-  :right "UMINUS"
+function class:prec(name)
+  local items = self.items
+  items[#items].precedence = name
+  return self
+end
 
-_"E"
-  :_ "E" "*" "E"
-  :_ "E" "+" "E"
-  :_ "(" "E" ")"
-  :_ "decimal"
-  :_ "octal"
+class.metatable = {
+  __index = class;
+}
 
-local data = _:build()
+function class.metatable:__call(name)
+  local items = self.items
+  local body = items[#items].body
+  body[#body + 1] = name
+  return self
+end
 
-print(dumper.encode(_, { pretty = true, stable = true }))
-print(dumper.encode(data, { pretty = true, stable = true }))
+return setmetatable(class, {
+  __call = function (_, items, name)
+    return setmetatable(class.new(items, name), class.metatable)
+  end;
+})

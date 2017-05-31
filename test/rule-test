@@ -1,0 +1,56 @@
+# = definition
+# := lexer
+# : rule definition
+
+decimal = /[1-9][0-9]*/ ;
+decimal = [1-9] [0-9]* ;
+octal = /0[0-7]*/ ;
+hexadecimal = /0x[0-9a-f]/i ;
+
+scanner {
+  /[ \t\n\v\f\r]+/ { skip };
+  decimal;
+  octal;
+  hexadecimal;
+  "*";
+  "+";
+  "(";
+  ")";
+  identifier: /[a-z_][0-9a-z_]*/;
+  "\"" { call string; };
+  "[" { call bracket; };
+}
+
+string
+  := "\"" { ret; }
+  | "\\." as string_content
+  | /[^\\"]+/ as string_content
+  ;
+
+bracket
+  := "]" { ret; }
+  | /\\[-\\\]]/ as escaped_char
+  | "-" as range
+  | /./ as char
+
+// bracket.escaped_char
+// bracket.range
+
+E : E "*" E
+  | E "+" E
+  | "(" E ")"
+  | decimal | octal | hexadecimal
+  | identifier
+  | string
+  ;
+
+string
+  : "\"" string_contents "\""
+
+string_contents
+  :
+  | string_content
+  | string_contents string_content
+  ;
+
+

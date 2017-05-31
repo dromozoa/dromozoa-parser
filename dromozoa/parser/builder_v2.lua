@@ -16,9 +16,24 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local atom = require "dromozoa.parser.builder.atom"
+local build = require "dromozoa.parser.builder.build"
+local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
+local precedence = require "dromozoa.parser.builder.precedence"
+local production = require "dromozoa.parser.builder.production"
 
-local class = {}
+local class = {
+  range = atom.range;
+  set = atom.set;
+}
+
+function class.new()
+  return {
+    lexers = { lexer() };
+    precedences = {};
+    productions = {};
+  }
+end
 
 function class.pattern(that)
   local t = type(that)
@@ -26,27 +41,79 @@ function class.pattern(that)
     if that == 1 then
       return atom.any()
     else
-      return pattern.any(that)
+      local any = atom.any()
+      local items = {}
+      for i = 1, that do
+        items[i] = any
+      end
+      return pattern.concat(items)
     end
   elseif t == "string" then
     if #that == 1 then
       return atom.char(that)
     else
-      return pattern.literal(that)
+      local char = atom.char
+      local items = {}
+      for i = 1, #that do
+        items[i] = char(that:sub(i, i))
+      end
+      return pattern.concat(items)
     end
   else
     return that
   end
 end
 
-function class.range(that)
-  return atom.range(that)
+function class:lexer(name)
+  local lexers = self.lexers
+  if name == nil then
+    return lexers[1]
+  else
+    local lexer = lexer(name)
+    lexers[#lexers + 1] = lexer
+    return lexer
+  end
 end
 
-function class.set(that)
-  return atom.set(that)
+function class:precedence(name, associativity)
+  local precedences = self.precedences
+  local items = {}
+  precedences[#precedences + 1] = {
+    associativity = associativity;
+    items = items
+  }
+  return precedence(self, items)(name)
 end
 
+function class:left(name)
+  return self:precedence(name, "left")
+end
+
+function class:right(name)
+  return self:precedence(name, "right")
+end
+
+function class:nonassoc(name)
+  return self:precedence(name, "nonassoc")
+end
+
+function class:build(start_name)
+  return build(self, start_name)
+end
+
+lexer.super = class
 pattern.super = class
 
-return class
+class.metatable = {
+  __index = class;
+}
+
+function class.metatable:__call(name)
+  return production(self.productions, name)
+end
+
+return setmetatable(class, {
+  __call = function ()
+    return setmetatable(class.new(), class.metatable)
+  end;
+})
