@@ -15,14 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function concat(items, i)
-  if i == 1 then
-    return items[i]
-  else
-    return concat(items, i - 1) * items[i]
-  end
-end
-
 local class = {}
 
 function class.new(...)
@@ -30,7 +22,11 @@ function class.new(...)
 end
 
 function class.concat(items)
-  return concat(items, #items)
+  local result = items[1]
+  for i = 2, #items do
+    result = result * items[i]
+  end
+  return result
 end
 
 function class:clone()

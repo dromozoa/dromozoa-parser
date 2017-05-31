@@ -41,10 +41,9 @@ function class.pattern(that)
     if that == 1 then
       return atom.any()
     else
-      local any = atom.any()
       local items = {}
       for i = 1, that do
-        items[i] = any
+        items[i] = atom.any()
       end
       return pattern.concat(items)
     end
@@ -52,10 +51,9 @@ function class.pattern(that)
     if #that == 1 then
       return atom.char(that)
     else
-      local char = atom.char
       local items = {}
       for i = 1, #that do
-        items[i] = char(that:sub(i, i))
+        items[i] = atom.char(that:sub(i, i))
       end
       return pattern.concat(items)
     end
