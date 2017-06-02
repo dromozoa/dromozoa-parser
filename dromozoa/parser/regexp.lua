@@ -15,8 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-
 local function set_to_seq(set)
   local key = {}
   for k in pairs(set) do
@@ -295,10 +293,7 @@ function class.minimize(this)
   local start_state = this.start_state
   local accept_states = this.accept_states
 
-  -- [TODO] accept_statesに到達しない状態を探す
-
   local reverse_transitions = {}
-
   local stack = { start_state }
   local color = { [start_state] = true }
   while true do
