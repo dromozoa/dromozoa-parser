@@ -15,6 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
+
 local function set_to_seq(set)
   local key = {}
   for k in pairs(set) do
@@ -290,26 +292,82 @@ end
 
 function class.minimize(this)
   local transitions = this.transitions
+  local start_state = this.start_state
   local accept_states = this.accept_states
 
   -- [TODO] accept_statesに到達しない状態を探す
 
+  local reverse_transitions = {}
+
+  local stack = { start_state }
+  local color = { [start_state] = true }
+  while true do
+    local n = #stack
+    local u = stack[n]
+    if u == nil then
+      break
+    end
+    stack[n] = nil
+    for char = 0, 255 do
+      local v = transitions[char][u]
+      if v then
+        local reverse_transition = reverse_transitions[v]
+        if reverse_transition == nil then
+          reverse_transition = {}
+          reverse_transitions[v] = reverse_transition
+        end
+        reverse_transition[u] = true
+        if not color[v] then
+          stack[n] = v
+          color[v] = true
+          n = n + 1
+        end
+      end
+    end
+  end
+  local stack = {}
+  local color = {}
+  for k in pairs(accept_states) do
+    stack[#stack + 1] = k
+    color[k] = true
+  end
+  while true do
+    local n = #stack
+    local u = stack[n]
+    if u == nil then
+      break
+    end
+    stack[n] = nil
+    local reverse_transition = reverse_transitions[u]
+    if reverse_transition then
+      for v in pairs(reverse_transition) do
+        if not color[v] then
+          stack[n] = v
+          color[v] = true
+          n = n + 1
+        end
+      end
+    end
+  end
+
   local accept_partitions = {}
   local partition
   for state = 1, this.max_state do
-    local accept = accept_states[state]
-    if accept then
-      local partition = accept_partitions[accept]
-      if partition == nil then
-        partition = {}
-        accept_partitions[accept] = partition
+    if color[state] then
+      local accept = accept_states[state]
+      if accept then
+        local partition = accept_partitions[accept]
+        if partition == nil then
+          partition = {}
+          accept_partitions[accept] = partition
+        end
+        partition[#partition + 1] = state
+      else
+        if partition == nil then
+          partition = {}
+        end
+        partition[#partition + 1] = state
       end
-      partition[#partition + 1] = state
-    else
-      if partition == nil then
-        partition = {}
-      end
-      partition[#partition + 1] = state
     end
   end
   local partitions = {}

@@ -34,10 +34,14 @@ local S = builder.set
 
 local a1 = regexp.minimize(regexp.nfa_to_dfa(regexp.tree_to_nfa(S"abc"^"*")))
 regexp_writer.write_automaton(assert(io.open("test-a1.dot", "w")), a1):close()
-local a2 = regexp.minimize(regexp.nfa_to_dfa(regexp.tree_to_nfa(S"abc"^"*" * P"ccc" * S"abc"^"*")))
+local a2 = regexp.nfa_to_dfa(regexp.tree_to_nfa(S"abc"^"*" * P"ccc" * S"abc"^"*"))
+regexp_writer.write_automaton(assert(io.open("test-a2-0.dot", "w")), a2):close()
+print("minimize a2")
+local a2 = regexp.minimize(a2)
 regexp_writer.write_automaton(assert(io.open("test-a2.dot", "w")), a2):close()
 local a3 = regexp.difference(a1, a2)
 regexp_writer.write_automaton(assert(io.open("test-a3.dot", "w")), a3):close()
+print("minimize a3")
 local a4 = regexp.minimize(a3)
 regexp_writer.write_automaton(assert(io.open("test-a4.dot", "w")), a4):close()
 
