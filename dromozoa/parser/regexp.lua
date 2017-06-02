@@ -143,8 +143,6 @@ function class.tree_to_nfa(root, accept)
           local dfa = class.nfa_to_dfa(class.difference(dfa1, dfa2))
           local dfa = class.minimize(dfa)
 
-          print("?", dfa.max_state, dfa.start_state)
-
           local this, that = class.merge({
             max_state = max_state;
             epsilons = epsilons;
@@ -153,15 +151,10 @@ function class.tree_to_nfa(root, accept)
             accept_states = { [v] = accept };
           }, dfa)
 
-          print("!", that.max_state, that.start_state)
-
-          print("-", max_state, this.max_state)
           max_state = this.max_state
 
-          print(u, this.start_state, that.start_state)
           epsilons1[u] = that.start_state
           for w in pairs(that.accept_states) do
-            print(v, w)
             epsilons1[w] = v
           end
 
