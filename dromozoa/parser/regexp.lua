@@ -15,8 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local regexp_writer = require "dromozoa.parser.regexp_writer"
-
 local function set_to_seq(set)
   local key = {}
   for k in pairs(set) do
@@ -141,7 +139,6 @@ function class.tree_to_nfa(root, accept)
             accept_states = { [b.v] = accept };
           }))
           local dfa = class.difference(dfa1, dfa2)
-          regexp_writer.write_automaton(assert(io.open("test-dfa-0.dot", "w")), dfa):close()
           local dfa = class.minimize(dfa)
 
           local this, that = class.merge({

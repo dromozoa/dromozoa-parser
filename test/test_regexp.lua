@@ -31,6 +31,17 @@ local S = builder.set
 -- local p = P"xyz"^"*" + P"abcd" + P"aaaa" + P"abca"
 -- local p = P"abc"^"+" + P"abc"^2 + P"abc"^3
 -- local p = S"abc"^"*" * P"abc" * S"abc"^"*"
+
+local a1 = regexp.minimize(regexp.nfa_to_dfa(regexp.tree_to_nfa(S"abc"^"*")))
+regexp_writer.write_automaton(assert(io.open("test-a1.dot", "w")), a1):close()
+local a2 = regexp.minimize(regexp.nfa_to_dfa(regexp.tree_to_nfa(S"abc"^"*" * P"ccc" * S"abc"^"*")))
+regexp_writer.write_automaton(assert(io.open("test-a2.dot", "w")), a2):close()
+local a3 = regexp.difference(a1, a2)
+regexp_writer.write_automaton(assert(io.open("test-a3.dot", "w")), a3):close()
+local a4 = regexp.minimize(a3)
+regexp_writer.write_automaton(assert(io.open("test-a4.dot", "w")), a4):close()
+
+
 local p = P"cba" * (S"abc"^"*" - S"abc"^"*" * P"ccc" * S"abc"^"*") * P"abc"
 local nfa = regexp.tree_to_nfa(p)
 regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa):close()
