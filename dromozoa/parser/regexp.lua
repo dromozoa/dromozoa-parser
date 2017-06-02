@@ -15,6 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local regexp_writer = require "dromozoa.parser.regexp_writer"
+
 local function set_to_seq(set)
   local key = {}
   for k in pairs(set) do
@@ -123,8 +125,6 @@ function class.tree_to_nfa(root, accept)
           epsilons1[a.v] = v
           epsilons1[b.v] = v
         elseif code == 6 then -- difference
-          -- error("not implemented")
-
           -- [TODO] コードをきれいにする
           local dfa1 = class.minimize(class.nfa_to_dfa({
             max_state = max_state;
@@ -140,7 +140,8 @@ function class.tree_to_nfa(root, accept)
             start_state = b.u;
             accept_states = { [b.v] = accept };
           }))
-          local dfa = class.nfa_to_dfa(class.difference(dfa1, dfa2))
+          local dfa = class.difference(dfa1, dfa2)
+          regexp_writer.write_automaton(assert(io.open("test-dfa-0.dot", "w")), dfa):close()
           local dfa = class.minimize(dfa)
 
           local this, that = class.merge({
@@ -481,22 +482,60 @@ function class.union(this, that)
 end
 
 function class.difference(this, that)
-  local this, that = class.merge(this, that)
-
-  local max_state = this.max_state + 1
-  local epsilons = this.epsilons
-  local accept_states = this.accept_states
-
-  epsilons[1][max_state] = this.start_state
-  epsilons[2][max_state] = that.start_state
-
-  for state, accept in pairs(that.accept_states) do
-    accept_states[state] = accept
+  local transitions = {}
+  for char = 0, 255 do
+    transitions[char] = {}
   end
 
-  this.max_state = max_state
-  this.start_state = max_state
-  return this
+  local this_max_state = this.max_state
+  local that_max_state = that.max_state
+  local n = this_max_state + 1
+
+  local this_trantions = this.transitions
+  local that_trantions = that.transitions
+
+  for i = 0, this_max_state do
+    for j = 0, that_max_state do
+      local u = i + n * j
+      if u ~= 0 then
+        local transition = {}
+        for char = 0, 255 do
+          local tx = this_trantions[char][i]
+          local ty = that_trantions[char][j]
+          if tx == nil then
+            tx = 0
+          end
+          if ty == nil then
+            ty = 0
+          end
+          local v = tx + n * ty
+          if v ~= 0 then
+            transitions[char][u] = v
+          end
+        end
+      end
+    end
+  end
+
+  local accept_states = {}
+  local that_accept_states = that.accept_states
+
+  for i, accept in pairs(this.accept_states) do
+    for j = 1, that_max_state do
+      if that_accept_states[j] == nil then
+        local u = i + n * j
+        accept_states[u] = accept
+        print(u, accept)
+      end
+    end
+  end
+
+  return {
+    max_state = this_max_state + n * that_max_state;
+    transitions = transitions;
+    start_state = this.start_state + n * that.start_state;
+    accept_states = accept_states;
+  }
 end
 
 return class
