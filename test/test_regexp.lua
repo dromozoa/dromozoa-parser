@@ -27,46 +27,14 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
--- local p = P"a"^"*"
--- local p = (P"X" ^{2,4}) ^"*"
--- local p = P"abcdef"
--- local p = (S"ab"^"*" * P"c"^"?")^"*"
--- local p = (P"a"^"*")^"*"
--- local p = (P"a"*P"b")^{1,3}
-local p = P"abcd" + P"aacd"
--- local p = P"if" + "elseif" + "then" + "end" + "while"
-
-print(dumper.encode(p, { pretty = true, stable = ture }))
-
-local data = regexp.tree_to_nfa(p)
-local transitions = data.transitions
-local epsilons = data.epsilons
-local n = data.max_state
--- print(dumper.encode(transitions, { pretty = true, stable = ture }))
-
--- print(data.start_state, dumper.encode(data.accept_states))
-
-local dfa, epsilon_closures = regexp.nfa_to_dfa(data)
-local dfa_transitions = dfa.transitions
-local max_dfa = dfa.max_state
-local dfa_accepts = dfa.accept_states
-
--- local epsilon_closures, dfa_transitions, max_dfa, dfa_accepts = regexp.nfa_to_dfa(data)
--- print("--")
--- print(dumper.encode(dfa_transitions, { pretty = true, stable = true }))
--- print(dumper.encode(dfa_accepts, { pretty = true, stable = true }))
-
-regexp_writer.write_automaton(assert(io.open("test-dfa1.dot", "w")), dfa):close()
-
-dfa, partitions = regexp.minimize_dfa(dfa)
-local dfa_transitions = dfa.transitions
-local max_dfa = dfa.max_state
-local dfa_accepts = dfa.accept_states
-
--- print("--")
--- print(dumper.encode(dfa, { pretty = true, stable = true }))
--- print(dumper.encode(dfa_accepts, { pretty = true, stable = true }))
-
-regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), data):close()
-
-regexp_writer.write_automaton(assert(io.open("test-dfa2.dot", "w")), dfa):close()
+-- local p = P"abcd" + P"aacd"
+-- local p = P"xyz"^"*" + P"abcd" + P"aaaa" + P"abca"
+-- local p = P"abc"^"+" + P"abc"^2 + P"abc"^3
+-- local p = S"abc"^"*" * P"abc" * S"abc"^"*"
+local p = P"X" * (S"abc"^"*" - S"abc"^"*" * P"abc" * S"abc"^"*") * P"Y"
+local nfa = regexp.tree_to_nfa(p)
+regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa):close()
+local dfa1 = regexp.nfa_to_dfa(nfa)
+local dfa2 = regexp.minimize(dfa1)
+regexp_writer.write_automaton(assert(io.open("test-dfa1.dot", "w")), dfa1):close()
+regexp_writer.write_automaton(assert(io.open("test-dfa2.dot", "w")), dfa2):close()

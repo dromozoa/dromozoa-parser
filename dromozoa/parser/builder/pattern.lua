@@ -49,6 +49,13 @@ function class.metatable:__add(that)
   return class(3, self, that) -- union
 end
 
+function class.metatable:__sub(that)
+  local pattern = class.super.pattern
+  local self = pattern(self)
+  local that = pattern(that)
+  return class(6, self, that) -- difference
+end
+
 function class.metatable:__mul(that)
   local pattern = class.super.pattern
   local self = pattern(self)

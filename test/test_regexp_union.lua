@@ -23,24 +23,29 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
-local nfa1 = regexp.tree_to_nfa(P"abcd", 1)
-local nfa2 = regexp.tree_to_nfa(P"aaaa", 2)
-local nfa3 = regexp.tree_to_nfa(P"x"^"*", 3)
-local nfa4 = regexp.tree_to_nfa(R("ad")^"+", 4)
+-- local a1 = regexp.tree_to_nfa(P"abcd", 1)
+local a1 = regexp.tree_to_nfa(S"abc"^"*" * P"abc" * S"abc"^"*")
+-- local a2 = regexp.tree_to_nfa(P"aaaa", 2)
+local a2 = regexp.tree_to_nfa(S"abc"^"*")
+local a3 = regexp.tree_to_nfa(P"x"^"*", 3)
+local a4 = regexp.tree_to_nfa(R("ad")^"+", 4)
 
-regexp.union(nfa1, nfa2)
-regexp.union(nfa1, nfa3)
-regexp.union(nfa1, nfa4)
+a1 = regexp.minimize(regexp.nfa_to_dfa(a1))
+a2 = regexp.minimize(regexp.nfa_to_dfa(a2))
+a3 = regexp.minimize(regexp.nfa_to_dfa(a3))
+a4 = regexp.minimize(regexp.nfa_to_dfa(a4))
 
--- regexp_writer.write_automaton(assert(io.open("test-nfa0.dot", "w")), nfa3):close()
+regexp.union(a1, a2)
+-- regexp.union(a1, a3)
+-- regexp.union(a1, a4)
 
-regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa1):close()
+-- regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), a1):close()
 
-local dfa1 = regexp.nfa_to_dfa(nfa1)
+local dfa1 = regexp.nfa_to_dfa(a1)
 
 regexp_writer.write_automaton(assert(io.open("test-dfa1.dot", "w")), dfa1):close()
 
-local dfa2 = regexp.minimize_dfa(dfa1)
+local dfa2 = regexp.minimize(dfa1)
 
 regexp_writer.write_automaton(assert(io.open("test-dfa2.dot", "w")), dfa2):close()
 
