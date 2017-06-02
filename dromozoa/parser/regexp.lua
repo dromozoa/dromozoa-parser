@@ -276,14 +276,14 @@ local function minimize(this)
 
   for i = 1, max_state do
     local partition = partitions[i]
-    local state = partition[1]
+    local u = partition[1]
     for char = 0, 255 do
-      local transition = transitions[char][state]
-      if transition then
-        new_transitions[char][i] = partition_table[transition]
+      local v = transitions[char][u]
+      if v then
+        new_transitions[char][i] = partition_table[v]
       end
     end
-    new_accept_states[i] = accept_states[state]
+    new_accept_states[i] = accept_states[u]
   end
 
   return {
