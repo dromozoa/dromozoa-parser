@@ -122,7 +122,7 @@ function merge(this, that)
   return this, that
 end
 
-function color_reachable(this)
+local function minimize(this)
   local transitions = this.transitions
   local start_state = this.start_state
   local accept_states = this.accept_states
@@ -179,7 +179,119 @@ function color_reachable(this)
     end
   end
 
-  return color
+  local accept_partitions = {}
+  local partition
+  for u in pairs(color) do
+    local accept = accept_states[u]
+    if accept then
+      local partition = accept_partitions[accept]
+      if partition then
+        partition[#partition + 1] = u
+      else
+        accept_partitions[accept] = { u }
+      end
+    else
+      if partition then
+        partition[#partition + 1] = u
+      else
+        partition = { u }
+      end
+    end
+  end
+
+  local partitions = {}
+  for _, partition in pairs(accept_partitions) do
+    partitions[#partitions + 1] = partition
+  end
+  if partition then
+    partitions[#partitions + 1] = partition
+  end
+  local partition_table = {}
+  for i = 1, #partitions do
+    local partition = partitions[i]
+    for j = 1, #partition do
+      partition_table[partition[j]] = i
+    end
+  end
+
+  while true do
+    local new_partitions = {}
+    local new_partition_table = {}
+    for i = 1, #partitions do
+      local partition = partitions[i]
+      for i = 1, #partition do
+        local x = partition[i]
+        for j = 1, i - 1 do
+          local y = partition[j]
+          local same_group = true
+          for char = 0, 255 do
+            local tx = transitions[char][x]
+            local ty = transitions[char][y]
+            if partition_table[tx] ~= partition_table[ty] then
+              same_group = false
+              break
+            end
+          end
+          if same_group then
+            local gx = new_partition_table[x]
+            local gy = new_partition_table[y]
+            if gx then
+              if gy == nil then
+                local partition = new_partitions[gx]
+                partition[#partition + 1] = y
+                new_partition_table[y] = gx
+              end
+            elseif gy then
+              local partition = new_partitions[gy]
+              partition[#partition + 1] = x
+              new_partition_table[x] = gy
+            else
+              local g = #new_partitions + 1
+              new_partitions[g] = { x, y }
+              new_partition_table[x] = g
+              new_partition_table[y] = g
+            end
+          end
+        end
+        if new_partition_table[x] == nil then
+          local g = #new_partitions + 1
+          new_partitions[g] = { x }
+          new_partition_table[x] = g
+        end
+      end
+    end
+    if #partitions == #new_partitions then
+      break
+    end
+    partitions = new_partitions
+    partition_table = new_partition_table
+  end
+
+  local max_state = #partitions
+  local new_transitions = {}
+  for char = 0, 255 do
+    new_transitions[char] = {}
+  end
+  local new_accept_states = {}
+
+  for i = 1, max_state do
+    local partition = partitions[i]
+    local state = partition[1]
+    for char = 0, 255 do
+      local transition = transitions[char][state]
+      if transition then
+        new_transitions[char][i] = partition_table[transition]
+      end
+    end
+    new_accept_states[i] = accept_states[state]
+  end
+
+  return {
+    max_state = max_state;
+    transitions = new_transitions,
+    start_state = partition_table[this.start_state];
+    accept_states = new_accept_states;
+  }, partitions
 end
 
 local class = {}
@@ -235,14 +347,14 @@ function class.tree_to_nfa(root, accept)
           epsilons1[b.v] = v
         elseif code == 6 then -- difference
           -- [TODO] コードをきれいにする
-          local dfa1 = class.minimize(class.nfa_to_dfa({
+          local dfa1 = minimize(class.nfa_to_dfa({
             max_state = max_state;
             epsilons = epsilons;
             transitions = transitions;
             start_state = a.u;
             accept_states = { [a.v] = accept };
           }))
-          local dfa2 = class.minimize(class.nfa_to_dfa({
+          local dfa2 = minimize(class.nfa_to_dfa({
             max_state = max_state;
             epsilons = epsilons;
             transitions = transitions;
@@ -250,7 +362,7 @@ function class.tree_to_nfa(root, accept)
             accept_states = { [b.v] = accept };
           }))
           local dfa = class.difference(dfa1, dfa2)
-          local dfa = class.minimize(dfa)
+          local dfa = minimize(dfa)
 
           local this, that = merge({
             max_state = max_state;
@@ -400,126 +512,7 @@ function class.nfa_to_dfa(nfa)
 end
 
 function class.minimize(this)
-  local transitions = this.transitions
-  local start_state = this.start_state
-  local accept_states = this.accept_states
-
-  local color = color_reachable(this)
-
-  local accept_partitions = {}
-  local partition
-  for state = 1, this.max_state do
-    if color[state] then
-      local accept = accept_states[state]
-      if accept then
-        local partition = accept_partitions[accept]
-        if partition == nil then
-          partition = {}
-          accept_partitions[accept] = partition
-        end
-        partition[#partition + 1] = state
-      else
-        if partition == nil then
-          partition = {}
-        end
-        partition[#partition + 1] = state
-      end
-    end
-  end
-  local partitions = {}
-  for _, partition in pairs(accept_partitions) do
-    partitions[#partitions + 1] = partition
-  end
-  if partition then
-    partitions[#partitions + 1] = partition
-  end
-  local partition_table = {}
-  for i = 1, #partitions do
-    local partition = partitions[i]
-    for j = 1, #partition do
-      partition_table[partition[j]] = i
-    end
-  end
-
-  while true do
-    local new_partitions = {}
-    local new_partition_table = {}
-    for i = 1, #partitions do
-      local partition = partitions[i]
-      local n = #partition
-      for i = 1, n do
-        local x = partition[i]
-        for j = 1, i - 1 do
-          local y = partition[j]
-          local same_group = true
-          for char = 0, 255 do
-            local tx = transitions[char][x]
-            local ty = transitions[char][y]
-            if partition_table[tx] ~= partition_table[ty] then
-              same_group = false
-              break
-            end
-          end
-          if same_group then
-            local gx = new_partition_table[x]
-            local gy = new_partition_table[y]
-            if gx then
-              if gy == nil then
-                local partition = new_partitions[gx]
-                partition[#partition + 1] = y
-                new_partition_table[y] = gx
-              end
-            elseif gy then
-              local partition = new_partitions[gy]
-              partition[#partition + 1] = x
-              new_partition_table[x] = gy
-            else
-              local g = #new_partitions + 1
-              new_partitions[g] = { x, y }
-              new_partition_table[x] = g
-              new_partition_table[y] = g
-            end
-          end
-        end
-        if new_partition_table[x] == nil then
-          local g = #new_partitions + 1
-          new_partitions[g] = { x }
-          new_partition_table[x] = g
-        end
-      end
-    end
-    if #partitions == #new_partitions then
-      break
-    end
-    partitions = new_partitions
-    partition_table = new_partition_table
-  end
-
-  local max_state = #partitions
-  local new_transitions = {}
-  for char = 0, 255 do
-    new_transitions[char] = {}
-  end
-  local new_accept_states = {}
-
-  for i = 1, max_state do
-    local partition = partitions[i]
-    local state = partition[1]
-    for char = 0, 255 do
-      local transition = transitions[char][state]
-      if transition then
-        new_transitions[char][i] = partition_table[transition]
-      end
-    end
-    new_accept_states[i] = accept_states[state]
-  end
-
-  return {
-    max_state = max_state;
-    transitions = new_transitions,
-    start_state = partition_table[this.start_state];
-    accept_states = new_accept_states;
-  }, partitions
+  return minimize(this)
 end
 
 function class.union(this, that)
