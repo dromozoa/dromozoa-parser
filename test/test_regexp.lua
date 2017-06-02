@@ -31,7 +31,7 @@ local S = builder.set
 -- local p = P"xyz"^"*" + P"abcd" + P"aaaa" + P"abca"
 -- local p = P"abc"^"+" + P"abc"^2 + P"abc"^3
 -- local p = S"abc"^"*" * P"abc" * S"abc"^"*"
-local p = P"X" * (S"abc"^"*" - S"abc"^"*" * P"ccc" * S"abc"^"*") * P"Y"
+local p = P"cba" * (S"abc"^"*" - S"abc"^"*" * P"ccc" * S"abc"^"*") * P"abc"
 local nfa = regexp.tree_to_nfa(p)
 regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa):close()
 local dfa1 = regexp.nfa_to_dfa(nfa)

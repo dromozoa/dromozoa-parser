@@ -295,6 +295,8 @@ function class.minimize(this)
   local transitions = this.transitions
   local accept_states = this.accept_states
 
+  -- [TODO] accept_statesに到達しない状態を探す
+
   local accept_partitions = {}
   local partition
   for state = 1, this.max_state do
@@ -525,7 +527,6 @@ function class.difference(this, that)
       if that_accept_states[j] == nil then
         local u = i + n * j
         accept_states[u] = accept
-        print(u, accept)
       end
     end
   end
