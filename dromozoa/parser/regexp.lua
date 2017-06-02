@@ -15,6 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
+
 local function set_to_seq(set)
   local key = {}
   for k in pairs(set) do
@@ -69,6 +71,115 @@ local function merge_accept_state(accept_states, set)
     end
   end
   return result
+end
+
+function merge(this, that)
+  local n = this.max_state
+  local epsilons = this.epsilons
+  local epsilons1
+  local epsilons2
+  if epsilons == nil then
+    epsilons1 = {}
+    epsilons2 = {}
+    epsilons = { epsilons1, epsilons2 }
+    this.epsilons = epsilons
+  else
+    epsilons1 = epsilons[1]
+    epsilons2 = epsilons[2]
+  end
+  local transitions = this.transitions
+
+  local that_epsilons = that.epsilons
+  if that_epsilons then
+    for u, v in pairs(that_epsilons[1]) do
+      epsilons1[n + u] = n + v
+    end
+    for u, v in pairs(that_epsilons[2]) do
+      epsilons1[n + u] = n + v
+    end
+  end
+
+  local that_transitions = that.transitions
+  for char = 0, 255 do
+    local transition = transitions[char]
+    for u, v in pairs(that_transitions[char]) do
+      transition[n + u] = n + v
+    end
+  end
+
+  local accept_states = {}
+  for u, accept in pairs(that.accept_states) do
+    accept_states[n + u] = accept
+  end
+
+  local max_state = n + that.max_state
+  this.max_state = max_state
+  that.max_state = max_state
+  that.epsilons = epsilons
+  that.transitions = transitions
+  that.start_state = n + that.start_state
+  that.accept_states = accept_states
+  return this, that
+end
+
+function color_reachable(this)
+  local transitions = this.transitions
+  local start_state = this.start_state
+  local accept_states = this.accept_states
+
+  local reverse_transitions = {}
+
+  local stack = { start_state }
+  local color = { [start_state] = true }
+  while true do
+    local n = #stack
+    local u = stack[n]
+    if u == nil then
+      break
+    end
+    stack[n] = nil
+    for char = 0, 255 do
+      local v = transitions[char][u]
+      if v and u ~= v then
+        local reverse_transition = reverse_transitions[v]
+        if reverse_transition then
+          reverse_transition[u] = true
+        else
+          reverse_transitions[v] = { [u] = true }
+        end
+        if not color[v] then
+          stack[#stack + 1] = v
+          color[v] = true
+        end
+      end
+    end
+  end
+
+  local stack = {}
+  local color = {}
+  for u in pairs(accept_states) do
+    stack[#stack + 1] = u
+    color[u] = true
+  end
+  while true do
+    local n = #stack
+    local u = stack[n]
+    if u == nil then
+      break
+    end
+    stack[n] = nil
+    local reverse_transition = reverse_transitions[u]
+    if reverse_transition then
+      for v in pairs(reverse_transition) do
+        if not color[v] then
+          stack[#stack + 1] = v
+          color[v] = true
+        end
+      end
+    end
+  end
+
+  return color
 end
 
 local class = {}
@@ -141,7 +252,7 @@ function class.tree_to_nfa(root, accept)
           local dfa = class.difference(dfa1, dfa2)
           local dfa = class.minimize(dfa)
 
-          local this, that = class.merge({
+          local this, that = merge({
             max_state = max_state;
             epsilons = epsilons;
             transitions = transitions;
@@ -293,57 +404,7 @@ function class.minimize(this)
   local start_state = this.start_state
   local accept_states = this.accept_states
 
-  local reverse_transitions = {}
-  local stack = { start_state }
-  local color = { [start_state] = true }
-  while true do
-    local n = #stack
-    local u = stack[n]
-    if u == nil then
-      break
-    end
-    stack[n] = nil
-    for char = 0, 255 do
-      local v = transitions[char][u]
-      if v then
-        local reverse_transition = reverse_transitions[v]
-        if reverse_transition == nil then
-          reverse_transition = {}
-          reverse_transitions[v] = reverse_transition
-        end
-        reverse_transition[u] = true
-        if not color[v] then
-          stack[n] = v
-          color[v] = true
-          n = n + 1
-        end
-      end
-    end
-  end
-  local stack = {}
-  local color = {}
-  for k in pairs(accept_states) do
-    stack[#stack + 1] = k
-    color[k] = true
-  end
-  while true do
-    local n = #stack
-    local u = stack[n]
-    if u == nil then
-      break
-    end
-    stack[n] = nil
-    local reverse_transition = reverse_transitions[u]
-    if reverse_transition then
-      for v in pairs(reverse_transition) do
-        if not color[v] then
-          stack[n] = v
-          color[v] = true
-          n = n + 1
-        end
-      end
-    end
-  end
+  local color = color_reachable(this)
 
   local accept_partitions = {}
   local partition
@@ -461,61 +522,8 @@ function class.minimize(this)
   }, partitions
 end
 
-function class.merge(this, that)
-  local max_state = this.max_state
-  local epsilons = this.epsilons
-  local epsilons1
-  local epsilons2
-  if epsilons == nil then
-    epsilons1 = {}
-    epsilons2 = {}
-    epsilons = { epsilons1, epsilons2 }
-    this.epsilons = epsilons
-  else
-    epsilons1 = epsilons[1]
-    epsilons2 = epsilons[2]
-  end
-  local transitions = this.transitions
-
-  local that_epsilons = that.epsilons
-  if that_epsilons then
-    for from_state, to_state in pairs(that_epsilons[1]) do
-      epsilons1[from_state + max_state] = to_state + max_state
-    end
-    for from_state, to_state in pairs(that_epsilons[2]) do
-      epsilons2[from_state + max_state] = to_state + max_state
-    end
-  end
-
-  local that_transitions = that.transitions
-  for char = 0, 255 do
-    local transition = transitions[char]
-    for from_state, to_state in pairs(that_transitions[char]) do
-      transition[from_state + max_state] = to_state + max_state
-    end
-  end
-
-  local accept_states = {}
-  for state, accept in pairs(that.accept_states) do
-    accept_states[state + max_state] = accept
-  end
-
-  local start_state = that.start_state + max_state
-
-  local max_state = max_state + that.max_state
-  this.max_state = max_state
-
-  return this, {
-    max_state = max_state;
-    epsilons = epsilons;
-    transitions = transitions;
-    start_state = start_state;
-    accept_states = accept_states
-  }
-end
-
 function class.union(this, that)
-  local this, that = class.merge(this, that)
+  local this, that = merge(this, that)
 
   local max_state = this.max_state + 1
   local epsilons = this.epsilons
