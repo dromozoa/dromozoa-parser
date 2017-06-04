@@ -370,7 +370,7 @@ local function merge(this, that)
       epsilons1[n + u] = n + v
     end
     for u, v in pairs(that_epsilons[2]) do
-      epsilons1[n + u] = n + v
+      epsilons2[n + u] = n + v
     end
   end
 
@@ -395,6 +395,21 @@ local function merge(this, that)
   that.start_state = n + that.start_state
   that.accept_states = accept_states
   return this, that
+end
+
+local function concat(this, that)
+  local this, that = merge(this, that)
+
+  local epsilons = this.epsilons
+  local epsilons1 = epsilons[1]
+
+  local v = that.start_state
+  for u in pairs(this.accept_states) do
+    epsilons1[u] = v
+  end
+
+  this.accept_states = that.accept_states
+  return this
 end
 
 local function union(this, that)
@@ -540,6 +555,10 @@ end
 
 function class.minimize(this)
   return minimize(this)
+end
+
+function class.concat(this, that)
+  return concat(this, that)
 end
 
 function class.union(this, that)
