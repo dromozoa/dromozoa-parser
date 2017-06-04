@@ -122,38 +122,41 @@ function merge(this, that)
   return this, that
 end
 
-local function epsilon_closure(this, u)
-  local epsilons = this.epsilons
-  local epsilons1 = epsilons[1]
-  local epsilons2 = epsilons[2]
+local function epsilon_closure(this, epsilon_closures, u)
+  local epsilon_closure = epsilon_closures[u]
+  if epsilon_closure == nil then
+    epsilon_closure = {}
+    epsilon_closures[u] = epsilon_closure
 
-  local epsilon_closure = {}
+    local epsilons = this.epsilons
+    local epsilons1 = epsilons[1]
+    local epsilons2 = epsilons[2]
 
-  local stack = { u }
-  local color = { [u] = true }
-  while true do
-    local n = #stack
-    local u = stack[n]
-    if u == nil then
-      break
-    end
-    stack[n] = nil
-    epsilon_closure[u] = true
-    local v = epsilons1[u]
-    if v then
-      if not color[v] then
-        stack[n] = v
-        color[v] = true
-        n = n + 1
+    local stack = { u }
+    local color = { [u] = true }
+    while true do
+      local n = #stack
+      local u = stack[n]
+      if u == nil then
+        break
       end
-      local v = epsilons2[u]
-      if v and not color[v] then
-        stack[n] = v
-        color[v] = true
+      stack[n] = nil
+      epsilon_closure[u] = true
+      local v = epsilons1[u]
+      if v then
+        if not color[v] then
+          stack[n] = v
+          color[v] = true
+          n = n + 1
+        end
+        local v = epsilons2[u]
+        if v and not color[v] then
+          stack[n] = v
+          color[v] = true
+        end
       end
     end
   end
-
   return epsilon_closure
 end
 
@@ -164,15 +167,10 @@ local function nfa_to_dfa(this)
   local transitions = this.transitions
   local accept_states = this.accept_states
 
-  -- [TODO] 効率化できるか？
-  -- [TODO] nfa.max_stateに依存しないようにする
   local epsilon_closures = {}
-  for u = 1, this.max_state do
-    epsilon_closures[u] = epsilon_closure(this, u)
-  end
 
   local max_state = 1
-  local uset = epsilon_closures[this.start_state]
+  local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
   local maps = {}
   insert(maps, useq, max_state)
@@ -199,7 +197,7 @@ local function nfa_to_dfa(this)
       for i = 1, #useq do
         local transition = transitions[char][useq[i]]
         if transition then
-          for k in pairs(epsilon_closures[transition]) do
+          for k in pairs(epsilon_closure(this, epsilon_closures, transition)) do
             if vset == nil then
               vset = {}
             end
