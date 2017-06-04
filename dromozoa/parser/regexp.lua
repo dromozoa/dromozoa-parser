@@ -60,68 +60,6 @@ local function insert(maps, key, value)
   map[key[n]] = value
 end
 
-local function merge_accept_state(accept_states, set)
-  local result
-  for k in pairs(set) do
-    local accept = accept_states[k]
-    if accept then
-      if result == nil or result > accept then
-        result = accept
-      end
-    end
-  end
-  return result
-end
-
-function merge(this, that)
-  local n = this.max_state
-  local epsilons = this.epsilons
-  local epsilons1
-  local epsilons2
-  if epsilons == nil then
-    epsilons1 = {}
-    epsilons2 = {}
-    epsilons = { epsilons1, epsilons2 }
-    this.epsilons = epsilons
-  else
-    epsilons1 = epsilons[1]
-    epsilons2 = epsilons[2]
-  end
-  local transitions = this.transitions
-
-  local that_epsilons = that.epsilons
-  if that_epsilons then
-    for u, v in pairs(that_epsilons[1]) do
-      epsilons1[n + u] = n + v
-    end
-    for u, v in pairs(that_epsilons[2]) do
-      epsilons1[n + u] = n + v
-    end
-  end
-
-  local that_transitions = that.transitions
-  for char = 0, 255 do
-    local transition = transitions[char]
-    for u, v in pairs(that_transitions[char]) do
-      transition[n + u] = n + v
-    end
-  end
-
-  local accept_states = {}
-  for u, accept in pairs(that.accept_states) do
-    accept_states[n + u] = accept
-  end
-
-  local max_state = n + that.max_state
-  this.max_state = max_state
-  that.max_state = max_state
-  that.epsilons = epsilons
-  that.transitions = transitions
-  that.start_state = n + that.start_state
-  that.accept_states = accept_states
-  return this, that
-end
-
 local function epsilon_closure(this, epsilon_closures, u)
   local epsilon_closure = epsilon_closures[u]
   if epsilon_closure == nil then
@@ -160,19 +98,29 @@ local function epsilon_closure(this, epsilon_closures, u)
   return epsilon_closure
 end
 
+local function merge_accept_state(accept_states, set)
+  local result
+  for u in pairs(set) do
+    local accept = accept_states[u]
+    if accept then
+      if result == nil or result > accept then
+        result = accept
+      end
+    end
+  end
+  return result
+end
+
 local function nfa_to_dfa(this)
-  local epsilons = this.epsilons
-  local epsilons1 = epsilons[1]
-  local epsilons2 = epsilons[2]
   local transitions = this.transitions
   local accept_states = this.accept_states
 
-  local epsilon_closures = {}
-
   local max_state = 1
+  local epsilon_closures = {}
+  local maps = {}
+
   local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
-  local maps = {}
   insert(maps, useq, max_state)
 
   local new_transitions = {}
@@ -195,13 +143,14 @@ local function nfa_to_dfa(this)
     for char = 0, 255 do
       local vset
       for i = 1, #useq do
-        local transition = transitions[char][useq[i]]
-        if transition then
-          for k in pairs(epsilon_closure(this, epsilon_closures, transition)) do
-            if vset == nil then
-              vset = {}
+        local x = transitions[char][useq[i]]
+        if x then
+          for y in pairs(epsilon_closure(this, epsilon_closures, x)) do
+            if vset then
+              vset[y] = true
+            else
+              vset = { [y] = true }
             end
-            vset[k] = true
           end
         end
       end
@@ -399,6 +348,74 @@ local function minimize(this)
   }, partitions
 end
 
+local function merge(this, that)
+  local n = this.max_state
+  local epsilons = this.epsilons
+  local epsilons1
+  local epsilons2
+  if epsilons == nil then
+    epsilons1 = {}
+    epsilons2 = {}
+    epsilons = { epsilons1, epsilons2 }
+    this.epsilons = epsilons
+  else
+    epsilons1 = epsilons[1]
+    epsilons2 = epsilons[2]
+  end
+  local transitions = this.transitions
+
+  local that_epsilons = that.epsilons
+  if that_epsilons then
+    for u, v in pairs(that_epsilons[1]) do
+      epsilons1[n + u] = n + v
+    end
+    for u, v in pairs(that_epsilons[2]) do
+      epsilons1[n + u] = n + v
+    end
+  end
+
+  local that_transitions = that.transitions
+  for char = 0, 255 do
+    local transition = transitions[char]
+    for u, v in pairs(that_transitions[char]) do
+      transition[n + u] = n + v
+    end
+  end
+
+  local accept_states = {}
+  for u, accept in pairs(that.accept_states) do
+    accept_states[n + u] = accept
+  end
+
+  local max_state = n + that.max_state
+  this.max_state = max_state
+  that.max_state = max_state
+  that.epsilons = epsilons
+  that.transitions = transitions
+  that.start_state = n + that.start_state
+  that.accept_states = accept_states
+  return this, that
+end
+
+local function union(this, that)
+  local this, that = merge(this, that)
+
+  local max_state = this.max_state + 1
+  local epsilons = this.epsilons
+  local accept_states = this.accept_states
+
+  epsilons[1][max_state] = this.start_state
+  epsilons[2][max_state] = that.start_state
+
+  for u, accept in pairs(that.accept_states) do
+    accept_states[u] = accept
+  end
+
+  this.max_state = max_state
+  this.start_state = max_state
+  return this
+end
+
 local class = {}
 
 function class.tree_to_nfa(root, accept)
@@ -526,22 +543,7 @@ function class.minimize(this)
 end
 
 function class.union(this, that)
-  local this, that = merge(this, that)
-
-  local max_state = this.max_state + 1
-  local epsilons = this.epsilons
-  local accept_states = this.accept_states
-
-  epsilons[1][max_state] = this.start_state
-  epsilons[2][max_state] = that.start_state
-
-  for state, accept in pairs(that.accept_states) do
-    accept_states[state] = accept
-  end
-
-  this.max_state = max_state
-  this.start_state = max_state
-  return this
+  return union(this, that)
 end
 
 function class.difference(this, that)

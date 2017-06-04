@@ -23,10 +23,10 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
--- local a1 = regexp.tree_to_nfa(P"abcd", 1)
-local a1 = regexp.tree_to_nfa(S"abc"^"*" * P"abc" * S"abc"^"*")
--- local a2 = regexp.tree_to_nfa(P"aaaa", 2)
-local a2 = regexp.tree_to_nfa(S"abc"^"*")
+local a1 = regexp.tree_to_nfa(P"abcd", 1)
+-- local a1 = regexp.tree_to_nfa(S"abc"^"*" * P"abc" * S"abc"^"*")
+local a2 = regexp.tree_to_nfa(P"aaaa", 2)
+-- local a2 = regexp.tree_to_nfa(S"abc"^"*")
 local a3 = regexp.tree_to_nfa(P"x"^"*", 3)
 local a4 = regexp.tree_to_nfa(R("ad")^"+", 4)
 
@@ -36,8 +36,8 @@ a3 = regexp.minimize(regexp.nfa_to_dfa(a3))
 a4 = regexp.minimize(regexp.nfa_to_dfa(a4))
 
 regexp.union(a1, a2)
--- regexp.union(a1, a3)
--- regexp.union(a1, a4)
+regexp.union(a1, a3)
+regexp.union(a1, a4)
 
 -- regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), a1):close()
 
