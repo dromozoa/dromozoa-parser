@@ -431,6 +431,60 @@ local function union(this, that)
   return this
 end
 
+local function difference(this, that)
+  local this_max_state = this.max_state
+  local that_max_state = that.max_state
+  local this_trantions = this.transitions
+  local that_trantions = that.transitions
+  local that_accept_states = that.accept_states
+
+  local n = this_max_state + 1
+
+  local transitions = {}
+  for char = 0, 255 do
+    transitions[char] = {}
+  end
+  local accept_states = {}
+
+  for i = 0, this_max_state do
+    for j = 0, that_max_state do
+      local u = i + n * j
+      if u ~= 0 then
+        for char = 0, 255 do
+          local x = this_trantions[char][i]
+          local y = that_trantions[char][j]
+          if x == nil then
+            x = 0
+          end
+          if y == nil then
+            y = 0
+          end
+          local v = x + n * y
+          if v ~= 0 then
+            transitions[char][u] = v
+          end
+        end
+      end
+    end
+  end
+
+  for i, accept in pairs(this.accept_states) do
+    for j = 1, that_max_state do
+      if that_accept_states[j] == nil then
+        local u = i + n * j
+        accept_states[u] = accept
+      end
+    end
+  end
+
+  return {
+    max_state = this_max_state + n * that_max_state;
+    transitions = transitions;
+    start_state = this.start_state + n * that.start_state;
+    accept_states = accept_states;
+  }
+end
+
 local class = {}
 
 function class.tree_to_nfa(root, accept)
@@ -566,59 +620,7 @@ function class.union(this, that)
 end
 
 function class.difference(this, that)
-  local transitions = {}
-  for char = 0, 255 do
-    transitions[char] = {}
-  end
-
-  local this_max_state = this.max_state
-  local that_max_state = that.max_state
-  local n = this_max_state + 1
-
-  local this_trantions = this.transitions
-  local that_trantions = that.transitions
-
-  for i = 0, this_max_state do
-    for j = 0, that_max_state do
-      local u = i + n * j
-      if u ~= 0 then
-        local transition = {}
-        for char = 0, 255 do
-          local tx = this_trantions[char][i]
-          local ty = that_trantions[char][j]
-          if tx == nil then
-            tx = 0
-          end
-          if ty == nil then
-            ty = 0
-          end
-          local v = tx + n * ty
-          if v ~= 0 then
-            transitions[char][u] = v
-          end
-        end
-      end
-    end
-  end
-
-  local accept_states = {}
-  local that_accept_states = that.accept_states
-
-  for i, accept in pairs(this.accept_states) do
-    for j = 1, that_max_state do
-      if that_accept_states[j] == nil then
-        local u = i + n * j
-        accept_states[u] = accept
-      end
-    end
-  end
-
-  return {
-    max_state = this_max_state + n * that_max_state;
-    transitions = transitions;
-    start_state = this.start_state + n * that.start_state;
-    accept_states = accept_states;
-  }
+  return difference(this, that)
 end
 
 return class
