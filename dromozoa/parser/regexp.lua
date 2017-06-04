@@ -122,17 +122,17 @@ function merge(this, that)
   return this, that
 end
 
-local function nfa_to_dfa(nfa)
-  local epsilons = nfa.epsilons
+local function nfa_to_dfa(this)
+  local epsilons = this.epsilons
   local epsilons1 = epsilons[1]
   local epsilons2 = epsilons[2]
-  local transitions = nfa.transitions
-  local accept_states = nfa.accept_states
+  local transitions = this.transitions
+  local accept_states = this.accept_states
 
   -- [TODO] 効率化できるか？
   -- [TODO] nfa.max_stateに依存しないようにする
   local epsilon_closures = {}
-  for state = 1, nfa.max_state do
+  for state = 1, this.max_state do
     local stack = { state }
     local color = { [state] = true }
     local epsilon_closure = {}
@@ -162,7 +162,7 @@ local function nfa_to_dfa(nfa)
   end
 
   local max_state = 1
-  local uset = epsilon_closures[nfa.start_state]
+  local uset = epsilon_closures[this.start_state]
   local useq = set_to_seq(uset)
   local maps = {}
   insert(maps, useq, max_state)
@@ -509,8 +509,8 @@ function class.tree_to_nfa(root, accept)
   }
 end
 
-function class.nfa_to_dfa(nfa)
-  return nfa_to_dfa(nfa)
+function class.nfa_to_dfa(this)
+  return nfa_to_dfa(this)
 end
 
 function class.minimize(this)
