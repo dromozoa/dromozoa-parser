@@ -122,6 +122,105 @@ function merge(this, that)
   return this, that
 end
 
+local function nfa_to_dfa(nfa)
+  local epsilons = nfa.epsilons
+  local epsilons1 = epsilons[1]
+  local epsilons2 = epsilons[2]
+  local transitions = nfa.transitions
+  local accept_states = nfa.accept_states
+
+  -- [TODO] 効率化できるか？
+  -- [TODO] nfa.max_stateに依存しないようにする
+  local epsilon_closures = {}
+  for state = 1, nfa.max_state do
+    local stack = { state }
+    local color = { [state] = true }
+    local epsilon_closure = {}
+    while true do
+      local n = #stack
+      local u = stack[n]
+      if u == nil then
+        break
+      end
+      stack[n] = nil
+      epsilon_closure[u] = true
+      local v = epsilons1[u]
+      if v then
+        if not color[v] then
+          stack[n] = v
+          color[v] = true
+          n = n + 1
+        end
+        local v = epsilons2[u]
+        if v and not color[v] then
+          stack[n] = v
+          color[v] = true
+        end
+      end
+    end
+    epsilon_closures[state] = epsilon_closure
+  end
+
+  local max_state = 1
+  local uset = epsilon_closures[nfa.start_state]
+  local useq = set_to_seq(uset)
+  local maps = {}
+  insert(maps, useq, max_state)
+
+  local new_transitions = {}
+  for char = 0, 255 do
+    new_transitions[char] = {}
+  end
+  local new_accept_states = {
+    [max_state] = merge_accept_state(accept_states, uset);
+  }
+
+  local stack = { useq }
+  while true do
+    local n = #stack
+    local useq = stack[n]
+    if useq == nil then
+      break
+    end
+    stack[n] = nil
+    local u = find(maps, useq)
+    for char = 0, 255 do
+      local vset
+      for i = 1, #useq do
+        local transition = transitions[char][useq[i]]
+        if transition then
+          for k in pairs(epsilon_closures[transition]) do
+            if vset == nil then
+              vset = {}
+            end
+            vset[k] = true
+          end
+        end
+      end
+      if vset then
+        local vseq = set_to_seq(vset)
+        local v = find(maps, vseq)
+        if v == nil then
+          max_state = max_state + 1
+          v = max_state
+          insert(maps, vseq, v)
+          stack[n] = vseq
+          n = n + 1
+          new_accept_states[v] = merge_accept_state(accept_states, vset)
+        end
+        new_transitions[char][u] = v
+      end
+    end
+  end
+
+  return {
+    max_state = max_state;
+    transitions = new_transitions;
+    start_state = 1;
+    accept_states = new_accept_states;
+  }, epsilon_closures
+end
+
 local function minimize(this)
   local transitions = this.transitions
   local start_state = this.start_state
@@ -411,102 +510,7 @@ function class.tree_to_nfa(root, accept)
 end
 
 function class.nfa_to_dfa(nfa)
-  local epsilons = nfa.epsilons
-  local epsilons1 = epsilons[1]
-  local epsilons2 = epsilons[2]
-  local transitions = nfa.transitions
-  local accept_states = nfa.accept_states
-
-  -- [TODO] 効率化できるか？
-  -- [TODO] nfa.max_stateに依存しないようにする
-  local epsilon_closures = {}
-  for state = 1, nfa.max_state do
-    local stack = { state }
-    local color = { [state] = true }
-    local epsilon_closure = {}
-    while true do
-      local n = #stack
-      local u = stack[n]
-      if u == nil then
-        break
-      end
-      stack[n] = nil
-      epsilon_closure[u] = true
-      local v = epsilons1[u]
-      if v then
-        if not color[v] then
-          stack[n] = v
-          color[v] = true
-          n = n + 1
-        end
-        local v = epsilons2[u]
-        if v and not color[v] then
-          stack[n] = v
-          color[v] = true
-        end
-      end
-    end
-    epsilon_closures[state] = epsilon_closure
-  end
-
-  local max_state = 1
-  local uset = epsilon_closures[nfa.start_state]
-  local useq = set_to_seq(uset)
-  local maps = {}
-  insert(maps, useq, max_state)
-
-  local new_transitions = {}
-  for char = 0, 255 do
-    new_transitions[char] = {}
-  end
-  local new_accept_states = {
-    [max_state] = merge_accept_state(accept_states, uset);
-  }
-
-  local stack = { useq }
-  while true do
-    local n = #stack
-    local useq = stack[n]
-    if useq == nil then
-      break
-    end
-    stack[n] = nil
-    local u = find(maps, useq)
-    for char = 0, 255 do
-      local vset
-      for i = 1, #useq do
-        local transition = transitions[char][useq[i]]
-        if transition then
-          for k in pairs(epsilon_closures[transition]) do
-            if vset == nil then
-              vset = {}
-            end
-            vset[k] = true
-          end
-        end
-      end
-      if vset then
-        local vseq = set_to_seq(vset)
-        local v = find(maps, vseq)
-        if v == nil then
-          max_state = max_state + 1
-          v = max_state
-          insert(maps, vseq, v)
-          stack[n] = vseq
-          n = n + 1
-          new_accept_states[v] = merge_accept_state(accept_states, vset)
-        end
-        new_transitions[char][u] = v
-      end
-    end
-  end
-
-  return {
-    max_state = max_state;
-    transitions = new_transitions;
-    start_state = 1;
-    accept_states = new_accept_states;
-  }, epsilon_closures
+  return nfa_to_dfa(nfa)
 end
 
 function class.minimize(this)
