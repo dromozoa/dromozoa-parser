@@ -235,13 +235,13 @@ local function minimize(this)
             local py = new_partition_table[uy]
             if px then
               if py == nil then
-                local partition = new_partitions[px]
-                partition[#partition + 1] = uy
+                local new_partition = new_partitions[px]
+                new_partition[#new_partition + 1] = uy
                 new_partition_table[uy] = px
               end
             elseif py then
-              local partition = new_partitions[py]
-              partition[#partition + 1] = ux
+              local new_partition = new_partitions[py]
+              new_partition[#new_partition + 1] = ux
               new_partition_table[ux] = py
             else
               local p = #new_partitions + 1
