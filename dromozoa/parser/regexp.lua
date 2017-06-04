@@ -15,8 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-
 local function set_to_seq(set)
   local key = {}
   for k in pairs(set) do
@@ -599,28 +597,36 @@ end
 
 local class = {}
 
-function class.tree_to_nfa(root, accept)
+function class.new(root, accept)
   return tree_to_nfa(root, accept)
 end
 
-function class.nfa_to_dfa(this)
-  return nfa_to_dfa(this)
+function class:nfa_to_dfa()
+  return setmetatable(nfa_to_dfa(self), class.metatable)
 end
 
-function class.minimize(this)
-  return minimize(this)
+function class:minimize()
+  return setmetatable(minimize(self), class.metatable)
 end
 
-function class.concat(this, that)
-  return concat(this, that)
+function class:concat(that)
+  return concat(self, that)
 end
 
-function class.union(this, that)
-  return union(this, that)
+function class:union(that)
+  return union(self, that)
 end
 
-function class.difference(this, that)
-  return difference(this, that)
+function class:difference(that)
+  return setmetatable(difference(self, that), class.metatable)
 end
 
-return class
+class.metatable = {
+  __index = class;
+}
+
+return setmetatable(class, {
+  __call = function (_, root, accept)
+    return setmetatable(class.new(root, accept), class.metatable)
+  end;
+})
