@@ -220,43 +220,41 @@ local function minimize(this)
     for i = 1, #partitions do
       local partition = partitions[i]
       for i = 1, #partition do
-        local x = partition[i]
+        local ux = partition[i]
         for j = 1, i - 1 do
-          local y = partition[j]
-          local same_group = true
+          local uy = partition[j]
+          local same_partition = true
           for char = 0, 255 do
-            local tx = transitions[char][x]
-            local ty = transitions[char][y]
-            if partition_table[tx] ~= partition_table[ty] then
-              same_group = false
+            if partition_table[transitions[char][ux]] ~= partition_table[transitions[char][uy]] then
+              same_partition = false
               break
             end
           end
-          if same_group then
-            local gx = new_partition_table[x]
-            local gy = new_partition_table[y]
-            if gx then
-              if gy == nil then
-                local partition = new_partitions[gx]
-                partition[#partition + 1] = y
-                new_partition_table[y] = gx
+          if same_partition then
+            local px = new_partition_table[ux]
+            local py = new_partition_table[uy]
+            if px then
+              if py == nil then
+                local partition = new_partitions[px]
+                partition[#partition + 1] = uy
+                new_partition_table[uy] = px
               end
-            elseif gy then
-              local partition = new_partitions[gy]
-              partition[#partition + 1] = x
-              new_partition_table[x] = gy
+            elseif py then
+              local partition = new_partitions[py]
+              partition[#partition + 1] = ux
+              new_partition_table[ux] = py
             else
-              local g = #new_partitions + 1
-              new_partitions[g] = { x, y }
-              new_partition_table[x] = g
-              new_partition_table[y] = g
+              local p = #new_partitions + 1
+              new_partitions[p] = { ux, uy }
+              new_partition_table[ux] = p
+              new_partition_table[uy] = p
             end
           end
         end
-        if new_partition_table[x] == nil then
-          local g = #new_partitions + 1
-          new_partitions[g] = { x }
-          new_partition_table[x] = g
+        if new_partition_table[ux] == nil then
+          local p = #new_partitions + 1
+          new_partitions[p] = { ux }
+          new_partition_table[ux] = p
         end
       end
     end
