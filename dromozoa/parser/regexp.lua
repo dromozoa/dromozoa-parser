@@ -485,9 +485,7 @@ local function difference(this, that)
   }
 end
 
-local class = {}
-
-function class.tree_to_nfa(root, accept)
+local function tree_to_nfa(root, accept)
   if accept == nil then
     accept = 1
   end
@@ -537,23 +535,21 @@ function class.tree_to_nfa(root, accept)
           epsilons1[a.v] = v
           epsilons1[b.v] = v
         elseif code == 6 then -- difference
-          -- [TODO] コードをきれいにする
-          local dfa1 = minimize(class.nfa_to_dfa({
+          local this = minimize(nfa_to_dfa({
             max_state = max_state;
             epsilons = epsilons;
             transitions = transitions;
             start_state = a.u;
             accept_states = { [a.v] = accept };
           }))
-          local dfa2 = minimize(class.nfa_to_dfa({
+          local that = minimize(nfa_to_dfa({
             max_state = max_state;
             epsilons = epsilons;
             transitions = transitions;
             start_state = b.u;
             accept_states = { [b.v] = accept };
           }))
-          local dfa = class.difference(dfa1, dfa2)
-          local dfa = minimize(dfa)
+          local that = minimize(difference(this, that))
 
           local this, that = merge({
             max_state = max_state;
@@ -561,15 +557,13 @@ function class.tree_to_nfa(root, accept)
             transitions = transitions;
             start_state = u;
             accept_states = { [v] = accept };
-          }, dfa)
+          }, that)
 
           max_state = this.max_state
-
           epsilons1[u] = that.start_state
           for w in pairs(that.accept_states) do
             epsilons1[w] = v
           end
-
         else -- 0 or more repetition / optional
           local au = a.u
           local av = a.v
@@ -601,6 +595,12 @@ function class.tree_to_nfa(root, accept)
     start_state = root.u;
     accept_states = { [root.v] = accept };
   }
+end
+
+local class = {}
+
+function class.tree_to_nfa(root, accept)
+  return tree_to_nfa(root, accept)
 end
 
 function class.nfa_to_dfa(this)
