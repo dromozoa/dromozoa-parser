@@ -220,41 +220,41 @@ local function minimize(this)
     for i = 1, #partitions do
       local partition = partitions[i]
       for i = 1, #partition do
-        local ux = partition[i]
+        local x = partition[i]
         for j = 1, i - 1 do
-          local uy = partition[j]
+          local y = partition[j]
           local same_partition = true
           for char = 0, 255 do
-            if partition_table[transitions[char][ux]] ~= partition_table[transitions[char][uy]] then
+            if partition_table[transitions[char][x]] ~= partition_table[transitions[char][y]] then
               same_partition = false
               break
             end
           end
           if same_partition then
-            local px = new_partition_table[ux]
-            local py = new_partition_table[uy]
+            local px = new_partition_table[x]
+            local py = new_partition_table[y]
             if px then
               if py == nil then
                 local new_partition = new_partitions[px]
-                new_partition[#new_partition + 1] = uy
-                new_partition_table[uy] = px
+                new_partition[#new_partition + 1] = y
+                new_partition_table[y] = px
               end
             elseif py then
               local new_partition = new_partitions[py]
-              new_partition[#new_partition + 1] = ux
-              new_partition_table[ux] = py
+              new_partition[#new_partition + 1] = x
+              new_partition_table[x] = py
             else
               local p = #new_partitions + 1
-              new_partitions[p] = { ux, uy }
-              new_partition_table[ux] = p
-              new_partition_table[uy] = p
+              new_partitions[p] = { x, y }
+              new_partition_table[x] = p
+              new_partition_table[y] = p
             end
           end
         end
-        if new_partition_table[ux] == nil then
+        if new_partition_table[x] == nil then
           local p = #new_partitions + 1
-          new_partitions[p] = { ux }
-          new_partition_table[ux] = p
+          new_partitions[p] = { x }
+          new_partition_table[x] = p
         end
       end
     end
