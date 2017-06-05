@@ -43,7 +43,6 @@ regexp_writer.write_automaton(assert(io.open("test-a3.dot", "w")), a3):close()
 local a4 = a3:minimize()
 regexp_writer.write_automaton(assert(io.open("test-a4.dot", "w")), a4):close()
 
-
 local p = P"cba" * (S"abc"^"*" - S"abc"^"*" * P"ccc" * S"abc"^"*") * P"abc"
 local nfa = regexp(p)
 regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa):close()
