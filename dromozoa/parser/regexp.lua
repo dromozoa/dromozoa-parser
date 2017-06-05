@@ -39,7 +39,7 @@ local function find(maps, seq)
   return map[seq[n]]
 end
 
-local function insert(maps, seq, u)
+local function insert(maps, seq, value)
   local n = #seq
   local map = maps[n]
   if map == nil then
@@ -55,7 +55,7 @@ local function insert(maps, seq, u)
     end
     map = m
   end
-  map[seq[n]] = u
+  map[seq[n]] = value
 end
 
 local function epsilon_closure(this, epsilon_closures, u)
@@ -155,15 +155,15 @@ local function nfa_to_dfa(this)
       if vset then
         local vseq = set_to_seq(vset)
         local v = find(maps, vseq)
-        if v == nil then
+        if v then
+          new_transitions[char][u] = v
+        else
           max_state = max_state + 1
-          v = max_state
-          insert(maps, vseq, v)
-          stack[n] = vseq
-          n = n + 1
-          new_accept_states[v] = merge_accept_state(accept_states, vset)
+          insert(maps, vseq, max_state)
+          stack[#stack + 1] = vseq
+          new_accept_states[max_state] = merge_accept_state(accept_states, vset)
+          new_transitions[char][u] = max_state
         end
-        new_transitions[char][u] = v
       end
     end
   end
