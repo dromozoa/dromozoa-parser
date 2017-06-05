@@ -27,12 +27,12 @@ end
 local function find(maps, seq)
   local n = #seq
   local map = maps[n]
-  if map == nil then
+  if not map then
     return
   end
   for i = 1, n - 1 do
     map = map[seq[i]]
-    if map == nil then
+    if not map then
       return
     end
   end
@@ -42,14 +42,14 @@ end
 local function insert(maps, seq, value)
   local n = #seq
   local map = maps[n]
-  if map == nil then
+  if not map then
     map = {}
     maps[n] = map
   end
   for i = 1, n - 1 do
     local k = seq[i]
     local m = map[k]
-    if m == nil then
+    if not m then
       m = {}
       map[k] = m
     end
@@ -100,10 +100,8 @@ local function merge_accept_state(accept_states, set)
   local result
   for u in pairs(set) do
     local accept = accept_states[u]
-    if accept then
-      if result == nil or result > accept then
-        result = accept
-      end
+    if accept and (not result or result > accept) then
+      result = accept
     end
   end
   return result
@@ -133,7 +131,7 @@ local function nfa_to_dfa(this)
   while true do
     local n = #stack
     local useq = stack[n]
-    if useq == nil then
+    if not useq then
       break
     end
     stack[n] = nil
@@ -188,7 +186,7 @@ local function minimize(this)
   while true do
     local n = #stack
     local u = stack[n]
-    if u == nil then
+    if not u then
       break
     end
     stack[n] = nil
@@ -218,7 +216,7 @@ local function minimize(this)
   while true do
     local n = #stack
     local u = stack[n]
-    if u == nil then
+    if not u then
       break
     end
     stack[n] = nil
@@ -288,7 +286,7 @@ local function minimize(this)
             local px = new_partition_table[x]
             local py = new_partition_table[y]
             if px then
-              if py == nil then
+              if not py then
                 local new_partition = new_partitions[px]
                 new_partition[#new_partition + 1] = y
                 new_partition_table[y] = px
@@ -305,7 +303,7 @@ local function minimize(this)
             end
           end
         end
-        if new_partition_table[x] == nil then
+        if not new_partition_table[x] then
           local p = #new_partitions + 1
           new_partitions[p] = { x }
           new_partition_table[x] = p
@@ -351,14 +349,14 @@ local function merge(this, that)
   local epsilons = this.epsilons
   local epsilons1
   local epsilons2
-  if epsilons == nil then
+  if epsilons then
+    epsilons1 = epsilons[1]
+    epsilons2 = epsilons[2]
+  else
     epsilons1 = {}
     epsilons2 = {}
     epsilons = { epsilons1, epsilons2 }
     this.epsilons = epsilons
-  else
-    epsilons1 = epsilons[1]
-    epsilons2 = epsilons[2]
   end
   local transitions = this.transitions
 
@@ -451,10 +449,10 @@ local function difference(this, that)
         for char = 0, 255 do
           local x = this_trantions[char][i]
           local y = that_trantions[char][j]
-          if x == nil then
+          if not x then
             x = 0
           end
-          if y == nil then
+          if not y then
             y = 0
           end
           local v = x + n * y
@@ -468,7 +466,7 @@ local function difference(this, that)
 
   for i, accept in pairs(this.accept_states) do
     for j = 1, that_max_state do
-      if that_accept_states[j] == nil then
+      if not that_accept_states[j] then
         local u = i + n * j
         accept_states[u] = accept
       end
@@ -484,7 +482,7 @@ local function difference(this, that)
 end
 
 local function tree_to_nfa(root, accept)
-  if accept == nil then
+  if not accept then
     accept = 1
   end
 
@@ -503,7 +501,7 @@ local function tree_to_nfa(root, accept)
     local n1 = #stack1
     local n2 = #stack2
     local node = stack1[n1]
-    if node == nil then
+    if not node then
       break
     end
     local code = node[1]
