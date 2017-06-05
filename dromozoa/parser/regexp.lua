@@ -39,7 +39,7 @@ local function find(maps, seq)
   return map[seq[n]]
 end
 
-local function insert(maps, seq, value)
+local function insert(maps, seq, u)
   local n = #seq
   local map = maps[n]
   if map == nil then
@@ -55,7 +55,7 @@ local function insert(maps, seq, value)
     end
     map = m
   end
-  map[seq[n]] = value
+  map[seq[n]] = u
 end
 
 local function epsilon_closure(this, epsilon_closures, u)
