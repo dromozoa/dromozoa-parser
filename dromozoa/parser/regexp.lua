@@ -60,7 +60,7 @@ end
 
 local function epsilon_closure(this, epsilon_closures, u)
   local epsilon_closure = epsilon_closures[u]
-  if epsilon_closure == nil then
+  if not epsilon_closure then
     epsilon_closure = {}
     epsilon_closures[u] = epsilon_closure
 
@@ -73,7 +73,7 @@ local function epsilon_closure(this, epsilon_closures, u)
     while true do
       local n = #stack
       local u = stack[n]
-      if u == nil then
+      if not u then
         break
       end
       stack[n] = nil
