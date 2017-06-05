@@ -171,7 +171,7 @@ local function nfa_to_dfa(this)
     transitions = new_transitions;
     start_state = 1;
     accept_states = new_accept_states;
-  }, epsilon_closures
+  }
 end
 
 local function minimize(this)
@@ -341,7 +341,7 @@ local function minimize(this)
     transitions = new_transitions,
     start_state = partition_table[this.start_state];
     accept_states = new_accept_states;
-  }, partitions
+  }
 end
 
 local function merge(this, that)
