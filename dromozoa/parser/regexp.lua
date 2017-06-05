@@ -16,38 +16,38 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local function set_to_seq(set)
-  local key = {}
-  for k in pairs(set) do
-    key[#key + 1] = k
+  local seq = {}
+  for u in pairs(set) do
+    seq[#seq + 1] = u
   end
-  table.sort(key)
-  return key
+  table.sort(seq)
+  return seq
 end
 
-local function find(maps, key)
-  local n = #key
+local function find(maps, seq)
+  local n = #seq
   local map = maps[n]
   if map == nil then
     return
   end
   for i = 1, n - 1 do
-    map = map[key[i]]
+    map = map[seq[i]]
     if map == nil then
       return
     end
   end
-  return map[key[n]]
+  return map[seq[n]]
 end
 
-local function insert(maps, key, value)
-  local n = #key
+local function insert(maps, seq, value)
+  local n = #seq
   local map = maps[n]
   if map == nil then
     map = {}
     maps[n] = map
   end
   for i = 1, n - 1 do
-    local k = key[i]
+    local k = seq[i]
     local m = map[k]
     if m == nil then
       m = {}
@@ -55,7 +55,7 @@ local function insert(maps, key, value)
     end
     map = m
   end
-  map[key[n]] = value
+  map[seq[n]] = value
 end
 
 local function epsilon_closure(this, epsilon_closures, u)
