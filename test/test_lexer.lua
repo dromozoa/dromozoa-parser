@@ -17,7 +17,6 @@
 
 local builder = require "dromozoa.parser.builder_v2"
 local regexp = require "dromozoa.parser.regexp"
-local regexp_writer = require "dromozoa.parser.regexp_writer"
 
 local P = builder.pattern
 local R = builder.range
@@ -28,4 +27,4 @@ local a2 = regexp(R"09"^"+", 2)
 local a3 = regexp(P[["]] * (P[[\]] * P(1) + (-S[[\"]])) * P[["]], 3)
 
 local a = a1:union(a2):union(a3):nfa_to_dfa():minimize()
-regexp_writer.write_automaton(assert(io.open("test-a.dot", "w")), a):close()
+a:write_graphviz(assert(io.open("test-a.dot", "w"))):close()

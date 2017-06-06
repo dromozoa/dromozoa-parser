@@ -430,7 +430,6 @@ end
 local function difference(this, that)
   local this_max_state = this.max_state
   local that_max_state = that.max_state
-  local this_trantions = this.transitions
   local that_trantions = that.transitions
   local that_accept_states = that.accept_states
 
@@ -593,6 +592,105 @@ local function tree_to_nfa(root, accept)
   }
 end
 
+local char_table = {}
+
+for char = 0, 31 do
+  char_table[char] = ([[\x%02x]]):format(char)
+end
+
+for char = 32, 126 do
+  char_table[char] = string.char(char)
+end
+
+for char = 127, 255 do
+  char_table[char] = ([[\x%02x]]):format(char)
+end
+
+char_table[0x26] = "&amp;"
+char_table[0x3c] = "&lt;"
+char_table[0x3e] = "&gt;"
+char_table[0x22] = "&quot;"
+char_table[0x27] = "&apos;"
+char_table[0x5c] = "\\\\\\\\"
+char_table[0x5d] = "\\]"
+
+local function write_graphviz(this, out)
+  local epsilons = this.epsilons
+  local transitions = this.transitions
+  local start_state = this.start_state
+  local accept_states = this.accept_states
+
+  out:write([[
+digraph g {
+graph [rankdir=LR];
+]])
+
+  for u, accept in pairs(accept_states) do
+    out:write(u, " [peripheries=2")
+    if u == start_state then
+      out:write(",style=filled,fillcolor=black,fontcolor=white")
+    end
+    out:write(',label="', u, " / ", accept, '"];\n')
+  end
+
+  if not accept_states[start_state] then
+    out:write(start_state, '[style=filled,fillcolor=black,fontcolor=white,label="', start_state, '"];\n')
+  end
+
+  if epsilons then
+    for u, v in pairs(epsilons[1]) do
+      out:write(u, " -> ", v, "\n")
+    end
+    for u, v in pairs(epsilons[2]) do
+      out:write(u, " -> ", v, "\n")
+    end
+  end
+
+  for u = 1, this.max_state do
+    local map = {}
+    for char = 0, 255 do
+      local v = transitions[char][u]
+      if v then
+        local item = map[v]
+        if item then
+          item[#item + 1] = char
+        else
+          map[v] = { char }
+        end
+      end
+    end
+    for v, item in pairs(map) do
+      local n = #item
+      local ranges = { { item[1], item[1] } }
+      for i = 2, n do
+        local char = item[i]
+        local range = ranges[#ranges]
+        if char == range[2] + 1 then
+          range[2] = char
+        else
+          ranges[#ranges + 1] = { char, char }
+        end
+      end
+      out:write(u, " -> ", v, " [label=<")
+      for i = 1, #ranges do
+        local range = ranges[i]
+        local char1, char2 = range[1], range[2]
+        if char1 == char2 then
+          out:write(char_table[char1])
+        else
+          out:write(char_table[char1], "-", char_table[char2])
+        end
+      end
+      out:write(">];\n")
+    end
+  end
+  out:write([[
+}
+]])
+
+  return out
+end
+
 local class = {}
 
 function class.new(root, accept)
@@ -617,6 +715,10 @@ end
 
 function class:difference(that)
   return setmetatable(difference(self, that), class.metatable)
+end
+
+function class:write_graphviz(out)
+  return write_graphviz(self, out)
 end
 
 class.metatable = {
