@@ -593,26 +593,22 @@ local function tree_to_nfa(root, accept)
 end
 
 local char_table = {}
-
-for char = 0, 31 do
-  char_table[char] = ([[\x%02x]]):format(char)
+for char = 0, 255 do
+  char_table[char] = ([[\\x%02x]]):format(char)
 end
-
 for char = 32, 126 do
   char_table[char] = string.char(char)
 end
-
-for char = 127, 255 do
-  char_table[char] = ([[\x%02x]]):format(char)
-end
-
-char_table[0x26] = "&amp;"
-char_table[0x3c] = "&lt;"
-char_table[0x3e] = "&gt;"
-char_table[0x22] = "&quot;"
-char_table[0x27] = "&apos;"
-char_table[0x5c] = "\\\\\\\\"
-char_table[0x5d] = "\\]"
+char_table[0x09] = [=[\\t]=]
+char_table[0x0a] = [=[\\n]=]
+char_table[0x0b] = [=[\\v]=]
+char_table[0x0c] = [=[\\f]=]
+char_table[0x0d] = [=[\\r]=]
+char_table[0x22] = [=[\"]=]
+char_table[0x5b] = [=[\\[]=]
+char_table[0x5c] = [=[\\\\]=]
+char_table[0x5d] = [=[\\]]=]
+char_table[0x5e] = [=[\\^]=]
 
 local function write_graphviz(this, out)
   local epsilons = this.epsilons
@@ -653,35 +649,66 @@ graph [rankdir=LR];
       if v then
         local item = map[v]
         if item then
-          item[#item + 1] = char
+          item.set[char] = true
+          item.n = item.n + 1
         else
-          map[v] = { char }
+          map[v] = {
+            set = { [char] = true };
+            n = 1;
+          }
         end
       end
     end
+
     for v, item in pairs(map) do
-      local n = #item
-      local ranges = { { item[1], item[1] } }
-      for i = 2, n do
-        local char = item[i]
-        local range = ranges[#ranges]
-        if char == range[2] + 1 then
-          range[2] = char
+      local n = item.n
+      if n == 256 then
+        out:write(u, "->", v, '[label="."];\n')
+      else
+        local set = item.set
+        local neg = n > 127
+
+        local ranges = {}
+        if neg then
+          for char = 0, 255 do
+            if not set[char] then
+              local range = ranges[#ranges]
+              if range and range[2] + 1 == char then
+                range[2] = char
+              else
+                ranges[#ranges + 1] = { char, char }
+              end
+            end
+          end
         else
-          ranges[#ranges + 1] = { char, char }
+          for char = 0, 255 do
+            if set[char] then
+              local range = ranges[#ranges]
+              if range and range[2] + 1 == char then
+                range[2] = char
+              else
+                ranges[#ranges + 1] = { char, char }
+              end
+            end
+          end
         end
-      end
-      out:write(u, " -> ", v, " [label=<")
-      for i = 1, #ranges do
-        local range = ranges[i]
-        local char1, char2 = range[1], range[2]
-        if char1 == char2 then
-          out:write(char_table[char1])
-        else
-          out:write(char_table[char1], "-", char_table[char2])
+
+        out:write(u, " -> ", v, ' [label="[')
+        if neg then
+          out:write("^")
         end
+
+        for i = 1, #ranges do
+          local range = ranges[i]
+          local char1, char2 = range[1], range[2]
+          if char1 == char2 then
+            out:write(char_table[char1])
+          else
+            out:write(char_table[char1], "-", char_table[char2])
+          end
+        end
+        out:write(']"];\n')
       end
-      out:write(">];\n")
     end
   end
   out:write([[
