@@ -27,10 +27,14 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
-local p = P"cba" * (S"abc"^"*" - S"abc"^"*" * P"abc" * S"abc"^"*") * P"abc"
+local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
 local nfa = regexp(p)
-regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), nfa):close()
+nfa:write_graphviz(assert(io.open("test-nfa.dot", "w")), nfa):close()
+
 local dfa1 = nfa:nfa_to_dfa()
+dfa1:write_graphviz(assert(io.open("test-dfa1.dot", "w")), nfa):close()
 local dfa2 = dfa1:minimize()
-regexp_writer.write_automaton(assert(io.open("test-dfa1.dot", "w")), dfa1):close()
-regexp_writer.write_automaton(assert(io.open("test-dfa2.dot", "w")), dfa2):close()
+dfa2:write_graphviz(assert(io.open("test-dfa2.dot", "w")), nfa):close()
+
+local p2 = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
+regexp(p2):nfa_to_dfa():minimize():write_graphviz(assert(io.open("test-dfa3.dot", "w")), nfa):close()

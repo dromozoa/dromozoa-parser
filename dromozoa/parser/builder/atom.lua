@@ -84,6 +84,24 @@ function class.metatable:__add(that)
   end
 end
 
+function class.metatable:__sub(that)
+  local pattern = class.super.pattern
+  local self = pattern(self)
+  local that = pattern(that)
+  if getmetatable(that) == class.metatable then
+    local set = {}
+    for char in pairs(self[2]) do
+      set[char] = true
+    end
+    for char in pairs(that[2]) do
+      set[char] = nil
+    end
+    return class(set)
+  else
+    return super.metatable.__add(self, that)
+  end
+end
+
 function class.metatable:__unm()
   local set = self[2]
   local neg = {}
