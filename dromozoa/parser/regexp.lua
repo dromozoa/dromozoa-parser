@@ -596,17 +596,17 @@ local function tree_to_nfa(root, accept)
 end
 
 local class = {}
-
-function class.new(root, accept)
-  return tree_to_nfa(root, accept)
-end
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class:nfa_to_dfa()
-  return setmetatable(nfa_to_dfa(self), class.metatable)
+  return setmetatable(nfa_to_dfa(self), metatable)
 end
 
 function class:minimize()
-  return setmetatable(minimize(self), class.metatable)
+  return setmetatable(minimize(self), metatable)
 end
 
 function class:concat(that)
@@ -618,19 +618,15 @@ function class:union(that)
 end
 
 function class:difference(that)
-  return setmetatable(difference(self, that), class.metatable)
+  return setmetatable(difference(self, that), metatable)
 end
 
 function class:write_graphviz(out)
   return write_graphviz(self, out)
 end
 
-class.metatable = {
-  __index = class;
-}
-
 return setmetatable(class, {
   __call = function (_, root, accept)
-    return setmetatable(class.new(root, accept), class.metatable)
+    return setmetatable(tree_to_nfa(root, accept), metatable)
   end;
 })
