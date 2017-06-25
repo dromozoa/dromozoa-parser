@@ -523,7 +523,7 @@ local function tree_to_nfa(root, accept)
         max_state = max_state + 1
         local v = max_state
         node.v = v
-        if code == 1 then -- byteacter class
+        if code == 1 then -- character class
           for byte in pairs(a) do
             transitions[byte][u] = v
           end
