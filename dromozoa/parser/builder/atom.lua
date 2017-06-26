@@ -24,6 +24,12 @@ end
 
 local class = {}
 local super = pattern
+local metatable = {
+  __index = class;
+  __mul = super.metatable.__mul;
+  __pow = super.metatable.__pow;
+}
+class.metatable = metatable
 
 function class.any()
   return class(any)
@@ -55,13 +61,6 @@ end
 function class:clone()
   return class(self[2])
 end
-
-local metatable = {
-  __index = class;
-  __mul = super.metatable.__mul;
-  __pow = super.metatable.__pow;
-}
-class.metatable = metatable
 
 function metatable:__add(that)
   local pattern = class.super.pattern
