@@ -22,11 +22,6 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
-local a1 = regexp(R"09AZaz" * R"AZaz"^"+", 1)
-local a2 = regexp(R"09"^"+", 2)
-local a3 = regexp(P[["]] * (P[[\]] * P(1) + (-S[[\"]]))^"*" * P[["]], 3)
-local a4 = regexp(S" \r\n\t\v\f"^"+", 4)
-local a5 = regexp(P"[" * S[["^]]^"+" * P"]", 5)
-
-local a = a1:union(a2):union(a3):union(a4):union(a5):nfa_to_dfa():minimize()
-a:write_graphviz(assert(io.open("test-a.dot", "w"))):close()
+local p = S("abc") + S("def")
+local nfa = regexp(p)
+nfa:write_graphviz(assert(io.open("test-nfa.dot", "w")), nfa):close()
