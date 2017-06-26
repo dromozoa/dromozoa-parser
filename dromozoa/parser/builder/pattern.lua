@@ -16,6 +16,10 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class.concat(items)
   local result = items[1]
@@ -33,11 +37,6 @@ function class:clone()
     return class(self[1], self[2]:clone(), that:clone())
   end
 end
-
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 function metatable:__add(that)
   local pattern = class.super.pattern
