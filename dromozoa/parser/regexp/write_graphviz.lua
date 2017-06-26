@@ -39,10 +39,7 @@ return function (this, out)
   local start_state = this.start_state
   local accept_states = this.accept_states
 
-  out:write([[
-digraph g {
-graph [rankdir=LR];
-]])
+  out:write('digraph g {\ngraph [rankdir=LR];\n')
 
   for u, accept in pairs(accept_states) do
     if u == start_state then
@@ -124,7 +121,7 @@ graph [rankdir=LR];
       end
     end
   end
-  out:write('}\n')
 
+  out:write('}\n')
   return out
 end
