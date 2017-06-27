@@ -47,9 +47,10 @@ function class:as(name)
   return self
 end
 
-class.metatable = {
+local metatable = {
   __index = class;
 }
+class.metatable = metatable
 
 function class.metatable:__call(action)
   local items = self.items
@@ -59,6 +60,6 @@ end
 
 return setmetatable(class, {
   __call = function (_, name)
-    return setmetatable(class.new(name), class.metatable)
+    return setmetatable(class.new(name), metatable)
   end;
 })
