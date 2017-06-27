@@ -32,3 +32,15 @@ Parser generator toolkit.
 |    4 | `*`                 |         1 | `0` or more repetition |
 |    5 | `?`                 |         1 | optional               |
 |    6 | `-`                 |         2 | difference             |
+
+## Lexer Action
+
+| Code | Operator   | #Operands | Example            |
+|-----:|------------|----------:|--------------------|
+|    1 | `default`  |         0 |                    |
+|    2 | `skip`     |         0 | `{}`               |
+|    3 | `goto`     |         1 | `{"goto","label"}` |
+|    4 | `call`     |         1 | `{"call","label"}` |
+|    5 | `return`   |         0 | `{"return"}`       |
+|    6 | `function` |         1 | `{function()end}`  |
+

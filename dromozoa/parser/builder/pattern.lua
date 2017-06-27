@@ -16,10 +16,10 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-
-function class.new(...)
-  return { ... }
-end
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class.concat(items)
   local result = items[1]
@@ -38,32 +38,28 @@ function class:clone()
   end
 end
 
-class.metatable = {
-  __index = class;
-}
-
-function class.metatable:__add(that)
+function metatable:__add(that)
   local pattern = class.super.pattern
   local self = pattern(self)
   local that = pattern(that)
   return class(3, self, that) -- union
 end
 
-function class.metatable:__sub(that)
+function metatable:__sub(that)
   local pattern = class.super.pattern
   local self = pattern(self)
   local that = pattern(that)
   return class(6, self, that) -- difference
 end
 
-function class.metatable:__mul(that)
+function metatable:__mul(that)
   local pattern = class.super.pattern
   local self = pattern(self)
   local that = pattern(that)
   return class(2, self, that) -- concatenation
 end
 
-function class.metatable:__pow(that)
+function metatable:__pow(that)
   if that == 0 or that == "*" then
     return class(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
@@ -111,13 +107,13 @@ function class.metatable:__pow(that)
   end
 end
 
-function class.metatable:__call(that)
+function metatable:__call(that)
   self.action = that
   return self
 end
 
 return setmetatable(class, {
   __call = function (_, ...)
-    return setmetatable(class.new(...), class.metatable)
+    return setmetatable({...}, metatable)
   end;
 })

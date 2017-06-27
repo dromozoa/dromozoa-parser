@@ -122,8 +122,8 @@ local function nfa_to_dfa(this)
   insert(maps, useq, max_state)
 
   local new_transitions = {}
-  for char = 0, 255 do
-    new_transitions[char] = {}
+  for byte = 0, 255 do
+    new_transitions[byte] = {}
   end
   local new_accept_states = {
     [max_state] = merge_accept_state(accept_states, uset);
@@ -138,10 +138,10 @@ local function nfa_to_dfa(this)
     end
     stack[n] = nil
     local u = find(maps, useq)
-    for char = 0, 255 do
+    for byte = 0, 255 do
       local vset
       for i = 1, #useq do
-        local x = transitions[char][useq[i]]
+        local x = transitions[byte][useq[i]]
         if x then
           for y in pairs(epsilon_closure(this, epsilon_closures, x)) do
             if vset then
@@ -156,13 +156,13 @@ local function nfa_to_dfa(this)
         local vseq = set_to_seq(vset)
         local v = find(maps, vseq)
         if v then
-          new_transitions[char][u] = v
+          new_transitions[byte][u] = v
         else
           max_state = max_state + 1
           insert(maps, vseq, max_state)
           stack[#stack + 1] = vseq
           new_accept_states[max_state] = merge_accept_state(accept_states, vset)
-          new_transitions[char][u] = max_state
+          new_transitions[byte][u] = max_state
         end
       end
     end
@@ -192,8 +192,8 @@ local function minimize(this)
       break
     end
     stack[n] = nil
-    for char = 0, 255 do
-      local v = transitions[char][u]
+    for byte = 0, 255 do
+      local v = transitions[byte][u]
       if v and u ~= v then
         local reverse_transition = reverse_transitions[v]
         if reverse_transition then
@@ -278,8 +278,8 @@ local function minimize(this)
         for j = 1, i - 1 do
           local y = partition[j]
           local same_partition = true
-          for char = 0, 255 do
-            if partition_table[transitions[char][x]] ~= partition_table[transitions[char][y]] then
+          for byte = 0, 255 do
+            if partition_table[transitions[byte][x]] ~= partition_table[transitions[byte][y]] then
               same_partition = false
               break
             end
@@ -321,18 +321,18 @@ local function minimize(this)
 
   local max_state = #partitions
   local new_transitions = {}
-  for char = 0, 255 do
-    new_transitions[char] = {}
+  for byte = 0, 255 do
+    new_transitions[byte] = {}
   end
   local new_accept_states = {}
 
   for i = 1, max_state do
     local partition = partitions[i]
     local u = partition[1]
-    for char = 0, 255 do
-      local v = transitions[char][u]
+    for byte = 0, 255 do
+      local v = transitions[byte][u]
       if v then
-        new_transitions[char][i] = partition_table[v]
+        new_transitions[byte][i] = partition_table[v]
       end
     end
     new_accept_states[i] = accept_states[u]
@@ -373,9 +373,9 @@ local function merge(this, that)
   end
 
   local that_transitions = that.transitions
-  for char = 0, 255 do
-    local transition = transitions[char]
-    for u, v in pairs(that_transitions[char]) do
+  for byte = 0, 255 do
+    local transition = transitions[byte]
+    for u, v in pairs(that_transitions[byte]) do
       transition[n + u] = n + v
     end
   end
@@ -439,8 +439,8 @@ local function difference(this, that)
   local n = this_max_state + 1
 
   local transitions = {}
-  for char = 0, 255 do
-    transitions[char] = {}
+  for byte = 0, 255 do
+    transitions[byte] = {}
   end
   local accept_states = {}
 
@@ -448,9 +448,9 @@ local function difference(this, that)
     for j = 0, that_max_state do
       local u = i + n * j
       if u ~= 0 then
-        for char = 0, 255 do
-          local x = this_transitions[char][i]
-          local y = that_transitions[char][j]
+        for byte = 0, 255 do
+          local x = this_transitions[byte][i]
+          local y = that_transitions[byte][j]
           if not x then
             x = 0
           end
@@ -459,7 +459,7 @@ local function difference(this, that)
           end
           local v = x + n * y
           if v ~= 0 then
-            transitions[char][u] = v
+            transitions[byte][u] = v
           end
         end
       end
@@ -493,8 +493,8 @@ local function tree_to_nfa(root, accept)
   local epsilons2 = {}
   local epsilons = { epsilons1, epsilons2 }
   local transitions = {}
-  for char = 0, 255 do
-    transitions[char] = {}
+  for byte = 0, 255 do
+    transitions[byte] = {}
   end
 
   local stack1 = { root }
@@ -524,8 +524,8 @@ local function tree_to_nfa(root, accept)
         local v = max_state
         node.v = v
         if code == 1 then -- character class
-          for char in pairs(a) do
-            transitions[char][u] = v
+          for byte in pairs(a) do
+            transitions[byte][u] = v
           end
         elseif code == 3 then -- union
           epsilons1[u] = a.u
@@ -596,17 +596,17 @@ local function tree_to_nfa(root, accept)
 end
 
 local class = {}
-
-function class.new(root, accept)
-  return tree_to_nfa(root, accept)
-end
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class:nfa_to_dfa()
-  return setmetatable(nfa_to_dfa(self), class.metatable)
+  return setmetatable(nfa_to_dfa(self), metatable)
 end
 
 function class:minimize()
-  return setmetatable(minimize(self), class.metatable)
+  return setmetatable(minimize(self), metatable)
 end
 
 function class:concat(that)
@@ -618,19 +618,15 @@ function class:union(that)
 end
 
 function class:difference(that)
-  return setmetatable(difference(self, that), class.metatable)
+  return setmetatable(difference(self, that), metatable)
 end
 
 function class:write_graphviz(out)
   return write_graphviz(self, out)
 end
 
-class.metatable = {
-  __index = class;
-}
-
 return setmetatable(class, {
   __call = function (_, root, accept)
-    return setmetatable(class.new(root, accept), class.metatable)
+    return setmetatable(tree_to_nfa(root, accept), metatable)
   end;
 })

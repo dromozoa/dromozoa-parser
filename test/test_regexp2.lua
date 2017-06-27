@@ -22,20 +22,6 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
-local _ = builder()
-
-_:lexer()
-  :_(S" \r\n\t\v\f"^"+") { "skip" }
-  :_"*"
-  :_"+"
-  :_"("
-  :_")"
-  :_(R"19" * R"09"^"*") :as "integer"
-  :_'"' { "call", "string" }
-
-_:lexer()
-  :_'"' { "return" }
-  :_'\\"'
-  :_((-S'\\"')^"+") :as "string_content"
-
-local lexer = _()
+local p = S("abc") + S("def")
+local nfa = regexp(p)
+nfa:write_graphviz(assert(io.open("test-nfa.dot", "w")), nfa):close()

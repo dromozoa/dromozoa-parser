@@ -18,16 +18,18 @@
 local pattern = require "dromozoa.parser.builder.pattern"
 
 local any = {}
-for char = 0, 255 do
-  any[char] = true
+for byte = 0, 255 do
+  any[byte] = true
 end
 
 local class = {}
 local super = pattern
-
-function class.new(set)
-  return super(1, set) -- character class
-end
+local metatable = {
+  __index = class;
+  __mul = super.metatable.__mul;
+  __pow = super.metatable.__pow;
+}
+class.metatable = metatable
 
 function class.any()
   return class(any)
@@ -60,23 +62,17 @@ function class:clone()
   return class(self[2])
 end
 
-class.metatable = {
-  __index = class;
-  __mul = super.metatable.__mul;
-  __pow = super.metatable.__pow;
-}
-
-function class.metatable:__add(that)
+function metatable:__add(that)
   local pattern = class.super.pattern
   local self = pattern(self)
   local that = pattern(that)
-  if getmetatable(that) == class.metatable then
+  if getmetatable(that) == metatable then
     local set = {}
-    for char in pairs(self[2]) do
-      set[char] = true
+    for byte in pairs(self[2]) do
+      set[byte] = true
     end
-    for char in pairs(that[2]) do
-      set[char] = true
+    for byte in pairs(that[2]) do
+      set[byte] = true
     end
     return class(set)
   else
@@ -84,17 +80,17 @@ function class.metatable:__add(that)
   end
 end
 
-function class.metatable:__sub(that)
+function metatable:__sub(that)
   local pattern = class.super.pattern
   local self = pattern(self)
   local that = pattern(that)
-  if getmetatable(that) == class.metatable then
+  if getmetatable(that) == metatable then
     local set = {}
-    for char in pairs(self[2]) do
-      set[char] = true
+    for byte in pairs(self[2]) do
+      set[byte] = true
     end
-    for char in pairs(that[2]) do
-      set[char] = nil
+    for byte in pairs(that[2]) do
+      set[byte] = nil
     end
     return class(set)
   else
@@ -102,12 +98,12 @@ function class.metatable:__sub(that)
   end
 end
 
-function class.metatable:__unm()
+function metatable:__unm()
   local set = self[2]
   local neg = {}
-  for char = 0, 255 do
-    if not set[char] then
-      neg[char] = true
+  for byte = 0, 255 do
+    if not set[byte] then
+      neg[byte] = true
     end
   end
   return class(neg)
@@ -116,6 +112,6 @@ end
 return setmetatable(class, {
   __index = super;
   __call = function (_, set)
-    return setmetatable(class.new(set), class.metatable)
+    return setmetatable(super(1, set), metatable)
   end;
 })
