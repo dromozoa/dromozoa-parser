@@ -33,14 +33,18 @@ Parser generator toolkit.
 |    5 | `?`                 |         1 | optional               |
 |    6 | `-`                 |         2 | difference             |
 
-## Lexer Action
+## Lexer Actions
 
-| Code | Operator   | #Operands | Example            |
-|-----:|------------|----------:|--------------------|
-|    1 | `default`  |         0 |                    |
-|    2 | `skip`     |         0 | `{}`               |
-|    3 | `goto`     |         1 | `{"goto","label"}` |
-|    4 | `call`     |         1 | `{"call","label"}` |
-|    5 | `return`   |         0 | `{"return"}`       |
-|    6 | `function` |         1 | `{function()end}`  |
+| Code | Action    | Description |
+|-----:|-----------|-------------|
+|    1 |           | default     |
+|    2 | `:skip()` | skip        |
+
+## Lexer Operators
+
+| Code | Operator        | #Operands | Description |
+|-----:|-----------------|----------:|-------------|
+|    1 |                 |         0 | default     |
+|    2 | `:call "label"` |         1 | call        |
+|    3 | `:ret()`        |         0 | return      |
 

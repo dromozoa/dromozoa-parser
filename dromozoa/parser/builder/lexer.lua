@@ -32,10 +32,14 @@ function class:_(that)
     items[#items + 1] = {
       name = that;
       pattern = class.super.pattern(that);
+      action = 1;
+      operator = 1;
     }
   else
     items[#items + 1] = {
       pattern = that;
+      action = 1;
+      operator = 1;
     }
   end
   return self
@@ -47,16 +51,30 @@ function class:as(name)
   return self
 end
 
+function class:skip()
+  local items = self.items
+  items[#items].action = 2
+  return self
+end
+
+function class:call(label)
+  local items = self.items
+  local item = items[#items]
+  item.operator = 2
+  item.operand = label
+  return self
+end
+
+function class:ret()
+  local items = self.items
+  items[#items].operator = 3
+  return self
+end
+
 local metatable = {
   __index = class;
 }
 class.metatable = metatable
-
-function class.metatable:__call(action)
-  local items = self.items
-  items[#items].action = action
-  return self
-end
 
 return setmetatable(class, {
   __call = function (_, name)
