@@ -42,6 +42,20 @@ _:lexer "string"
 
 local lexer = _:build()
 -- print(json.encode(_.lexers, { pretty = true, stable = true }))
--- print(json.encode(lexer, { pretty = true, stable = true }))
+-- print(json.encode(data, { pretty = true, stable = true }))
 _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
 _.lexers[2].automaton:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
+
+local s = [[
+12 + 34 * 56 "test" "\"foo\""
+]]
+
+local position = 1
+while true do
+  local symbol, i, j = assert(lexer(s, position))
+  print(symbol, s:sub(i, j))
+  if symbol == 1 then
+    break
+  end
+  position = j + 1
+end

@@ -15,13 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local lexer = require "dromozoa.parser.lexer"
 local regexp = require "dromozoa.parser.regexp"
 
 return function (data, start_name)
   local lexers = data.lexers
 
   local n = 1
-  local symbol_map = {}
   local symbol_names = { "$" }
   local symbol_table = {}
 
@@ -55,6 +55,11 @@ return function (data, start_name)
       end
     end
     lexer.accept_table = accept_table
+    local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
+    for j = 2, #items do
+      automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
+    end
+    lexer.automaton = automaton:nfa_to_dfa():minimize()
   end
 
   for i = 1, #lexers do
@@ -68,25 +73,18 @@ return function (data, start_name)
         if not lexer then
           error(("lexer %q not defined at lexer %d pattern %d"):format(name, i, j))
         end
+        item.operand = lexer
       end
     end
   end
 
-  for i = 1, #lexers do
-    local lexer = lexers[i]
-    local items = lexer.items
-    local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
-    for j = 2, #items do
-      automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
-    end
-    lexer.automaton = automaton:nfa_to_dfa():minimize()
-  end
-
   local max_terminal_symbol = n
 
-  return {
-    symbol_names = symbol_names;
-    symbol_table = symbol_table;
-    max_terminal_symbol = max_terminal_symbol;
-  }
+  data.symbol_names = symbol_names
+  data.symbol_table = symbol_table
+  data.max_terminal_symbol = max_terminal_symbol
+  data.lexer_names = lexer_names
+  data.lexer_table = lexer_table
+
+  return lexer(lexers)
 end
