@@ -15,8 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-
 local class = {}
 
 function class.new(name)
@@ -32,10 +30,12 @@ function class:_(that)
     items[#items + 1] = {
       name = that;
       pattern = class.super.pattern(that);
+      actions = {};
     }
   else
     items[#items + 1] = {
       pattern = that;
+      actions = {};
     }
   end
   return self
@@ -47,14 +47,61 @@ function class:as(name)
   return self
 end
 
+function class:skip()
+  local items = self.items
+  local item = items[#items]
+  item.skip = true
+  local actions = item.actions
+  actions[#actions + 1] = { 1 }
+  return self
+end
+
+function class:push()
+  local items = self.items
+  local item = items[#items]
+  item.skip = true
+  local actions = item.actions
+  actions[#actions + 1] = { 2 }
+  return self
+end
+
+function class:concat()
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 3 }
+  return self
+end
+
+function class:call(label)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 4, label }
+  return self
+end
+
+function class:ret()
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 5 }
+  return self
+end
+
 local metatable = {
   __index = class;
 }
 class.metatable = metatable
 
-function class.metatable:__call(action)
+function metatable:__call(repl)
   local items = self.items
-  items[#items].action = action
+  local actions = items[#items].actions
+  local t = type(repl)
+  if t == "table" then
+    actions[#actions + 1] = { 6, repl }
+  elseif t == "function" then
+    actions[#actions + 1] = { 7, repl }
+  else
+    actions[#actions + 1] = { 8, tostring(repl) }
+  end
   return self
 end
 
