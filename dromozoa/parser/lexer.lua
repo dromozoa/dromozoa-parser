@@ -30,12 +30,18 @@ local metatable = {
 class.metatable = metatable
 
 function metatable:__call(s, init)
+  if not init then
+    init = 1
+  end
+
   local lexers = self.lexers
   local stack = self.stack
   local buffer = self.buffer
 
+  local n = #s
+
   while true do
-    if #s < init then
+    if n < init then
       if #stack == 1 then
         return 1, init, s, init, init -- marker end
       else
@@ -51,10 +57,10 @@ function metatable:__call(s, init)
     local accept_states = automaton.accept_states
 
     local state = automaton.start_state
-    for i = init, #s + 1 do
+    for i = init, n + 1 do
       local next_state
-      if i <= #s then
-        local byte = s:byte(i)
+      local byte = s:byte(i)
+      if byte then
         next_state = transitions[byte][state]
       end
       if not next_state then

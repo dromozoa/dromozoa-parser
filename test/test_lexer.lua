@@ -35,27 +35,33 @@ _:lexer()
   :_ '"' :skip() :call "string"
 
 _:lexer "string"
-  :_ '"' :as "string_content" :concat() :ret()
+  :_ '"' :as "string" :concat() :ret()
+  :_ [[\r]] "\r" :push()
+  :_ [[\n]] "\n" :push()
+  :_ [[\t]] "\t" :push()
+  :_ [[\v]] "\v" :push()
+  :_ [[\f]] "\f" :push()
   :_ '\\"' "\"" :push()
   :_ ((-S'\\"')^"+") :push()
 
 local lexer = _:build()
 -- print(json.encode(_.lexers, { pretty = true, stable = true }))
 -- print(json.encode(data, { pretty = true, stable = true }))
-print(json.encode(lexer, { pretty = true, stable = true }))
-_.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
-_.lexers[2].automaton:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
+-- print(json.encode(lexer, { pretty = true, stable = true }))
+-- _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
+-- _.lexers[2].automaton:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
 
 local s = [[
-12 + 34 * 56 "test" "\"foo\""
+12 + 34 * 56 "test\tabc" "\"foo\""
 ]]
 
+local symbol
 local position = 1
-while true do
-  local symbol, j, rs, ri, rj = assert(lexer(s, position))
+local rs
+local ri
+local rj
+
+repeat
+  symbol, position, rs, ri, rj = assert(lexer(s, position))
   print(symbol, ("%q"):format(rs:sub(ri, rj)))
-  if symbol == 1 then
-    break
-  end
-  position = j
-end
+until symbol == 1
