@@ -47,10 +47,10 @@ function metatable:__call(s, init)
     local accept_states = automaton.accept_states
 
     local state = automaton.start_state
-    for pos = init, #s + 1 do
+    for i = init, #s + 1 do
       local next_state
-      if pos <= #s then
-        local byte = s:byte(pos)
+      if i <= #s then
+        local byte = s:byte(i)
         next_state = transitions[byte][state]
       end
       if not next_state then
@@ -59,9 +59,9 @@ function metatable:__call(s, init)
           local actions = items[accept].actions
           local skip
 
-          local s = s
+          local rs = s
           local ri = init
-          local rj = pos - 1
+          local rj = i - 1
 
           for j = 1, #actions do
             local action = actions[j]
@@ -69,12 +69,12 @@ function metatable:__call(s, init)
             if code == 1 then -- skip
               skip = true
             elseif code == 2 then -- push
-              buffer[#buffer + 1] = s:sub(ri, rj)
+              buffer[#buffer + 1] = rs:sub(ri, rj)
               skip = true
             elseif code == 3 then -- concat
-              s = table.concat(buffer)
+              rs = table.concat(buffer)
               ri = 1
-              rj = #s
+              rj = #rs
               for i = 1, #buffer do
                 buffer[i] = nil
               end
@@ -83,29 +83,29 @@ function metatable:__call(s, init)
             elseif code == 5 then -- return
               stack[#stack] = nil
             elseif code == 6 then -- filter table
-              s = action[2][s:sub(ri, rj)]
+              rs = action[2][rs:sub(ri, rj)]
               ri = 1
-              rj = #s
+              rj = #rs
             elseif code == 7 then -- filter function
-              s, ri, rj = action[2](s, ri, rj)
+              rs, ri, rj = action[2](rs, ri, rj)
               if not ri then
                 ri = 1
               end
               if not rj then
-                rj = #s
+                rj = #rs
               end
             elseif code == 8 then -- replace
-              s = action[2]
+              rs = action[2]
               ri = 1
-              rj = #s
+              rj = #rs
             end
           end
 
           if skip then
-            init = pos
+            init = i
             break
           else
-            return accept_table[accept], pos, s, ri, rj
+            return accept_table[accept], i, rs, ri, rj
           end
         else
           return nil, "lexer error", init
