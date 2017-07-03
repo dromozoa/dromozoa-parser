@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function compile(lexers)
+local function new(lexers)
   return {
     lexers = lexers;
     stack = { 1 }; -- start lexer
@@ -36,7 +36,11 @@ function metatable:__call(s, init)
 
   while true do
     if #s < init then
-      return 1, init, s, init, init -- marker end
+      if #stack == 1 then
+        return 1, init, s, init, init -- marker end
+      else
+        return nil, ("lexer error at position %d"):format(init)
+      end
     end
 
     local lexer = lexers[stack[#stack]]
@@ -75,8 +79,8 @@ function metatable:__call(s, init)
               rs = table.concat(buffer)
               ri = 1
               rj = #rs
-              for i = 1, #buffer do
-                buffer[i] = nil
+              for k = 1, #buffer do
+                buffer[k] = nil
               end
             elseif code == 4 then -- call
               stack[#stack + 1] = action[2]
@@ -108,7 +112,7 @@ function metatable:__call(s, init)
             return accept_table[accept], i, rs, ri, rj
           end
         else
-          return nil, "lexer error", init
+          return nil, ("lexer error at position %d"):format(init)
         end
       else
         state = next_state
@@ -119,6 +123,6 @@ end
 
 return setmetatable(class, {
   __call = function (_, lexers)
-    return setmetatable(compile(lexers), metatable)
+    return setmetatable(new(lexers), metatable)
   end;
 })
