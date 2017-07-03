@@ -39,7 +39,7 @@ return function (data, start_name)
     local accept_table = {}
     for j = 1, #items do
       local item = items[j]
-      if item.action == 1 then -- default
+      if not item.skip then
         local name = item.name
         if not name then
           error(("lexer %d pattern %d is unnamed"):format(i, j))
@@ -63,17 +63,19 @@ return function (data, start_name)
   end
 
   for i = 1, #lexers do
-    local lexer = lexers[i]
-    local items = lexer.items
+    local items = lexers[i].items
     for j = 1, #items do
-      local item = items[j]
-      if item.operator == 2 then -- call
-        local name = item.operand
-        local lexer = lexer_table[name]
-        if not lexer then
-          error(("lexer %q not defined at lexer %d pattern %d"):format(name, i, j))
+      local actions = items[j].actions
+      for k = 1, #actions do
+        local action = actions[k]
+        if action[1] == 4 then -- call
+          local name = action[2]
+          local lexer = lexer_table[name]
+          if not lexer then
+            error(("lexer %q not defined at lexer %d pattern %d action %d"):format(name, i, j, k))
+          end
+          action[2] = lexer
         end
-        item.operand = lexer
       end
     end
   end

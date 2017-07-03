@@ -19,6 +19,7 @@ local function compile(lexers)
   return {
     lexers = lexers;
     stack = { 1 }; -- start lexer
+    buffer = {};
   }
 end
 
@@ -31,42 +32,80 @@ class.metatable = metatable
 function metatable:__call(s, init)
   local lexers = self.lexers
   local stack = self.stack
+  local buffer = self.buffer
 
   while true do
     if #s < init then
-      return 1, init, init -- marker end
+      return 1, init, s, init, init -- marker end
     end
 
     local lexer = lexers[stack[#stack]]
     local items = lexer.items
-    local automaton = lexer.automaton
     local accept_table = lexer.accept_table
+    local automaton = lexer.automaton
     local transitions = automaton.transitions
     local accept_states = automaton.accept_states
 
     local state = automaton.start_state
-    for i = init, #s + 1 do
+    for pos = init, #s + 1 do
       local next_state
-      if i <= #s then
-        local byte = s:byte(i)
+      if pos <= #s then
+        local byte = s:byte(pos)
         next_state = transitions[byte][state]
       end
       if not next_state then
         local accept = accept_states[state]
         if accept then
-          local item = items[accept]
-          local operator = item.operator
-          if operator == 2 then -- call
-            stack[#stack + 1] = item.operand
-          elseif operator == 3 then -- ret
-            stack[#stack] = nil
+          local actions = items[accept].actions
+          local skip
+
+          local s = s
+          local ri = init
+          local rj = pos - 1
+
+          for j = 1, #actions do
+            local action = actions[j]
+            local code = action[1]
+            if code == 1 then -- skip
+              skip = true
+            elseif code == 2 then -- push
+              buffer[#buffer + 1] = s:sub(ri, rj)
+              skip = true
+            elseif code == 3 then -- concat
+              s = table.concat(buffer)
+              ri = 1
+              rj = #s
+              for i = 1, #buffer do
+                buffer[i] = nil
+              end
+            elseif code == 4 then -- call
+              stack[#stack + 1] = action[2]
+            elseif code == 5 then -- return
+              stack[#stack] = nil
+            elseif code == 6 then -- filter table
+              s = action[2][s:sub(ri, rj)]
+              ri = 1
+              rj = #s
+            elseif code == 7 then -- filter function
+              s, ri, rj = action[2](s, ri, rj)
+              if not ri then
+                ri = 1
+              end
+              if not rj then
+                rj = #s
+              end
+            elseif code == 8 then -- replace
+              s = action[2]
+              ri = 1
+              rj = #s
+            end
           end
-          local action = item.action
-          if action == 1 then -- default
-            return accept_table[accept], init, i - 1
-          elseif action == 2 then -- skip
-            init = i
+
+          if skip then
+            init = pos
             break
+          else
+            return accept_table[accept], pos, s, ri, rj
           end
         else
           return nil, "lexer error", init
