@@ -82,8 +82,8 @@ function metatable:__call(s, init)
       local ri = init
       local rj = position - 1
 
-      for j = 1, #actions do
-        local action = actions[j]
+      for i = 1, #actions do
+        local action = actions[i]
         local code = action[1]
         if code == 1 then -- skip
           skip = true
@@ -94,8 +94,8 @@ function metatable:__call(s, init)
           rs = table.concat(buffer)
           ri = 1
           rj = #rs
-          for k = 1, #buffer do
-            buffer[k] = nil
+          for j = 1, #buffer do
+            buffer[j] = nil
           end
         elseif code == 4 then -- call
           stack[#stack + 1] = action[2]
