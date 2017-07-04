@@ -55,16 +55,84 @@ function metatable:__call(s, init)
     local transitions = automaton.transitions
 
     local state = automaton.start_state
-    local position = n + 1
+    local position
 
-    for i = init, n do
-      local byte = s:byte(i)
-      local next_state = transitions[byte][state]
+    for i = init + 3, n, 4 do
+      local a, b, c, d = s:byte(i - 3, i)
+
+      local next_state = transitions[a][state]
+      if not next_state then
+        position = i - 3
+        break
+      end
+      state = next_state
+
+      local next_state = transitions[b][state]
+      if not next_state then
+        position = i - 2
+        break
+      end
+      state = next_state
+
+      local next_state = transitions[c][state]
+      if not next_state then
+        position = i - 1
+        break
+      end
+      state = next_state
+
+      local next_state = transitions[d][state]
       if not next_state then
         position = i
         break
       end
       state = next_state
+    end
+
+    if not position then
+      position = n + 1
+      local m = position - (position - init) % 4
+      local a, b, c = s:byte(m, n)
+      if c then
+        local next_state = transitions[a][state]
+        if not next_state then
+          position = m
+        else
+          state = next_state
+          local next_state = transitions[b][state]
+          if not next_state then
+            position = m + 1
+          else
+            state = next_state
+            local next_state = transitions[c][state]
+            if not next_state then
+              position = n
+            else
+              state = next_state
+            end
+          end
+        end
+      elseif b then
+        local next_state = transitions[a][state]
+        if not next_state then
+          position = m
+        else
+          state = next_state
+          local next_state = transitions[b][state]
+          if not next_state then
+            position = m + 1
+          else
+            state = next_state
+          end
+        end
+      else
+        local next_state = transitions[a][state]
+        if not next_state then
+          position = m
+        else
+          state = next_state
+        end
+      end
     end
 
     local accept = automaton.accept_states[state]
