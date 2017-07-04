@@ -64,73 +64,76 @@ function metatable:__call(s, init)
       if not next_state then
         position = i - 3
         break
-      end
-      state = next_state
+      else
+        state = next_state
 
-      local next_state = transitions[b][state]
-      if not next_state then
-        position = i - 2
-        break
-      end
-      state = next_state
+        local next_state = transitions[b][state]
+        if not next_state then
+          position = i - 2
+          break
+        end
+        state = next_state
 
-      local next_state = transitions[c][state]
-      if not next_state then
-        position = i - 1
-        break
-      end
-      state = next_state
+        local next_state = transitions[c][state]
+        if not next_state then
+          position = i - 1
+          break
+        end
+        state = next_state
 
-      local next_state = transitions[d][state]
-      if not next_state then
-        position = i
-        break
+        local next_state = transitions[d][state]
+        if not next_state then
+          position = i
+          break
+        end
+        state = next_state
       end
-      state = next_state
     end
 
     if not position then
       position = n + 1
       local m = position - (position - init) % 4
-      local a, b, c = s:byte(m, n)
-      if c then
-        local next_state = transitions[a][state]
-        if not next_state then
-          position = m
-        else
-          state = next_state
-          local next_state = transitions[b][state]
+      if m < position then
+        local a, b, c = s:byte(m, n)
+        if c then
+          local next_state = transitions[a][state]
           if not next_state then
-            position = m + 1
+            position = m
           else
             state = next_state
-            local next_state = transitions[c][state]
+            local next_state = transitions[b][state]
             if not next_state then
-              position = n
+              position = m + 1
+            else
+              state = next_state
+              local next_state = transitions[c][state]
+              if not next_state then
+                position = n
+              else
+                state = next_state
+              end
+            end
+          end
+        elseif b then
+          local next_state = transitions[a][state]
+          if not next_state then
+            position = m
+          else
+            state = next_state
+            local next_state = transitions[b][state]
+            if not next_state then
+              position = m + 1
             else
               state = next_state
             end
           end
-        end
-      elseif b then
-        local next_state = transitions[a][state]
-        if not next_state then
-          position = m
         else
-          state = next_state
-          local next_state = transitions[b][state]
+          local next_state = transitions[a][state]
           if not next_state then
-            position = m + 1
+            position = m
           else
             state = next_state
           end
-        end
-      else
-        local next_state = transitions[a][state]
-        if not next_state then
-          position = m
-        else
-          state = next_state
         end
       end
     end
