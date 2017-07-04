@@ -63,5 +63,5 @@ local rj
 
 repeat
   symbol, position, rs, ri, rj = assert(lexer(s, position))
-  print(symbol, ("%q"):format(rs:sub(ri, rj)))
+  print(_.symbol_names[symbol], symbol, ("%q"):format(rs:sub(ri, rj)))
 until symbol == 1
