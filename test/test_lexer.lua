@@ -63,31 +63,36 @@ abcde
 abcd
 ]]
 
-local symbol
-local position = 1
-local rs
-local ri
-local rj
+for i = 1, 8 do
+  local source = s .. (" "):rep(i)
+  local symbol
+  local position = 1
+  local rs
+  local ri
+  local rj
 
-local data = {}
-repeat
-  symbol, position, rs, ri, rj = assert(lexer(s, position))
-  data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
-  print(_.symbol_names[symbol], symbol, ("%q"):format(rs:sub(ri, rj)))
-until symbol == 1
+  local data = {}
+  repeat
+    symbol, position, rs, ri, rj = assert(lexer(source, position))
+    data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
+    if i == 1 then
+      print(_.symbol_names[symbol], symbol, ("%q"):format(rs:sub(ri, rj)))
+    end
+  until symbol == 1
 
-assert(equal(data, {
-  { "integer", "12" };
-  { "+", "+" };
-  { "integer", "34" };
-  { "*", "*" };
-  { "integer", "56" };
-  { "string", "test\tabc" };
-  { "string", "\"foo\"" };
-  { "identifier", "abcdefgh" };
-  { "identifier", "abcdefg" };
-  { "identifier", "abcdef" };
-  { "identifier", "abcde" };
-  { "identifier", "abcd" };
-  { "$", "" };
-}))
+  assert(equal(data, {
+    { "integer", "12" };
+    { "+", "+" };
+    { "integer", "34" };
+    { "*", "*" };
+    { "integer", "56" };
+    { "string", "test\tabc" };
+    { "string", "\"foo\"" };
+    { "identifier", "abcdefgh" };
+    { "identifier", "abcdefg" };
+    { "identifier", "abcdef" };
+    { "identifier", "abcde" };
+    { "identifier", "abcd" };
+    { "$", "" };
+  }))
+end
