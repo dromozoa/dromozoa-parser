@@ -56,74 +56,78 @@ function metatable:__call(s, init)
     local transitions = automaton.transitions
     local accept_states = automaton.accept_states
 
+    local position
     local state = automaton.start_state
     for i = init, n + 1 do
-      local next_state
       local byte = s:byte(i)
-      if byte then
-        next_state = transitions[byte][state]
+      if not byte then
+        position = i
+        break
       end
+      local next_state = transitions[byte][state]
       if not next_state then
-        local accept = accept_states[state]
-        if accept then
-          local actions = items[accept].actions
-          local skip
-
-          local rs = s
-          local ri = init
-          local rj = i - 1
-
-          for j = 1, #actions do
-            local action = actions[j]
-            local code = action[1]
-            if code == 1 then -- skip
-              skip = true
-            elseif code == 2 then -- push
-              buffer[#buffer + 1] = rs:sub(ri, rj)
-              skip = true
-            elseif code == 3 then -- concat
-              rs = table.concat(buffer)
-              ri = 1
-              rj = #rs
-              for k = 1, #buffer do
-                buffer[k] = nil
-              end
-            elseif code == 4 then -- call
-              stack[#stack + 1] = action[2]
-            elseif code == 5 then -- return
-              stack[#stack] = nil
-            elseif code == 6 then -- filter table
-              rs = action[2][rs:sub(ri, rj)]
-              ri = 1
-              rj = #rs
-            elseif code == 7 then -- filter function
-              rs, ri, rj = action[2](rs, ri, rj)
-              if not ri then
-                ri = 1
-              end
-              if not rj then
-                rj = #rs
-              end
-            elseif code == 8 then -- replace
-              rs = action[2]
-              ri = 1
-              rj = #rs
-            end
-          end
-
-          if skip then
-            init = i
-            break
-          else
-            return accept_table[accept], i, rs, ri, rj
-          end
-        else
-          return nil, ("lexer error at position %d"):format(init)
-        end
+        position = i
+        break
       else
         state = next_state
       end
     end
+
+    local accept = accept_states[state]
+    if accept then
+      local actions = items[accept].actions
+      local skip
+
+      local rs = s
+      local ri = init
+      local rj = position - 1
+
+      for j = 1, #actions do
+        local action = actions[j]
+        local code = action[1]
+        if code == 1 then -- skip
+          skip = true
+        elseif code == 2 then -- push
+          buffer[#buffer + 1] = rs:sub(ri, rj)
+          skip = true
+        elseif code == 3 then -- concat
+          rs = table.concat(buffer)
+          ri = 1
+          rj = #rs
+          for k = 1, #buffer do
+            buffer[k] = nil
+          end
+        elseif code == 4 then -- call
+          stack[#stack + 1] = action[2]
+        elseif code == 5 then -- return
+          stack[#stack] = nil
+        elseif code == 6 then -- filter table
+          rs = action[2][rs:sub(ri, rj)]
+          ri = 1
+          rj = #rs
+        elseif code == 7 then -- filter function
+          rs, ri, rj = action[2](rs, ri, rj)
+          if not ri then
+            ri = 1
+          end
+          if not rj then
+            rj = #rs
+          end
+        elseif code == 8 then -- replace
+          rs = action[2]
+          ri = 1
+          rj = #rs
+        end
+      end
+      if skip then
+        init = position
+      else
+        return accept_table[accept], position, rs, ri, rj
+      end
+    else
+      return nil, ("lexer error at position %d"):format(init)
+    end
+
   end
 end
 
