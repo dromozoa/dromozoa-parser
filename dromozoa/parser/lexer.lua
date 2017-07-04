@@ -59,34 +59,33 @@ function metatable:__call(s, init)
 
     for i = init + 3, n, 4 do
       local a, b, c, d = s:byte(i - 3, i)
-
-      local next_state = transitions[a][state]
-      if not next_state then
+      local state1 = transitions[a][state]
+      if not state1 then
         position = i - 3
         break
       else
-        state = next_state
-
-        local next_state = transitions[b][state]
-        if not next_state then
+        local state2 = transitions[b][state1]
+        if not state2 then
+          state = state1
           position = i - 2
           break
+        else
+          local state3 = transitions[c][state2]
+          if not state3 then
+            state = state2
+            position = i - 1
+            break
+          else
+            local state4 = transitions[d][state3]
+            if not state4 then
+              state = state3
+              position = i
+              break
+            else
+              state = state4
+            end
+          end
         end
-        state = next_state
-
-        local next_state = transitions[c][state]
-        if not next_state then
-          position = i - 1
-          break
-        end
-        state = next_state
-
-        local next_state = transitions[d][state]
-        if not next_state then
-          position = i
-          break
-        end
-        state = next_state
       end
     end
 
