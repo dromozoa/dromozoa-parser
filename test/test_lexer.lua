@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local equal = require "dromozoa.commons.equal"
 local json = require "dromozoa.commons.json"
 local builder = require "dromozoa.parser.builder_v2"
 local regexp = require "dromozoa.parser.regexp"
@@ -27,15 +28,17 @@ local _ = builder()
 
 _:lexer()
   :_ (S" \r\n\t\v\f"^"+") :skip()
+  :_ "="
   :_ "*"
   :_ "+"
   :_ "("
   :_ ")"
-  :_ (R"19" * R"09"^"*") :as "integer"
-  :_ '"' :skip() :call "string"
+  :_ (R"AZ__az" * R"09AZ__az"^"*") :as "identifier"
+  :_ (R"09"^"+") :as "integer"
+  :_ [["]] :call "string" :skip()
 
 _:lexer "string"
-  :_ '"' :as "string" :concat() :ret()
+  :_ [["]] :as "string" :concat() :ret()
   :_ [[\r]] "\r" :push()
   :_ [[\n]] "\n" :push()
   :_ [[\t]] "\t" :push()
@@ -61,7 +64,20 @@ local rs
 local ri
 local rj
 
+local data = {}
 repeat
   symbol, position, rs, ri, rj = assert(lexer(s, position))
+  data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
   print(_.symbol_names[symbol], symbol, ("%q"):format(rs:sub(ri, rj)))
 until symbol == 1
+
+assert(equal(data, {
+  { "integer", "12" };
+  { "+", "+" };
+  { "integer", "34" };
+  { "*", "*" };
+  { "integer", "56" };
+  { "string", "test\tabc" };
+  { "string", "\"foo\"" };
+  { "$", "" };
+}))
