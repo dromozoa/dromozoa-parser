@@ -95,43 +95,43 @@ function metatable:__call(s, init)
       if m < position then
         local a, b, c = s:byte(m, n)
         if c then
-          local next_state = transitions[a][state]
-          if not next_state then
+          local state1 = transitions[a][state]
+          if not state1 then
             position = m
           else
-            state = next_state
-            local next_state = transitions[b][state]
-            if not next_state then
+            local state2 = transitions[b][state1]
+            if not state2 then
+              state = state1
               position = m + 1
             else
-              state = next_state
-              local next_state = transitions[c][state]
-              if not next_state then
+              local state3 = transitions[c][state2]
+              if not state3 then
+                state = state2
                 position = n
               else
-                state = next_state
+                state = state3
               end
             end
           end
         elseif b then
-          local next_state = transitions[a][state]
-          if not next_state then
+          local state1 = transitions[a][state]
+          if not state1 then
             position = m
           else
-            state = next_state
-            local next_state = transitions[b][state]
-            if not next_state then
+            local state2 = transitions[b][state1]
+            if not state2 then
+              state = state1
               position = m + 1
             else
-              state = next_state
+              state = state2
             end
           end
         else
-          local next_state = transitions[a][state]
-          if not next_state then
+          local state1 = transitions[a][state]
+          if not state1 then
             position = m
           else
-            state = next_state
+            state = state1
           end
         end
       end
