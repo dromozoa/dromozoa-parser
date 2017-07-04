@@ -18,8 +18,8 @@
 local lexer = require "dromozoa.parser.lexer"
 local regexp = require "dromozoa.parser.regexp"
 
-return function (data, start_name)
-  local lexers = data.lexers
+return function (self, start_name)
+  local lexers = self.lexers
 
   local n = 1
   local symbol_names = { "$" }
@@ -36,7 +36,7 @@ return function (data, start_name)
       lexer_names[i] = name
       lexer_table[name] = i
     end
-    local accept_table = {}
+    local accept_to_symbol = {}
     for j = 1, #items do
       local item = items[j]
       if not item.skip then
@@ -51,10 +51,10 @@ return function (data, start_name)
           symbol_names[n] = name
           symbol_table[name] = n
         end
-        accept_table[j] = symbol
+        accept_to_symbol[j] = symbol
       end
     end
-    lexer.accept_table = accept_table
+    lexer.accept_to_symbol = accept_to_symbol
     local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
     for j = 2, #items do
       automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
@@ -82,11 +82,11 @@ return function (data, start_name)
 
   local max_terminal_symbol = n
 
-  data.symbol_names = symbol_names
-  data.symbol_table = symbol_table
-  data.max_terminal_symbol = max_terminal_symbol
-  data.lexer_names = lexer_names
-  data.lexer_table = lexer_table
+  self.symbol_names = symbol_names
+  self.symbol_table = symbol_table
+  self.max_terminal_symbol = max_terminal_symbol
+  self.lexer_names = lexer_names
+  self.lexer_table = lexer_table
 
   return lexer(lexers)
 end

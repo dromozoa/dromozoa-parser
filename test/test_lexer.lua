@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local equal = require "dromozoa.commons.equal"
 local json = require "dromozoa.commons.json"
 local builder = require "dromozoa.parser.builder_v2"
 local regexp = require "dromozoa.parser.regexp"
@@ -27,35 +28,71 @@ local _ = builder()
 
 _:lexer()
   :_ (S" \r\n\t\v\f"^"+") :skip()
+  :_ "="
   :_ "*"
   :_ "+"
   :_ "("
   :_ ")"
-  :_ (R"19" * R"09"^"*") :as "integer"
-  :_ '"' :skip() :call "string"
+  :_ (R"AZ__az" * R"09AZ__az"^"*") :as "identifier"
+  :_ (R"09"^"+") :as "integer"
+  :_ [["]] :call "string" :skip()
 
 _:lexer "string"
-  :_ '"' :as "string_content" :concat() :ret()
+  :_ [["]] :as "string" :concat() :ret()
+  :_ [[\r]] "\r" :push()
+  :_ [[\n]] "\n" :push()
+  :_ [[\t]] "\t" :push()
+  :_ [[\v]] "\v" :push()
+  :_ [[\f]] "\f" :push()
   :_ '\\"' "\"" :push()
   :_ ((-S'\\"')^"+") :push()
 
 local lexer = _:build()
 -- print(json.encode(_.lexers, { pretty = true, stable = true }))
 -- print(json.encode(data, { pretty = true, stable = true }))
-print(json.encode(lexer, { pretty = true, stable = true }))
-_.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
-_.lexers[2].automaton:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
+-- print(json.encode(lexer, { pretty = true, stable = true }))
+-- _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
+-- _.lexers[2].automaton:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
 
 local s = [[
-12 + 34 * 56 "test" "\"foo\""
+12 + 34 * 56 "test\tabc" "\"foo\""
+abcdefgh
+abcdefg
+abcdef
+abcde
+abcd
 ]]
 
-local position = 1
-while true do
-  local symbol, j, rs, ri, rj = assert(lexer(s, position))
-  print(symbol, ("%q"):format(rs:sub(ri, rj)))
-  if symbol == 1 then
-    break
-  end
-  position = j
+for i = 1, 8 do
+  local source = s .. (" "):rep(i)
+  local symbol
+  local position = 1
+  local rs
+  local ri
+  local rj
+
+  local data = {}
+  repeat
+    symbol, position, rs, ri, rj = assert(lexer(source, position))
+    data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
+    if i == 1 then
+      print(_.symbol_names[symbol], symbol, ("%q"):format(rs:sub(ri, rj)))
+    end
+  until symbol == 1
+
+  assert(equal(data, {
+    { "integer", "12" };
+    { "+", "+" };
+    { "integer", "34" };
+    { "*", "*" };
+    { "integer", "56" };
+    { "string", "test\tabc" };
+    { "string", "\"foo\"" };
+    { "identifier", "abcdefgh" };
+    { "identifier", "abcdefg" };
+    { "identifier", "abcdef" };
+    { "identifier", "abcde" };
+    { "identifier", "abcd" };
+    { "$", "" };
+  }))
 end

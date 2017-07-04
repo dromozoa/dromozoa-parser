@@ -35,14 +35,14 @@ Parser generator toolkit.
 
 ## Lexer Actions
 
-| Code | Operator          | #Operands | Skip | Description     |
-|-----:|-------------------|----------:|------|-----------------|
-|    1 | `:skip()`         |         0 | yes  | skip            |
-|    2 | `:push()`         |         0 | yes  | push            |
-|    3 | `:concat()`       |         0 |      | concat          |
-|    4 | `:call "label"`   |         1 |      | call            |
-|    5 | `:ret()`          |         0 |      | return          |
-|    6 | `({})`            |         1 |      | filter table    |
-|    7 | `(function()end)` |         1 |      | filter function |
-|    8 | `"repl"`          |         1 |      | replace         |
+| Code | Operator        | #Operands | Skip | Description           |
+|-----:|-----------------|----------:|------|-----------------------|
+|    1 | `:skip()`       |         0 | yes  | skip                  |
+|    2 | `:push()`       |         0 | yes  | push                  |
+|    3 | `:concat()`     |         0 |      | concat                |
+|    4 | `:call "label"` |         1 |      | call                  |
+|    5 | `:ret()`        |         0 |      | return                |
+|    6 | `(table)`       |         1 |      | replace by `table`    |
+|    7 | `(function)`    |         1 |      | replace by `function` |
+|    8 | `(string)`      |         1 |      | replace by `string`   |
 
