@@ -56,6 +56,11 @@ local lexer = _:build()
 
 local s = [[
 12 + 34 * 56 "test\tabc" "\"foo\""
+abcdefgh
+abcdefg
+abcdef
+abcde
+abcd
 ]]
 
 local symbol
@@ -79,5 +84,10 @@ assert(equal(data, {
   { "integer", "56" };
   { "string", "test\tabc" };
   { "string", "\"foo\"" };
+  { "identifier", "abcdefgh" };
+  { "identifier", "abcdefg" };
+  { "identifier", "abcdef" };
+  { "identifier", "abcde" };
+  { "identifier", "abcd" };
   { "$", "" };
 }))
