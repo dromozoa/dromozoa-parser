@@ -36,7 +36,7 @@ return function (self, start_name)
       lexer_names[i] = name
       lexer_table[name] = i
     end
-    local accept_table = {}
+    local accept_to_symbol = {}
     for j = 1, #items do
       local item = items[j]
       if not item.skip then
@@ -51,10 +51,10 @@ return function (self, start_name)
           symbol_names[n] = name
           symbol_table[name] = n
         end
-        accept_table[j] = symbol
+        accept_to_symbol[j] = symbol
       end
     end
-    lexer.accept_table = accept_table
+    lexer.accept_to_symbol = accept_to_symbol
     local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
     for j = 2, #items do
       automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
