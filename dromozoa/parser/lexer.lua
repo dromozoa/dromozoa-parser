@@ -54,14 +54,11 @@ function metatable:__call(s, init)
     local automaton = lexer.automaton
     local transitions = automaton.transitions
 
-    local position
     local state = automaton.start_state
-    for i = init, n + 1 do
+    local position = n + 1
+
+    for i = init, n do
       local byte = s:byte(i)
-      if not byte then
-        position = i
-        break
-      end
       local next_state = transitions[byte][state]
       if not next_state then
         position = i
