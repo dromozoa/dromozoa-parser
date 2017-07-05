@@ -20,6 +20,8 @@ local regexp = require "dromozoa.parser.regexp"
 
 return function (self, start_name)
   local lexers = self.lexers
+  local precedences = self.precedences
+  local productions = self.productions
 
   local n = 1
   local symbol_names = { "$" }
@@ -81,6 +83,31 @@ return function (self, start_name)
   end
 
   local max_terminal_symbol = n
+
+  if #productions > 0 then
+    -- argumented start symbol
+    if not start_name then
+      start_name = productions[1].head
+    end
+    symbol_names[n] = start_name .. "'"
+    n = n + 1
+  end
+
+--[[
+  for production in production_builders:each() do
+    local name = production.head
+    local symbol = symbol_table[name]
+    if symbol == nil then
+      n = n + 1
+      symbol_names[n] = name
+      symbol_table[name] = n
+    else
+      if symbol <= max_terminal_symbol then
+        error(("symbol %q must be a nonterminal symbol"):format(name))
+      end
+    end
+  end
+]]
 
   self.symbol_names = symbol_names
   self.symbol_table = symbol_table
