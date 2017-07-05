@@ -15,14 +15,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
-
-function class.new(items, name)
+local function new(items, name)
   return {
     items = items;
     head = name;
   }
 end
+
+local class = {}
 
 function class:_(name)
   local items = self.items
@@ -39,11 +39,12 @@ function class:prec(name)
   return self
 end
 
-class.metatable = {
+local metatable = {
   __index = class;
 }
+class.metatable = metatable
 
-function class.metatable:__call(name)
+function metatable:__call(name)
   local items = self.items
   local body = items[#items].body
   body[#body + 1] = name
@@ -52,6 +53,6 @@ end
 
 return setmetatable(class, {
   __call = function (_, items, name)
-    return setmetatable(class.new(items, name), class.metatable)
+    return setmetatable(new(items, name), metatable)
   end;
 })
