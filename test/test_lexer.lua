@@ -44,7 +44,7 @@ _:lexer "string"
   :_ [[\t]] "\t" :push()
   :_ [[\v]] "\v" :push()
   :_ [[\f]] "\f" :push()
-  :_ '\\"' "\"" :push()
+  :_ [[\"]] "\"" :push()
   :_ ((-S'\\"')^"+") :push()
 
 local lexer = _:build()
