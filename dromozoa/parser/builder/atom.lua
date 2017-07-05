@@ -112,6 +112,6 @@ end
 return setmetatable(class, {
   __index = super;
   __call = function (_, set)
-    return setmetatable(super(1, set), metatable)
+    return setmetatable({ 1, set }, metatable)
   end;
 })

@@ -15,13 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local keys = require "dromozoa.commons.keys"
-local dumper = require "dromozoa.commons.dumper"
-local unpack = require "dromozoa.commons.unpack"
 local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
-local regexp_builder = require "dromozoa.parser.regexp_builder"
-local regexp_writer = require "dromozoa.parser.regexp_writer"
 
 local P = builder.pattern
 local R = builder.range
