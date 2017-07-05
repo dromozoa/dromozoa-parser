@@ -17,7 +17,6 @@
 
 local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
-local regexp_writer = require "dromozoa.parser.regexp_writer"
 
 local P = builder.pattern
 local R = builder.range
@@ -41,13 +40,12 @@ regexp.union(a1, a2)
 regexp.union(a1, a3)
 regexp.union(a1, a4)
 
-regexp_writer.write_automaton(assert(io.open("test-nfa.dot", "w")), a1):close()
+a1:write_graphviz(assert(io.open("test-nfa.dot", "w"))):close()
 
 local dfa1 = regexp.nfa_to_dfa(a1)
 
-regexp_writer.write_automaton(assert(io.open("test-dfa1.dot", "w")), dfa1):close()
+dfa1:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
 
 local dfa2 = regexp.minimize(dfa1)
 
-regexp_writer.write_automaton(assert(io.open("test-dfa2.dot", "w")), dfa2):close()
-
+dfa2:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
