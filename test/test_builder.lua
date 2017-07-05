@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local builder = require "dromozoa.parser.builder_v2"
+local builder = require "dromozoa.parser.builder"
 
 local P = builder.pattern
 local R = builder.range

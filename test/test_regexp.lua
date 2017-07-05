@@ -18,7 +18,7 @@
 local keys = require "dromozoa.commons.keys"
 local dumper = require "dromozoa.commons.dumper"
 local unpack = require "dromozoa.commons.unpack"
-local builder = require "dromozoa.parser.builder_v2"
+local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 local regexp_builder = require "dromozoa.parser.regexp_builder"
 local regexp_writer = require "dromozoa.parser.regexp_writer"

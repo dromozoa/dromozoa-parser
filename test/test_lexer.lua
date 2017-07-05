@@ -17,8 +17,7 @@
 
 local equal = require "dromozoa.commons.equal"
 local json = require "dromozoa.commons.json"
-local builder = require "dromozoa.parser.builder_v2"
-local regexp = require "dromozoa.parser.regexp"
+local builder = require "dromozoa.parser.builder"
 
 local P = builder.pattern
 local R = builder.range
