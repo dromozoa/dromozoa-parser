@@ -16,33 +16,39 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local builder = require "dromozoa.parser.builder_v2"
+local builder = require "dromozoa.parser.builder"
 
 local P = builder.pattern
 local R = builder.range
 local S = builder.set
 local _ = builder()
 
-_:lexer ()
-  :_(S" \t\n\v\f\r"^"+") {}
+_:lexer()
+  :_(S" \t\n\v\f\r"^"+") :skip()
   :_(R"09"^"+") :as "integer"
   :_"*"
+  :_"/"
   :_"+"
+  :_"-"
   :_"("
   :_")"
 
-_ :left "*" "/"
-  :left "+" "-"
+_ :left "+" "-"
+  :left "*" "/"
   :right "UMINUS"
 
 _"E"
   :_ "E" "*" "E"
+  :_ "E" "/" "E"
   :_ "E" "+" "E"
+  :_ "E" "-" "E"
   :_ "(" "E" ")"
-  :_ "decimal"
-  :_ "octal"
+  :_ "-" "E" :prec "UMINUS"
+  :_ "integer"
 
-local data = _:build()
+local lexer, grammar = _:build()
 
+_.lexers = nil
 print(dumper.encode(_, { pretty = true, stable = true }))
-print(dumper.encode(data, { pretty = true, stable = true }))
+-- print(dumper.encode(lexer, { pretty = true, stable = true }))
+-- _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()

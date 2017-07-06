@@ -17,13 +17,6 @@
 
 local class = {}
 
-function class.new(name)
-  return {
-    name = name;
-    items = {};
-  }
-end
-
 function class:_(that)
   local items = self.items
   if type(that) == "string" then
@@ -107,6 +100,6 @@ end
 
 return setmetatable(class, {
   __call = function (_, name)
-    return setmetatable(class.new(name), metatable)
+    return setmetatable({ name = name, items = {} }, metatable)
   end;
 })

@@ -15,9 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local builder = require "dromozoa.parser.builder_v2"
+local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
-local regexp_writer = require "dromozoa.parser.regexp_writer"
 
 local P = builder.pattern
 local R = builder.range
@@ -29,17 +28,17 @@ local a2 = regexp(P"def"^"?", 2)
 -- a1 = regexp.minimize(regexp.nfa_to_dfa(a1))
 -- a2 = regexp.minimize(regexp.nfa_to_dfa(a2))
 
-regexp_writer.write_automaton(assert(io.open("test-a1.dot", "w")), a1):close()
-regexp_writer.write_automaton(assert(io.open("test-a2.dot", "w")), a2):close()
+a1:write_graphviz(assert(io.open("test-a1.dot", "w"))):close()
+a2:write_graphviz(assert(io.open("test-a2.dot", "w"))):close()
 
 regexp.concat(a1, a2)
 
-regexp_writer.write_automaton(assert(io.open("test-concat.dot", "w")), a1):close()
+a1:write_graphviz(assert(io.open("test-concat.dot", "w"))):close()
 
 local dfa1 = regexp.nfa_to_dfa(a1)
 
-regexp_writer.write_automaton(assert(io.open("test-dfa1.dot", "w")), dfa1):close()
+dfa1:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
 
 local dfa2 = regexp.minimize(dfa1)
 
-regexp_writer.write_automaton(assert(io.open("test-dfa2.dot", "w")), dfa2):close()
+dfa2:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()

@@ -15,13 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local keys = require "dromozoa.commons.keys"
-local dumper = require "dromozoa.commons.dumper"
-local unpack = require "dromozoa.commons.unpack"
-local builder = require "dromozoa.parser.builder_v2"
+local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
-local regexp_builder = require "dromozoa.parser.regexp_builder"
-local regexp_writer = require "dromozoa.parser.regexp_writer"
 
 local P = builder.pattern
 local R = builder.range
@@ -29,12 +24,12 @@ local S = builder.set
 
 local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
 local nfa = regexp(p)
-nfa:write_graphviz(assert(io.open("test-nfa.dot", "w")), nfa):close()
+nfa:write_graphviz(assert(io.open("test-nfa.dot", "w"))):close()
 
 local dfa1 = nfa:nfa_to_dfa()
-dfa1:write_graphviz(assert(io.open("test-dfa1.dot", "w")), nfa):close()
+dfa1:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
 local dfa2 = dfa1:minimize()
-dfa2:write_graphviz(assert(io.open("test-dfa2.dot", "w")), nfa):close()
+dfa2:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
 
 local p2 = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
-regexp(p2):nfa_to_dfa():minimize():write_graphviz(assert(io.open("test-dfa3.dot", "w")), nfa):close()
+regexp(p2):nfa_to_dfa():minimize():write_graphviz(assert(io.open("test-dfa3.dot", "w"))):close()

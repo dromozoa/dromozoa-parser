@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local builder = require "dromozoa.parser.builder_v2"
+local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
 local P = builder.pattern
@@ -24,4 +24,4 @@ local S = builder.set
 
 local p = S("abc") + S("def")
 local nfa = regexp(p)
-nfa:write_graphviz(assert(io.open("test-nfa.dot", "w")), nfa):close()
+nfa:write_graphviz(assert(io.open("test-nfa.dot", "w"))):close()

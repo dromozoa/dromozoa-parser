@@ -17,8 +17,7 @@
 
 local equal = require "dromozoa.commons.equal"
 local json = require "dromozoa.commons.json"
-local builder = require "dromozoa.parser.builder_v2"
-local regexp = require "dromozoa.parser.regexp"
+local builder = require "dromozoa.parser.builder"
 
 local P = builder.pattern
 local R = builder.range
@@ -44,7 +43,7 @@ _:lexer "string"
   :_ [[\t]] "\t" :push()
   :_ [[\v]] "\v" :push()
   :_ [[\f]] "\f" :push()
-  :_ '\\"' "\"" :push()
+  :_ [[\"]] "\"" :push()
   :_ ((-S'\\"')^"+") :push()
 
 local lexer = _:build()

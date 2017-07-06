@@ -17,13 +17,6 @@
 
 local class = {}
 
-function class.new(builder, items)
-  return {
-    builder = builder;
-    items = items;
-  }
-end
-
 function class:left(name)
   return self.builder:left(name)
 end
@@ -36,11 +29,12 @@ function class:nonassoc(name)
   return self.builder:nonassoc(name)
 end
 
-class.metatable = {
+local metatable = {
   __index = class;
 }
+class.metatable = metatable
 
-function class.metatable:__call(name)
+function metatable:__call(name)
   local items = self.items
   items[#items + 1] = name
   return self
@@ -48,6 +42,6 @@ end
 
 return setmetatable(class, {
   __call = function (_, builder, items)
-    return setmetatable(class.new(builder, items), class.metatable)
+    return setmetatable({ builder = builder, items = items }, metatable)
   end;
 })
