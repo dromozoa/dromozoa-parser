@@ -20,9 +20,6 @@ local regexp = require "dromozoa.parser.regexp"
 
 return function (self, start_name)
   local lexers = self.lexers
-  local precedences = self.precedences
-  local productions = self.productions
-
   local lexer_names = {}
   local lexer_table = {}
 
@@ -83,12 +80,17 @@ return function (self, start_name)
   end
 
   local max_terminal_symbol = n
-  local max_nonterminal_symbol
-  local symbol_precedences = {}
-  local production_precedences = {}
-  local new_productions = {}
 
+  self.lexer_names = lexer_names
+  self.lexer_table = lexer_table
+  self.symbol_names = symbol_names
+  self.symbol_table = symbol_table
+  self.max_terminal_symbol = max_terminal_symbol
+
+  local productions = self.productions
   if #productions > 1 then
+    local precedences = self.precedences
+
     -- argumented start symbol
     if not start_name then
       start_name = productions[2].head
@@ -137,9 +139,10 @@ return function (self, start_name)
       error(("start symbol %q must be a nonterminal symbol"):format(start_name))
     end
 
-    max_nonterminal_symbol = n
-
+    local symbol_precedences = {}
+    local production_precedences = {}
     local precedence_table = {}
+
     for i = 1, #precedences do
       local precedence = precedences[i]
       local associativity = precedence.associativity
@@ -191,16 +194,11 @@ return function (self, start_name)
         production_precedences[i] = precedence
       end
     end
-  end
 
-  self.symbol_names = symbol_names
-  self.symbol_table = symbol_table
-  self.lexer_names = lexer_names
-  self.lexer_table = lexer_table
-  self.max_terminal_symbol = max_terminal_symbol
-  self.max_nonterminal_symbol = max_nonterminal_symbol
-  self.symbol_precedences = symbol_precedences
-  self.production_precedences = production_precedences
+    self.max_nonterminal_symbol = n
+    self.symbol_precedences = symbol_precedences
+    self.production_precedences = production_precedences
+  end
 
   return lexer(lexers)
 end
