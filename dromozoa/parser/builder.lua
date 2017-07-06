@@ -76,15 +76,15 @@ function class:precedence(name, associativity)
 end
 
 function class:left(name)
-  return self:precedence(name, "left")
+  return self:precedence(name, 1)
 end
 
 function class:right(name)
-  return self:precedence(name, "right")
+  return self:precedence(name, 2)
 end
 
 function class:nonassoc(name)
-  return self:precedence(name, "nonassoc")
+  return self:precedence(name, 3)
 end
 
 function class:build(start_name)

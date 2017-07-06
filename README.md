@@ -46,3 +46,11 @@ Parser generator toolkit.
 |    7 | `(function)`    |         1 |      | substitute by `function` |
 |    8 | `(string)`      |         1 |      | substitute by `string`   |
 
+## Precedence Associativity
+
+| Code | Associativity |
+|-----:|---------------|
+|    1 | left          |
+|    2 | right         |
+|    3 | nonassoc      |
+
