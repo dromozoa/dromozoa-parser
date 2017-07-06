@@ -27,14 +27,6 @@ local class = {
   set = atom.set;
 }
 
-function class.new()
-  return {
-    lexers = { lexer() };
-    precedences = {};
-    productions = {};
-  }
-end
-
 function class.pattern(that)
   local t = type(that)
   if t == "number" then
@@ -112,6 +104,10 @@ end
 
 return setmetatable(class, {
   __call = function ()
-    return setmetatable(class.new(), class.metatable)
+    return setmetatable({
+      lexers = { lexer() };
+      precedences = {};
+      productions = { true };
+    }, class.metatable)
   end;
 })

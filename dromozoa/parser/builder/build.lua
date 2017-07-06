@@ -88,15 +88,15 @@ return function (self, start_name)
   local production_precedences = {}
   local new_productions = {}
 
-  if #productions > 0 then
+  if #productions > 1 then
     -- argumented start symbol
     if not start_name then
-      start_name = productions[1].head
+      start_name = productions[2].head
     end
     n = n + 1
     symbol_names[n] = start_name .. "'"
 
-    for i = 1, #productions do
+    for i = 2, #productions do
       local production = productions[i]
       local name = production.head
       local symbol = symbol_table[name]
@@ -112,7 +112,7 @@ return function (self, start_name)
     end
 
     local check_table = {}
-    for i = 1, #productions do
+    for i = 2, #productions do
       local body = productions[i].body
       for j = 1, #body do
         local name = body[j]
@@ -170,10 +170,10 @@ return function (self, start_name)
       end
     end
 
-    table.insert(productions, 1, {
+    productions[1] = {
       head = max_terminal_symbol + 1;
       body = { start_symbol };
-    })
+    }
 
     for i = 2, #productions do
       local production = productions[i]
