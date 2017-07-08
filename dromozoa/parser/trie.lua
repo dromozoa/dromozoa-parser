@@ -51,6 +51,28 @@ function class:insert(key, value)
   map[key[n]] = value
 end
 
+local function each(i, n, map, key)
+  if i == n then
+    for k, v in pairs(map) do
+      key[i] = k
+      coroutine.yield(key, v)
+    end
+  else
+    for k, v in pairs(map) do
+      key[i] = k
+      each(i + 1, n, v, key)
+    end
+  end
+end
+
+function class:each()
+  return coroutine.wrap(function ()
+    for n, map in pairs(self) do
+      each(1, n, map, {})
+    end
+  end)
+end
+
 local metatable = {
   __index = class;
 }
