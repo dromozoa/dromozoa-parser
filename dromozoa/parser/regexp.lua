@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local trie = require "dromozoa.parser.trie"
 local write_graphviz = require "dromozoa.parser.regexp.write_graphviz"
 
 local function set_to_seq(set)
@@ -115,11 +116,11 @@ local function nfa_to_dfa(this)
 
   local max_state = 1
   local epsilon_closures = {}
-  local maps = {}
+  local maps = trie()
 
   local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
-  insert(maps, useq, max_state)
+  maps:insert(useq, max_state)
 
   local new_transitions = {}
   for byte = 0, 255 do
@@ -137,7 +138,7 @@ local function nfa_to_dfa(this)
       break
     end
     stack[n] = nil
-    local u = find(maps, useq)
+    local u = maps:find(useq)
     for byte = 0, 255 do
       local vset
       for i = 1, #useq do
@@ -154,12 +155,12 @@ local function nfa_to_dfa(this)
       end
       if vset then
         local vseq = set_to_seq(vset)
-        local v = find(maps, vseq)
+        local v = maps:find(vseq)
         if v then
           new_transitions[byte][u] = v
         else
           max_state = max_state + 1
-          insert(maps, vseq, max_state)
+          maps:insert(vseq, max_state)
           stack[#stack + 1] = vseq
           new_accept_states[max_state] = merge_accept_state(accept_states, vset)
           new_transitions[byte][u] = max_state
