@@ -32,17 +32,6 @@ local start_id = 1
 
 local class = {}
 
-function class.new(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
-  return {
-    productions = productions;
-    max_terminal_symbol = max_terminal_symbol;
-    min_nonterminal_symbol = max_terminal_symbol + 1;
-    max_nonterminal_symbol = max_nonterminal_symbol;
-    symbol_precedences = symbol_precedences;
-    production_precedences = production_precedences;
-  }
-end
-
 function class:each_production(head)
   return coroutine.wrap(function ()
     for id, production in ipairs(self.productions) do
@@ -175,7 +164,8 @@ end
 
 function class:first_symbols(symbols)
   local first = linked_hash_table()
-  for symbol in symbols:each() do
+  for i = 1, #symbols do
+    local symbol = symbols[i]
     set.union(first, self:first_symbol(symbol))
     if first:remove(epsilon) == nil then
       return first
@@ -561,12 +551,21 @@ function class:lr1_construct_table(set_of_items, transitions)
   }, conflicts
 end
 
-class.metatable = {
+local metatable = {
   __index = class;
 }
+class.metatable = metatable
 
 return setmetatable(class, {
-  __call = function (_, productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
-    return setmetatable(class.new(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences), class.metatable)
+  __call = function (_, data)
+    local max_terminal_symbol = data.max_terminal_symbol
+    return setmetatable({
+      productions = data.productions;
+      max_terminal_symbol = max_terminal_symbol;
+      min_nonterminal_symbol = max_terminal_symbol + 1;
+      max_nonterminal_symbol = data.max_nonterminal_symbol;
+      symbol_precedences = data.symbol_precedences;
+      production_precedences = data.production_precedences;
+    }, metatable)
   end;
 })
