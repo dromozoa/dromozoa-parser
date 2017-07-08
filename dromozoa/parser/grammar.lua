@@ -143,34 +143,34 @@ function class:eliminate_left_recursion(symbol_names)
 end
 
 function class:first_symbol(symbol)
-  local first = {}
   if self:is_terminal_symbol(symbol) then
-    first[symbol] = true
+    return { [symbol] = true }
   else
     local first_table = self.first_table
     if first_table == nil then
+      local first = {}
       for _, body in self:each_production(symbol) do
         if empty(body) then
           first[epsilon] = true
         else
-          for sym in pairs(self:first_symbols(body)) do
-            first[sym] = true
+          for symbol in pairs(self:first_symbols(body)) do
+            first[symbol] = true
           end
         end
       end
+      return first
     else
       return assert(first_table[symbol], "not found " .. symbol)
     end
   end
-  return first
 end
 
 function class:first_symbols(symbols)
   local first = {}
   for i = 1, #symbols do
     local symbol = symbols[i]
-    for sym in pairs(self:first_symbol(symbol)) do
-      first[sym] = true
+    for symbol in pairs(self:first_symbol(symbol)) do
+      first[symbol] = true
     end
     if first[epsilon] then
       first[epsilon] = nil
