@@ -38,7 +38,7 @@ end
 function class:write_production(out, production)
   local symbol_names = self.symbol_names
   out:write(symbol_names[production.head], " ", TO)
-  for symbol in production.body:each() do
+  for symbol in pairs(production.body) do
     out:write(" ", symbol_names[symbol])
   end
   return out
@@ -103,7 +103,7 @@ function class:write_first(out, symbols)
   local symbol_names = self.symbol_names
   out:write("{")
   local first = true
-  for symbol in symbols:each() do
+  for symbol in pairs(symbols) do
     if first then
       first = false
     else

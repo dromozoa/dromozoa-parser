@@ -21,21 +21,22 @@ local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
 
-_ :lit "a"
-  :lit "b"
-  :lit "c"
-  :lit "d"
+_:lexer()
+  :_"a"
+  :_"b"
+  :_"c"
+  :_"d"
 
-_ "S"
+_"S"
   :_ "A" "a"
   :_ "b"
 
-_ "A"
+_"A"
   :_ "A" "c"
   :_ "S" "d"
   :_ ()
 
-local scanner, grammar, writer = _:build()
+local lexer, grammar = _:build()
 
 -- writer:write_first(io.stdout, grammar:first_symbol(_.symbol_table["A"])):write("\n")
 
@@ -56,5 +57,5 @@ grammar.first_table = elr_grammar:first()
 
 local set_of_items, transitions = grammar:lalr1_items()
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts, true)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
+-- writer:write_conflicts(io.stdout, conflicts, true)
+-- writer:write_table(assert(io.open("test.html", "w")), data):close()

@@ -129,12 +129,13 @@ function class:eliminate_left_recursion(symbol_names)
     end
   end
 
-  local grammar = class(
-      elr_productions,
-      self.max_terminal_symbol,
-      n,
-      self.symbol_precedences,
-      self.production_precedences)
+  local grammar = class({
+    productions = elr_productions;
+    max_terminal_symbol = self.max_terminal_symbol;
+    max_nonterminal_symbol = n;
+    symbol_precedences = self.symbol_precedences;
+    production_precedences = self.production_precedences;
+  })
   if symbol_names == nil then
     return grammar
   else
@@ -300,7 +301,7 @@ function class:lr1_closure(items)
         local symbols = sequence():copy(body, dot + 1):push(item.la)
         local first = self:first_symbols(symbols)
         for id in self:each_production(symbol) do
-          for la in first:each() do
+          for la in pairs(first) do
             local item = { id = id, dot = 1, la = la }
             if not added[item] then
               items:push(item)
