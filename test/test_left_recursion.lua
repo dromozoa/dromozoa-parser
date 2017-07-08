@@ -43,6 +43,8 @@ local lexer, grammar = _:build()
 local elr_grammar, elr_writer = grammar:eliminate_left_recursion(_.symbol_names)
 local elr_productions = elr_grammar.productions
 
+print(dumper.encode(elr_grammar.productions, { pretty = true, stable = true }))
+
 for i, production in ipairs(elr_productions) do
   io.write(i, ": ")
   elr_writer:write_production(io.stdout, production)

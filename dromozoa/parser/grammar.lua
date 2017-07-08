@@ -66,7 +66,7 @@ function class:eliminate_left_recursion(symbol_names)
   local symbol_names = clone(symbol_names)
 
   for i = min_nonterminal_symbol, max_nonterminal_symbol do
-    local left_rescursions = sequence()
+    local left_recursions = sequence()
     local no_left_recursions = sequence()
 
     for _, body in self:each_production(i) do
@@ -76,7 +76,7 @@ function class:eliminate_left_recursion(symbol_names)
           local body = sequence():copy(production.body):copy(body, 2)
           local production = { head = i, body = body }
           if i == body[1] then
-            left_rescursions:push(production)
+            left_recursions:push(production)
           else
             no_left_recursions:push(production)
           end
@@ -84,14 +84,14 @@ function class:eliminate_left_recursion(symbol_names)
       else
         local production = { head = i, body = body }
         if i == body[1] then
-          left_rescursions:push(production)
+          left_recursions:push(production)
         else
           no_left_recursions:push(production)
         end
       end
     end
 
-    if empty(left_rescursions) then
+    if empty(left_recursions) then
       map_of_productions[i] = no_left_recursions
     else
       n = n + 1
@@ -108,7 +108,7 @@ function class:eliminate_left_recursion(symbol_names)
       end
       map_of_productions[i] = productions
       local productions = sequence()
-      for production in left_rescursions:each() do
+      for production in left_recursions:each() do
         productions:push({
           head = symbol;
           body = sequence():copy(production.body, 2):push(symbol);

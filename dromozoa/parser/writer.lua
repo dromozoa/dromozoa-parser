@@ -38,7 +38,7 @@ end
 function class:write_production(out, production)
   local symbol_names = self.symbol_names
   out:write(symbol_names[production.head], " ", TO)
-  for symbol in pairs(production.body) do
+  for _, symbol in ipairs(production.body) do
     out:write(" ", symbol_names[symbol])
   end
   return out
