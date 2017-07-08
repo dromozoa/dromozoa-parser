@@ -66,32 +66,35 @@ function class:eliminate_left_recursion(symbol_names)
   local symbol_names = clone(symbol_names)
 
   for i = min_nonterminal_symbol, max_nonterminal_symbol do
-    local left_recursions = sequence()
-    local no_left_recursions = sequence()
+    local left_recursions = {}
+    local no_left_recursions = {}
 
     for _, body in self:each_production(i) do
       local symbol = body[1]
       if symbol ~= nil and min_nonterminal_symbol <= symbol and symbol < i then
-        for production in map_of_productions[symbol]:each() do
+        -- for production in map_of_productions[symbol]:each() do
+        local productions = map_of_productions[symbol]
+        for j = 1, #productions do
+          local production = productions[j]
           local body = sequence():copy(production.body):copy(body, 2)
           local production = { head = i, body = body }
           if i == body[1] then
-            left_recursions:push(production)
+            left_recursions[#left_recursions + 1] = production
           else
-            no_left_recursions:push(production)
+            no_left_recursions[#no_left_recursions + 1] = production
           end
         end
       else
         local production = { head = i, body = body }
         if i == body[1] then
-          left_recursions:push(production)
+          left_recursions[#left_recursions + 1] = production
         else
-          no_left_recursions:push(production)
+          no_left_recursions[#no_left_recursions + 1] = production
         end
       end
     end
 
-    if empty(left_recursions) then
+    if not left_recursions[1] then
       map_of_productions[i] = no_left_recursions
     else
       n = n + 1
@@ -100,7 +103,9 @@ function class:eliminate_left_recursion(symbol_names)
         symbol_names[symbol] = symbol_names[i] .. "'"
       end
       local productions = sequence()
-      for production in no_left_recursions:each() do
+      -- for production in no_left_recursions:each() do
+      for j = 1, #no_left_recursions do
+        local production = no_left_recursions[j]
         productions:push({
           head = i;
           body = sequence():copy(production.body):push(symbol);
@@ -108,7 +113,9 @@ function class:eliminate_left_recursion(symbol_names)
       end
       map_of_productions[i] = productions
       local productions = sequence()
-      for production in left_recursions:each() do
+      -- for production in left_recursions:each() do
+      for j = 1, #left_recursions do
+        local production = left_recursions[j]
         productions:push({
           head = symbol;
           body = sequence():copy(production.body, 2):push(symbol);
@@ -124,7 +131,9 @@ function class:eliminate_left_recursion(symbol_names)
 
   local elr_productions = sequence()
   for _, productions in pairs(map_of_productions) do
-    for production in productions:each() do
+    -- for production in productions:each() do
+    for i = 1, #productions do
+      local production = productions[i]
       elr_productions:push(production)
     end
   end
