@@ -23,6 +23,8 @@ t:insert({ 1, 2 }, 1)
 t:insert({ 1, 2, 3 }, 2)
 t:insert({ 1, 3 }, 3)
 t:insert({ 1, 2, 3, 4 }, 4)
+t:insert({ 1 }, 5)
+t:insert({ 2 }, 6)
 
 local key = {}
 for i = 1, 100 do
