@@ -50,11 +50,11 @@ local function s(name)
   return _.symbol_table[name]
 end
 
-print(dumper.encode(grammar:first_symbol(s"F"), { stable = true }))
-print(dumper.encode(grammar:first_symbol(s"T"), { stable = true }))
-print(dumper.encode(grammar:first_symbol(s"E"), { stable = true }))
-print(dumper.encode(grammar:first_symbol(s"E'"), { stable = true }))
-print(dumper.encode(grammar:first_symbol(s"T'"), { stable = true }))
+print(dumper.encode(grammar:first_symbol(s"F"), { stable = true })) -- (, id = 2,5
+print(dumper.encode(grammar:first_symbol(s"T"), { stable = true })) -- (, id = 2,5
+print(dumper.encode(grammar:first_symbol(s"E"), { stable = true })) -- (, id = 2,5
+print(dumper.encode(grammar:first_symbol(s"E'"), { stable = true })) -- +, epsilon = 0,3
+print(dumper.encode(grammar:first_symbol(s"T'"), { stable = true })) -- *, epsilon = 0,4
 
 -- local _ = _.symbol_table
 -- writer:write_first(io.stdout, grammar:first_symbol(_["F"])):write("\n") -- (, id

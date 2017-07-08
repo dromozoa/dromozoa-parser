@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local clone = require "dromozoa.commons.clone"
+local dumper = require "dromozoa.commons.dumper"
 local empty = require "dromozoa.commons.empty"
 local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
@@ -142,17 +143,19 @@ function class:eliminate_left_recursion(symbol_names)
 end
 
 function class:first_symbol(symbol)
-  local first = linked_hash_table()
+  local first = {}
   if self:is_terminal_symbol(symbol) then
-    first:insert(symbol)
+    first[symbol] = true
   else
     local first_table = self.first_table
     if first_table == nil then
       for _, body in self:each_production(symbol) do
         if empty(body) then
-          first:insert(epsilon)
+          first[epsilon] = true
         else
-          set.union(first, self:first_symbols(body))
+          for sym in pairs(self:first_symbols(body)) do
+            first[sym] = true
+          end
         end
       end
     else
@@ -163,15 +166,19 @@ function class:first_symbol(symbol)
 end
 
 function class:first_symbols(symbols)
-  local first = linked_hash_table()
+  local first = {}
   for i = 1, #symbols do
     local symbol = symbols[i]
-    set.union(first, self:first_symbol(symbol))
-    if first:remove(epsilon) == nil then
+    for sym in pairs(self:first_symbol(symbol)) do
+      first[sym] = true
+    end
+    if first[epsilon] then
+      first[epsilon] = nil
+    else
       return first
     end
   end
-  first:insert(epsilon)
+  first[epsilon] = true
   return first
 end
 
