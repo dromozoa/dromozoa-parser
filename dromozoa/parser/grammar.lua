@@ -143,11 +143,17 @@ function class:eliminate_left_recursion(symbol_names)
 end
 
 function class:first_symbol(symbol)
-  if self:is_terminal_symbol(symbol) then
+  if symbol <= self.max_terminal_symbol then
     return { [symbol] = true }
   else
     local first_table = self.first_table
-    if first_table == nil then
+    if first_table then
+      local first = first_table[symbol]
+      if not first then
+        error(("first not defined at symbol %d"):format(symbol))
+      end
+      return first
+    else
       local first = {}
       for _, body in self:each_production(symbol) do
         if empty(body) then
@@ -159,8 +165,6 @@ function class:first_symbol(symbol)
         end
       end
       return first
-    else
-      return assert(first_table[symbol], "not found " .. symbol)
     end
   end
 end
