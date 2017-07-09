@@ -75,8 +75,7 @@ function class:eliminate_left_recursion(symbol_names)
       if symbol and max_terminal_symbol < symbol and symbol < i then
         local productions = map_of_productions[symbol]
         for j = 1, #productions do
-          local production = productions[j]
-          local production_body = production.body
+          local production_body = productions[j].body
           local new_body = {}
           for k = 1, #production_body do
             new_body[k] = production_body[k]
@@ -117,10 +116,7 @@ function class:eliminate_left_recursion(symbol_names)
           new_body[k] = production_body[k]
         end
         new_body[#new_body + 1] = n
-        productions[#productions + 1] = {
-          head = i;
-          body = new_body;
-        }
+        productions[#productions + 1] = { head = i, body = new_body }
       end
       map_of_productions[i] = productions
 
@@ -129,18 +125,12 @@ function class:eliminate_left_recursion(symbol_names)
         local production_body = left_recursions[j].body
         local new_body = {}
         for k = 2, #production_body do
-          new_body[k - 1] = production_body[k]
+          new_body[#new_body + 1] = production_body[k]
         end
         new_body[#new_body + 1] = n
-        productions[#productions + 1] = {
-          head = n;
-          body = new_body;
-        }
+        productions[#productions + 1] = { head = n, body = new_body }
       end
-      productions[#productions + 1] = {
-        head = n;
-        body = {};
-      }
+      productions[#productions + 1] = { head = n, body = {} }
       map_of_productions[n] = productions
     end
   end
