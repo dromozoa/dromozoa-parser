@@ -56,6 +56,7 @@ function class:is_kernel_item(item)
 end
 
 function class:eliminate_left_recursion(symbol_names)
+  local max_terminal_symbol = self.max_terminal_symbol
   local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
 
@@ -71,7 +72,7 @@ function class:eliminate_left_recursion(symbol_names)
 
     for _, body in self:each_production(i) do
       local symbol = body[1]
-      if symbol ~= nil and min_nonterminal_symbol <= symbol and symbol < i then
+      if symbol and max_terminal_symbol < symbol and symbol < i then
         local productions = map_of_productions[symbol]
         for j = 1, #productions do
           local production = productions[j]
@@ -104,9 +105,8 @@ function class:eliminate_left_recursion(symbol_names)
       map_of_productions[i] = no_left_recursions
     else
       n = n + 1
-      local symbol = n
       if symbol_names then
-        symbol_names[symbol] = symbol_names[i] .. "'"
+        symbol_names[n] = symbol_names[i] .. "'"
       end
 
       local productions = {}
@@ -116,7 +116,7 @@ function class:eliminate_left_recursion(symbol_names)
         for k = 1, #production_body do
           new_body[k] = production_body[k]
         end
-        new_body[#new_body + 1] = symbol
+        new_body[#new_body + 1] = n
         productions[#productions + 1] = {
           head = i;
           body = new_body;
@@ -131,17 +131,17 @@ function class:eliminate_left_recursion(symbol_names)
         for k = 2, #production_body do
           new_body[k - 1] = production_body[k]
         end
-        new_body[#new_body + 1] = symbol
+        new_body[#new_body + 1] = n
         productions[#productions + 1] = {
-          head = symbol;
+          head = n;
           body = new_body;
         }
       end
       productions[#productions + 1] = {
-        head = symbol;
+        head = n;
         body = {};
       }
-      map_of_productions[symbol] = productions
+      map_of_productions[n] = productions
     end
   end
 
@@ -154,7 +154,7 @@ function class:eliminate_left_recursion(symbol_names)
 
   local grammar = class({
     productions = new_productions;
-    max_terminal_symbol = self.max_terminal_symbol;
+    max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
     production_precedences = self.production_precedences;
