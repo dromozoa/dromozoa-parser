@@ -108,6 +108,7 @@ function class:eliminate_left_recursion(symbol_names)
       if symbol_names then
         symbol_names[symbol] = symbol_names[i] .. "'"
       end
+
       local productions = sequence()
       -- for production in no_left_recursions:each() do
       for j = 1, #no_left_recursions do
@@ -125,8 +126,8 @@ function class:eliminate_left_recursion(symbol_names)
         })
       end
       map_of_productions[i] = productions
+
       local productions = sequence()
-      -- for production in left_recursions:each() do
       for j = 1, #left_recursions do
         local production = left_recursions[j]
         local production_body = production.body
@@ -138,13 +139,11 @@ function class:eliminate_left_recursion(symbol_names)
         productions:push({
           head = symbol;
           body = new_body;
-          -- body = sequence():copy(production.body, 2):push(symbol);
         })
       end
       productions:push({
         head = symbol;
         body = {};
-        -- body = sequence();
       })
       map_of_productions[symbol] = productions
     end
