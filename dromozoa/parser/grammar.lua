@@ -150,19 +150,15 @@ function class:eliminate_left_recursion(symbol_names)
     end
   end
 
-  local elr_productions = {}
-  -- local elr_productions = sequence()
+  local new_productions = {}
   for _, productions in pairs(map_of_productions) do
-    -- for production in productions:each() do
     for i = 1, #productions do
-      local production = productions[i]
-      elr_productions[#elr_productions + 1] = production
-      -- elr_productions:push(production)
+      new_productions[#new_productions + 1] = productions[i]
     end
   end
 
   local grammar = class({
-    productions = elr_productions;
+    productions = new_productions;
     max_terminal_symbol = self.max_terminal_symbol;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
@@ -171,7 +167,7 @@ function class:eliminate_left_recursion(symbol_names)
   if symbol_names == nil then
     return grammar
   else
-    return grammar, writer(symbol_names, elr_productions, self.max_terminal_symbol)
+    return grammar, writer(symbol_names, new_productions, self.max_terminal_symbol)
   end
 end
 
