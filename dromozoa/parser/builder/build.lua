@@ -203,7 +203,7 @@ return function (self, start_name)
     self.production_precedences = production_precedences
 
     local grammar = grammar(self)
-    -- grammar.first_table = grammar:eliminate_left_recursion():first()
+    grammar.first_table = grammar:eliminate_left_recursion():first()
     return lexer(lexers), grammar
     -- return lexer(lexers), parser(grammar)
   end

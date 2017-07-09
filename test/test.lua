@@ -18,22 +18,24 @@
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
+local writer = require "dromozoa.parser.writer"
 
 local _ = builder()
-local P = builder.P
-local R = builder.R
-local S = builder.S
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
 
-_ :pat(S" \t\n\v\f\r"^"+") :ignore()
-  :pat(R"19" * R"09"^"*") :as "decimal"
-  :pat(P"0" * R"07"^"*") :as "octal"
-  :pat(P"0x" * R"09A-Fa-f"^"*") :as "hexadecimal"
-  :lit "*"
-  :lit "/"
-  :lit "+"
-  :lit "-"
-  :lit "("
-  :lit ")"
+_:lexer()
+  :_(S" \t\n\v\f\r"^"+") :skip()
+  :_(R"19" * R"09"^"*") :as "decimal"
+  :_(P"0" * R"07"^"*") :as "octal"
+  :_(P"0x" * R"09A-Fa-f"^"*") :as "hexadecimal"
+  :_ "*"
+  :_ "/"
+  :_ "+"
+  :_ "-"
+  :_ "("
+  :_ ")"
 
 _ :left "+" "-"
   :left "*" "/"
@@ -50,7 +52,8 @@ _ "E"
   :_ "octal"
   :_ "hexadecimal"
 
-local scanner, grammar, writer = _:build()
+local lexer, grammar = _:build()
+local writer = writer(_.symbol_names, grammar.productions, grammar.max_teminal_symbol)
 
 -- print(dumper.encode(scanner, { pretty = true, stable = true }))
 -- print(dumper.encode(grammar, { pretty = true, stable = true }))
@@ -64,6 +67,9 @@ local set_of_items, transitions = grammar:lalr1_items()
 writer:write_set_of_items(io.stdout, set_of_items)
 
 writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+
+--[====[
+
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 writer:write_conflicts(io.stdout, conflicts)
 writer:write_table(assert(io.open("test.html", "w")), data):close()
@@ -88,3 +94,5 @@ while true do
 end
 
 writer:write_tree(assert(io.open("test-tree.dot", "w")), driver.tree):close()
+
+]====]

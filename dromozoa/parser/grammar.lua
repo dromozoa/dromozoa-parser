@@ -198,7 +198,7 @@ end
 function class:symbol_precedence(symbol)
   local item = self.symbol_precedences[symbol]
   if item == nil then
-    return 0, false
+    return 0, false -- [TODO] fix 2nd
   else
     return item.precedence, item.associativity
   end
@@ -206,7 +206,7 @@ end
 
 function class:production_precedence(id)
   local item = self.production_precedences[id]
-  if item ~= nil then
+  if item then
     return item.precedence, item.associativity
   end
   local production = self.productions[id]
@@ -217,7 +217,7 @@ function class:production_precedence(id)
       return self:symbol_precedence(symbol)
     end
   end
-  return 0, false
+  return 0, false -- [TODO] fix 2nd
 end
 
 function class:lr0_closure(items)
