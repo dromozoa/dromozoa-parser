@@ -55,16 +55,13 @@ function class:is_kernel_item(item)
   return self.productions[item.id].head == self.min_nonterminal_symbol or item.dot > 1
 end
 
-function class:eliminate_left_recursion(symbol_names)
+function class:eliminate_left_recursion()
   local max_terminal_symbol = self.max_terminal_symbol
   local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
 
   local map_of_productions = {}
-
   local n = max_nonterminal_symbol
-
-  local symbol_names = clone(symbol_names)
 
   for i = min_nonterminal_symbol, max_nonterminal_symbol do
     local left_recursions = {}
@@ -75,63 +72,58 @@ function class:eliminate_left_recursion(symbol_names)
       if symbol and max_terminal_symbol < symbol and symbol < i then
         local productions = map_of_productions[symbol]
         for j = 1, #productions do
-          local production_body = productions[j].body
+          local src_body = productions[j].body
           local new_body = {}
-          for k = 1, #production_body do
-            new_body[k] = production_body[k]
+          for k = 1, #src_body do
+            new_body[k] = src_body[k]
           end
           for k = 2, #body do
             new_body[#new_body + 1] = body[k]
           end
-          local production = { head = i, body = new_body }
           if i == new_body[1] then
-            left_recursions[#left_recursions + 1] = production
+            left_recursions[#left_recursions + 1] = { head = i, body = new_body }
           else
-            no_left_recursions[#no_left_recursions + 1] = production
+            no_left_recursions[#no_left_recursions + 1] = { head = i, body = new_body }
           end
         end
       else
-        local production = { head = i, body = body }
         if i == body[1] then
-          left_recursions[#left_recursions + 1] = production
+          left_recursions[#left_recursions + 1] = { head = i, body = body }
         else
-          no_left_recursions[#no_left_recursions + 1] = production
+          no_left_recursions[#no_left_recursions + 1] = { head = i, body = body }
         end
       end
     end
 
-    if not left_recursions[1] then
-      map_of_productions[i] = no_left_recursions
-    else
+    if left_recursions[1] then
       n = n + 1
-      if symbol_names then
-        symbol_names[n] = symbol_names[i] .. "'"
-      end
-
-      local productions = {}
-      for j = 1, #no_left_recursions do
-        local production_body = no_left_recursions[j].body
-        local new_body = {}
-        for k = 1, #production_body do
-          new_body[k] = production_body[k]
-        end
-        new_body[#new_body + 1] = n
-        productions[#productions + 1] = { head = i, body = new_body }
-      end
-      map_of_productions[i] = productions
 
       local productions = {}
       for j = 1, #left_recursions do
-        local production_body = left_recursions[j].body
+        local src_body = left_recursions[j].body
         local new_body = {}
-        for k = 2, #production_body do
-          new_body[#new_body + 1] = production_body[k]
+        for k = 2, #src_body do
+          new_body[#new_body + 1] = src_body[k]
         end
         new_body[#new_body + 1] = n
         productions[#productions + 1] = { head = n, body = new_body }
       end
       productions[#productions + 1] = { head = n, body = {} }
       map_of_productions[n] = productions
+
+      local productions = {}
+      for j = 1, #no_left_recursions do
+        local src_body = no_left_recursions[j].body
+        local new_body = {}
+        for k = 1, #src_body do
+          new_body[k] = src_body[k]
+        end
+        new_body[#new_body + 1] = n
+        productions[#productions + 1] = { head = i, body = new_body }
+      end
+      map_of_productions[i] = productions
+    else
+      map_of_productions[i] = no_left_recursions
     end
   end
 
@@ -142,18 +134,13 @@ function class:eliminate_left_recursion(symbol_names)
     end
   end
 
-  local grammar = class({
+  return class({
     productions = new_productions;
     max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
     production_precedences = self.production_precedences;
   })
-  if symbol_names == nil then
-    return grammar
-  else
-    return grammar, writer(symbol_names, new_productions, self.max_terminal_symbol)
-  end
 end
 
 function class:first_symbol(symbol)
