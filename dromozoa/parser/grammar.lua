@@ -31,6 +31,27 @@ local marker_end = 1
 local marker_la = -1
 local start_id = 1
 
+local function equal(items1, items2)
+  local n = #items1
+  if n ~= #items2 then
+    return false
+  end
+  for i = 1, n do
+    local item1 = items1[i]
+    local item2 = items2[i]
+    if item1.id ~= item2.id then
+      return false
+    end
+    if item1.dot ~= item2.dot then
+      return false
+    end
+    if item1.la ~= item2.la then
+      return false
+    end
+  end
+  return true
+end
+
 local class = {}
 
 function class:each_production(head)
@@ -264,30 +285,38 @@ function class:lr0_goto(items)
 end
 
 function class:lr0_items()
-  local set_of_items = linked_hash_table()
-  local transitions = linked_hash_table()
-  local start_items = sequence():push({ id = start_id, dot = 1 })
+  local start_items = { { id = start_id, dot = 1 } }
   self:lr0_closure(start_items)
-  set_of_items[start_items] = 1
-  local n = 1
+  local set_of_items = { start_items }
+  local transitions = {}
   repeat
     local done = true
-    for items, i in set_of_items:each() do
-      for symbol, to_items in pairs(self:lr0_goto(items)) do
-        if not empty(to_items) then
-          local j = set_of_items[to_items]
-          if j == nil then
-            n = n + 1
-            j = n
-            set_of_items[to_items] = j
+    for i = 1, #set_of_items do
+      for symbol, to_items in pairs(self:lr0_goto(set_of_items[i])) do
+        if to_items[1] then
+          local to
+          for j = 1, #set_of_items do
+            if equal(to_items, set_of_items[j]) then
+              to = j
+              break
+            end
+          end
+          if not to then
+            to = #set_of_items + 1
+            set_of_items[to] = to_items
             done = false
           end
-          transitions[{ from = i, symbol = symbol }] = j
+          local transition = transitions[i]
+          if transition then
+            transition[symbol] = to
+          else
+            transitions[i] = { [symbol] = to }
+          end
         end
       end
     end
   until done
-  return keys(set_of_items), transitions
+  return set_of_items, transitions
 end
 
 function class:lr1_closure(items)

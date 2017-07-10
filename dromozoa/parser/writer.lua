@@ -186,8 +186,10 @@ function class:write_graph(out, transitions)
 digraph g {
 graph [rankdir=LR];
 ]])
-  for transition, to in transitions:each() do
-    out:write(("%d->%d [label=<%s>];\n"):format(transition.from, to, xml.escape(symbol_names[transition.symbol])))
+  for i, transition in pairs(transitions) do
+    for j, to in pairs(transition) do
+      out:write(("%d->%d [label=<%s>];\n"):format(i, to, xml.escape(symbol_names[j])))
+    end
   end
   out:write("}\n")
   return out
