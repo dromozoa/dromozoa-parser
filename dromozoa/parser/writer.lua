@@ -85,7 +85,8 @@ function class:write_item(out, item)
 end
 
 function class:write_items(out, items)
-  for item in items:each() do
+  for i = 1, #items do
+    local item = items[i]
     self:write_item(out, item)
     out:write("\n")
   end

@@ -222,14 +222,16 @@ end
 
 function class:lr0_closure(items)
   local productions = self.productions
+  local max_terminal_symbol = self.max_terminal_symbol
   local added = {}
   repeat
     local done = true
-    for item in items:each() do
+    for i = 1, #items do
+      local item = items[i]
       local symbol = productions[item.id].body[item.dot]
-      if symbol ~= nil and self:is_nonterminal_symbol(symbol) and not added[symbol] then
+      if symbol and max_terminal_symbol < symbol and not added[symbol] then
         for id in self:each_production(symbol) do
-          items:push({ id = id, dot = 1 })
+          items[#items + 1] = { id = id, dot = 1 }
           done = false
         end
         added[symbol] = true
@@ -240,22 +242,22 @@ end
 
 function class:lr0_goto(items)
   local productions = self.productions
-  local gotos = linked_hash_table()
-  for item in items:each() do
+  local gotos = {}
+  for i = 1, #items do
+    local item = items[i]
     local id = item.id
-    local production = productions[id]
     local dot = item.dot
-    local symbol = production.body[dot]
-    if symbol ~= nil then
+    local symbol = productions[id].body[dot]
+    if symbol then
       local to_items = gotos[symbol]
-      if to_items == nil then
-        to_items = sequence()
-        gotos[symbol] = to_items
+      if to_items then
+        to_items[#to_items + 1] = { id = id, dot = dot + 1 }
+      else
+        gotos[symbol] = { { id = id, dot = dot + 1 } }
       end
-      to_items:push({ id = id, dot = dot + 1 })
     end
   end
-  for _, to_items in gotos:each() do
+  for _, to_items in pairs(gotos) do
     self:lr0_closure(to_items)
   end
   return gotos
@@ -271,12 +273,12 @@ function class:lr0_items()
   repeat
     local done = true
     for items, i in set_of_items:each() do
-      for symbol, to_items in self:lr0_goto(items):each() do
+      for symbol, to_items in pairs(self:lr0_goto(items)) do
         if not empty(to_items) then
           local j = set_of_items[to_items]
           if j == nil then
-            j = n + 1
-            n = j
+            n = n + 1
+            j = n
             set_of_items[to_items] = j
             done = false
           end
