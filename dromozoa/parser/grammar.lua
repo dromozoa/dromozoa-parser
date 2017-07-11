@@ -371,7 +371,7 @@ end
 
 function class:lr1_items()
   local set_of_items = linked_hash_table()
-  local transitions = linked_hash_table()
+  local transitions = {}
   local start_items = sequence():push({ id = start_id, dot = 1, la = marker_end })
   self:lr1_closure(start_items)
   set_of_items[start_items] = 1
@@ -388,7 +388,12 @@ function class:lr1_items()
             set_of_items[to_items] = j
             done = false
           end
-          transitions[{ from = i, symbol = symbol }] = j
+          local transition = transitions[i]
+          if transition then
+            transition[symbol] = j
+          else
+            transitions[i] = { [symbol] = j }
+          end
         end
       end
     end
