@@ -244,18 +244,18 @@ end
 function class:lr0_closure(items)
   local productions = self.productions
   local max_terminal_symbol = self.max_terminal_symbol
-  local added = {}
+  local added_table = {}
   repeat
     local done = true
     for i = 1, #items do
       local item = items[i]
       local symbol = productions[item.id].body[item.dot]
-      if symbol and max_terminal_symbol < symbol and not added[symbol] then
+      if symbol and max_terminal_symbol < symbol and not added_table[symbol] then
         for id in self:each_production(symbol) do
           items[#items + 1] = { id = id, dot = 1 }
           done = false
         end
-        added[symbol] = true
+        added_table[symbol] = true
       end
     end
   until done
@@ -321,23 +321,33 @@ end
 
 function class:lr1_closure(items)
   local productions = self.productions
-  local added = hash_table()
+  local max_terminal_symbol = self.max_terminal_symbol
+  local added_table = {}
   repeat
     local done = true
-    for item in items:each() do
+    for i = 1, #items do
+      local item = items[i]
       local body = productions[item.id].body
       local dot = item.dot
       local symbol = body[dot]
-      if symbol ~= nil and self:is_nonterminal_symbol(symbol) then
-        local symbols = sequence():copy(body, dot + 1):push(item.la)
+      if symbol and max_terminal_symbol < symbol then
+        local symbols = {}
+        for i = dot + 1, #body do
+          symbols[#symbols + 1] = body[i]
+        end
+        symbols[#symbols + 1] = item.la
         local first = self:first_symbols(symbols)
         for id in self:each_production(symbol) do
+          local added = added_table[id]
+          if not added then
+            added = {}
+            added_table[id] = added
+          end
           for la in pairs(first) do
-            local item = { id = id, dot = 1, la = la }
-            if not added[item] then
-              items:push(item)
+            if not added[la] then
+              items[#items + 1] = { id = id, dot = 1, la = la }
               done = false
-              added[item] = true
+              added[la] = true
             end
           end
         end
