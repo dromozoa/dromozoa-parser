@@ -358,22 +358,22 @@ end
 
 function class:lr1_goto(items)
   local productions = self.productions
-  local gotos = linked_hash_table()
-  for item in items:each() do
+  local gotos = {}
+  for i = 1, #items do
+    local item = items[i]
     local id = item.id
-    local production = productions[id]
     local dot = item.dot
-    local symbol = production.body[dot]
-    if symbol ~= nil then
-      local to_items = gotos:get(symbol)
-      if to_items == nil then
-        to_items = sequence()
-        gotos[symbol] = to_items
+    local symbol = productions[id].body[dot]
+    if symbol then
+      local to_items = gotos[symbol]
+      if to_items then
+        to_items[#to_items + 1] = { id = id, dot = dot + 1, la = item.la }
+      else
+        gotos[symbol] = { { id = id, dot = dot + 1, la = item.la } }
       end
-      to_items:push({ id = id, dot = dot + 1, la = item.la })
     end
   end
-  for _, to_items in gotos:each() do
+  for _, to_items in pairs(gotos) do
     self:lr1_closure(to_items)
   end
   return gotos
@@ -389,7 +389,7 @@ function class:lr1_items()
   repeat
     local done = true
     for items, i in set_of_items:each() do
-      for symbol, to_items in self:lr1_goto(items):each() do
+      for symbol, to_items in pairs(self:lr1_goto(items)) do
         if not empty(to_items) then
           local j = set_of_items[to_items]
           if j == nil then
