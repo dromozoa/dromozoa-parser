@@ -27,7 +27,6 @@ local set = require "dromozoa.commons.set"
 local writer = require "dromozoa.parser.writer"
 
 local epsilon = 0
-local marker_end = 1
 local marker_la = -1
 
 local function equal(items1, items2)

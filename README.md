@@ -54,3 +54,11 @@ Parser generator toolkit.
 |    2 | right         |
 |    3 | nonassoc      |
 
+## Grammar Special Symbols
+
+| Code | Name         | Symbol |
+|-----:|--------------|--------|
+|    0 | `epsilon`    | ϵ      |
+|    1 | `marker_end` | $      |
+|   -1 | `marker_la`  | #      |
+
