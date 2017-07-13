@@ -423,19 +423,18 @@ function class:lalr1_kernels(set_of_items, transitions)
   for i = 1, #set_of_items do
     local items = set_of_items[i]
     local kernel_items = {}
-    local map = {}
+    local kernel_table = {}
     for j = 1, #items do
       local item = items[j]
       local id = item.id
       local dot = item.dot
       if id == 1 or dot > 1 then
-        local m = map[id]
-        if m then
-          m[dot] = j
+        local map = kernel_table[id]
+        if map then
+          map[dot] = j
         else
-          map[id] = { [dot] = j }
+          kernel_table[id] = { [dot] = j }
         end
-        local la
         if id == 1 and dot == 1 then
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { [1] = true }}
         else
@@ -445,7 +444,7 @@ function class:lalr1_kernels(set_of_items, transitions)
       end
     end
     set_of_kernel_items[i] = kernel_items
-    map_of_kernel_items[i] = map
+    map_of_kernel_items[i] = kernel_table
   end
 
   do
