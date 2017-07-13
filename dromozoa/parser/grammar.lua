@@ -481,23 +481,28 @@ function class:lalr1_kernels(set_of_items, transitions)
       local op = propagated[i]
       local from_la = set_of_kernel_items[op.from_i][op.from_j].la
       local to_la = set_of_kernel_items[op.to_i][op.to_j].la
-      if set.union(to_la, from_la) > 0 then
-        done = false
+      for la in pairs(from_la) do
+        if not to_la[la] then
+          to_la[la] = true
+          done = false
+        end
       end
     end
   until done
 
-  local expanded_set_of_kernel_items = sequence()
-  for _, items in ipairs(set_of_kernel_items) do
-    local expanded_items = sequence()
-    for _, item in ipairs(items) do
+  local expanded_set_of_kernel_items = {}
+  for i = 1, #set_of_kernel_items do
+    local items = set_of_kernel_items[i]
+    local expanded_items = {}
+    for j = 1, #items do
+      local item = items[j]
       local id = item.id
       local dot = item.dot
       for la in pairs(item.la) do
-        expanded_items:push({ id = id, dot = dot, la = la })
+        expanded_items[#expanded_items + 1] = { id = id, dot = dot, la = la }
       end
     end
-    expanded_set_of_kernel_items:push(expanded_items)
+    expanded_set_of_kernel_items[#expanded_set_of_kernel_items + 1] = expanded_items
   end
 
   return expanded_set_of_kernel_items
@@ -506,8 +511,8 @@ end
 function class:lalr1_items()
   local set_of_items, transitions = self:lr0_items()
   local set_of_items = self:lalr1_kernels(set_of_items, transitions)
-  for items in set_of_items:each() do
-    self:lr1_closure(items)
+  for i = 1, #set_of_items do
+    self:lr1_closure(set_of_items[i])
   end
   return set_of_items, transitions
 end
