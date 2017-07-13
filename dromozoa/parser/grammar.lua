@@ -26,9 +26,6 @@ local sequence = require "dromozoa.commons.sequence"
 local set = require "dromozoa.commons.set"
 local writer = require "dromozoa.parser.writer"
 
-local epsilon = 0
-local marker_la = -1
-
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
@@ -173,7 +170,7 @@ function class:first_symbol(symbol)
       local first = {}
       for _, body in self:each_production(symbol) do
         if empty(body) then
-          first[epsilon] = true
+          first[0] = true -- epsilon
         else
           for symbol in pairs(self:first_symbols(body)) do
             first[symbol] = true
@@ -192,13 +189,13 @@ function class:first_symbols(symbols)
     for symbol in pairs(self:first_symbol(symbol)) do
       first[symbol] = true
     end
-    if first[epsilon] then
-      first[epsilon] = nil
+    if first[0] then -- epsilon
+      first[0] = nil
     else
       return first
     end
   end
-  first[epsilon] = true
+  first[0] = true -- epsilon
   return first
 end
 
@@ -374,7 +371,7 @@ function class:lr1_goto(items)
 end
 
 function class:lr1_items()
-  local start_items = { { id = 1, dot = 1, la = 1 } }
+  local start_items = { { id = 1, dot = 1, la = 1 } } -- la = marker_end
   self:lr1_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
@@ -413,7 +410,7 @@ function class:lalr1_kernels(set_of_items, transitions)
   local min_nonterminal_symbol = self.min_nonterminal_symbol
 
   local set_of_kernel_items = {}
-  local map_of_kernel_items = {} -- i,id,dot => j
+  local map_of_kernel_items = {}
 
   for i = 1, #set_of_items do
     local items = set_of_items[i]
@@ -431,7 +428,7 @@ function class:lalr1_kernels(set_of_items, transitions)
           kernel_table[id] = { [dot] = j }
         end
         if id == 1 and dot == 1 then
-          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { [1] = true }}
+          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { [1] = true }} -- la = { [marker_end] = true }
         else
           la = {}
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = {} }
@@ -451,7 +448,7 @@ function class:lalr1_kernels(set_of_items, transitions)
       local from_id = from_item.id
       local from_dot = from_item.dot
       if productions[from_id].head == min_nonterminal_symbol or from_dot > 1 then
-        local items = { { id = from_id, dot = from_dot, la = marker_la } }
+        local items = { { id = from_id, dot = from_dot, la = -1 } } -- la = marker_lookahead
         self:lr1_closure(items)
         for k = 1, #items do
           local item = items[k]
@@ -463,7 +460,7 @@ function class:lalr1_kernels(set_of_items, transitions)
           if symbol ~= nil then
             local to_i = transitions[i][symbol]
             local to_j = map_of_kernel_items[to_i][id][dot + 1]
-            if la == marker_la then
+            if la == -1 then -- marker_lookahead
               propagated[#propagated + 1] = { from_i = i, from_j = j, to_i = to_i, to_j = to_j }
             else
               set_of_kernel_items[to_i][to_j].la[la] = true
