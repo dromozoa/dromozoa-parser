@@ -71,10 +71,6 @@ function class:is_nonterminal_symbol(symbol)
   return symbol >= self.min_nonterminal_symbol
 end
 
-function class:is_kernel_item(item)
-  return self.productions[item.id].head == self.min_nonterminal_symbol or item.dot > 1
-end
-
 function class:eliminate_left_recursion()
   local max_terminal_symbol = self.max_terminal_symbol
   local min_nonterminal_symbol = self.min_nonterminal_symbol
@@ -447,30 +443,31 @@ function class:lalr1_kernels(set_of_items, transitions)
     map_of_kernel_items[i] = kernel_table
   end
 
-  do
-    return set_of_kernel_items, map_of_kernel_items
-  end
+  local propagated = {}
 
-  local propagated = sequence()
-
-  for i, from_items in ipairs(set_of_items) do
-    for j, from_item in ipairs(from_items) do
-      if self:is_kernel_item(from_item) then
-        local items = sequence():push({ id = from_item.id, dot = from_item.dot, la = marker_la })
+  for i = 1, #set_of_items do
+    local from_items = set_of_items[i]
+    for j = 1, #from_items do
+      local from_item = from_items[j]
+      local from_id = from_item.id
+      local from_dot = from_item.dot
+      if productions[from_id].head == min_nonterminal_symbol or from_dot > 1 then
+        local items = { { id = from_id, dot = from_dot, la = marker_la } }
         self:lr1_closure(items)
-        for item in items:each() do
+        for k = 1, #items do
+          local item = items[k]
           local id = item.id
           local production = productions[id]
           local dot = item.dot
           local symbol = production.body[dot]
           local la = item.la
           if symbol ~= nil then
-            local to_i = transitions[{ from = i, symbol = symbol }]
-            local to_j = map_of_kernel_items[{ i = to_i, item = { id = id, dot = dot + 1 } }]
+            local to_i = transitions[i][symbol]
+            local to_j = map_of_kernel_items[to_i][id][dot + 1]
             if la == marker_la then
-              propagated:push({ from_i = i, from_j = j, to_i = to_i, to_j = to_j })
+              propagated[#propagated + 1] = { from_i = i, from_j = j, to_i = to_i, to_j = to_j }
             else
-              set_of_kernel_items[to_i][to_j].la:insert(la)
+              set_of_kernel_items[to_i][to_j].la[la] = true
             end
           end
         end
@@ -480,7 +477,8 @@ function class:lalr1_kernels(set_of_items, transitions)
 
   repeat
     local done = true
-    for op in propagated:each() do
+    for i = 1, #propagated do
+      local op = propagated[i]
       local from_la = set_of_kernel_items[op.from_i][op.from_j].la
       local to_la = set_of_kernel_items[op.to_i][op.to_j].la
       if set.union(to_la, from_la) > 0 then
@@ -490,12 +488,12 @@ function class:lalr1_kernels(set_of_items, transitions)
   until done
 
   local expanded_set_of_kernel_items = sequence()
-  for items in set_of_kernel_items:each() do
+  for _, items in ipairs(set_of_kernel_items) do
     local expanded_items = sequence()
-    for item in items:each() do
+    for _, item in ipairs(items) do
       local id = item.id
       local dot = item.dot
-      for la in item.la:each() do
+      for la in pairs(item.la) do
         expanded_items:push({ id = id, dot = dot, la = la })
       end
     end
