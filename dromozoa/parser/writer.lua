@@ -70,7 +70,7 @@ function class:write_item(out, item)
     else
       out:write(", ")
       local first = true
-      for la in la:each() do
+      for la in pairs(la) do
         if first then
           first = false
         else

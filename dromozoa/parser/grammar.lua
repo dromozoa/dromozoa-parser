@@ -379,7 +379,7 @@ function class:lr1_goto(items)
 end
 
 function class:lr1_items()
-  local start_items = { { id = 1, dot = 1, la = marker_end } }
+  local start_items = { { id = 1, dot = 1, la = 1 } }
   self:lr1_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
@@ -418,29 +418,38 @@ function class:lalr1_kernels(set_of_items, transitions)
   local min_nonterminal_symbol = self.min_nonterminal_symbol
 
   local set_of_kernel_items = {}
-  local map_of_kernel_items = hash_table()
+  local map_of_kernel_items = {} -- i,id,dot => j
 
   for i = 1, #set_of_items do
     local items = set_of_items[i]
     local kernel_items = {}
+    local map = {}
     for j = 1, #items do
       local item = items[j]
-      if item.id == 1 or item.dot > 1 then
-        map_of_kernel_items[{ i = i, item = item }] = j
+      local id = item.id
+      local dot = item.dot
+      if id == 1 or dot > 1 then
+        local m = map[id]
+        if m then
+          m[dot] = j
+        else
+          map[id] = { [dot] = j }
+        end
         local la
-        if item.id == 1 and item.dot == 1 then
-          la = { [marker_end] = true }
+        if id == 1 and dot == 1 then
+          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { [1] = true }}
         else
           la = {}
+          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = {} }
         end
-        kernel_items[#kernel_items + 1] = { id = item.id, dot = item.dot, la = la }
       end
     end
-    set_of_kernel_items[#set_of_kernel_items + 1] = kernel_items
+    set_of_kernel_items[i] = kernel_items
+    map_of_kernel_items[i] = map
   end
 
   do
-    return set_of_kernel_items
+    return set_of_kernel_items, map_of_kernel_items
   end
 
   local propagated = sequence()

@@ -47,11 +47,35 @@ local writer = writer(_.symbol_names, grammar.productions, grammar.max_teminal_s
 -- print(dumper.encode(writer, { pretty = true, stable = true }))
 
 local set_of_items, transitions = grammar:lr0_items()
-local set_of_kernel_items = grammar:lalr1_kernels(set_of_items, transitions)
+local set_of_kernel_items, map_of_kernel_items = grammar:lalr1_kernels(set_of_items, transitions)
 -- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
 -- for from, to in pairs(transitions) do
 --   print(dumper.encode({ from = from, to = to }, { stable = true }))
 -- end
 writer:write_set_of_items(io.stdout, set_of_kernel_items)
+
+local map = {}
+-- for from, to in map_of_kernel_items:each() do
+--   map[#map + 1] = { from.i, from.item.id, from.item.dot, to }
+-- end
+for i, u in pairs(map_of_kernel_items) do
+  for id, v in pairs(u) do
+    for dot, to in pairs(v) do
+      map[#map + 1] = { i, id, dot, to }
+    end
+  end
+end
+
+table.sort(map, function (a, b)
+  for i = 1, #a do
+    if a[i] ~= b[i] then
+      return a[i] < b[i]
+    end
+  end
+  return false
+end)
+for i = 1, #map do
+  print(map[i][1], map[i][2], map[i][3], map[i][4])
+end
 
 writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
