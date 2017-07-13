@@ -29,7 +29,6 @@ local writer = require "dromozoa.parser.writer"
 local epsilon = 0
 local marker_end = 1
 local marker_la = -1
-local start_id = 1
 
 local function equal(items1, items2)
   local n = #items1
@@ -285,7 +284,7 @@ function class:lr0_goto(items)
 end
 
 function class:lr0_items()
-  local start_items = { { id = start_id, dot = 1 } }
+  local start_items = { { id = 1, dot = 1 } }
   self:lr0_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
@@ -380,7 +379,7 @@ function class:lr1_goto(items)
 end
 
 function class:lr1_items()
-  local start_items = { { id = start_id, dot = 1, la = marker_end } }
+  local start_items = { { id = 1, dot = 1, la = marker_end } }
   self:lr1_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
@@ -416,23 +415,32 @@ end
 
 function class:lalr1_kernels(set_of_items, transitions)
   local productions = self.productions
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
 
-  local set_of_kernel_items = sequence()
+  local set_of_kernel_items = {}
   local map_of_kernel_items = hash_table()
 
-  for i, items in ipairs(set_of_items) do
-    local kernel_items = sequence()
-    for j, item in ipairs(items) do
-      if self:is_kernel_item(item) then
+  for i = 1, #set_of_items do
+    local items = set_of_items[i]
+    local kernel_items = {}
+    for j = 1, #items do
+      local item = items[j]
+      if item.id == 1 or item.dot > 1 then
         map_of_kernel_items[{ i = i, item = item }] = j
-        local la = linked_hash_table()
-        if item.id == start_id and item.dot == 1 then
-          la:insert(marker_end)
+        local la
+        if item.id == 1 and item.dot == 1 then
+          la = { [marker_end] = true }
+        else
+          la = {}
         end
-        kernel_items:push({ id = item.id, dot = item.dot, la = la })
+        kernel_items[#kernel_items + 1] = { id = item.id, dot = item.dot, la = la }
       end
     end
-    set_of_kernel_items:push(kernel_items)
+    set_of_kernel_items[#set_of_kernel_items + 1] = kernel_items
+  end
+
+  do
+    return set_of_kernel_items
   end
 
   local propagated = sequence()
