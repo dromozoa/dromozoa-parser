@@ -15,16 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local clone = require "dromozoa.commons.clone"
-local dumper = require "dromozoa.commons.dumper"
-local empty = require "dromozoa.commons.empty"
-local hash_table = require "dromozoa.commons.hash_table"
 local ipairs = require "dromozoa.commons.ipairs"
-local keys = require "dromozoa.commons.keys"
-local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local sequence = require "dromozoa.commons.sequence"
-local set = require "dromozoa.commons.set"
-local writer = require "dromozoa.parser.writer"
 
 local function equal(items1, items2)
   local n = #items1
@@ -161,12 +152,12 @@ function class:first_symbol(symbol)
     else
       local first = {}
       for _, body in self:each_production(symbol) do
-        if empty(body) then
-          first[0] = true -- epsilon
-        else
+        if body[1] then
           for symbol in pairs(self:first_symbols(body)) do
             first[symbol] = true
           end
+        else
+          first[0] = true -- epsilon
         end
       end
       return first
