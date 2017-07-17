@@ -263,7 +263,7 @@ function class:write_conflict(out, conflict, verbose)
 end
 
 function class:write_conflicts(out, conflicts, verbose)
-  for conflict in conflicts:each() do
+  for _, conflict in ipairs(conflicts) do
     self:write_conflict(out, conflict, verbose)
   end
   return out

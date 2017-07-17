@@ -515,24 +515,27 @@ end
 
 function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
+  local max_terminal_symbol = self.max_terminal_symbol
 
   local max_state = #set_of_items
   local max_symbol = self.max_nonterminal_symbol
 
   local table = {}
-  local conflicts = sequence()
+  local conflicts = {}
 
   for i = 1, (max_state + 1) * max_symbol do
     table[i] = 0
   end
 
-  for i, items in ipairs(set_of_items) do
+  for i = 1, max_state do
+    local items = set_of_items[i]
     local terminal_symbol_table = {}
-    for j, item in ipairs(items) do
+    for j = 1, #items do
+      local item = items[j]
       local symbol = productions[item.id].body[item.dot]
-      if symbol ~= nil and self:is_terminal_symbol(symbol) and not terminal_symbol_table[symbol] then
-        terminal_symbol_table[symbol] = true
+      if symbol and symbol <= max_terminal_symbol and not terminal_symbol_table[symbol] then
         table[i * max_symbol + symbol] = transitions[i][symbol]
+        terminal_symbol_table[symbol] = true
       end
     end
     local error_table = {}
@@ -546,12 +549,12 @@ function class:lr1_construct_table(set_of_items, transitions)
         local current = table[index]
         if current == 0 then
           if error_table[index] then
-            conflicts:push({
+            conflicts[#conflicts + 1] = {
               state = i;
               symbol = symbol;
               { action = "error" };
               { action = "reduce", argument = id };
-            })
+            }
           else
             table[index] = action
           end
@@ -590,13 +593,12 @@ function class:lr1_construct_table(set_of_items, transitions)
               table[index] = action
             end
           end
-          conflicts:push(conflict)
+          conflicts[#conflicts + 1] = conflict
         end
       end
     end
   end
 
-  -- symbol, from, to
   for i = 1, #transitions do
     for symbol, to in pairs(transitions[i]) do
       if self:is_nonterminal_symbol(symbol) then
@@ -606,16 +608,6 @@ function class:lr1_construct_table(set_of_items, transitions)
       end
     end
   end
---[[
-  for transition, to in transitions:each() do
-    local symbol = transition.symbol
-    if self:is_nonterminal_symbol(symbol) then
-      local index = transition.from * max_symbol + symbol
-      local current = table[index]
-      table[index] = to
-    end
-  end
-]]
 
   local heads = {}
   local sizes = {}
