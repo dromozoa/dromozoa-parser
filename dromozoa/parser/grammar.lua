@@ -36,16 +36,30 @@ local function equal(items1, items2)
   return true
 end
 
+local function map_of_production_indices(productions)
+  local map_of_production_indices = {}
+  for i = 1, #productions do
+    local production = productions[i]
+    local head = production.head
+    local production_indices = map_of_production_indices[head]
+    if production_indices then
+      production_indices[#production_indices + 1] = i
+    else
+      map_of_production_indices[head] = { i }
+    end
+  end
+  return map_of_production_indices
+end
+
 local class = {}
 
 function class:each_production(head)
+  local production_indices = self.map_of_production_indices[head]
   return coroutine.wrap(function ()
     local productions = self.productions
-    for i = 1, #productions do
-      local production = productions[i]
-      if production.head == head then
-        coroutine.yield(i, production.body)
-      end
+    for i = 1, #production_indices do
+      local index = production_indices[i]
+      coroutine.yield(index, productions[index].body)
     end
   end)
 end
@@ -129,6 +143,7 @@ function class:eliminate_left_recursion()
 
   return class({
     productions = new_productions;
+    map_of_production_indices = map_of_production_indices(new_productions);
     max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
@@ -613,8 +628,10 @@ class.metatable = metatable
 return setmetatable(class, {
   __call = function (_, data)
     local max_terminal_symbol = data.max_terminal_symbol
+    local productions = data.productions
     return setmetatable({
-      productions = data.productions;
+      productions = productions;
+      map_of_production_indices = map_of_production_indices(productions);
       max_terminal_symbol = max_terminal_symbol;
       min_nonterminal_symbol = max_terminal_symbol + 1;
       max_nonterminal_symbol = data.max_nonterminal_symbol;
