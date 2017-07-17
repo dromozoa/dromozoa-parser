@@ -231,6 +231,7 @@ end
 
 function class:lr0_closure(items)
   local productions = self.productions
+  local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
   local added_table = {}
   repeat
@@ -239,8 +240,9 @@ function class:lr0_closure(items)
       local item = items[i]
       local symbol = productions[item.id].body[item.dot]
       if symbol and symbol > max_terminal_symbol and not added_table[symbol] then
-        for id in each_production(self, symbol) do
-          items[#items + 1] = { id = id, dot = 1 }
+        local production_ids = map_of_production_ids[symbol]
+        for j = 1, #production_ids do
+          items[#items + 1] = { id = production_ids[j], dot = 1 }
           done = false
         end
         added_table[symbol] = true
@@ -309,6 +311,7 @@ end
 
 function class:lr1_closure(items)
   local productions = self.productions
+  local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
   local added_table = {}
   repeat
@@ -325,7 +328,9 @@ function class:lr1_closure(items)
         end
         symbols[#symbols + 1] = item.la
         local first = self:first_symbols(symbols)
-        for id in each_production(self, symbol) do
+        local production_ids = map_of_production_ids[symbol]
+        for j = 1, #production_ids do
+          local id = production_ids[j]
           local added = added_table[id]
           if not added then
             added = {}
