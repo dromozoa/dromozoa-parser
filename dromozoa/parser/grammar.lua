@@ -62,7 +62,7 @@ function class:eliminate_left_recursion()
 
     for _, body in self:each_production(i) do
       local symbol = body[1]
-      if symbol and max_terminal_symbol < symbol and symbol < i then
+      if symbol and symbol > max_terminal_symbol and symbol < i then
         local productions = map_of_productions[symbol]
         for j = 1, #productions do
           local src_body = productions[j].body
@@ -223,7 +223,7 @@ function class:lr0_closure(items)
     for i = 1, #items do
       local item = items[i]
       local symbol = productions[item.id].body[item.dot]
-      if symbol and max_terminal_symbol < symbol and not added_table[symbol] then
+      if symbol and symbol > max_terminal_symbol and not added_table[symbol] then
         for id in self:each_production(symbol) do
           items[#items + 1] = { id = id, dot = 1 }
           done = false
@@ -303,7 +303,7 @@ function class:lr1_closure(items)
       local body = productions[item.id].body
       local dot = item.dot
       local symbol = body[dot]
-      if symbol and max_terminal_symbol < symbol then
+      if symbol and symbol > max_terminal_symbol then
         local symbols = {}
         for i = dot + 1, #body do
           symbols[#symbols + 1] = body[i]
@@ -580,7 +580,7 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   for i = 1, #transitions do
     for symbol, to in pairs(transitions[i]) do
-      if max_terminal_symbol < symbol then
+      if symbol > max_terminal_symbol then
         local index = i * n + symbol
         local current = table[index]
         table[index] = to
