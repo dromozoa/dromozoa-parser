@@ -25,6 +25,7 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
+--[[
 _:lexer()
   :_ "="
   :_ "*"
@@ -38,9 +39,26 @@ _"L"
   :_ "id"
 _"R"
   :_ "L"
+]]
+
+_:lexer()
+  :_ "id"
+  :_ "+"
+  :_ "*"
+  :_ "("
+  :_ ")"
+
+_ :left "+"
+  :left "*"
+
+_"E"
+  :_ "E" "+" "E"
+  :_ "E" "*" "E"
+  :_ "(" "E" ")"
+  :_ "id"
 
 local lexer, grammar = _:build()
-local writer = writer(_.symbol_names, grammar.productions, grammar.max_teminal_symbol)
+local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 -- print(dumper.encode(scanner, { pretty = true, stable = true }))
 -- print(dumper.encode(grammar, { pretty = true, stable = true }))
@@ -80,3 +98,9 @@ end
 ]====]
 
 writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+
+print(dumper.encode(transitions, { stable = true }))
+local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+print(dumper.encode(data, { stable = true }))
+writer:write_table(assert(io.open("test.html", "w")), data):close()
+writer:write_conflicts(io.stdout, conflicts)

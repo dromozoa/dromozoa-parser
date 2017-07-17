@@ -210,7 +210,7 @@ end
 function class:symbol_precedence(symbol)
   local item = self.symbol_precedences[symbol]
   if item == nil then
-    return 0, false -- [TODO] fix 2nd
+    return 0, -1 -- [TODO] fix 2nd
   else
     return item.precedence, item.associativity
   end
@@ -229,7 +229,7 @@ function class:production_precedence(id)
       return self:symbol_precedence(symbol)
     end
   end
-  return 0, false -- [TODO] fix 2nd
+  return 0, -1 -- [TODO] fix 2nd
 end
 
 function class:lr0_closure(items)
@@ -283,6 +283,11 @@ function class:lr0_items()
   repeat
     local done = true
     for i = 1, #set_of_items do
+      local transition = transitions[i]
+      if not transition then
+        transition = {}
+        transitions[i] = transition
+      end
       for symbol, to_items in pairs(self:lr0_goto(set_of_items[i])) do
         if to_items[1] then
           local to
@@ -297,12 +302,7 @@ function class:lr0_items()
             set_of_items[to] = to_items
             done = false
           end
-          local transition = transitions[i]
-          if transition then
-            transition[symbol] = to
-          else
-            transitions[i] = { [symbol] = to }
-          end
+          transition[symbol] = to
         end
       end
     end
@@ -528,15 +528,15 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   for i, items in ipairs(set_of_items) do
     local terminal_symbol_table = {}
-    for item in items:each() do
+    for j, item in ipairs(items) do
       local symbol = productions[item.id].body[item.dot]
       if symbol ~= nil and self:is_terminal_symbol(symbol) and not terminal_symbol_table[symbol] then
         terminal_symbol_table[symbol] = true
-        table[i * max_symbol + symbol] = transitions[{ from = i, symbol = symbol }]
+        table[i * max_symbol + symbol] = transitions[i][symbol]
       end
     end
     local error_table = {}
-    for item in items:each() do
+    for j, item in ipairs(items) do
       local id = item.id
       local symbol = productions[id].body[item.dot]
       if symbol == nil then
@@ -569,10 +569,10 @@ function class:lr1_construct_table(set_of_items, transitions)
             if precedence > 0 then
               conflict.resolved = true
               if shift_precedence == precedence then
-                if associativity == "left" then
+                if associativity == 1 then -- left
                   conflict.resolution = 2
                   table[index] = action
-                elseif associativity == "nonassoc" then
+                elseif associativity == 3 then -- nonassoc
                   conflict.resolution = 0
                   error_table[index] = action
                   table[index] = 0
@@ -596,6 +596,17 @@ function class:lr1_construct_table(set_of_items, transitions)
     end
   end
 
+  -- symbol, from, to
+  for i = 1, #transitions do
+    for symbol, to in pairs(transitions[i]) do
+      if self:is_nonterminal_symbol(symbol) then
+        local index = i * max_symbol + symbol
+        local current = table[index]
+        table[index] = to
+      end
+    end
+  end
+--[[
   for transition, to in transitions:each() do
     local symbol = transition.symbol
     if self:is_nonterminal_symbol(symbol) then
@@ -604,6 +615,7 @@ function class:lr1_construct_table(set_of_items, transitions)
       table[index] = to
     end
   end
+]]
 
   local heads = {}
   local sizes = {}
