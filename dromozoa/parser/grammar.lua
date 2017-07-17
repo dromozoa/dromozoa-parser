@@ -52,13 +52,11 @@ end
 
 function class:eliminate_left_recursion()
   local max_terminal_symbol = self.max_terminal_symbol
-  local min_nonterminal_symbol = self.min_nonterminal_symbol
-  local max_nonterminal_symbol = self.max_nonterminal_symbol
 
   local map_of_productions = {}
-  local n = max_nonterminal_symbol
+  local n = self.max_nonterminal_symbol
 
-  for i = min_nonterminal_symbol, max_nonterminal_symbol do
+  for i = self.min_nonterminal_symbol, n do
     local left_recursions = {}
     local no_left_recursions = {}
 
