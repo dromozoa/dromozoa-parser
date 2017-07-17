@@ -16,40 +16,22 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
-local builder = require "dromozoa.parser.builder"
+local trie = require "dromozoa.parser.trie"
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
-local _ = builder()
+local t = trie()
+t:insert({ 1, 2 }, 1)
+t:insert({ 1, 2, 3 }, 2)
+t:insert({ 1, 3 }, 3)
+t:insert({ 1, 2, 3, 4 }, 4)
+t:insert({ 1 }, 5)
+t:insert({ 2 }, 6)
 
-_:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
-  :_(R"09"^"+") :as "integer"
-  :_"*"
-  :_"/"
-  :_"+"
-  :_"-"
-  :_"("
-  :_")"
+local key = {}
+for i = 1, 100 do
+  key[i] = i
+end
+t:insert(key, 100)
 
-_ :left "+" "-"
-  :left "*" "/"
-  :right "UMINUS"
-
-_"E"
-  :_ "E" "*" "E"
-  :_ "E" "/" "E"
-  :_ "E" "+" "E"
-  :_ "E" "-" "E"
-  :_ "(" "E" ")"
-  :_ "-" "E" :prec "UMINUS"
-  :_ "integer"
-
-local lexer, grammar = _:build()
-
--- _.lexers = nil
--- print(dumper.encode(_, { pretty = true, stable = true }))
--- print(dumper.encode(lexer, { pretty = true, stable = true }))
-print(dumper.encode(grammar, { pretty = true, stable = true }))
--- _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
+for k, v in t:each() do
+  print(dumper.encode(k), v)
+end

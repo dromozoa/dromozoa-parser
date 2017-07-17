@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local grammar = require "dromozoa.parser.grammar"
 local lexer = require "dromozoa.parser.lexer"
 local regexp = require "dromozoa.parser.regexp"
 
@@ -88,7 +89,9 @@ return function (self, start_name)
   self.max_terminal_symbol = max_terminal_symbol
 
   local productions = self.productions
-  if #productions > 1 then
+  if #productions == 1 then
+    return lexer(lexers)
+  else
     local precedences = self.precedences
 
     -- argumented start symbol
@@ -198,7 +201,10 @@ return function (self, start_name)
     self.max_nonterminal_symbol = n
     self.symbol_precedences = symbol_precedences
     self.production_precedences = production_precedences
-  end
 
-  return lexer(lexers)
+    local grammar = grammar(self)
+    grammar.first_table = grammar:eliminate_left_recursion():first()
+    return lexer(lexers), grammar
+    -- return lexer(lexers), parser(grammar)
+  end
 end

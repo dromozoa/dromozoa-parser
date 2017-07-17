@@ -38,7 +38,7 @@ end
 function class:write_production(out, production)
   local symbol_names = self.symbol_names
   out:write(symbol_names[production.head], " ", TO)
-  for symbol in production.body:each() do
+  for _, symbol in ipairs(production.body) do
     out:write(" ", symbol_names[symbol])
   end
   return out
@@ -70,7 +70,7 @@ function class:write_item(out, item)
     else
       out:write(", ")
       local first = true
-      for la in la:each() do
+      for la in pairs(la) do
         if first then
           first = false
         else
@@ -85,7 +85,8 @@ function class:write_item(out, item)
 end
 
 function class:write_items(out, items)
-  for item in items:each() do
+  for i = 1, #items do
+    local item = items[i]
     self:write_item(out, item)
     out:write("\n")
   end
@@ -103,7 +104,7 @@ function class:write_first(out, symbols)
   local symbol_names = self.symbol_names
   out:write("{")
   local first = true
-  for symbol in symbols:each() do
+  for symbol in pairs(symbols) do
     if first then
       first = false
     else
@@ -185,8 +186,10 @@ function class:write_graph(out, transitions)
 digraph g {
 graph [rankdir=LR];
 ]])
-  for transition, to in transitions:each() do
-    out:write(("%d->%d [label=<%s>];\n"):format(transition.from, to, xml.escape(symbol_names[transition.symbol])))
+  for i, transition in pairs(transitions) do
+    for j, to in pairs(transition) do
+      out:write(("%d->%d [label=<%s>];\n"):format(i, to, xml.escape(symbol_names[j])))
+    end
   end
   out:write("}\n")
   return out
@@ -260,7 +263,7 @@ function class:write_conflict(out, conflict, verbose)
 end
 
 function class:write_conflicts(out, conflicts, verbose)
-  for conflict in conflicts:each() do
+  for _, conflict in ipairs(conflicts) do
     self:write_conflict(out, conflict, verbose)
   end
   return out

@@ -15,46 +15,53 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local clone = require "dromozoa.commons.clone"
+local equal = require "dromozoa.commons.equal"
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
 
-_ :lit "a"
-  :lit "b"
-  :lit "c"
-  :lit "d"
+_:lexer()
+  :_"a"
+  :_"b"
+  :_"c"
+  :_"d"
 
-_ "S"
+_"S"
   :_ "A" "a"
   :_ "b"
 
-_ "A"
+_"A"
   :_ "A" "c"
   :_ "S" "d"
   :_ ()
 
-local scanner, grammar, writer = _:build()
+local lexer, grammar = _:build()
 
--- writer:write_first(io.stdout, grammar:first_symbol(_.symbol_table["A"])):write("\n")
+local first_table = grammar:eliminate_left_recursion():first()
+print(dumper.encode(first_table, { pretty = true, stable = true }))
 
-local elr_grammar, elr_writer = grammar:eliminate_left_recursion(_.symbol_names)
-local elr_productions = elr_grammar.productions
+assert(equal(first_table[6], { -- first(S') = { a, b, c }
+  [2] = true;
+  [3] = true;
+  [4] = true;
+}))
 
-for i, production in ipairs(elr_productions) do
-  io.write(i, ": ")
-  elr_writer:write_production(io.stdout, production)
-  io.write("\n")
-end
+assert(equal(first_table[7], { -- first(S) = { a, b, c }
+  [2] = true;
+  [3] = true;
+  [4] = true;
+}))
 
-io.write("--\n")
-elr_writer:write_first(io.stdout, elr_grammar:first_symbol(_.symbol_table["S"])):write("\n")
-elr_writer:write_first(io.stdout, elr_grammar:first_symbol(_.symbol_table["A"])):write("\n")
+assert(equal(first_table[8], { -- first(A) = { a, b, c, epsilon }
+  [0] = true;
+  [2] = true;
+  [3] = true;
+  [4] = true;
+}))
 
-grammar.first_table = elr_grammar:first()
-
-local set_of_items, transitions = grammar:lalr1_items()
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts, true)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
+assert(equal(first_table[9], { -- first(A') = { a, c, epsilon }
+  [0] = true;
+  [2] = true;
+  [4] = true;
+}))

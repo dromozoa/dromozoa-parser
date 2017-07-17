@@ -26,40 +26,30 @@ local R = builder.range
 local S = builder.set
 
 _:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
-  :_(R"19" * R"09"^"*") :as "decimal"
-  :_(P"0" * R"07"^"*") :as "octal"
-  :_(P"0x" * R"09A-Fa-f"^"*") :as "hexadecimal"
-  :_ "*"
-  :_ "/"
   :_ "+"
-  :_ "-"
+  :_ "*"
   :_ "("
   :_ ")"
+  :_ "id"
 
-_ :left "+" "-"
-  :left "*" "/"
-  :right "UMINUS"
-
-_ "E"
-  :_ "E" "*" "E"
-  :_ "E" "/" "E"
-  :_ "E" "+" "E"
-  :_ "E" "-" "E"
+_"E"
+  :_ "E" "+" "T"
+  :_ "T"
+_"T"
+  :_ "T" "*" "F"
+  :_ "F"
+_"F"
   :_ "(" "E" ")"
-  :_ "-" "E" :prec "UMINUS"
-  :_ "decimal"
-  :_ "octal"
-  :_ "hexadecimal"
+  :_ "id"
 
 local lexer, grammar = _:build()
-local writer = writer(_.symbol_names, grammar.productions, grammar.max_teminal_symbol)
+local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 -- print(dumper.encode(scanner, { pretty = true, stable = true }))
 -- print(dumper.encode(grammar, { pretty = true, stable = true }))
 -- print(dumper.encode(writer, { pretty = true, stable = true }))
 
-local set_of_items, transitions = grammar:lalr1_items()
+local set_of_items, transitions = grammar:lr0_items()
 -- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
 -- for from, to in pairs(transitions) do
 --   print(dumper.encode({ from = from, to = to }, { stable = true }))

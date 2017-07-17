@@ -16,47 +16,54 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dumper = require "dromozoa.commons.dumper"
+local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
 
-_ :lit "id"
-  :lit "+"
-  :lit "*"
-  :lit "("
-  :lit ")"
+_:lexer()
+  :_"id"
+  :_"+"
+  :_"*"
+  :_"("
+  :_")"
 
--- left recursive
--- _ "E"
---   :_ "E" "+" "T"
---   :_ "T"
--- _ "T"
---   :_ "T" "*" "F"
---   :_ "F"
--- _ "F"
---   :_ "(" "E" ")"
---   :_ "id"
-
-_ "E"
+_"E"
   :_ "T" "E'"
-_ "E'"
+_"E'"
   :_ "+" "T" "E'"
   :_ ()
-_ "T"
+_"T"
   :_ "F" "T'"
-_ "T'"
+_"T'"
   :_ "*" "F" "T'"
   :_ ()
-_ "F"
+_"F"
   :_ "(" "E" ")"
   :_ "id"
 
-local scanner, grammar, writer = _:build()
+local lexer, grammar = _:build()
+
 print(dumper.encode(grammar, { pretty = true, stable = true }))
 
-local _ = _.symbol_table
-writer:write_first(io.stdout, grammar:first_symbol(_["F"])):write("\n") -- (, id
-writer:write_first(io.stdout, grammar:first_symbol(_["T"])):write("\n") -- (, id
-writer:write_first(io.stdout, grammar:first_symbol(_["E"])):write("\n") -- (, id
-writer:write_first(io.stdout, grammar:first_symbol(_["E'"])):write("\n") -- +, epsilon
-writer:write_first(io.stdout, grammar:first_symbol(_["T'"])):write("\n") -- *, epsilon
+local function test(name, data)
+  local first = grammar:first_symbol(_.symbol_table[name])
+  print(dumper.encode(first, { stable = true }))
+  local expected = {}
+  for i = 1, #data do
+    local item = data[i]
+    if type(item) == "string" then
+      expected[_.symbol_table[item]] = true
+    else
+      expected[item] = true
+    end
+  end
+  assert(equal(first, expected))
+end
+
+local epsilon = 0
+test("F", { "(", "id" })
+test("T", { "(", "id" })
+test("E", { "(", "id" })
+test("E'", { "+", epsilon })
+test("T'", { "*", epsilon })

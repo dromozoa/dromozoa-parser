@@ -15,173 +15,170 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local clone = require "dromozoa.commons.clone"
-local empty = require "dromozoa.commons.empty"
-local hash_table = require "dromozoa.commons.hash_table"
-local ipairs = require "dromozoa.commons.ipairs"
-local keys = require "dromozoa.commons.keys"
-local linked_hash_table = require "dromozoa.commons.linked_hash_table"
-local sequence = require "dromozoa.commons.sequence"
-local set = require "dromozoa.commons.set"
-local writer = require "dromozoa.parser.writer"
-
-local epsilon = 0
-local marker_end = 1
-local marker_la = -1
-local start_id = 1
+local function equal(items1, items2)
+  local n = #items1
+  if n ~= #items2 then
+    return false
+  end
+  for i = 1, n do
+    local item1 = items1[i]
+    local item2 = items2[i]
+    if item1.id ~= item2.id then
+      return false
+    end
+    if item1.dot ~= item2.dot then
+      return false
+    end
+    if item1.la ~= item2.la then
+      return false
+    end
+  end
+  return true
+end
 
 local class = {}
 
-function class.new(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
-  return {
-    productions = productions;
-    max_terminal_symbol = max_terminal_symbol;
-    min_nonterminal_symbol = max_terminal_symbol + 1;
-    max_nonterminal_symbol = max_nonterminal_symbol;
-    symbol_precedences = symbol_precedences;
-    production_precedences = production_precedences;
-  }
-end
-
 function class:each_production(head)
   return coroutine.wrap(function ()
-    for id, production in ipairs(self.productions) do
+    local productions = self.productions
+    for i = 1, #productions do
+      local production = productions[i]
       if production.head == head then
-        coroutine.yield(id, production.body)
+        coroutine.yield(i, production.body)
       end
     end
   end)
 end
 
-function class:is_terminal_symbol(symbol)
-  return symbol <= self.max_terminal_symbol
-end
-
-function class:is_nonterminal_symbol(symbol)
-  return symbol >= self.min_nonterminal_symbol
-end
-
-function class:is_kernel_item(item)
-  return self.productions[item.id].head == self.min_nonterminal_symbol or item.dot > 1
-end
-
-function class:eliminate_left_recursion(symbol_names)
+function class:eliminate_left_recursion()
+  local max_terminal_symbol = self.max_terminal_symbol
   local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
 
-  local map_of_productions = linked_hash_table()
-
+  local map_of_productions = {}
   local n = max_nonterminal_symbol
 
-  local symbol_names = clone(symbol_names)
-
   for i = min_nonterminal_symbol, max_nonterminal_symbol do
-    local left_rescursions = sequence()
-    local no_left_recursions = sequence()
+    local left_recursions = {}
+    local no_left_recursions = {}
 
     for _, body in self:each_production(i) do
       local symbol = body[1]
-      if symbol ~= nil and min_nonterminal_symbol <= symbol and symbol < i then
-        for production in map_of_productions[symbol]:each() do
-          local body = sequence():copy(production.body):copy(body, 2)
-          local production = { head = i, body = body }
-          if i == body[1] then
-            left_rescursions:push(production)
+      if symbol and max_terminal_symbol < symbol and symbol < i then
+        local productions = map_of_productions[symbol]
+        for j = 1, #productions do
+          local src_body = productions[j].body
+          local new_body = {}
+          for k = 1, #src_body do
+            new_body[k] = src_body[k]
+          end
+          for k = 2, #body do
+            new_body[#new_body + 1] = body[k]
+          end
+          if i == new_body[1] then
+            left_recursions[#left_recursions + 1] = { head = i, body = new_body }
           else
-            no_left_recursions:push(production)
+            no_left_recursions[#no_left_recursions + 1] = { head = i, body = new_body }
           end
         end
       else
-        local production = { head = i, body = body }
         if i == body[1] then
-          left_rescursions:push(production)
+          left_recursions[#left_recursions + 1] = { head = i, body = body }
         else
-          no_left_recursions:push(production)
+          no_left_recursions[#no_left_recursions + 1] = { head = i, body = body }
         end
       end
     end
 
-    if empty(left_rescursions) then
-      map_of_productions[i] = no_left_recursions
-    else
+    if left_recursions[1] then
       n = n + 1
-      local symbol = n
-      if symbol_names ~= nil then
-        symbol_names[symbol] = symbol_names[i] .. "'"
+
+      local productions = {}
+      for j = 1, #left_recursions do
+        local src_body = left_recursions[j].body
+        local new_body = {}
+        for k = 2, #src_body do
+          new_body[#new_body + 1] = src_body[k]
+        end
+        new_body[#new_body + 1] = n
+        productions[#productions + 1] = { head = n, body = new_body }
       end
-      local productions = sequence()
-      for production in no_left_recursions:each() do
-        productions:push({
-          head = i;
-          body = sequence():copy(production.body):push(symbol);
-        })
+      productions[#productions + 1] = { head = n, body = {} }
+      map_of_productions[n] = productions
+
+      local productions = {}
+      for j = 1, #no_left_recursions do
+        local src_body = no_left_recursions[j].body
+        local new_body = {}
+        for k = 1, #src_body do
+          new_body[k] = src_body[k]
+        end
+        new_body[#new_body + 1] = n
+        productions[#productions + 1] = { head = i, body = new_body }
       end
       map_of_productions[i] = productions
-      local productions = sequence()
-      for production in left_rescursions:each() do
-        productions:push({
-          head = symbol;
-          body = sequence():copy(production.body, 2):push(symbol);
-        })
-      end
-      productions:push({
-        head = symbol;
-        body = sequence();
-      })
-      map_of_productions[symbol] = productions
+    else
+      map_of_productions[i] = no_left_recursions
     end
   end
 
-  local elr_productions = sequence()
+  local new_productions = {}
   for _, productions in pairs(map_of_productions) do
-    for production in productions:each() do
-      elr_productions:push(production)
+    for i = 1, #productions do
+      new_productions[#new_productions + 1] = productions[i]
     end
   end
 
-  local grammar = class(
-      elr_productions,
-      self.max_terminal_symbol,
-      n,
-      self.symbol_precedences,
-      self.production_precedences)
-  if symbol_names == nil then
-    return grammar
-  else
-    return grammar, writer(symbol_names, elr_productions, self.max_terminal_symbol)
-  end
+  return class({
+    productions = new_productions;
+    max_terminal_symbol = max_terminal_symbol;
+    max_nonterminal_symbol = n;
+    symbol_precedences = self.symbol_precedences;
+    production_precedences = self.production_precedences;
+  })
 end
 
 function class:first_symbol(symbol)
-  local first = linked_hash_table()
-  if self:is_terminal_symbol(symbol) then
-    first:insert(symbol)
+  if symbol <= self.max_terminal_symbol then
+    return { [symbol] = true }
   else
     local first_table = self.first_table
-    if first_table == nil then
+    if first_table then
+      local first = first_table[symbol]
+      if not first then
+        error(("first not defined at symbol %d"):format(symbol))
+      end
+      return first
+    else
+      local first = {}
       for _, body in self:each_production(symbol) do
-        if empty(body) then
-          first:insert(epsilon)
+        if body[1] then
+          for symbol in pairs(self:first_symbols(body)) do
+            first[symbol] = true
+          end
         else
-          set.union(first, self:first_symbols(body))
+          first[0] = true -- epsilon
         end
       end
-    else
-      return assert(first_table[symbol], "not found " .. symbol)
-    end
-  end
-  return first
-end
-
-function class:first_symbols(symbols)
-  local first = linked_hash_table()
-  for symbol in symbols:each() do
-    set.union(first, self:first_symbol(symbol))
-    if first:remove(epsilon) == nil then
       return first
     end
   end
-  first:insert(epsilon)
+end
+
+function class:first_symbols(symbols)
+  local first = {}
+  for i = 1, #symbols do
+    local symbol = symbols[i]
+    for symbol in pairs(self:first_symbol(symbol)) do
+      first[symbol] = true
+    end
+    if first[0] then -- epsilon
+      first[0] = nil
+    else
+      return first
+    end
+  end
+  first[0] = true -- epsilon
   return first
 end
 
@@ -195,42 +192,45 @@ end
 
 function class:symbol_precedence(symbol)
   local item = self.symbol_precedences[symbol]
-  if item == nil then
-    return 0, false
-  else
+  if item then
     return item.precedence, item.associativity
+  else
+    return 0
   end
 end
 
 function class:production_precedence(id)
   local item = self.production_precedences[id]
-  if item ~= nil then
+  if item then
     return item.precedence, item.associativity
   end
+  local max_terminal_symbol = self.max_terminal_symbol
   local production = self.productions[id]
   local body = production.body
   for i = #body, 1, -1 do
     local symbol = body[i]
-    if self:is_terminal_symbol(symbol) then
+    if symbol <= max_terminal_symbol then
       return self:symbol_precedence(symbol)
     end
   end
-  return 0, false
+  return 0
 end
 
 function class:lr0_closure(items)
   local productions = self.productions
-  local added = {}
+  local max_terminal_symbol = self.max_terminal_symbol
+  local added_table = {}
   repeat
     local done = true
-    for item in items:each() do
+    for i = 1, #items do
+      local item = items[i]
       local symbol = productions[item.id].body[item.dot]
-      if symbol ~= nil and self:is_nonterminal_symbol(symbol) and not added[symbol] then
+      if symbol and max_terminal_symbol < symbol and not added_table[symbol] then
         for id in self:each_production(symbol) do
-          items:push({ id = id, dot = 1 })
+          items[#items + 1] = { id = id, dot = 1 }
           done = false
         end
-        added[symbol] = true
+        added_table[symbol] = true
       end
     end
   until done
@@ -238,73 +238,91 @@ end
 
 function class:lr0_goto(items)
   local productions = self.productions
-  local gotos = linked_hash_table()
-  for item in items:each() do
+  local gotos = {}
+  for i = 1, #items do
+    local item = items[i]
     local id = item.id
-    local production = productions[id]
     local dot = item.dot
-    local symbol = production.body[dot]
-    if symbol ~= nil then
+    local symbol = productions[id].body[dot]
+    if symbol then
       local to_items = gotos[symbol]
-      if to_items == nil then
-        to_items = sequence()
-        gotos[symbol] = to_items
+      if to_items then
+        to_items[#to_items + 1] = { id = id, dot = dot + 1 }
+      else
+        gotos[symbol] = { { id = id, dot = dot + 1 } }
       end
-      to_items:push({ id = id, dot = dot + 1 })
     end
   end
-  for _, to_items in gotos:each() do
+  for _, to_items in pairs(gotos) do
     self:lr0_closure(to_items)
   end
   return gotos
 end
 
 function class:lr0_items()
-  local set_of_items = linked_hash_table()
-  local transitions = linked_hash_table()
-  local start_items = sequence():push({ id = start_id, dot = 1 })
+  local start_items = { { id = 1, dot = 1 } }
   self:lr0_closure(start_items)
-  set_of_items[start_items] = 1
-  local n = 1
+  local set_of_items = { start_items }
+  local transitions = {}
   repeat
     local done = true
-    for items, i in set_of_items:each() do
-      for symbol, to_items in self:lr0_goto(items):each() do
-        if not empty(to_items) then
-          local j = set_of_items[to_items]
-          if j == nil then
-            j = n + 1
-            n = j
-            set_of_items[to_items] = j
+    for i = 1, #set_of_items do
+      local transition = transitions[i]
+      if not transition then
+        transition = {}
+        transitions[i] = transition
+      end
+      for symbol, to_items in pairs(self:lr0_goto(set_of_items[i])) do
+        if to_items[1] then
+          local to
+          for j = 1, #set_of_items do
+            if equal(to_items, set_of_items[j]) then
+              to = j
+              break
+            end
+          end
+          if not to then
+            to = #set_of_items + 1
+            set_of_items[to] = to_items
             done = false
           end
-          transitions[{ from = i, symbol = symbol }] = j
+          transition[symbol] = to
         end
       end
     end
   until done
-  return keys(set_of_items), transitions
+  return set_of_items, transitions
 end
 
 function class:lr1_closure(items)
   local productions = self.productions
-  local added = hash_table()
+  local max_terminal_symbol = self.max_terminal_symbol
+  local added_table = {}
   repeat
     local done = true
-    for item in items:each() do
+    for i = 1, #items do
+      local item = items[i]
       local body = productions[item.id].body
       local dot = item.dot
       local symbol = body[dot]
-      if symbol ~= nil and self:is_nonterminal_symbol(symbol) then
-        local symbols = sequence():copy(body, dot + 1):push(item.la)
+      if symbol and max_terminal_symbol < symbol then
+        local symbols = {}
+        for i = dot + 1, #body do
+          symbols[#symbols + 1] = body[i]
+        end
+        symbols[#symbols + 1] = item.la
         local first = self:first_symbols(symbols)
         for id in self:each_production(symbol) do
-          for la in first:each() do
-            local item = { id = id, dot = 1, la = la }
-            if not added[item] then
-              items:push(item)
+          local added = added_table[id]
+          if not added then
+            added = {}
+            added_table[id] = added
+          end
+          for la in pairs(first) do
+            if not added[la] then
+              items[#items + 1] = { id = id, dot = 1, la = la }
               done = false
-              added[item] = true
+              added[la] = true
             end
           end
         end
@@ -315,95 +333,121 @@ end
 
 function class:lr1_goto(items)
   local productions = self.productions
-  local gotos = linked_hash_table()
-  for item in items:each() do
+  local gotos = {}
+  for i = 1, #items do
+    local item = items[i]
     local id = item.id
-    local production = productions[id]
     local dot = item.dot
-    local symbol = production.body[dot]
-    if symbol ~= nil then
-      local to_items = gotos:get(symbol)
-      if to_items == nil then
-        to_items = sequence()
-        gotos[symbol] = to_items
+    local symbol = productions[id].body[dot]
+    if symbol then
+      local to_items = gotos[symbol]
+      if to_items then
+        to_items[#to_items + 1] = { id = id, dot = dot + 1, la = item.la }
+      else
+        gotos[symbol] = { { id = id, dot = dot + 1, la = item.la } }
       end
-      to_items:push({ id = id, dot = dot + 1, la = item.la })
     end
   end
-  for _, to_items in gotos:each() do
+  for _, to_items in pairs(gotos) do
     self:lr1_closure(to_items)
   end
   return gotos
 end
 
 function class:lr1_items()
-  local set_of_items = linked_hash_table()
-  local transitions = linked_hash_table()
-  local start_items = sequence():push({ id = start_id, dot = 1, la = marker_end })
+  local start_items = { { id = 1, dot = 1, la = 1 } } -- la = marker_end
   self:lr1_closure(start_items)
-  set_of_items[start_items] = 1
-  local n = 1
+  local set_of_items = { start_items }
+  local transitions = {}
   repeat
     local done = true
-    for items, i in set_of_items:each() do
-      for symbol, to_items in self:lr1_goto(items):each() do
-        if not empty(to_items) then
-          local j = set_of_items[to_items]
-          if j == nil then
-            j = n + 1
-            n = j
-            set_of_items[to_items] = j
+    for i = 1, #set_of_items do
+      local transition = transitions[i]
+      if not transition then
+        transition = {}
+        transitions[i] = transition
+      end
+      for symbol, to_items in pairs(self:lr1_goto(set_of_items[i])) do
+        if to_items[1] then
+          local to
+          for j = 1, #set_of_items do
+            if equal(to_items, set_of_items[j]) then
+              to = j
+              break
+            end
+          end
+          if not to then
+            to = #set_of_items + 1
+            set_of_items[to] = to_items
             done = false
           end
-          transitions[{ from = i, symbol = symbol }] = j
+          transition[symbol] = to
         end
       end
     end
   until done
-  return keys(set_of_items), transitions
+  return set_of_items, transitions
 end
 
 function class:lalr1_kernels(set_of_items, transitions)
   local productions = self.productions
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
 
-  local set_of_kernel_items = sequence()
-  local map_of_kernel_items = hash_table()
+  local set_of_kernel_items = {}
+  local map_of_kernel_items = {}
 
-  for i, items in ipairs(set_of_items) do
-    local kernel_items = sequence()
-    for j, item in ipairs(items) do
-      if self:is_kernel_item(item) then
-        map_of_kernel_items[{ i = i, item = item }] = j
-        local la = linked_hash_table()
-        if item.id == start_id and item.dot == 1 then
-          la:insert(marker_end)
+  for i = 1, #set_of_items do
+    local items = set_of_items[i]
+    local kernel_items = {}
+    local kernel_table = {}
+    for j = 1, #items do
+      local item = items[j]
+      local id = item.id
+      local dot = item.dot
+      if id == 1 or dot > 1 then
+        local map = kernel_table[id]
+        if map then
+          map[dot] = j
+        else
+          kernel_table[id] = { [dot] = j }
         end
-        kernel_items:push({ id = item.id, dot = item.dot, la = la })
+        if id == 1 and dot == 1 then
+          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { [1] = true }} -- la = { [marker_end] = true }
+        else
+          la = {}
+          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = {} }
+        end
       end
     end
-    set_of_kernel_items:push(kernel_items)
+    set_of_kernel_items[i] = kernel_items
+    map_of_kernel_items[i] = kernel_table
   end
 
-  local propagated = sequence()
+  local propagated = {}
 
-  for i, from_items in ipairs(set_of_items) do
-    for j, from_item in ipairs(from_items) do
-      if self:is_kernel_item(from_item) then
-        local items = sequence():push({ id = from_item.id, dot = from_item.dot, la = marker_la })
+  for i = 1, #set_of_items do
+    local from_items = set_of_items[i]
+    for j = 1, #from_items do
+      local from_item = from_items[j]
+      local from_id = from_item.id
+      local from_dot = from_item.dot
+      if productions[from_id].head == min_nonterminal_symbol or from_dot > 1 then
+        local items = { { id = from_id, dot = from_dot, la = -1 } } -- la = marker_lookahead
         self:lr1_closure(items)
-        for item in items:each() do
+        for k = 1, #items do
+          local item = items[k]
           local id = item.id
           local production = productions[id]
           local dot = item.dot
           local symbol = production.body[dot]
           local la = item.la
-          if symbol ~= nil then
-            local to_i = transitions[{ from = i, symbol = symbol }]
-            local to_j = map_of_kernel_items[{ i = to_i, item = { id = id, dot = dot + 1 } }]
-            if la == marker_la then
-              propagated:push({ from_i = i, from_j = j, to_i = to_i, to_j = to_j })
+          if symbol then
+            local to_i = transitions[i][symbol]
+            local to_j = map_of_kernel_items[to_i][id][dot + 1]
+            if la == -1 then -- marker_lookahead
+              propagated[#propagated + 1] = { from_i = i, from_j = j, to_i = to_i, to_j = to_j }
             else
-              set_of_kernel_items[to_i][to_j].la:insert(la)
+              set_of_kernel_items[to_i][to_j].la[la] = true
             end
           end
         end
@@ -413,26 +457,32 @@ function class:lalr1_kernels(set_of_items, transitions)
 
   repeat
     local done = true
-    for op in propagated:each() do
+    for i = 1, #propagated do
+      local op = propagated[i]
       local from_la = set_of_kernel_items[op.from_i][op.from_j].la
       local to_la = set_of_kernel_items[op.to_i][op.to_j].la
-      if set.union(to_la, from_la) > 0 then
-        done = false
+      for la in pairs(from_la) do
+        if not to_la[la] then
+          to_la[la] = true
+          done = false
+        end
       end
     end
   until done
 
-  local expanded_set_of_kernel_items = sequence()
-  for items in set_of_kernel_items:each() do
-    local expanded_items = sequence()
-    for item in items:each() do
+  local expanded_set_of_kernel_items = {}
+  for i = 1, #set_of_kernel_items do
+    local items = set_of_kernel_items[i]
+    local expanded_items = {}
+    for j = 1, #items do
+      local item = items[j]
       local id = item.id
       local dot = item.dot
-      for la in item.la:each() do
-        expanded_items:push({ id = id, dot = dot, la = la })
+      for la in pairs(item.la) do
+        expanded_items[#expanded_items + 1] = { id = id, dot = dot, la = la }
       end
     end
-    expanded_set_of_kernel_items:push(expanded_items)
+    expanded_set_of_kernel_items[#expanded_set_of_kernel_items + 1] = expanded_items
   end
 
   return expanded_set_of_kernel_items
@@ -441,51 +491,55 @@ end
 function class:lalr1_items()
   local set_of_items, transitions = self:lr0_items()
   local set_of_items = self:lalr1_kernels(set_of_items, transitions)
-  for items in set_of_items:each() do
-    self:lr1_closure(items)
+  for i = 1, #set_of_items do
+    self:lr1_closure(set_of_items[i])
   end
   return set_of_items, transitions
 end
 
 function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
+  local max_terminal_symbol = self.max_terminal_symbol
 
   local max_state = #set_of_items
   local max_symbol = self.max_nonterminal_symbol
 
   local table = {}
-  local conflicts = sequence()
+  local conflicts = {}
 
   for i = 1, (max_state + 1) * max_symbol do
     table[i] = 0
   end
 
-  for i, items in ipairs(set_of_items) do
+  for i = 1, max_state do
+    local items = set_of_items[i]
     local terminal_symbol_table = {}
-    for item in items:each() do
+    for j = 1, #items do
+      local item = items[j]
       local symbol = productions[item.id].body[item.dot]
-      if symbol ~= nil and self:is_terminal_symbol(symbol) and not terminal_symbol_table[symbol] then
+      if symbol and symbol <= max_terminal_symbol and not terminal_symbol_table[symbol] then
+        table[i * max_symbol + symbol] = transitions[i][symbol]
         terminal_symbol_table[symbol] = true
-        table[i * max_symbol + symbol] = transitions[{ from = i, symbol = symbol }]
       end
     end
     local error_table = {}
-    for item in items:each() do
+    for j = 1, #items do
+      local item = items[j]
       local id = item.id
       local symbol = productions[id].body[item.dot]
-      if symbol == nil then
+      if not symbol then
         local action = max_state + id
         local symbol = item.la
         local index = i * max_symbol + symbol
         local current = table[index]
         if current == 0 then
           if error_table[index] then
-            conflicts:push({
+            conflicts[#conflicts + 1] = {
               state = i;
               symbol = symbol;
               { action = "error" };
               { action = "reduce", argument = id };
-            })
+            }
           else
             table[index] = action
           end
@@ -503,10 +557,10 @@ function class:lr1_construct_table(set_of_items, transitions)
             if precedence > 0 then
               conflict.resolved = true
               if shift_precedence == precedence then
-                if associativity == "left" then
+                if associativity == 1 then -- left
                   conflict.resolution = 2
                   table[index] = action
-                elseif associativity == "nonassoc" then
+                elseif associativity == 3 then -- nonassoc
                   conflict.resolution = 0
                   error_table[index] = action
                   table[index] = 0
@@ -524,18 +578,19 @@ function class:lr1_construct_table(set_of_items, transitions)
               table[index] = action
             end
           end
-          conflicts:push(conflict)
+          conflicts[#conflicts + 1] = conflict
         end
       end
     end
   end
 
-  for transition, to in transitions:each() do
-    local symbol = transition.symbol
-    if self:is_nonterminal_symbol(symbol) then
-      local index = transition.from * max_symbol + symbol
-      local current = table[index]
-      table[index] = to
+  for i = 1, #transitions do
+    for symbol, to in pairs(transitions[i]) do
+      if max_terminal_symbol < symbol then
+        local index = i * max_symbol + symbol
+        local current = table[index]
+        table[index] = to
+      end
     end
   end
 
@@ -561,12 +616,21 @@ function class:lr1_construct_table(set_of_items, transitions)
   }, conflicts
 end
 
-class.metatable = {
+local metatable = {
   __index = class;
 }
+class.metatable = metatable
 
 return setmetatable(class, {
-  __call = function (_, productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences)
-    return setmetatable(class.new(productions, max_terminal_symbol, max_nonterminal_symbol, symbol_precedences, production_precedences), class.metatable)
+  __call = function (_, data)
+    local max_terminal_symbol = data.max_terminal_symbol
+    return setmetatable({
+      productions = data.productions;
+      max_terminal_symbol = max_terminal_symbol;
+      min_nonterminal_symbol = max_terminal_symbol + 1;
+      max_nonterminal_symbol = data.max_nonterminal_symbol;
+      symbol_precedences = data.symbol_precedences;
+      production_precedences = data.production_precedences;
+    }, metatable)
   end;
 })

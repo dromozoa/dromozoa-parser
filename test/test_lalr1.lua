@@ -25,35 +25,40 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
+--[[
 _:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
-  :_(R"19" * R"09"^"*") :as "decimal"
-  :_(P"0" * R"07"^"*") :as "octal"
-  :_(P"0x" * R"09A-Fa-f"^"*") :as "hexadecimal"
+  :_ "="
   :_ "*"
-  :_ "/"
+  :_ "id"
+
+_"S"
+  :_ "L" "=" "R"
+  :_ "R"
+_"L"
+  :_ "*" "R"
+  :_ "id"
+_"R"
+  :_ "L"
+]]
+
+_:lexer()
+  :_ "id"
   :_ "+"
-  :_ "-"
+  :_ "*"
   :_ "("
   :_ ")"
 
-_ :left "+" "-"
-  :left "*" "/"
-  :right "UMINUS"
+_ :left "+"
+  :left "*"
 
-_ "E"
-  :_ "E" "*" "E"
-  :_ "E" "/" "E"
+_"E"
   :_ "E" "+" "E"
-  :_ "E" "-" "E"
+  :_ "E" "*" "E"
   :_ "(" "E" ")"
-  :_ "-" "E" :prec "UMINUS"
-  :_ "decimal"
-  :_ "octal"
-  :_ "hexadecimal"
+  :_ "id"
 
 local lexer, grammar = _:build()
-local writer = writer(_.symbol_names, grammar.productions, grammar.max_teminal_symbol)
+local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 -- print(dumper.encode(scanner, { pretty = true, stable = true }))
 -- print(dumper.encode(grammar, { pretty = true, stable = true }))
@@ -66,33 +71,36 @@ local set_of_items, transitions = grammar:lalr1_items()
 -- end
 writer:write_set_of_items(io.stdout, set_of_items)
 
-writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
-
 --[====[
-
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
-
-local driver = driver(data)
-
-local source = [[
-17 + - 23 * 37 - 42 / 0x69
-]]
-
-local position = 1
-while true do
-  local symbol, i, j = scanner(source, position)
-  print(symbol, writer.symbol_names[symbol], i, j, source:sub(i, j))
-  if symbol == 1 then
-    assert(driver:parse())
-    break
-  else
-    assert(driver:parse(symbol, { value = source:sub(i, j) }))
+local map = {}
+-- for from, to in map_of_kernel_items:each() do
+--   map[#map + 1] = { from.i, from.item.id, from.item.dot, to }
+-- end
+for i, u in pairs(map_of_kernel_items) do
+  for id, v in pairs(u) do
+    for dot, to in pairs(v) do
+      map[#map + 1] = { i, id, dot, to }
+    end
   end
-  position = j + 1
 end
 
-writer:write_tree(assert(io.open("test-tree.dot", "w")), driver.tree):close()
-
+table.sort(map, function (a, b)
+  for i = 1, #a do
+    if a[i] ~= b[i] then
+      return a[i] < b[i]
+    end
+  end
+  return false
+end)
+for i = 1, #map do
+  print(map[i][1], map[i][2], map[i][3], map[i][4])
+end
 ]====]
+
+writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+
+print(dumper.encode(transitions, { stable = true }))
+local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+print(dumper.encode(data, { stable = true }))
+writer:write_table(assert(io.open("test.html", "w")), data):close()
+writer:write_conflicts(io.stdout, conflicts)
