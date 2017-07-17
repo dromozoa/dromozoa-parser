@@ -156,7 +156,7 @@ function class:write_table(out, data)
     out:write("    <td>", state, "</td>\n")
     for symbol = 1, max_symbol do
       local action = table[state * max_symbol + symbol]
-      if action == 0 then
+      if action == nil then
         out:write("    <td></td>\n")
       elseif action <= max_state then
         if symbol <= max_terminal_symbol then
@@ -232,12 +232,12 @@ function class:write_conflict(out, conflict, verbose)
   local symbol = conflict.symbol
   local action = conflict[1].action
 
-  if action == "error" then
+  if action == 3 then
     out:write(("error / reduce(%d) conflict resolved as an error"):format(conflict[2].argument))
-  elseif action == "shift" then
+  elseif action == 1 then
     out:write(("shift(%d) / reduce(%d) conflict"):format(conflict[1].argument, conflict[2].argument))
     local resolution = conflict.resolution
-    if resolution == 0 then
+    if resolution == 3 then
       out:write(" resolved as an error")
     elseif resolution == 1 then
       out:write(" resolved as shift")
@@ -256,7 +256,7 @@ function class:write_conflict(out, conflict, verbose)
         out:write((": precedence %d > %d"):format(shift_precedence, precedence))
       end
     end
-  elseif action == "reduce" then
+  elseif action == 2 then
     out:write(("reduce(%d) / reduce(%d) conflict"):format(conflict[1].argument, conflict[2].argument))
   end
   out:write((" at state(%d) symbol(%q)\n"):format(state, symbol_names[symbol]))

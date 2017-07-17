@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local trie = require "dromozoa.parser.trie"
 local write_graphviz = require "dromozoa.parser.regexp.write_graphviz"
 
 local function set_to_seq(set)
@@ -25,6 +24,40 @@ local function set_to_seq(set)
   end
   table.sort(seq)
   return seq
+end
+
+local function find(maps, key)
+  local n = #key
+  local map = maps[n]
+  if not map then
+    return
+  end
+  for i = 1, n - 1 do
+    map = map[key[i]]
+    if not map then
+      return
+    end
+  end
+  return map[key[n]]
+end
+
+local function insert(maps, key, value)
+  local n = #key
+  local map = maps[n]
+  if not map then
+    map = {}
+    maps[n] = map
+  end
+  for i = 1, n - 1 do
+    local k = key[i]
+    local m = map[k]
+    if not m then
+      m = {}
+      map[k] = m
+    end
+    map = m
+  end
+  map[key[n]] = value
 end
 
 local function epsilon_closure(this, epsilon_closures, u)
@@ -82,11 +115,11 @@ local function nfa_to_dfa(this)
 
   local max_state = 1
   local epsilon_closures = {}
-  local map = trie()
+  local maps = {}
 
   local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
-  map:insert(useq, max_state)
+  insert(maps, useq, max_state)
 
   local new_transitions = {}
   for byte = 0, 255 do
@@ -104,7 +137,7 @@ local function nfa_to_dfa(this)
       break
     end
     stack[n] = nil
-    local u = map:find(useq)
+    local u = find(maps, useq)
     for byte = 0, 255 do
       local vset
       for i = 1, #useq do
@@ -121,12 +154,12 @@ local function nfa_to_dfa(this)
       end
       if vset then
         local vseq = set_to_seq(vset)
-        local v = map:find(vseq)
+        local v = find(maps, vseq)
         if v then
           new_transitions[byte][u] = v
         else
           max_state = max_state + 1
-          map:insert(vseq, max_state)
+          insert(maps, vseq, max_state)
           stack[#stack + 1] = vseq
           new_accept_states[max_state] = merge_accept_state(accept_states, vset)
           new_transitions[byte][u] = max_state
