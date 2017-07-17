@@ -499,24 +499,24 @@ function class:lr1_construct_table(set_of_items, transitions)
   local productions = self.productions
   local max_terminal_symbol = self.max_terminal_symbol
 
-  local max_state = #set_of_items
-  local max_symbol = self.max_nonterminal_symbol
+  local m = #set_of_items
+  local n = self.max_nonterminal_symbol
 
   local table = {}
   local conflicts = {}
 
-  for i = 1, (max_state + 1) * max_symbol do
+  for i = 1, (m + 1) * n do
     table[i] = 0
   end
 
-  for i = 1, max_state do
+  for i = 1, m do
     local items = set_of_items[i]
     local terminal_symbol_table = {}
     for j = 1, #items do
       local item = items[j]
       local symbol = productions[item.id].body[item.dot]
       if symbol and symbol <= max_terminal_symbol and not terminal_symbol_table[symbol] then
-        table[i * max_symbol + symbol] = transitions[i][symbol]
+        table[i * n + symbol] = transitions[i][symbol]
         terminal_symbol_table[symbol] = true
       end
     end
@@ -526,9 +526,9 @@ function class:lr1_construct_table(set_of_items, transitions)
       local id = item.id
       local symbol = productions[id].body[item.dot]
       if not symbol then
-        local action = max_state + id
+        local action = m + id
         local symbol = item.la
-        local index = i * max_symbol + symbol
+        local index = i * n + symbol
         local current = table[index]
         if current == 0 then
           if error_table[index] then
@@ -547,7 +547,7 @@ function class:lr1_construct_table(set_of_items, transitions)
             symbol = symbol;
             resolution = 1;
           }
-          if current <= max_state then
+          if current <= m then
             local shift_precedence = self:symbol_precedence(symbol)
             local precedence, associativity = self:production_precedence(id)
             conflict[1] = { action = "shift", argument = current, precedence = shift_precedence }
@@ -569,7 +569,7 @@ function class:lr1_construct_table(set_of_items, transitions)
               end
             end
           else
-            conflict[1] = { action = "reduce", argument = current - max_state }
+            conflict[1] = { action = "reduce", argument = current - m }
             conflict[2] = { action = "reduce", argument = id }
             if action < current then
               conflict.resolution = 2
@@ -585,7 +585,7 @@ function class:lr1_construct_table(set_of_items, transitions)
   for i = 1, #transitions do
     for symbol, to in pairs(transitions[i]) do
       if max_terminal_symbol < symbol then
-        local index = i * max_symbol + symbol
+        local index = i * n + symbol
         local current = table[index]
         table[index] = to
       end
@@ -594,20 +594,20 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   local heads = {}
   local sizes = {}
-  for i = 1, max_state + 1 do
+  for i = 1, m + 1 do
     heads[i] = 0
     sizes[i] = 0
   end
   for i = 2, #productions do
     local production = productions[i]
-    local j = max_state + i
+    local j = m + i
     heads[j] = production.head
     sizes[j] = #production.body
   end
 
   return {
-    max_state = max_state;
-    max_symbol = max_symbol;
+    max_state = m;
+    max_symbol = n;
     table = table;
     heads = heads;
     sizes = sizes;
