@@ -79,7 +79,6 @@ function class:eliminate_left_recursion()
     local production_ids = map_of_production_ids[i]
     for l = 1, #production_ids do
       local body = productions[production_ids[l]].body
-    -- for _, body in each_production(self, i) do
       local symbol = body[1]
       if symbol and symbol > max_terminal_symbol and symbol < i then
         local productions = map_of_productions[symbol]
