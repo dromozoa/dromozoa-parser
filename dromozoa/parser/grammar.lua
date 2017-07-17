@@ -534,8 +534,8 @@ function class:lr1_construct_table(set_of_items, transitions)
           if value <= m then
             local shift_precedence = self:symbol_precedence(symbol)
             local precedence, associativity = self:production_precedence(id)
-            conflict[1] = { action = "shift", argument = value, precedence = shift_precedence }
-            conflict[2] = { action = "reduce", argument = id, precedence = precedence, associativity = associativity }
+            conflict[1] = { action = 1, argument = value, precedence = shift_precedence }
+            conflict[2] = { action = 2, argument = id, precedence = precedence, associativity = associativity }
             if precedence > 0 then
               conflict.resolved = true
               if shift_precedence == precedence then
@@ -553,8 +553,8 @@ function class:lr1_construct_table(set_of_items, transitions)
               end
             end
           else
-            conflict[1] = { action = "reduce", argument = value - m }
-            conflict[2] = { action = "reduce", argument = id }
+            conflict[1] = { action = 2, argument = value - m }
+            conflict[2] = { action = 2, argument = id }
             if action < value then
               conflict.resolution = 2 -- reduce
               table[index] = action
@@ -566,8 +566,8 @@ function class:lr1_construct_table(set_of_items, transitions)
             conflicts[#conflicts + 1] = {
               state = i;
               symbol = symbol;
-              { action = "error" };
-              { action = "reduce", argument = id };
+              { action = 3 };
+              { action = 2, argument = id };
             }
           else
             table[index] = action

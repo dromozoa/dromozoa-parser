@@ -50,7 +50,7 @@ Parser generator toolkit.
 
 ## Parser
 
-### Precedence Associativity
+### Precedence Associativities
 
 | Code | Associativity |
 |-----:|---------------|
@@ -68,9 +68,9 @@ Parser generator toolkit.
 
 ## Conflict Resolutions
 
-| Code | Resolution |
-|-----:|------------|
-|    1 | shift      |
-|    2 | reduce     |
-|    3 | error      |
+| Code | Action |
+|-----:|--------|
+|    1 | shift  |
+|    2 | reduce |
+|    3 | error  |
 
