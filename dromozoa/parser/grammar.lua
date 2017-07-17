@@ -15,8 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local ipairs = require "dromozoa.commons.ipairs"
-
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
@@ -42,9 +40,11 @@ local class = {}
 
 function class:each_production(head)
   return coroutine.wrap(function ()
-    for id, production in ipairs(self.productions) do
+    local productions = self.productions
+    for i = 1, #productions do
+      local production = productions[i]
       if production.head == head then
-        coroutine.yield(id, production.body)
+        coroutine.yield(i, production.body)
       end
     end
   end)
@@ -523,7 +523,8 @@ function class:lr1_construct_table(set_of_items, transitions)
       end
     end
     local error_table = {}
-    for j, item in ipairs(items) do
+    for j = 1, #items do
+      local item = items[j]
       local id = item.id
       local symbol = productions[id].body[item.dot]
       if symbol == nil then
