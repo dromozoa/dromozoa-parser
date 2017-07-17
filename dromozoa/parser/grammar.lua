@@ -192,10 +192,10 @@ end
 
 function class:symbol_precedence(symbol)
   local item = self.symbol_precedences[symbol]
-  if item == nil then
-    return 0
-  else
+  if item then
     return item.precedence, item.associativity
+  else
+    return 0
   end
 end
 
@@ -441,7 +441,7 @@ function class:lalr1_kernels(set_of_items, transitions)
           local dot = item.dot
           local symbol = production.body[dot]
           local la = item.la
-          if symbol ~= nil then
+          if symbol then
             local to_i = transitions[i][symbol]
             local to_j = map_of_kernel_items[to_i][id][dot + 1]
             if la == -1 then -- marker_lookahead
@@ -527,7 +527,7 @@ function class:lr1_construct_table(set_of_items, transitions)
       local item = items[j]
       local id = item.id
       local symbol = productions[id].body[item.dot]
-      if symbol == nil then
+      if not symbol then
         local action = max_state + id
         local symbol = item.la
         local index = i * max_symbol + symbol
