@@ -156,7 +156,7 @@ function class:write_table(out, data)
     out:write("    <td>", state, "</td>\n")
     for symbol = 1, max_symbol do
       local action = table[state * max_symbol + symbol]
-      if action == 0 then
+      if action == nil then
         out:write("    <td></td>\n")
       elseif action <= max_state then
         if symbol <= max_terminal_symbol then

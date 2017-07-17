@@ -505,10 +505,6 @@ function class:lr1_construct_table(set_of_items, transitions)
   local table = {}
   local conflicts = {}
 
-  for i = 1, (m + 1) * n do
-    table[i] = 0
-  end
-
   for i = 1, m do
     local items = set_of_items[i]
     local terminal_symbol_table = {}
@@ -530,7 +526,7 @@ function class:lr1_construct_table(set_of_items, transitions)
         local symbol = item.la
         local index = i * n + symbol
         local current = table[index]
-        if current == 0 then
+        if not current then
           if error_table[index] then
             conflicts[#conflicts + 1] = {
               state = i;
@@ -594,10 +590,6 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   local heads = {}
   local sizes = {}
-  for i = 1, m + 1 do
-    heads[i] = 0
-    sizes[i] = 0
-  end
   for i = 2, #productions do
     local production = productions[i]
     local j = m + i
