@@ -36,28 +36,28 @@ local function equal(items1, items2)
   return true
 end
 
-local function map_of_production_indices(productions)
-  local map_of_production_indices = {}
+local function map_of_production_ids(productions)
+  local map_of_production_ids = {}
   for i = 1, #productions do
     local production = productions[i]
     local head = production.head
-    local production_indices = map_of_production_indices[head]
-    if production_indices then
-      production_indices[#production_indices + 1] = i
+    local production_ids = map_of_production_ids[head]
+    if production_ids then
+      production_ids[#production_ids + 1] = i
     else
-      map_of_production_indices[head] = { i }
+      map_of_production_ids[head] = { i }
     end
   end
-  return map_of_production_indices
+  return map_of_production_ids
 end
 
 local function each_production(self, head)
-  local production_indices = self.map_of_production_indices[head]
+  local production_ids = self.map_of_production_ids[head]
   return coroutine.wrap(function ()
     local productions = self.productions
-    for i = 1, #production_indices do
-      local index = production_indices[i]
-      coroutine.yield(index, productions[index].body)
+    for i = 1, #production_ids do
+      local id = production_ids[i]
+      coroutine.yield(id, productions[id].body)
     end
   end)
 end
@@ -143,7 +143,7 @@ function class:eliminate_left_recursion()
 
   return class({
     productions = new_productions;
-    map_of_production_indices = map_of_production_indices(new_productions);
+    map_of_production_ids = map_of_production_ids(new_productions);
     max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
@@ -631,7 +631,7 @@ return setmetatable(class, {
     local productions = data.productions
     return setmetatable({
       productions = productions;
-      map_of_production_indices = map_of_production_indices(productions);
+      map_of_production_ids = map_of_production_ids(productions);
       max_terminal_symbol = max_terminal_symbol;
       min_nonterminal_symbol = max_terminal_symbol + 1;
       max_nonterminal_symbol = data.max_nonterminal_symbol;
