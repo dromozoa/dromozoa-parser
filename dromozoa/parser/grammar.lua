@@ -210,7 +210,7 @@ end
 function class:symbol_precedence(symbol)
   local item = self.symbol_precedences[symbol]
   if item == nil then
-    return 0, -1 -- [TODO] fix 2nd
+    return 0
   else
     return item.precedence, item.associativity
   end
@@ -229,7 +229,7 @@ function class:production_precedence(id)
       return self:symbol_precedence(symbol)
     end
   end
-  return 0, -1 -- [TODO] fix 2nd
+  return 0
 end
 
 function class:lr0_closure(items)
@@ -378,6 +378,11 @@ function class:lr1_items()
   repeat
     local done = true
     for i = 1, #set_of_items do
+      local transition = transitions[i]
+      if not transition then
+        transition = {}
+        transitions[i] = transition
+      end
       for symbol, to_items in pairs(self:lr1_goto(set_of_items[i])) do
         if to_items[1] then
           local to
@@ -392,12 +397,7 @@ function class:lr1_items()
             set_of_items[to] = to_items
             done = false
           end
-          local transition = transitions[i]
-          if transition then
-            transition[symbol] = to
-          else
-            transitions[i] = { [symbol] = to }
-          end
+          transition[symbol] = to
         end
       end
     end

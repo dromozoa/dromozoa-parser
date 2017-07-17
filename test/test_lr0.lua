@@ -43,7 +43,7 @@ _"F"
   :_ "id"
 
 local lexer, grammar = _:build()
-local writer = writer(_.symbol_names, grammar.productions, grammar.max_teminal_symbol)
+local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 -- print(dumper.encode(scanner, { pretty = true, stable = true }))
 -- print(dumper.encode(grammar, { pretty = true, stable = true }))
