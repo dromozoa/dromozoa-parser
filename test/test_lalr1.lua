@@ -99,7 +99,8 @@ end
 
 writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
 
-print(dumper.encode(transitions, { stable = true }))
+print(dumper.encode(grammar, { stable = true, pretty = true }))
+-- print(dumper.encode(transitions, { stable = true }))
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 print(dumper.encode(data, { stable = true }))
 writer:write_table(assert(io.open("test.html", "w")), data):close()

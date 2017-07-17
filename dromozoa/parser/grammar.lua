@@ -51,9 +51,7 @@ local function map_of_production_indices(productions)
   return map_of_production_indices
 end
 
-local class = {}
-
-function class:each_production(head)
+local function each_production(self, head)
   local production_indices = self.map_of_production_indices[head]
   return coroutine.wrap(function ()
     local productions = self.productions
@@ -63,6 +61,8 @@ function class:each_production(head)
     end
   end)
 end
+
+local class = {}
 
 function class:eliminate_left_recursion()
   local max_terminal_symbol = self.max_terminal_symbol
@@ -74,7 +74,7 @@ function class:eliminate_left_recursion()
     local left_recursions = {}
     local no_left_recursions = {}
 
-    for _, body in self:each_production(i) do
+    for _, body in each_production(self, i) do
       local symbol = body[1]
       if symbol and symbol > max_terminal_symbol and symbol < i then
         local productions = map_of_productions[symbol]
@@ -164,7 +164,7 @@ function class:first_symbol(symbol)
       return first
     else
       local first = {}
-      for _, body in self:each_production(symbol) do
+      for _, body in each_production(self, symbol) do
         if body[1] then
           for symbol in pairs(self:first_symbols(body)) do
             first[symbol] = true
@@ -239,7 +239,7 @@ function class:lr0_closure(items)
       local item = items[i]
       local symbol = productions[item.id].body[item.dot]
       if symbol and symbol > max_terminal_symbol and not added_table[symbol] then
-        for id in self:each_production(symbol) do
+        for id in each_production(self, symbol) do
           items[#items + 1] = { id = id, dot = 1 }
           done = false
         end
@@ -325,7 +325,7 @@ function class:lr1_closure(items)
         end
         symbols[#symbols + 1] = item.la
         local first = self:first_symbols(symbols)
-        for id in self:each_production(symbol) do
+        for id in each_production(self, symbol) do
           local added = added_table[id]
           if not added then
             added = {}
