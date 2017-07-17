@@ -36,7 +36,7 @@ local function equal(items1, items2)
   return true
 end
 
-local function map_of_production_ids(productions)
+local function construct_map_of_production_ids(productions)
   local map_of_production_ids = {}
   for i = 1, #productions do
     local production = productions[i]
@@ -65,6 +65,8 @@ end
 local class = {}
 
 function class:eliminate_left_recursion()
+  local productions = self.productions
+  local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
 
   local map_of_productions = {}
@@ -74,7 +76,10 @@ function class:eliminate_left_recursion()
     local left_recursions = {}
     local no_left_recursions = {}
 
-    for _, body in each_production(self, i) do
+    local production_ids = map_of_production_ids[i]
+    for l = 1, #production_ids do
+      local body = productions[production_ids[l]].body
+    -- for _, body in each_production(self, i) do
       local symbol = body[1]
       if symbol and symbol > max_terminal_symbol and symbol < i then
         local productions = map_of_productions[symbol]
@@ -143,7 +148,7 @@ function class:eliminate_left_recursion()
 
   return class({
     productions = new_productions;
-    map_of_production_ids = map_of_production_ids(new_productions);
+    map_of_production_ids = construct_map_of_production_ids(new_productions);
     max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
@@ -163,8 +168,11 @@ function class:first_symbol(symbol)
       end
       return first
     else
+      local productions = self.productions
+      local production_ids = self.map_of_production_ids[symbol]
       local first = {}
-      for _, body in each_production(self, symbol) do
+      for i = 1, #production_ids do
+        local body = productions[production_ids[i]].body
         if body[1] then
           for symbol in pairs(self:first_symbols(body)) do
             first[symbol] = true
@@ -636,7 +644,7 @@ return setmetatable(class, {
     local productions = data.productions
     return setmetatable({
       productions = productions;
-      map_of_production_ids = map_of_production_ids(productions);
+      map_of_production_ids = construct_map_of_production_ids(productions);
       max_terminal_symbol = max_terminal_symbol;
       min_nonterminal_symbol = max_terminal_symbol + 1;
       max_nonterminal_symbol = data.max_nonterminal_symbol;
