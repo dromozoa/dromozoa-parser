@@ -51,17 +51,6 @@ local function construct_map_of_production_ids(productions)
   return map_of_production_ids
 end
 
-local function each_production(self, head)
-  local production_ids = self.map_of_production_ids[head]
-  return coroutine.wrap(function ()
-    local productions = self.productions
-    for i = 1, #production_ids do
-      local id = production_ids[i]
-      coroutine.yield(id, productions[id].body)
-    end
-  end)
-end
-
 local class = {}
 
 function class:eliminate_left_recursion()
@@ -77,19 +66,19 @@ function class:eliminate_left_recursion()
     local no_left_recursions = {}
 
     local production_ids = map_of_production_ids[i]
-    for l = 1, #production_ids do
-      local body = productions[production_ids[l]].body
+    for j = 1, #production_ids do
+      local body = productions[production_ids[j]].body
       local symbol = body[1]
       if symbol and symbol > max_terminal_symbol and symbol < i then
         local productions = map_of_productions[symbol]
-        for j = 1, #productions do
-          local src_body = productions[j].body
+        for k = 1, #productions do
+          local src_body = productions[k].body
           local new_body = {}
-          for k = 1, #src_body do
-            new_body[k] = src_body[k]
+          for l = 1, #src_body do
+            new_body[l] = src_body[l]
           end
-          for k = 2, #body do
-            new_body[#new_body + 1] = body[k]
+          for l = 2, #body do
+            new_body[#new_body + 1] = body[l]
           end
           if i == new_body[1] then
             left_recursions[#left_recursions + 1] = { head = i, body = new_body }
