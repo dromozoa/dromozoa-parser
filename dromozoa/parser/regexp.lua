@@ -26,9 +26,9 @@ local function set_to_seq(set)
   return seq
 end
 
-local function find(self, key)
+local function find(maps, key)
   local n = #key
-  local map = self[n]
+  local map = maps[n]
   if not map then
     return
   end
@@ -41,12 +41,12 @@ local function find(self, key)
   return map[key[n]]
 end
 
-local function insert(self, key, value)
+local function insert(maps, key, value)
   local n = #key
-  local map = self[n]
+  local map = maps[n]
   if not map then
     map = {}
-    self[n] = map
+    maps[n] = map
   end
   for i = 1, n - 1 do
     local k = key[i]
@@ -115,11 +115,11 @@ local function nfa_to_dfa(this)
 
   local max_state = 1
   local epsilon_closures = {}
-  local map = {}
+  local maps = {}
 
   local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
-  insert(map, useq, max_state)
+  insert(maps, useq, max_state)
 
   local new_transitions = {}
   for byte = 0, 255 do
@@ -137,7 +137,7 @@ local function nfa_to_dfa(this)
       break
     end
     stack[n] = nil
-    local u = find(map, useq)
+    local u = find(maps, useq)
     for byte = 0, 255 do
       local vset
       for i = 1, #useq do
@@ -154,12 +154,12 @@ local function nfa_to_dfa(this)
       end
       if vset then
         local vseq = set_to_seq(vset)
-        local v = find(map, vseq)
+        local v = find(maps, vseq)
         if v then
           new_transitions[byte][u] = v
         else
           max_state = max_state + 1
-          insert(map, vseq, max_state)
+          insert(maps, vseq, max_state)
           stack[#stack + 1] = vseq
           new_accept_states[max_state] = merge_accept_state(accept_states, vset)
           new_transitions[byte][u] = max_state
