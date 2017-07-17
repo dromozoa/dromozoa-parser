@@ -2,7 +2,9 @@
 
 Parser generator toolkit.
 
-## Regular Expression DSL
+## Lexer
+
+### Regular Expression DSL
 
 | Operator          | Example                                        | Regular Expression        | Description              |
 |-------------------|------------------------------------------------|---------------------------|--------------------------|
@@ -22,7 +24,7 @@ Parser generator toolkit.
 | `pattern^{m,n}`   | `P"abc"^{3,5}`                                 | `(abc){3,5}`              | `m` to `n` repetition    |
 | `pattern-pattern` | `(P(1)^"*"-P(1)^"*"*P"abc"*P(1)^"*") * P"abc"` | `.*?abc`                  | difference               |
 
-## Regular Expression AST
+### Regular Expression AST
 
 | Code | Operator            | #Operands | Description            |
 |-----:|---------------------|----------:|------------------------|
@@ -33,7 +35,7 @@ Parser generator toolkit.
 |    5 | `?`                 |         1 | optional               |
 |    6 | `-`                 |         2 | difference             |
 
-## Lexer Actions
+### Actions
 
 | Code | Operator        | #Operands | Skip | Description              |
 |-----:|-----------------|----------:|------|--------------------------|
@@ -46,7 +48,9 @@ Parser generator toolkit.
 |    7 | `(function)`    |         1 |      | substitute by `function` |
 |    8 | `(string)`      |         1 |      | substitute by `string`   |
 
-## Precedence Associativity
+## Parser
+
+### Precedence Associativity
 
 | Code | Associativity |
 |-----:|---------------|
@@ -54,7 +58,7 @@ Parser generator toolkit.
 |    2 | right         |
 |    3 | nonassoc      |
 
-## Grammar Special Symbols
+### Special Symbols
 
 | Code | Name               | Symbol |
 |-----:|--------------------|--------|
