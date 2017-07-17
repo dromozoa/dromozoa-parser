@@ -15,14 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function new(lexers)
-  return {
-    lexers = lexers;
-    stack = { 1 }; -- start lexer
-    buffer = {};
-  }
-end
-
 local class = {}
 local metatable = {
   __index = class;
@@ -195,6 +187,10 @@ end
 
 return setmetatable(class, {
   __call = function (_, lexers)
-    return setmetatable(new(lexers), metatable)
+    return setmetatable({
+      lexers = lexers;
+      stack = { 1 }; -- start lexer
+      buffer = {};
+    }, metatable)
   end;
 })
