@@ -59,14 +59,6 @@ function class:each_production(head)
   end)
 end
 
-function class:is_terminal_symbol(symbol)
-  return symbol <= self.max_terminal_symbol
-end
-
-function class:is_nonterminal_symbol(symbol)
-  return symbol >= self.min_nonterminal_symbol
-end
-
 function class:eliminate_left_recursion()
   local max_terminal_symbol = self.max_terminal_symbol
   local min_nonterminal_symbol = self.min_nonterminal_symbol
@@ -221,11 +213,12 @@ function class:production_precedence(id)
   if item then
     return item.precedence, item.associativity
   end
+  local max_terminal_symbol = self.max_terminal_symbol
   local production = self.productions[id]
   local body = production.body
   for i = #body, 1, -1 do
     local symbol = body[i]
-    if self:is_terminal_symbol(symbol) then
+    if symbol <= max_terminal_symbol then
       return self:symbol_precedence(symbol)
     end
   end
@@ -601,7 +594,7 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   for i = 1, #transitions do
     for symbol, to in pairs(transitions[i]) do
-      if self:is_nonterminal_symbol(symbol) then
+      if max_terminal_symbol < symbol then
         local index = i * max_symbol + symbol
         local current = table[index]
         table[index] = to
