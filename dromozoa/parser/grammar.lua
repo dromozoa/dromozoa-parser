@@ -501,7 +501,6 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   local m = #set_of_items
   local n = self.max_nonterminal_symbol
-
   local table = {}
   local conflicts = {}
 
@@ -525,8 +524,8 @@ function class:lr1_construct_table(set_of_items, transitions)
         local action = m + id
         local symbol = item.la
         local index = i * n + symbol
-        local current = table[index]
-        if not current then
+        local value = table[index]
+        if not value then
           if error_table[index] then
             conflicts[#conflicts + 1] = {
               state = i;
@@ -543,10 +542,10 @@ function class:lr1_construct_table(set_of_items, transitions)
             symbol = symbol;
             resolution = 1;
           }
-          if current <= m then
+          if value <= m then
             local shift_precedence = self:symbol_precedence(symbol)
             local precedence, associativity = self:production_precedence(id)
-            conflict[1] = { action = "shift", argument = current, precedence = shift_precedence }
+            conflict[1] = { action = "shift", argument = value, precedence = shift_precedence }
             conflict[2] = { action = "reduce", argument = id, precedence = precedence, associativity = associativity }
             if precedence > 0 then
               conflict.resolved = true
@@ -565,9 +564,9 @@ function class:lr1_construct_table(set_of_items, transitions)
               end
             end
           else
-            conflict[1] = { action = "reduce", argument = current - m }
+            conflict[1] = { action = "reduce", argument = value - m }
             conflict[2] = { action = "reduce", argument = id }
-            if action < current then
+            if action < value then
               conflict.resolution = 2
               table[index] = action
             end
@@ -582,7 +581,7 @@ function class:lr1_construct_table(set_of_items, transitions)
     for symbol, to in pairs(transitions[i]) do
       if symbol > max_terminal_symbol then
         local index = i * n + symbol
-        local current = table[index]
+        local value = table[index]
         table[index] = to
       end
     end
