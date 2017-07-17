@@ -525,22 +525,11 @@ function class:lr1_construct_table(set_of_items, transitions)
         local symbol = item.la
         local index = i * n + symbol
         local value = table[index]
-        if not value then
-          if error_table[index] then
-            conflicts[#conflicts + 1] = {
-              state = i;
-              symbol = symbol;
-              { action = "error" };
-              { action = "reduce", argument = id };
-            }
-          else
-            table[index] = action
-          end
-        else
+        if value then
           local conflict = {
             state = i;
             symbol = symbol;
-            resolution = 1;
+            resolution = 1; -- shift
           }
           if value <= m then
             local shift_precedence = self:symbol_precedence(symbol)
@@ -551,15 +540,15 @@ function class:lr1_construct_table(set_of_items, transitions)
               conflict.resolved = true
               if shift_precedence == precedence then
                 if associativity == 1 then -- left
-                  conflict.resolution = 2
+                  conflict.resolution = 2 -- reduce
                   table[index] = action
                 elseif associativity == 3 then -- nonassoc
-                  conflict.resolution = 0
+                  conflict.resolution = 3 -- error
                   error_table[index] = action
                   table[index] = 0
                 end
               elseif shift_precedence < precedence then
-                conflict.resolution = 2
+                conflict.resolution = 2 -- reduce
                 table[index] = action
               end
             end
@@ -567,11 +556,22 @@ function class:lr1_construct_table(set_of_items, transitions)
             conflict[1] = { action = "reduce", argument = value - m }
             conflict[2] = { action = "reduce", argument = id }
             if action < value then
-              conflict.resolution = 2
+              conflict.resolution = 2 -- reduce
               table[index] = action
             end
           end
           conflicts[#conflicts + 1] = conflict
+        else
+          if error_table[index] then
+            conflicts[#conflicts + 1] = {
+              state = i;
+              symbol = symbol;
+              { action = "error" };
+              { action = "reduce", argument = id };
+            }
+          else
+            table[index] = action
+          end
         end
       end
     end

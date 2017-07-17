@@ -66,3 +66,11 @@ Parser generator toolkit.
 |    1 | `marker_end`       | $      |
 |   -1 | `marker_lookahead` | #      |
 
+## Conflict Resolutions
+
+| Code | Resolution |
+|-----:|------------|
+|    1 | shift      |
+|    2 | reduce     |
+|    3 | error      |
+

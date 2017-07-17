@@ -237,7 +237,7 @@ function class:write_conflict(out, conflict, verbose)
   elseif action == "shift" then
     out:write(("shift(%d) / reduce(%d) conflict"):format(conflict[1].argument, conflict[2].argument))
     local resolution = conflict.resolution
-    if resolution == 0 then
+    if resolution == 3 then
       out:write(" resolved as an error")
     elseif resolution == 1 then
       out:write(" resolved as shift")
