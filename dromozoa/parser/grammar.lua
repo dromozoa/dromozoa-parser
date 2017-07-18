@@ -426,7 +426,7 @@ function class:lalr1_kernels(set_of_items, transitions)
           kernel_table[id] = { [dot] = j }
         end
         if id == 1 and dot == 1 then
-          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { [1] = true }} -- la = { [marker_end] = true }
+          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { true } } -- la = { [marker_end] = true }
         else
           la = {}
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = {} }
