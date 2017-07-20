@@ -40,12 +40,12 @@ regexp.union(a1, a2)
 regexp.union(a1, a3)
 regexp.union(a1, a4)
 
-a1:write_graphviz(assert(io.open("test-nfa.dot", "w"))):close()
+a1:write_graphviz("test-nfa.dot")
 
 local dfa1 = regexp.nfa_to_dfa(a1)
 
-dfa1:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
+dfa1:write_graphviz("test-dfa1.dot")
 
 local dfa2 = regexp.minimize(dfa1)
 
-dfa2:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
+dfa2:write_graphviz("test-dfa2.dot")

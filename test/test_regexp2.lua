@@ -24,4 +24,4 @@ local S = builder.set
 
 local p = S("abc") + S("def")
 local nfa = regexp(p)
-nfa:write_graphviz(assert(io.open("test-nfa.dot", "w"))):close()
+nfa:write_graphviz("test-nfa.dot", "w")
