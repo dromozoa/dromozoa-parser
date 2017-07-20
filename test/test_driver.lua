@@ -17,48 +17,103 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
+local parser = require "dromozoa.parser.parser"
 
 local _ = builder()
-local P = builder.P
-local R = builder.R
-local S = builder.S
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
 
-_ :pat(S" \t\n\v\f\r"^"+") :ignore()
-  :pat(R"09"^"+") :as "id"
-  :lit "+"
-  :lit "*"
-  :lit "("
-  :lit ")"
+_:lexer()
+  :_(S" \t\n\v\f\r"^"+") :skip()
+  :_(R"09"^"+") :as "id"
+  :_ "+"
+  :_ "*"
+  :_ "("
+  :_ ")"
 
-_ "E"
-  :_ "E" "+" "T"
-  :_ "T"
+--_ "E"
+--  :_ "E" "+" "T"
+--  :_ "T"
+--
+--_ "T"
+--  :_ "T" "*" "F"
+--  :_ "F"
+--
+--_ "F"
+--  :_ "(" "E" ")"
+--  :_ "id"
 
-_ "T"
-  :_ "T" "*" "F"
-  :_ "F"
+_ :left "+"
+  :left "*"
 
-_ "F"
+_"E"
+  :_ "E" "+" "E"
+  :_ "E" "*" "E"
   :_ "(" "E" ")"
   :_ "id"
 
-local scanner, grammar, writer = _:build()
+local scanner, grammar = _:build()
 print(dumper.encode(grammar, { pretty = true, stable = true }))
 
 local data = grammar:lr1_construct_table(grammar:lalr1_items())
 print(dumper.encode(data, { stable = true }))
-writer:write_table(assert(io.open("test.html", "w")), data):close()
 
+local symbol_names = _.symbol_names
 local _ = _.symbol_table
 
-local driver = driver(data)
-assert(driver:parse(_["("]))
-assert(driver:parse(_["id"], { value = 17 }))
-assert(driver:parse(_["+"]))
-assert(driver:parse(_["id"], { value = 23 }))
-assert(driver:parse(_[")"]))
-assert(driver:parse(_["+"]))
-assert(driver:parse(_["id"], { value = 37 }))
-assert(driver:parse())
-writer:write_tree(assert(io.open("test-tree.dot", "w")), driver.tree):close()
+local p = parser(data)
+-- assert(p(_["("]))
+assert(p(_["id"], { value = 17 }))
+assert(p(_["+"]))
+assert(p(_["id"], { value = 23 }))
+-- assert(p(_[")"]))
+assert(p(_["*"]))
+assert(p(_["id"], { value = 37 }))
+local tree = assert(p(1))
+-- print(dumper.encode(tree, { pretty = true, stable = true }))
+
+local out = assert(io.open("test.dot", "w"))
+out:write([[
+digraph g {
+graph [rankdir=TB];
+node [shape=box];
+]])
+
+tree.depth = 0
+tree.id = 1
+local id = 1
+local stack = { tree }
+while true do
+  local n = #stack
+  local node = stack[n]
+  if node then
+    stack[n] = nil
+    local data = node.data
+    local value = ""
+    if data then
+      value = " / " .. data.value
+    end
+    -- io.write(("  "):rep(node.depth), symbol_names[node[1]], value, "\n")
+    out:write(([[
+%d [label=<%s%s>];
+]]):format(node.id, symbol_names[node[1]], value))
+    for i = 2, node.n do
+      id = id + 1
+      node[i].id = id
+      out:write(([[
+%d -> %d;
+]]):format(node.id, id))
+    end
+    for i = node.n, 2, -1 do
+      node[i].depth = node.depth + 1
+      stack[#stack + 1] = node[i]
+    end
+  else
+    break
+  end
+end
+
+out:write("}\n")
+
+out:close()
