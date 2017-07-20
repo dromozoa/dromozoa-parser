@@ -15,6 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
+
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
@@ -621,6 +623,10 @@ function class:lr1_construct_table(set_of_items, transitions)
   }, conflicts
 end
 
+function class:write_set_of_items(out, set_of_items)
+  return write_set_of_items(self, out, set_of_items)
+end
+
 local metatable = {
   __index = class;
 }
@@ -631,6 +637,7 @@ return setmetatable(class, {
     local max_terminal_symbol = data.max_terminal_symbol
     local productions = data.productions
     return setmetatable({
+      symbol_names = data.symbol_names;
       productions = productions;
       map_of_production_ids = construct_map_of_production_ids(productions);
       max_terminal_symbol = max_terminal_symbol;

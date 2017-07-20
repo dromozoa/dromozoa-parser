@@ -46,7 +46,7 @@ local set_of_items, transitions = grammar:lr1_items()
 -- for from, to in pairs(transitions) do
 --   print(dumper.encode({ from = from, to = to }, { stable = true }))
 -- end
-writer:write_set_of_items(io.stdout, set_of_items)
+grammar:write_set_of_items(io.stdout, set_of_items)
 
 writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
 
