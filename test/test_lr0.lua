@@ -17,7 +17,6 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
 local writer = require "dromozoa.parser.writer"
 
 local _ = builder()
