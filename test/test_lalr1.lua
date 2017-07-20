@@ -96,7 +96,7 @@ for i = 1, #map do
 end
 ]====]
 
-writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+grammar:write_graphviz(assert(io.open("test-graph.dot", "w")), transitions):close()
 
 print(dumper.encode(grammar, { stable = true, pretty = true }))
 -- print(dumper.encode(transitions, { stable = true }))

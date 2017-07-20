@@ -35,26 +35,6 @@ function class.new(symbol_names, productions, max_terminal_symbol)
   }
 end
 
-function class:write_first(out, symbols)
-  local symbol_names = self.symbol_names
-  out:write("{")
-  local first = true
-  for symbol in pairs(symbols) do
-    if first then
-      first = false
-    else
-      out:write(", ")
-    end
-    if symbol == 0 then
-      out:write(EPSILON)
-    else
-      out:write(symbol_names[symbol])
-    end
-  end
-  out:write("}")
-  return out
-end
-
 function class:write_table(out, data)
   local max_state = data.max_state
   local max_symbol = data.max_symbol
@@ -112,21 +92,6 @@ function class:write_table(out, data)
   end
 
   out:write("</table>\n")
-  return out
-end
-
-function class:write_graph(out, transitions)
-  local symbol_names = self.symbol_names
-  out:write([[
-digraph g {
-graph [rankdir=LR];
-]])
-  for i, transition in pairs(transitions) do
-    for j, to in pairs(transition) do
-      out:write(("%d->%d [label=<%s>];\n"):format(i, to, xml.escape(symbol_names[j])))
-    end
-  end
-  out:write("}\n")
   return out
 end
 

@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 
 local function equal(items1, items2)
@@ -625,6 +626,10 @@ end
 
 function class:write_set_of_items(out, set_of_items)
   return write_set_of_items(self, out, set_of_items)
+end
+
+function class:write_graphviz(out, transitions)
+  return write_graphviz(self, out, transitions)
 end
 
 local metatable = {
