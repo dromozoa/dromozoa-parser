@@ -17,7 +17,6 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local writer = require "dromozoa.parser.writer"
 
 local _ = builder()
 local P = builder.pattern
@@ -57,7 +56,6 @@ _"E"
   :_ "id"
 
 local lexer, grammar = _:build()
-local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 -- print(dumper.encode(scanner, { pretty = true, stable = true }))
 -- print(dumper.encode(grammar, { pretty = true, stable = true }))
