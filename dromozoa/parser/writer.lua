@@ -95,31 +95,6 @@ function class:write_table(out, data)
   return out
 end
 
-function class:write_tree(out, tree)
-  local symbol_names = self.symbol_names
-  tree:write_graphviz(out, {
-    default_node_attributes = function ()
-      return {
-        shape = "box";
-      }
-    end;
-    node_attributes = function (_, u)
-      local name = symbol_names[u.symbol]
-      local value = u.value
-      if value ~= nil and value ~= name then
-        return {
-          label = "<" .. xml.escape(name) .. " / " .. xml.escape(value) .. ">";
-        }
-      else
-        return {
-          label = "<" .. xml.escape(name) .. ">";
-        }
-      end
-    end;
-  })
-  return out
-end
-
 class.metatable = {
   __index = class;
 }
