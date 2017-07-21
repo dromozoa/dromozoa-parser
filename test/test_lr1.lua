@@ -51,4 +51,4 @@ grammar:write_set_of_items(io.stdout, set_of_items)
 grammar:write_graphviz("test-graph.dot", transitions)
 
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
+grammar:write_table("test.html", data)

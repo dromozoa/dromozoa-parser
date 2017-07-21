@@ -35,66 +35,6 @@ function class.new(symbol_names, productions, max_terminal_symbol)
   }
 end
 
-function class:write_table(out, data)
-  local max_state = data.max_state
-  local max_symbol = data.max_symbol
-  local table = data.table
-  local symbol_names = self.symbol_names
-  local max_terminal_symbol = self.max_terminal_symbol
-
-  out:write([[
-<style>
-  table {
-    border-collapse: collapse;
-  }
-  td {
-    border: 1px solid #ccc;
-    text-align: center;
-  }
-</style>
-<table>
-]])
-  out:write("  <tr>\n")
-  out:write("    <td rowspan=\"2\">STATE</td>\n")
-  out:write("    <td colspan=\"", max_terminal_symbol, "\">ACTION</td>\n")
-  out:write("    <td colspan=\"", max_symbol - max_terminal_symbol, "\">GOTO</td>\n")
-  out:write("  </tr>\n")
-
-  out:write("  <tr>\n")
-  for symbol = 1, max_symbol do
-    out:write("    <td>", xml.escape(symbol_names[symbol]), "</td>\n")
-  end
-  out:write("  </tr>\n")
-
-  for state = 1, max_state do
-    out:write("  <tr>\n")
-    out:write("    <td>", state, "</td>\n")
-    for symbol = 1, max_symbol do
-      local action = table[state * max_symbol + symbol]
-      if action == nil then
-        out:write("    <td></td>\n")
-      elseif action <= max_state then
-        if symbol <= max_terminal_symbol then
-          out:write("    <td>s", action, "</td>\n")
-        else
-          out:write("    <td>", action, "</td>\n")
-        end
-      else
-        local reduce = action - max_state
-        if reduce == 1 then
-          out:write("    <td>acc</td>\n")
-        else
-          out:write("    <td>r", reduce, "</td>\n")
-        end
-      end
-    end
-    out:write("  </tr>\n")
-  end
-
-  out:write("</table>\n")
-  return out
-end
-
 class.metatable = {
   __index = class;
 }
