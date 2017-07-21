@@ -298,15 +298,14 @@ function class:lr0_items()
         transitions[i] = transition
       end
       local gotos = self:lr0_goto(set_of_items[i])
-      for x = 1, #gotos do
-        local data = gotos[x]
-        local symbol = data.symbol
+      for j = 1, #gotos do
+        local data = gotos[j]
         local to_items = data.to_items
         if to_items[1] then
           local to
-          for j = 1, #set_of_items do
-            if equal(to_items, set_of_items[j]) then
-              to = j
+          for k = 1, #set_of_items do
+            if equal(to_items, set_of_items[k]) then
+              to = k
               break
             end
           end
@@ -315,7 +314,7 @@ function class:lr0_items()
             set_of_items[to] = to_items
             done = false
           end
-          transition[symbol] = to
+          transition[data.symbol] = to
         end
       end
     end
