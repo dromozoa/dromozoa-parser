@@ -17,8 +17,6 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
-local writer = require "dromozoa.parser.writer"
 
 local _ = builder()
 local P = builder.pattern
@@ -58,7 +56,6 @@ _"E"
   :_ "id"
 
 local lexer, grammar = _:build()
-local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 -- print(dumper.encode(scanner, { pretty = true, stable = true }))
 -- print(dumper.encode(grammar, { pretty = true, stable = true }))
@@ -69,7 +66,7 @@ local set_of_items, transitions = grammar:lalr1_items()
 -- for from, to in pairs(transitions) do
 --   print(dumper.encode({ from = from, to = to }, { stable = true }))
 -- end
-writer:write_set_of_items(io.stdout, set_of_items)
+grammar:write_set_of_items(io.stdout, set_of_items)
 
 --[====[
 local map = {}
@@ -97,11 +94,13 @@ for i = 1, #map do
 end
 ]====]
 
-writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+grammar:write_graphviz("test-graph.dot", transitions)
 
-print(dumper.encode(transitions, { stable = true }))
+print(dumper.encode(grammar, { stable = true, pretty = true }))
+-- print(dumper.encode(transitions, { stable = true }))
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 print(dumper.encode(data, { stable = true }))
-writer:write_table(assert(io.open("test.html", "w")), data):close()
-writer:write_conflicts(io.stdout, conflicts, true)
+-- writer:write_table(assert(io.open("test.html", "w")), data):close()
+grammar:write_table("test.html", data)
+grammar:write_conflicts(io.stdout, conflicts, true)
 -- print(dumper.encode(conflicts, { stable = true, pretty = true  }))

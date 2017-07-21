@@ -83,7 +83,7 @@ return function (this, out)
     for v, item in pairs(map) do
       local n = item.n
       if n == 256 then
-        out:write(u, "->", v, '[label="."];\n')
+        out:write(u, '->', v, '[label="."];\n')
       else
         local neg = n > 127
         local set = item.set

@@ -15,6 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local write_conflicts = require "dromozoa.parser.grammar.write_conflicts"
+local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
+local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
+local write_table = require "dromozoa.parser.grammar.write_table"
+
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
@@ -36,21 +41,26 @@ local function equal(items1, items2)
   return true
 end
 
-local class = {}
-
-function class:each_production(head)
-  return coroutine.wrap(function ()
-    local productions = self.productions
-    for i = 1, #productions do
-      local production = productions[i]
-      if production.head == head then
-        coroutine.yield(i, production.body)
-      end
+local function construct_map_of_production_ids(productions)
+  local map_of_production_ids = {}
+  for i = 1, #productions do
+    local production = productions[i]
+    local head = production.head
+    local production_ids = map_of_production_ids[head]
+    if production_ids then
+      production_ids[#production_ids + 1] = i
+    else
+      map_of_production_ids[head] = { i }
     end
-  end)
+  end
+  return map_of_production_ids
 end
 
+local class = {}
+
 function class:eliminate_left_recursion()
+  local productions = self.productions
+  local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
 
   local map_of_productions = {}
@@ -60,18 +70,20 @@ function class:eliminate_left_recursion()
     local left_recursions = {}
     local no_left_recursions = {}
 
-    for _, body in self:each_production(i) do
+    local production_ids = map_of_production_ids[i]
+    for j = 1, #production_ids do
+      local body = productions[production_ids[j]].body
       local symbol = body[1]
       if symbol and symbol > max_terminal_symbol and symbol < i then
         local productions = map_of_productions[symbol]
-        for j = 1, #productions do
-          local src_body = productions[j].body
+        for k = 1, #productions do
+          local src_body = productions[k].body
           local new_body = {}
-          for k = 1, #src_body do
-            new_body[k] = src_body[k]
+          for l = 1, #src_body do
+            new_body[l] = src_body[l]
           end
-          for k = 2, #body do
-            new_body[#new_body + 1] = body[k]
+          for l = 2, #body do
+            new_body[#new_body + 1] = body[l]
           end
           if i == new_body[1] then
             left_recursions[#left_recursions + 1] = { head = i, body = new_body }
@@ -129,6 +141,7 @@ function class:eliminate_left_recursion()
 
   return class({
     productions = new_productions;
+    map_of_production_ids = construct_map_of_production_ids(new_productions);
     max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
@@ -148,8 +161,11 @@ function class:first_symbol(symbol)
       end
       return first
     else
+      local productions = self.productions
+      local production_ids = self.map_of_production_ids[symbol]
       local first = {}
-      for _, body in self:each_production(symbol) do
+      for i = 1, #production_ids do
+        local body = productions[production_ids[i]].body
         if body[1] then
           for symbol in pairs(self:first_symbols(body)) do
             first[symbol] = true
@@ -216,6 +232,7 @@ end
 
 function class:lr0_closure(items)
   local productions = self.productions
+  local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
   local added_table = {}
   repeat
@@ -224,8 +241,9 @@ function class:lr0_closure(items)
       local item = items[i]
       local symbol = productions[item.id].body[item.dot]
       if symbol and symbol > max_terminal_symbol and not added_table[symbol] then
-        for id in self:each_production(symbol) do
-          items[#items + 1] = { id = id, dot = 1 }
+        local production_ids = map_of_production_ids[symbol]
+        for j = 1, #production_ids do
+          items[#items + 1] = { id = production_ids[j], dot = 1 }
           done = false
         end
         added_table[symbol] = true
@@ -294,6 +312,7 @@ end
 
 function class:lr1_closure(items)
   local productions = self.productions
+  local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
   local added_table = {}
   repeat
@@ -310,7 +329,9 @@ function class:lr1_closure(items)
         end
         symbols[#symbols + 1] = item.la
         local first = self:first_symbols(symbols)
-        for id in self:each_production(symbol) do
+        local production_ids = map_of_production_ids[symbol]
+        for j = 1, #production_ids do
+          local id = production_ids[j]
           local added = added_table[id]
           if not added then
             added = {}
@@ -410,7 +431,7 @@ function class:lalr1_kernels(set_of_items, transitions)
           kernel_table[id] = { [dot] = j }
         end
         if id == 1 and dot == 1 then
-          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { [1] = true }} -- la = { [marker_end] = true }
+          kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { true } } -- la = { [marker_end] = true }
         else
           la = {}
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = {} }
@@ -605,6 +626,30 @@ function class:lr1_construct_table(set_of_items, transitions)
   }, conflicts
 end
 
+function class:write_set_of_items(out, set_of_items)
+  return write_set_of_items(self, out, set_of_items)
+end
+
+function class:write_graphviz(out, transitions)
+  if type(out) == "string" then
+    write_graphviz(self, assert(io.open(out, "w")), transitions):close()
+  else
+    return write_graphviz(self, out, transitions)
+  end
+end
+
+function class:write_table(out, data)
+  if type(out) == "string" then
+    write_table(self, assert(io.open(out, "w")), data):close()
+  else
+    return write_table(self, out, data)
+  end
+end
+
+function class:write_conflicts(out, conflicts, verbose)
+  return write_conflicts(self, out, conflicts, verbose)
+end
+
 local metatable = {
   __index = class;
 }
@@ -613,8 +658,11 @@ class.metatable = metatable
 return setmetatable(class, {
   __call = function (_, data)
     local max_terminal_symbol = data.max_terminal_symbol
+    local productions = data.productions
     return setmetatable({
-      productions = data.productions;
+      symbol_names = data.symbol_names;
+      productions = productions;
+      map_of_production_ids = construct_map_of_production_ids(productions);
       max_terminal_symbol = max_terminal_symbol;
       min_nonterminal_symbol = max_terminal_symbol + 1;
       max_nonterminal_symbol = data.max_nonterminal_symbol;

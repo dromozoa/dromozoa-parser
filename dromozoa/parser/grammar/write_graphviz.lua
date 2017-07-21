@@ -15,41 +15,17 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local sequence = require "dromozoa.commons.sequence"
-
-local class = {}
-
-function class.new(items, name)
-  return {
-    items = items;
-    head = name;
-  }
+return function (self, out, transitions)
+  local symbol_names = self.symbol_names
+  out:write('digraph g {\ngraph [rankdir=LR];\n')
+  for from, transition in pairs(transitions) do
+    for symbol, to in pairs(transition) do
+      -- [TODO] escape xml
+      -- [TODO] make table
+      -- [TODO] check textbook
+      out:write(from, '->', to, ' [label="', symbol_names[symbol], '"];\n')
+    end
+  end
+  out:write('}\n')
+  return out
 end
-
-function class:_(name)
-  self.items:push({
-    head = self.head;
-    body = sequence():push(name);
-  })
-  return self
-end
-
-function class:prec(name)
-  self.items:top().precedence = name
-  return self
-end
-
-class.metatable = {
-  __index = class;
-}
-
-function class.metatable:__call(name)
-  self.items:top().body:push(name)
-  return self
-end
-
-return setmetatable(class, {
-  __call = function (_, items, name)
-    return setmetatable(class.new(items, name), class.metatable)
-  end;
-})

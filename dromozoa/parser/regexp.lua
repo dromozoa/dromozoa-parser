@@ -622,7 +622,11 @@ function class:difference(that)
 end
 
 function class:write_graphviz(out)
-  return write_graphviz(self, out)
+  if type(out) == "string" then
+    write_graphviz(self, assert(io.open(out, "w"))):close()
+  else
+    return write_graphviz(self, out)
+  end
 end
 
 return setmetatable(class, {

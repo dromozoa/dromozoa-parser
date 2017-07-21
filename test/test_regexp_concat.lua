@@ -28,17 +28,17 @@ local a2 = regexp(P"def"^"?", 2)
 -- a1 = regexp.minimize(regexp.nfa_to_dfa(a1))
 -- a2 = regexp.minimize(regexp.nfa_to_dfa(a2))
 
-a1:write_graphviz(assert(io.open("test-a1.dot", "w"))):close()
-a2:write_graphviz(assert(io.open("test-a2.dot", "w"))):close()
+a1:write_graphviz("test-a1.dot")
+a2:write_graphviz("test-a2.dot")
 
 regexp.concat(a1, a2)
 
-a1:write_graphviz(assert(io.open("test-concat.dot", "w"))):close()
+a1:write_graphviz("test-concat.dot")
 
 local dfa1 = regexp.nfa_to_dfa(a1)
 
-dfa1:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
+dfa1:write_graphviz("test-dfa1.dot")
 
 local dfa2 = regexp.minimize(dfa1)
 
-dfa2:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
+dfa2:write_graphviz("test-dfa2.dot")
