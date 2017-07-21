@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local parser = require "dromozoa.parser.parser"
 local write_conflicts = require "dromozoa.parser.grammar.write_conflicts"
 local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
@@ -641,13 +642,13 @@ function class:lr1_construct_table(set_of_items, transitions)
     sizes[j] = #production.body
   end
 
-  return {
+  return parser({
     max_state = m;
     max_symbol = n;
     table = table;
     heads = heads;
     sizes = sizes;
-  }, conflicts
+  }), conflicts
 end
 
 function class:write_set_of_items(out, set_of_items)
