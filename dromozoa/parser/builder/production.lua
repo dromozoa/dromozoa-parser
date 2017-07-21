@@ -15,21 +15,37 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local builder = require "dromozoa.parser.builder"
-local regexp = require "dromozoa.parser.regexp"
+local class = {}
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
+function class:_(name)
+  local items = self.items
+  items[#items + 1] = {
+    head = self.head;
+    body = { name };
+  }
+  return self
+end
 
-local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
-local nfa = regexp(p)
-nfa:write_graphviz("test-nfa.dot")
+function class:prec(name)
+  local items = self.items
+  items[#items].precedence = name
+  return self
+end
 
-local dfa1 = nfa:nfa_to_dfa()
-dfa1:write_graphviz("test-dfa1.dot")
-local dfa2 = dfa1:minimize()
-dfa2:write_graphviz("test-dfa2.dot")
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
-local p2 = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
-regexp(p2):nfa_to_dfa():minimize():write_graphviz("test-dfa3.dot")
+function metatable:__call(name)
+  local items = self.items
+  local body = items[#items].body
+  body[#body + 1] = name
+  return self
+end
+
+return setmetatable(class, {
+  __call = function (_, items, name)
+    return setmetatable({ items = items, head = name }, metatable)
+  end;
+})

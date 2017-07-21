@@ -15,43 +15,26 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local tag_names = {
-  "[",
-  "concat",
-  "|", -- union
-  "*",
-  "?",
-}
-
-local tag_table = {}
-for i = 1, #tag_names do
-  tag_table[tag_names[i]] = i
-end
-
-local max_terminal_tag = 1
-local min_char = 0
-local max_char = 255
+local write_graphviz = require "dromozoa.parser.regexp.write_graphviz"
 
 local function set_to_seq(set)
-  local n = 0
-  local key = {}
-  for k in pairs(set) do
-    n = n + 1
-    key[n] = k
+  local seq = {}
+  for u in pairs(set) do
+    seq[#seq + 1] = u
   end
-  table.sort(key)
-  return key
+  table.sort(seq)
+  return seq
 end
 
 local function find(maps, key)
   local n = #key
   local map = maps[n]
-  if map == nil then
+  if not map then
     return
   end
   for i = 1, n - 1 do
     map = map[key[i]]
-    if map == nil then
+    if not map then
       return
     end
   end
@@ -61,14 +44,14 @@ end
 local function insert(maps, key, value)
   local n = #key
   local map = maps[n]
-  if map == nil then
+  if not map then
     map = {}
     maps[n] = map
   end
   for i = 1, n - 1 do
     local k = key[i]
     local m = map[k]
-    if m == nil then
+    if not m then
       m = {}
       map[k] = m
     end
@@ -77,127 +60,22 @@ local function insert(maps, key, value)
   map[key[n]] = value
 end
 
-local function merge_accept_state(accept_states, set)
-  local accept
-  for k in pairs(set) do
-    local v = accept_states[k]
-    if v then
-      if accept == nil or accept > v then
-        accept = v
-      end
-    end
-  end
-  return accept
-end
+local function epsilon_closure(this, epsilon_closures, u)
+  local epsilon_closure = epsilon_closures[u]
+  if not epsilon_closure then
+    epsilon_closure = {}
+    epsilon_closures[u] = epsilon_closure
 
-local class = {
-  tag_names = tag_names;
-  tag_table = tag_table;
-  max_terminal_tag = max_terminal_tag;
-}
+    local epsilons = this.epsilons
+    local epsilons1 = epsilons[1]
+    local epsilons2 = epsilons[2]
 
-function class.new(root)
-  return {}
-end
-
-function class.tree_to_nfa(root, accept)
-  if accept == nil then
-    accept = 1
-  end
-
-  local max_state = 0
-  local epsilons1 = {}
-  local epsilons2 = {}
-  local transitions = {}
-  for char = min_char, max_char do
-    transitions[char] = {}
-  end
-
-  local stack1 = { root }
-  local stack2 = {}
-
-  while true do
-    local n1 = #stack1
-    local n2 = #stack2
-    local node = stack1[n1]
-    if node == nil then
-      break
-    end
-    local tag = node[1]
-    local a = node[2]
-    local b = node[3]
-    if node == stack2[n2] then
-      stack1[n1] = nil
-      stack2[n2] = nil
-      if tag == 2 then -- "concat"
-        node.u = a.u
-        node.v = b.v
-        epsilons1[a.v] = b.u
-      else
-        max_state = max_state + 1
-        local u = max_state
-        node.u = u
-        max_state = max_state + 1
-        local v = max_state
-        node.v = v
-        if tag == 1 then -- "["
-          for char in pairs(a) do
-            transitions[char][u] = v
-          end
-        elseif tag == 3 then -- "|"
-          epsilons1[u] = a.u
-          epsilons2[u] = b.u
-          epsilons1[a.v] = v
-          epsilons1[b.v] = v
-        else -- "*" or "?"
-          local au = a.u
-          local av = a.v
-          epsilons1[u] = au
-          epsilons2[u] = v
-          epsilons1[av] = v
-          if tag == 4 then -- "*"
-            epsilons2[av] = au
-          end
-        end
-      end
-    else
-      if tag > max_terminal_tag then
-        if b then
-          stack1[n1 + 1] = b
-          stack1[n1 + 2] = a
-        else
-          stack1[n1 + 1] = a
-        end
-      end
-      stack2[n2 + 1] = node
-    end
-  end
-
-  return {
-    max_state = max_state;
-    epsilons = { epsilons1, epsilons2 };
-    transitions = transitions;
-    start_state = root.u;
-    accept_states = { [root.v] = accept };
-  }
-end
-
-function class.nfa_to_dfa(nfa)
-  local epsilons = nfa.epsilons
-  local epsilons1 = epsilons[1]
-  local epsilons2 = epsilons[2]
-  local transitions = nfa.transitions
-  local accept_states = nfa.accept_states
-
-  local epsilon_closures = {}
-  for state = 1, nfa.max_state do
-    local stack = { state }
-    local color = { [state] = true }
-    local epsilon_closure = {}
+    local stack = { u }
+    local color = { [u] = true }
     while true do
       local n = #stack
       local u = stack[n]
-      if u == nil then
+      if not u then
         break
       end
       stack[n] = nil
@@ -216,59 +94,76 @@ function class.nfa_to_dfa(nfa)
         end
       end
     end
-    epsilon_closures[state] = epsilon_closure
   end
+  return epsilon_closure
+end
+
+local function merge_accept_state(accept_states, set)
+  local result
+  for u in pairs(set) do
+    local accept = accept_states[u]
+    if accept and (not result or result > accept) then
+      result = accept
+    end
+  end
+  return result
+end
+
+local function nfa_to_dfa(this)
+  local transitions = this.transitions
+  local accept_states = this.accept_states
 
   local max_state = 1
-
-  local uset = epsilon_closures[nfa.start_state]
-  local useq = set_to_seq(uset)
+  local epsilon_closures = {}
   local maps = {}
+
+  local uset = epsilon_closure(this, epsilon_closures, this.start_state)
+  local useq = set_to_seq(uset)
   insert(maps, useq, max_state)
 
   local new_transitions = {}
-  for char = min_char, max_char do
-    new_transitions[char] = {}
+  for byte = 0, 255 do
+    new_transitions[byte] = {}
   end
   local new_accept_states = {
     [max_state] = merge_accept_state(accept_states, uset);
   }
 
   local stack = { useq }
-
   while true do
     local n = #stack
     local useq = stack[n]
-    if useq == nil then
+    if not useq then
       break
     end
     stack[n] = nil
     local u = find(maps, useq)
-    for char = min_char, max_char do
+    for byte = 0, 255 do
       local vset
       for i = 1, #useq do
-        local transition = transitions[char][useq[i]]
-        if transition then
-          for k in pairs(epsilon_closures[transition]) do
-            if vset == nil then
-              vset = {}
+        local x = transitions[byte][useq[i]]
+        if x then
+          for y in pairs(epsilon_closure(this, epsilon_closures, x)) do
+            if vset then
+              vset[y] = true
+            else
+              vset = { [y] = true }
             end
-            vset[k] = true
           end
         end
       end
       if vset then
         local vseq = set_to_seq(vset)
         local v = find(maps, vseq)
-        if v == nil then
+        if v then
+          new_transitions[byte][u] = v
+        else
           max_state = max_state + 1
-          v = max_state
-          insert(maps, vseq, v)
-          stack[n] = vseq
-          n = n + 1
-          new_accept_states[v] = merge_accept_state(accept_states, vset)
+          insert(maps, vseq, max_state)
+          stack[#stack + 1] = vseq
+          new_accept_states[max_state] = merge_accept_state(accept_states, vset)
+          new_transitions[byte][u] = max_state
         end
-        new_transitions[char][u] = v
       end
     end
   end
@@ -278,32 +173,83 @@ function class.nfa_to_dfa(nfa)
     transitions = new_transitions;
     start_state = 1;
     accept_states = new_accept_states;
-  }, epsilon_closures
+  }
 end
 
-function class.minimize_dfa(dfa)
-  local transitions = dfa.transitions
-  local accept_states = dfa.accept_states
+local function minimize(this)
+  local transitions = this.transitions
+  local start_state = this.start_state
+  local accept_states = this.accept_states
 
-  local max_partition = 0
+  local reverse_transitions = {}
+
+  local stack = { start_state }
+  local color = { [start_state] = true }
+  while true do
+    local n = #stack
+    local u = stack[n]
+    if not u then
+      break
+    end
+    stack[n] = nil
+    for byte = 0, 255 do
+      local v = transitions[byte][u]
+      if v and u ~= v then
+        local reverse_transition = reverse_transitions[v]
+        if reverse_transition then
+          reverse_transition[u] = true
+        else
+          reverse_transitions[v] = { [u] = true }
+        end
+        if not color[v] then
+          stack[#stack + 1] = v
+          color[v] = true
+        end
+      end
+    end
+  end
+
+  local stack = {}
+  local color = {}
+  for u in pairs(accept_states) do
+    stack[#stack + 1] = u
+    color[u] = true
+  end
+  while true do
+    local n = #stack
+    local u = stack[n]
+    if not u then
+      break
+    end
+    stack[n] = nil
+    local reverse_transition = reverse_transitions[u]
+    if reverse_transition then
+      for v in pairs(reverse_transition) do
+        if not color[v] then
+          stack[#stack + 1] = v
+          color[v] = true
+        end
+      end
+    end
+  end
+
   local accept_partitions = {}
   local partition
-
-  for state = 1, dfa.max_state do
-    local accept = accept_states[state]
+  for u in pairs(color) do
+    local accept = accept_states[u]
     if accept then
       local partition = accept_partitions[accept]
-      if partition == nil then
-        max_partition = max_partition + 1
-        partition = {}
-        accept_partitions[accept] = partition
+      if partition then
+        partition[#partition + 1] = u
+      else
+        accept_partitions[accept] = { u }
       end
-      partition[#partition + 1] = state
     else
-      if partition == nil then
-        partition = {}
+      if partition then
+        partition[#partition + 1] = u
+      else
+        partition = { u }
       end
-      partition[#partition + 1] = state
     end
   end
 
@@ -314,7 +260,6 @@ function class.minimize_dfa(dfa)
   if partition then
     partitions[#partitions + 1] = partition
   end
-
   local partition_table = {}
   for i = 1, #partitions do
     local partition = partitions[i]
@@ -323,143 +268,369 @@ function class.minimize_dfa(dfa)
     end
   end
 
-  repeat
+  while true do
     local new_partitions = {}
     local new_partition_table = {}
-
     for i = 1, #partitions do
       local partition = partitions[i]
-      local n = #partition
-      for i = 1, n - 1 do
+      for i = 1, #partition do
         local x = partition[i]
-        for j = i + 1, n do
+        for j = 1, i - 1 do
           local y = partition[j]
-          local same_group = true
-          for char = min_char, max_char do
-            local tx = transitions[char][x]
-            local ty = transitions[char][y]
-            if partition_table[tx] ~= partition_table[ty] then
-              same_group = false
+          local same_partition = true
+          for byte = 0, 255 do
+            if partition_table[transitions[byte][x]] ~= partition_table[transitions[byte][y]] then
+              same_partition = false
               break
             end
           end
-          if same_group then
-            local gx = new_partition_table[x]
-            local gy = new_partition_table[y]
-            if gx ~= nil then
-              if gy == nil then
-                local partition = new_partitions[gx]
-                partition[#partition + 1] = y
-                new_partition_table[y] = gx
-              else
-                assert(gx == gy)
+          if same_partition then
+            local px = new_partition_table[x]
+            local py = new_partition_table[y]
+            if px then
+              if not py then
+                local new_partition = new_partitions[px]
+                new_partition[#new_partition + 1] = y
+                new_partition_table[y] = px
               end
-            elseif gy ~= nil then
-              local partition = new_partitions[gy]
-              partition[#partition + 1] = x
-              new_partition_table[x] = gy
+            elseif py then
+              local new_partition = new_partitions[py]
+              new_partition[#new_partition + 1] = x
+              new_partition_table[x] = py
             else
-              local g = #new_partitions + 1
-              new_partitions[g] = { x, y }
-              new_partition_table[x] = g
-              new_partition_table[y] = g
+              local p = #new_partitions + 1
+              new_partitions[p] = { x, y }
+              new_partition_table[x] = p
+              new_partition_table[y] = p
             end
           end
         end
-      end
-
-      for i = 1, #partition do
-        local x = partition[i]
-        local gx = new_partition_table[x]
-        if gx == nil then
-          local g = #new_partitions + 1
-          new_partitions[g] = { x }
-          new_partition_table[x] = g
+        if not new_partition_table[x] then
+          local p = #new_partitions + 1
+          new_partitions[p] = { x }
+          new_partition_table[x] = p
         end
       end
     end
-
-    local done = #partitions == #new_partitions
+    if #partitions == #new_partitions then
+      break
+    end
     partitions = new_partitions
     partition_table = new_partition_table
-  until done
+  end
 
   local max_state = #partitions
   local new_transitions = {}
-  for char = min_char, max_char do
-    new_transitions[char] = {}
+  for byte = 0, 255 do
+    new_transitions[byte] = {}
   end
   local new_accept_states = {}
 
   for i = 1, max_state do
     local partition = partitions[i]
-    local state = partition[1]
-    for char = min_char, max_char do
-      local transition = transitions[char][state]
-      if transition then
-        new_transitions[char][i] = partition_table[transition]
+    local u = partition[1]
+    for byte = 0, 255 do
+      local v = transitions[byte][u]
+      if v then
+        new_transitions[byte][i] = partition_table[v]
       end
     end
-    new_accept_states[i] = accept_states[state]
+    new_accept_states[i] = accept_states[u]
   end
 
   return {
-    transitions = new_transitions,
     max_state = max_state;
-    start_state = partition_table[dfa.start_state];
+    transitions = new_transitions,
+    start_state = partition_table[this.start_state];
     accept_states = new_accept_states;
-  }, partitions
+  }
 end
 
-function class:union(that)
-  local max_state = self.max_state
-  local epsilons = self.epsilons
-  if epsilons == nil then
-    epsilons = {}
-    self.epsilons = {}
+local function merge(this, that)
+  local n = this.max_state
+  local epsilons = this.epsilons
+  local epsilons1
+  local epsilons2
+  if epsilons then
+    epsilons1 = epsilons[1]
+    epsilons2 = epsilons[2]
+  else
+    epsilons1 = {}
+    epsilons2 = {}
+    epsilons = { epsilons1, epsilons2 }
+    this.epsilons = epsilons
   end
-  local epsilons1 = epsilons[1]
-  local epsilons2 = epsilons[2]
-  local transitions = self.transitions
-  local accept_states = self.accept_states
-
-  max_state = max_state + 1
-  local start_state = max_state
-  epsilons1[start_state] = self.start_state
-  epsilons2[start_state] = that.start_state + max_state
+  local transitions = this.transitions
 
   local that_epsilons = that.epsilons
   if that_epsilons then
-    for from, to in pairs(that_epsilons[1]) do
-      epsilons1[from + max_state] = to + max_state
+    for u, v in pairs(that_epsilons[1]) do
+      epsilons1[n + u] = n + v
     end
-    for from, to in pairs(that_epsilons[2]) do
-      epsilons2[from + max_state] = to + max_state
+    for u, v in pairs(that_epsilons[2]) do
+      epsilons2[n + u] = n + v
     end
   end
 
   local that_transitions = that.transitions
-  for char = min_char, max_char do
-    local transition = transitions[char]
-    for from, to in pairs(that_transitions[char]) do
-      transition[from + max_state] = to + max_state
+  for byte = 0, 255 do
+    local transition = transitions[byte]
+    for u, v in pairs(that_transitions[byte]) do
+      transition[n + u] = n + v
     end
   end
 
-  for state, accept in pairs(that.accept_states) do
-    accept_states[state + max_state] = accept
+  local accept_states = {}
+  for u, accept in pairs(that.accept_states) do
+    accept_states[n + u] = accept
   end
 
-  self.max_state = max_state + that.max_state
-  self.start_state = start_state
+  local max_state = n + that.max_state
+  this.max_state = max_state
+  that.max_state = max_state
+  that.epsilons = epsilons
+  that.transitions = transitions
+  that.start_state = n + that.start_state
+  that.accept_states = accept_states
+  return this, that
 end
 
-class.metatable = {
+local function concat(this, that)
+  local this, that = merge(this, that)
+
+  local epsilons = this.epsilons
+  local epsilons1 = epsilons[1]
+
+  local v = that.start_state
+  for u in pairs(this.accept_states) do
+    epsilons1[u] = v
+  end
+
+  this.accept_states = that.accept_states
+  return this
+end
+
+local function union(this, that)
+  local this, that = merge(this, that)
+
+  local max_state = this.max_state + 1
+  local epsilons = this.epsilons
+  local accept_states = this.accept_states
+
+  epsilons[1][max_state] = this.start_state
+  epsilons[2][max_state] = that.start_state
+
+  for u, accept in pairs(that.accept_states) do
+    accept_states[u] = accept
+  end
+
+  this.max_state = max_state
+  this.start_state = max_state
+  return this
+end
+
+local function difference(this, that)
+  local this_max_state = this.max_state
+  local that_max_state = that.max_state
+  local this_transitions = this.transitions
+  local that_transitions = that.transitions
+  local that_accept_states = that.accept_states
+
+  local n = this_max_state + 1
+
+  local transitions = {}
+  for byte = 0, 255 do
+    transitions[byte] = {}
+  end
+  local accept_states = {}
+
+  for i = 0, this_max_state do
+    for j = 0, that_max_state do
+      local u = i + n * j
+      if u ~= 0 then
+        for byte = 0, 255 do
+          local x = this_transitions[byte][i]
+          local y = that_transitions[byte][j]
+          if not x then
+            x = 0
+          end
+          if not y then
+            y = 0
+          end
+          local v = x + n * y
+          if v ~= 0 then
+            transitions[byte][u] = v
+          end
+        end
+      end
+    end
+  end
+
+  for i, accept in pairs(this.accept_states) do
+    for j = 1, that_max_state do
+      if not that_accept_states[j] then
+        local u = i + n * j
+        accept_states[u] = accept
+      end
+    end
+  end
+
+  return {
+    max_state = this_max_state + n * that_max_state;
+    transitions = transitions;
+    start_state = this.start_state + n * that.start_state;
+    accept_states = accept_states;
+  }
+end
+
+local function tree_to_nfa(root, accept)
+  if not accept then
+    accept = 1
+  end
+
+  local max_state = 0
+  local epsilons1 = {}
+  local epsilons2 = {}
+  local epsilons = { epsilons1, epsilons2 }
+  local transitions = {}
+  for byte = 0, 255 do
+    transitions[byte] = {}
+  end
+
+  local stack1 = { root }
+  local stack2 = {}
+  while true do
+    local n1 = #stack1
+    local n2 = #stack2
+    local node = stack1[n1]
+    if not node then
+      break
+    end
+    local code = node[1]
+    local a = node[2]
+    local b = node[3]
+    if node == stack2[n2] then
+      stack1[n1] = nil
+      stack2[n2] = nil
+      if code == 2 then -- concatenation
+        node.u = a.u
+        node.v = b.v
+        epsilons1[a.v] = b.u
+      else
+        max_state = max_state + 1
+        local u = max_state
+        node.u = u
+        max_state = max_state + 1
+        local v = max_state
+        node.v = v
+        if code == 1 then -- character class
+          for byte in pairs(a) do
+            transitions[byte][u] = v
+          end
+        elseif code == 3 then -- union
+          epsilons1[u] = a.u
+          epsilons2[u] = b.u
+          epsilons1[a.v] = v
+          epsilons1[b.v] = v
+        elseif code == 6 then -- difference
+          local this = minimize(nfa_to_dfa({
+            max_state = max_state;
+            epsilons = epsilons;
+            transitions = transitions;
+            start_state = a.u;
+            accept_states = { [a.v] = accept };
+          }))
+          local that = minimize(nfa_to_dfa({
+            max_state = max_state;
+            epsilons = epsilons;
+            transitions = transitions;
+            start_state = b.u;
+            accept_states = { [b.v] = accept };
+          }))
+          local that = minimize(difference(this, that))
+
+          local this, that = merge({
+            max_state = max_state;
+            epsilons = epsilons;
+            transitions = transitions;
+            start_state = u;
+            accept_states = { [v] = accept };
+          }, that)
+
+          max_state = this.max_state
+          epsilons1[u] = that.start_state
+          for w in pairs(that.accept_states) do
+            epsilons1[w] = v
+          end
+        else -- 0 or more repetition / optional
+          local au = a.u
+          local av = a.v
+          epsilons1[u] = au
+          epsilons2[u] = v
+          epsilons1[av] = v
+          if code == 4 then -- 0 or more repetition
+            epsilons2[av] = au
+          end
+        end
+      end
+    else
+      if code > 1 then
+        if b then
+          stack1[n1 + 1] = b
+          stack1[n1 + 2] = a
+        else
+          stack1[n1 + 1] = a
+        end
+      end
+      stack2[n2 + 1] = node
+    end
+  end
+
+  return {
+    max_state = max_state;
+    epsilons = epsilons;
+    transitions = transitions;
+    start_state = root.u;
+    accept_states = { [root.v] = accept };
+  }
+end
+
+local class = {}
+local metatable = {
   __index = class;
 }
+class.metatable = metatable
+
+function class:nfa_to_dfa()
+  return setmetatable(nfa_to_dfa(self), metatable)
+end
+
+function class:minimize()
+  return setmetatable(minimize(self), metatable)
+end
+
+function class:concat(that)
+  return concat(self, that)
+end
+
+function class:union(that)
+  return union(self, that)
+end
+
+function class:difference(that)
+  return setmetatable(difference(self, that), metatable)
+end
+
+function class:write_graphviz(out)
+  if type(out) == "string" then
+    write_graphviz(self, assert(io.open(out, "w"))):close()
+  else
+    return write_graphviz(self, out)
+  end
+end
 
 return setmetatable(class, {
-  __call = function ()
-    return setmetatable(class.new(), class.metatable)
+  __call = function (_, root, accept)
+    return setmetatable(tree_to_nfa(root, accept), metatable)
   end;
 })

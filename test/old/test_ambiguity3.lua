@@ -17,20 +17,22 @@
 
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
+local writer = require "dromozoa.parser.writer"
+-- local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
 
-local S = builder.S
+local S = builder.set
 
-_ :pat(S" \t\n\v\f\r"^"+") :ignore()
-  :lit "=="
-  :lit "!="
-  :lit "<"
-  :lit "<="
-  :lit ">"
-  :lit ">="
-  :lit "id"
+_:lexer()
+  :_(S" \t\n\v\f\r"^"+") :skip()
+  :_ "=="
+  :_ "!="
+  :_ "<"
+  :_ "<="
+  :_ ">"
+  :_ ">="
+  :_ "id"
 
 _ :nonassoc "==" "!="
   :nonassoc "<" "<=" ">" ">="
@@ -44,7 +46,8 @@ _ "E"
   :_ "E" ">=" "E"
   :_ "id"
 
-local scanner, grammar, writer = _:build()
+local lexer, grammar = _:build()
+local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 local set_of_items, transitions = grammar:lalr1_items()
 
@@ -54,6 +57,8 @@ writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 writer:write_conflicts(io.stdout, conflicts, true)
 writer:write_table(assert(io.open("test.html", "w")), data):close()
+
+os.exit()
 
 local _ = _.symbol_table
 

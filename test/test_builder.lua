@@ -15,53 +15,41 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local equal = require "dromozoa.commons.equal"
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
 local _ = builder()
 
 _:lexer()
-  :_"a"
-  :_"b"
-  :_"c"
-  :_"d"
+  :_(S" \t\n\v\f\r"^"+") :skip()
+  :_(R"09"^"+") :as "integer"
+  :_"*"
+  :_"/"
+  :_"+"
+  :_"-"
+  :_"("
+  :_")"
 
-_"S"
-  :_ "A" "a"
-  :_ "b"
+_ :left "+" "-"
+  :left "*" "/"
+  :right "UMINUS"
 
-_"A"
-  :_ "A" "c"
-  :_ "S" "d"
-  :_ ()
+_"E"
+  :_ "E" "*" "E"
+  :_ "E" "/" "E"
+  :_ "E" "+" "E"
+  :_ "E" "-" "E"
+  :_ "(" "E" ")"
+  :_ "-" "E" :prec "UMINUS"
+  :_ "integer"
 
 local lexer, grammar = _:build()
 
-local first_table = grammar:eliminate_left_recursion():first()
-print(dumper.encode(first_table, { pretty = true, stable = true }))
-
-assert(equal(first_table[6], { -- first(S') = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[7], { -- first(S) = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[8], { -- first(A) = { a, b, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[9], { -- first(A') = { a, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [4] = true;
-}))
+-- _.lexers = nil
+-- print(dumper.encode(_, { pretty = true, stable = true }))
+-- print(dumper.encode(lexer, { pretty = true, stable = true }))
+print(dumper.encode(grammar, { pretty = true, stable = true }))
+-- _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()

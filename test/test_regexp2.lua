@@ -22,14 +22,6 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
-local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
+local p = S("abc") + S("def")
 local nfa = regexp(p)
-nfa:write_graphviz("test-nfa.dot")
-
-local dfa1 = nfa:nfa_to_dfa()
-dfa1:write_graphviz("test-dfa1.dot")
-local dfa2 = dfa1:minimize()
-dfa2:write_graphviz("test-dfa2.dot")
-
-local p2 = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
-regexp(p2):nfa_to_dfa():minimize():write_graphviz("test-dfa3.dot")
+nfa:write_graphviz("test-nfa.dot", "w")

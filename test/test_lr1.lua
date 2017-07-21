@@ -15,53 +15,38 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local equal = require "dromozoa.commons.equal"
 local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
 
 _:lexer()
-  :_"a"
-  :_"b"
-  :_"c"
-  :_"d"
+  :_ "c"
+  :_ "d"
 
 _"S"
-  :_ "A" "a"
-  :_ "b"
-
-_"A"
-  :_ "A" "c"
-  :_ "S" "d"
-  :_ ()
+  :_ "C" "C"
+_"C"
+  :_ "c" "C"
+  :_ "d"
 
 local lexer, grammar = _:build()
 
-local first_table = grammar:eliminate_left_recursion():first()
-print(dumper.encode(first_table, { pretty = true, stable = true }))
+-- print(dumper.encode(scanner, { pretty = true, stable = true }))
+-- print(dumper.encode(grammar, { pretty = true, stable = true }))
+-- print(dumper.encode(writer, { pretty = true, stable = true }))
 
-assert(equal(first_table[6], { -- first(S') = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
+local set_of_items, transitions = grammar:lr1_items()
+-- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
+-- for from, to in pairs(transitions) do
+--   print(dumper.encode({ from = from, to = to }, { stable = true }))
+-- end
+grammar:write_set_of_items(io.stdout, set_of_items)
 
-assert(equal(first_table[7], { -- first(S) = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
+grammar:write_graphviz("test-graph.dot", transitions)
 
-assert(equal(first_table[8], { -- first(A) = { a, b, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[9], { -- first(A') = { a, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [4] = true;
-}))
+local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+grammar:write_table("test.html", data)
