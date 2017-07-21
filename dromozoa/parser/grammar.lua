@@ -266,8 +266,8 @@ function class:lr0_goto(items)
       if to_items then
         to_items[#to_items + 1] = { id = id, dot = dot + 1 }
       else
-        map_of_to_items[symbol] = { { id = id, dot = dot + 1 } }
         symbols[#symbols + 1] = symbol
+        map_of_to_items[symbol] = { { id = id, dot = dot + 1 } }
       end
     end
   end
@@ -364,23 +364,32 @@ end
 
 function class:lr1_goto(items)
   local productions = self.productions
-  local gotos = {}
+  local symbols = {}
+  local map_of_to_items = {}
   for i = 1, #items do
     local item = items[i]
     local id = item.id
     local dot = item.dot
     local symbol = productions[id].body[dot]
     if symbol then
-      local to_items = gotos[symbol]
+      local to_items = map_of_to_items[symbol]
       if to_items then
         to_items[#to_items + 1] = { id = id, dot = dot + 1, la = item.la }
       else
-        gotos[symbol] = { { id = id, dot = dot + 1, la = item.la } }
+        symbols[#symbols + 1] = symbol
+        map_of_to_items[symbol] = { { id = id, dot = dot + 1, la = item.la } }
       end
     end
   end
-  for _, to_items in pairs(gotos) do
+  local gotos = {}
+  for i = 1, #symbols do
+    local symbol = symbols[i]
+    local to_items = map_of_to_items[symbol]
     self:lr1_closure(to_items)
+    gotos[#gotos + 1] = {
+      symbol = symbol;
+      to_items = to_items;
+    }
   end
   return gotos
 end
@@ -398,12 +407,15 @@ function class:lr1_items()
         transition = {}
         transitions[i] = transition
       end
-      for symbol, to_items in pairs(self:lr1_goto(set_of_items[i])) do
+      local gotos = self:lr1_goto(set_of_items[i])
+      for j = 1, #gotos do
+        local data = gotos[j]
+        local to_items = data.to_items
         if to_items[1] then
           local to
-          for j = 1, #set_of_items do
-            if equal(to_items, set_of_items[j]) then
-              to = j
+          for k = 1, #set_of_items do
+            if equal(to_items, set_of_items[k]) then
+              to = k
               break
             end
           end
@@ -412,7 +424,7 @@ function class:lr1_items()
             set_of_items[to] = to_items
             done = false
           end
-          transition[symbol] = to
+          transition[data.symbol] = to
         end
       end
     end
