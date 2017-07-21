@@ -54,8 +54,7 @@ local set_of_items, transitions = grammar:lr0_items()
 --   print(dumper.encode({ from = from, to = to }, { stable = true }))
 -- end
 grammar:write_set_of_items(io.stdout, set_of_items)
-
-grammar:write_graphviz(assert(io.open("test-graph.dot", "w")), transitions):close()
+grammar:write_graphviz("test-graph.dot", transitions)
 
 --[====[
 

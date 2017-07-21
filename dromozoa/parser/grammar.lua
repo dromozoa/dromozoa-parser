@@ -629,7 +629,11 @@ function class:write_set_of_items(out, set_of_items)
 end
 
 function class:write_graphviz(out, transitions)
-  return write_graphviz(self, out, transitions)
+  if type(out) == "string" then
+    write_graphviz(self, assert(io.open(out, "w")), transitions):close()
+  else
+    return write_graphviz(self, out, transitions)
+  end
 end
 
 local metatable = {
