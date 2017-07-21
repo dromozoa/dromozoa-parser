@@ -59,7 +59,7 @@ grammar:write_graphviz("test-graph.dot", transitions)
 --[====[
 
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts)
+grammar:write_conflicts(io.stdout, conflicts)
 writer:write_table(assert(io.open("test.html", "w")), data):close()
 
 local driver = driver(data)

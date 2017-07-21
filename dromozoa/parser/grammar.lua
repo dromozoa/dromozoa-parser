@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local write_conflicts = require "dromozoa.parser.grammar.write_conflicts"
 local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 
@@ -634,6 +635,10 @@ function class:write_graphviz(out, transitions)
   else
     return write_graphviz(self, out, transitions)
   end
+end
+
+function class:write_conflicts(out, conflicts, verbose)
+  return write_conflicts(self, out, conflicts, verbose)
 end
 
 local metatable = {
