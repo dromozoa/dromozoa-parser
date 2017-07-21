@@ -10,23 +10,24 @@ description = {
   homepage = "https://github.com/dromozoa/dromozoa-parser/";
   maintainer = "Tomoyuki Fujimori <moyu@dromozoa.com>";
 }
-dependencies = {
-  "dromozoa-commons";
-  "dromozoa-tree";
-}
 build = {
   type = "builtin";
   modules = {
     ["dromozoa.parser.builder"] = "dromozoa/parser/builder.lua";
-    ["dromozoa.parser.driver"] = "dromozoa/parser/driver.lua";
+    ["dromozoa.parser.builder.atom"] = "dromozoa/parser/builder/atom.lua";
+    ["dromozoa.parser.builder.build"] = "dromozoa/parser/builder/build.lua";
+    ["dromozoa.parser.builder.lexer"] = "dromozoa/parser/builder/lexer.lua";
+    ["dromozoa.parser.builder.pattern"] = "dromozoa/parser/builder/pattern.lua";
+    ["dromozoa.parser.builder.precedence"] = "dromozoa/parser/builder/precedence.lua";
+    ["dromozoa.parser.builder.production"] = "dromozoa/parser/builder/production.lua";
     ["dromozoa.parser.grammar"] = "dromozoa/parser/grammar.lua";
-    ["dromozoa.parser.precedence_builder"] = "dromozoa/parser/precedence_builder.lua";
-    ["dromozoa.parser.production_builder"] = "dromozoa/parser/production_builder.lua";
+    ["dromozoa.parser.grammar.write_conflicts"] = "dromozoa/parser/grammar/write_conflicts.lua";
+    ["dromozoa.parser.grammar.write_graphviz"] = "dromozoa/parser/grammar/write_graphviz.lua";
+    ["dromozoa.parser.grammar.write_set_of_items"] = "dromozoa/parser/grammar/write_set_of_items.lua";
+    ["dromozoa.parser.grammar.write_table"] = "dromozoa/parser/grammar/write_table.lua";
+    ["dromozoa.parser.lexer"] = "dromozoa/parser/lexer.lua";
+    ["dromozoa.parser.parser"] = "dromozoa/parser/parser.lua";
     ["dromozoa.parser.regexp"] = "dromozoa/parser/regexp.lua";
-    ["dromozoa.parser.regexp_builder"] = "dromozoa/parser/regexp_builder.lua";
-    ["dromozoa.parser.regexp_writer"] = "dromozoa/parser/regexp_writer.lua";
-    ["dromozoa.parser.scanner"] = "dromozoa/parser/scanner.lua";
-    ["dromozoa.parser.scanner_builder"] = "dromozoa/parser/scanner_builder.lua";
-    ["dromozoa.parser.writer"] = "dromozoa/parser/writer.lua";
+    ["dromozoa.parser.regexp.write_graphviz"] = "dromozoa/parser/regexp/write_graphviz.lua";
   };
 }
