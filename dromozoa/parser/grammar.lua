@@ -254,6 +254,7 @@ end
 
 function class:lr0_goto(items)
   local productions = self.productions
+  local goto_symbols = {}
   local gotos = {}
   for i = 1, #items do
     local item = items[i]
@@ -266,13 +267,14 @@ function class:lr0_goto(items)
         to_items[#to_items + 1] = { id = id, dot = dot + 1 }
       else
         gotos[symbol] = { { id = id, dot = dot + 1 } }
+        goto_symbols[#goto_symbols + 1] = symbol
       end
     end
   end
   for _, to_items in pairs(gotos) do
     self:lr0_closure(to_items)
   end
-  return gotos
+  return gotos, goto_symbols
 end
 
 function class:lr0_items()
@@ -288,7 +290,10 @@ function class:lr0_items()
         transition = {}
         transitions[i] = transition
       end
-      for symbol, to_items in pairs(self:lr0_goto(set_of_items[i])) do
+      local gotos, goto_symbols = self:lr0_goto(set_of_items[i])
+      for x = 1, #goto_symbols do
+        local symbol = goto_symbols[x]
+        local to_items = gotos[symbol]
         if to_items[1] then
           local to
           for j = 1, #set_of_items do
