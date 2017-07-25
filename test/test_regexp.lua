@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
@@ -32,4 +33,7 @@ local dfa2 = dfa1:minimize()
 dfa2:write_graphviz("test-dfa2.dot")
 
 local p2 = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
-regexp(p2):nfa_to_dfa():minimize():write_graphviz("test-dfa3.dot")
+local dfa3 = regexp(p2):nfa_to_dfa():minimize()
+dfa3:write_graphviz("test-dfa3.dot")
+
+assert(equal(dfa2, dfa3))
