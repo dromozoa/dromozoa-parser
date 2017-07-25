@@ -55,10 +55,10 @@ return function (this, out)
 
   if epsilons then
     for u, v in pairs(epsilons[1]) do
-      out:write(u, ' -> ', v, '\n')
+      out:write(u, ' -> ', v, ';\n')
     end
     for u, v in pairs(epsilons[2]) do
-      out:write(u, ' -> ', v, '\n')
+      out:write(u, ' -> ', v, ';\n')
     end
   end
 
@@ -83,7 +83,7 @@ return function (this, out)
     for v, item in pairs(map) do
       local n = item.n
       if n == 256 then
-        out:write(u, '->', v, '[label="."];\n')
+        out:write(u, ' -> ', v, ' [label="."];\n')
       else
         local neg = n > 127
         local set = item.set
