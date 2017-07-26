@@ -21,6 +21,8 @@ local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
 
+local pairs = pairs
+
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
@@ -340,14 +342,15 @@ function class:lr1_closure(items)
       local dot = item.dot
       local symbol = body[dot]
       if symbol and symbol > max_terminal_symbol then
+--[[
         local symbols = {}
         for i = dot + 1, #body do
           symbols[#symbols + 1] = body[i]
         end
         symbols[#symbols + 1] = item.la
         local first = self:first_symbols(symbols)
+]]
 
---[[
         local first_table = self.first_table
         local first = {}
         local first_done
@@ -355,6 +358,7 @@ function class:lr1_closure(items)
         for j = dot + 1, #body do
           local symbol = body[j]
           if symbol <= max_terminal_symbol then
+            -- assert(0 < symbol)
             first[symbol] = true
             first_done = true
             break
@@ -373,15 +377,9 @@ function class:lr1_closure(items)
 
         if not first_done then
           local symbol = item.la
-          if symbol <= max_terminal_symbol then
-            first[symbol] = true
-          else
-            for s in pairs(first_table[symbol]) do
-              first[s] = true
-            end
-          end
+          -- assert(symbol ~= 0)
+          first[symbol] = true
         end
-]]
 
         local production_ids = map_of_production_ids[symbol]
         for j = 1, #production_ids do
