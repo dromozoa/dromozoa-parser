@@ -18,7 +18,7 @@
 return function (self, out, tree)
   local symbol_names = self.symbol_names
 
-  out:write('digraph g {  graph[rankdir=TB];\n')
+  out:write('digraph g {\n  graph[rankdir=TB];\n')
 
   local stack = { tree }
   local id_table = { [tree] = 1 }
