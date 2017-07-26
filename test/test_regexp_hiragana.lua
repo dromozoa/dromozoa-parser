@@ -15,30 +15,16 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
+local regexp = require "dromozoa.parser.regexp"
 
-local _ = builder()
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
 
-_ :lit "word"
+local p
+  = P"あ" + P"い" + P"う" + P"え" + P"お"
+  + P"わ" + P"を" + P"ん"
+local a = regexp(p^"+"):nfa_to_dfa():minimize()
+a:write_graphviz("test.dot")
 
-_ "sequence"
-  :_ ()
-  :_ "maybeword"
-  :_ "sequence" "word"
-
-_ "maybeword"
-  :_ ()
-  :_ "word"
-
-local scanner, grammar, writer = _:build()
-
-local set_of_items, transitions = grammar:lalr1_items()
-
-writer:write_set_of_items(io.stdout, set_of_items)
-writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
-
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts)
-writer:write_table(assert(io.open("test.html", "w")), data):close()

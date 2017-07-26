@@ -37,6 +37,7 @@ return function (self, start_name)
       lexer_table[name] = i
     end
     local accept_to_symbol = {}
+    local m = #items
     for j = 1, #items do
       local item = items[j]
       if not item.skip then
@@ -55,11 +56,15 @@ return function (self, start_name)
       end
     end
     lexer.accept_to_symbol = accept_to_symbol
-    local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
-    for j = 2, #items do
-      automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
+    if #items == 1 then
+      lexer.automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
+    else
+      local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
+      for j = 2, #items do
+        automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
+      end
+      lexer.automaton = automaton:nfa_to_dfa():minimize()
     end
-    lexer.automaton = automaton:nfa_to_dfa():minimize()
   end
 
   for i = 1, #lexers do
@@ -72,7 +77,7 @@ return function (self, start_name)
           local name = action[2]
           local lexer = lexer_table[name]
           if not lexer then
-            error(("lexer %q not defined at lexer %d pattern %d action %d"):format(name, i, j, k))
+            error(("lexer %s not defined at lexer %d pattern %d action %d"):format(name, i, j, k))
           end
           action[2] = lexer
         end
@@ -107,7 +112,7 @@ return function (self, start_name)
       local symbol = symbol_table[name]
       if symbol then
         if symbol <= max_terminal_symbol then
-          error(("symbol %q must be a nonterminal symbol at production %d head"):format(name, i))
+          error(("symbol %s must be a nonterminal symbol at production %d head"):format(name, i))
         end
       else
         n = n + 1
@@ -123,23 +128,23 @@ return function (self, start_name)
         local name = body[j]
         local symbol = symbol_table[name]
         if not symbol then
-          error(("symbol %q not defined at production %d body %d"):format(name, i, j))
+          error(("symbol %s not defined at production %d body %d"):format(name, i, j))
         end
         check_table[symbol] = true
       end
     end
     for i = 2, max_terminal_symbol do
       if not check_table[i] then
-        error(("terminal symbol %q not used"):format(symbol_names[i]))
+        error(("terminal symbol %s not used"):format(symbol_names[i]))
       end
     end
 
     local start_symbol = symbol_table[start_name]
     if not start_symbol then
-      error(("start symbol %q not defined"):format(start_name))
+      error(("start symbol %s not defined"):format(start_name))
     end
     if start_symbol <= max_terminal_symbol then
-      error(("start symbol %q must be a nonterminal symbol"):format(start_name))
+      error(("start symbol %s must be a nonterminal symbol"):format(start_name))
     end
 
     local symbol_precedences = {}
@@ -155,7 +160,7 @@ return function (self, start_name)
         local symbol = symbol_table[name]
         if symbol then
           if symbol > max_terminal_symbol then
-            error(("symbol %q must be a terminal symbol at precedence %d symbol %d"):format(name, i, j))
+            error(("symbol %s must be a terminal symbol at precedence %d symbol %d"):format(name, i, j))
           end
           if symbol_precedences[symbol] then
             error(("precedence already defined at precedence %d symbol %d"):format(i, j))
@@ -192,7 +197,7 @@ return function (self, start_name)
       if name then
         local precedence = precedence_table[name]
         if not precedence then
-          error(("production precedence %q not defined at production %d"):format(name, i))
+          error(("production precedence %s not defined at production %d"):format(name, i))
         end
         production_precedences[i] = precedence
       end

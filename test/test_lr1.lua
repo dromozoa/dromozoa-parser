@@ -15,13 +15,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
 local P = builder.pattern
 local R = builder.range
 local S = builder.set
+
+local mode = ...
 
 _:lexer()
   :_ "c"
@@ -35,18 +36,18 @@ _"C"
 
 local lexer, grammar = _:build()
 
--- print(dumper.encode(scanner, { pretty = true, stable = true }))
--- print(dumper.encode(grammar, { pretty = true, stable = true }))
--- print(dumper.encode(writer, { pretty = true, stable = true }))
-
-local set_of_items, transitions = grammar:lr1_items()
--- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
--- for from, to in pairs(transitions) do
---   print(dumper.encode({ from = from, to = to }, { stable = true }))
--- end
+local set_of_items
+local transitions
+if mode == "lalr1" then
+  set_of_items, transitions = grammar:lalr1_items()
+else
+  set_of_items, transitions = grammar:lr1_items()
+end
 grammar:write_set_of_items(io.stdout, set_of_items)
-
-grammar:write_graphviz("test-graph.dot", transitions)
+-- P.262 Figure 4.41
+grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+-- P.266 Figure 4.42 or P.269 Figure 4.43
 grammar:write_table("test.html", data)
+grammar:write_conflicts(io.stdout, conflicts, true)

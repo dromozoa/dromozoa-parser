@@ -39,26 +39,26 @@ return function (this, out)
   local start_state = this.start_state
   local accept_states = this.accept_states
 
-  out:write('digraph g {\ngraph [rankdir=LR];\n')
+  out:write('digraph {\n  graph [rankdir=LR];\n')
 
   for u, accept in pairs(accept_states) do
     if u == start_state then
-      out:write(u, ' [peripheries=2,style=filled,fillcolor=black,fontcolor=white,label="', u, ' / ', accept, '"];\n')
+      out:write('  ', u, ' [peripheries=2,style=filled,fillcolor=black,fontcolor=white,label="', u, ' / ', accept, '"];\n')
     else
-      out:write(u, ' [peripheries=2,label="', u, ' / ', accept, '"];\n')
+      out:write('  ', u, ' [peripheries=2,label="', u, ' / ', accept, '"];\n')
     end
   end
 
   if not accept_states[start_state] then
-    out:write(start_state, ' [style=filled,fillcolor=black,fontcolor=white,label="', start_state, '"];\n')
+    out:write('  ', start_state, ' [style=filled,fillcolor=black,fontcolor=white,label="', start_state, '"];\n')
   end
 
   if epsilons then
     for u, v in pairs(epsilons[1]) do
-      out:write(u, ' -> ', v, '\n')
+      out:write('  ', u, ' -> ', v, ';\n')
     end
     for u, v in pairs(epsilons[2]) do
-      out:write(u, ' -> ', v, '\n')
+      out:write('  ', u, ' -> ', v, ';\n')
     end
   end
 
@@ -83,7 +83,7 @@ return function (this, out)
     for v, item in pairs(map) do
       local n = item.n
       if n == 256 then
-        out:write(u, '->', v, '[label="."];\n')
+        out:write('  ', u, ' -> ', v, ' [label="."];\n')
       else
         local neg = n > 127
         local set = item.set
@@ -104,7 +104,7 @@ return function (this, out)
           end
         end
 
-        out:write(u, ' -> ', v, ' [label="[')
+        out:write('  ', u, ' -> ', v, ' [label="[')
         if neg then
           out:write('^')
         end

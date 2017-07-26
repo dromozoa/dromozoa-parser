@@ -16,7 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local equal = require "dromozoa.commons.equal"
-local json = require "dromozoa.commons.json"
 local builder = require "dromozoa.parser.builder"
 
 local P = builder.pattern
@@ -47,11 +46,6 @@ _:lexer "string"
   :_ ((-S'\\"')^"+") :push()
 
 local lexer = _:build()
--- print(json.encode(_.lexers, { pretty = true, stable = true }))
--- print(json.encode(data, { pretty = true, stable = true }))
--- print(json.encode(lexer, { pretty = true, stable = true }))
--- _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
--- _.lexers[2].automaton:write_graphviz(assert(io.open("test-dfa2.dot", "w"))):close()
 
 local s = [[
 12 + 34 * 56 "test\tabc" "\"foo\""

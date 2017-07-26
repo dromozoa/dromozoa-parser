@@ -15,7 +15,17 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
+
 local class = {}
+
+function class:write_graphviz(out, tree)
+  if type(out) == "string" then
+    write_graphviz(self, assert(io.open(out, "w")), tree):close()
+  else
+    return write_graphviz(self, out, tree)
+  end
+end
 
 local metatable = {
   __index = class;
@@ -89,6 +99,7 @@ end
 return setmetatable(class, {
   __call = function (_, data)
     return setmetatable({
+      symbol_names = data.symbol_names;
       max_state = data.max_state;
       max_symbol = data.max_symbol;
       table = data.table;

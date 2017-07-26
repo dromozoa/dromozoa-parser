@@ -15,51 +15,29 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
 
+-- http://www.gnu.org/software/bison/manual/html_node/Reduce_002fReduce.html
 local _ = builder()
 
 _:lexer()
-  :_"a"
-  :_"b"
-  :_"c"
-  :_"d"
+  :_ "word"
 
-_"S"
-  :_ "A" "a"
-  :_ "b"
-
-_"A"
-  :_ "A" "c"
-  :_ "S" "d"
+_"sequence"
   :_ ()
+  :_ "maybeword"
+  :_ "sequence" "word"
 
-local lexer, grammar = _:build()
+_"maybeword"
+  :_ ()
+  :_ "word"
 
-local first_table = grammar.first_table
+local scanner, grammar = _:build()
+local set_of_items, transitions = grammar:lalr1_items()
 
-assert(equal(first_table[6], { -- first(S') = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
+grammar:write_set_of_items(io.stdout, set_of_items)
+grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 
-assert(equal(first_table[7], { -- first(S) = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[8], { -- first(A) = { a, b, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[9], { -- first(A') = { a, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [4] = true;
-}))
+local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+grammar:write_table("test.html", parser)
+grammar:write_conflicts(io.stdout, conflicts)

@@ -23,29 +23,20 @@ local R = builder.range
 local S = builder.set
 
 local a1 = regexp(P"abcd", 1):nfa_to_dfa():minimize()
--- local a1 = regexp(S"abc"^"*" * P"abc" * S"abc"^"*")
 local a2 = regexp(P"aaaa", 2):nfa_to_dfa():minimize()
--- local a2 = regexp(S"abc"^"*")
 local a3 = regexp(P"abba", 3):nfa_to_dfa():minimize()
--- local a3 = regexp(P"x"^"*", 3):nfa_to_dfa():minimize()
 local a4 = regexp(P"dddd", 4):nfa_to_dfa():minimize()
--- local a4 = regexp(R("ad")^"+", 4):nfa_to_dfa():minimize()
 
--- a1 = regexp.minimize(regexp.nfa_to_dfa(a1))
--- a2 = regexp.minimize(regexp.nfa_to_dfa(a2))
--- a3 = regexp.minimize(regexp.nfa_to_dfa(a3))
--- a4 = regexp.minimize(regexp.nfa_to_dfa(a4))
-
-regexp.union(a1, a2)
-regexp.union(a1, a3)
-regexp.union(a1, a4)
-
+a1:union(a2):union(a3):union(a4)
 a1:write_graphviz("test-nfa.dot")
 
-local dfa1 = regexp.nfa_to_dfa(a1)
+local dfa = a1:nfa_to_dfa():minimize()
+dfa:write_graphviz("test-dfa.dot")
 
-dfa1:write_graphviz("test-dfa1.dot")
-
-local dfa2 = regexp.minimize(dfa1)
-
-dfa2:write_graphviz("test-dfa2.dot")
+assert(dfa.max_state == 14)
+assert(dfa.start_state == 5)
+assert(dfa.accept_states[1] == 1)
+assert(dfa.accept_states[2] == 2)
+assert(dfa.accept_states[3] == 3)
+assert(dfa.accept_states[4] == 4)
+assert(dfa.accept_states[5] == nil)

@@ -15,22 +15,24 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
 
-_ :lit "c"
-  :lit "d"
+_:lexer()
+  :_ "i"
+  :_ "e"
+  :_ "a"
 
 _ "S"
-  :_ "C" "C"
-_ "C"
-  :_ "c" "C"
-  :_ "d"
+  :_ "i" "S" "e" "S"
+  :_ "i" "S"
+  :_ "a"
 
-local scanner, grammar, writer = _:build()
-
-local data = grammar:lr1_construct_table(grammar:lalr1_items())
-print(dumper.encode(data, { stable = true }))
-writer:write_table(assert(io.open("test.html", "w")), data):close()
+local lexer, grammar = _:build()
+local set_of_items, transitions = grammar:lalr1_items()
+grammar:write_set_of_items(io.stdout, set_of_items)
+local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+-- P.282 Figure 4.51
+grammar:write_table("test.html", parser)
+grammar:write_conflicts(io.stdout, conflicts, false)

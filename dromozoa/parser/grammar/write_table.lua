@@ -15,21 +15,20 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local escape_html = require "dromozoa.parser.escape_html"
+
 return function (self, out, data)
   local symbol_names = self.symbol_names
-  local max_terminal_symbol = self.max_terminal_symbol
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
   local max_state = data.max_state
   local table = data.table
-
 
   out:write([[
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>table</title>
     <style>
       table {
@@ -48,39 +47,53 @@ return function (self, out, data)
   out:write([[
       <tr>
         <td rowspan="2">STATE</td>
-        <td colspan="]], max_terminal_symbol, [[">ACTION</td>
-        <td colspan="]], max_nonterminal_symbol - max_terminal_symbol, [[">GOTO</td>
+        <td colspan="]], self.max_terminal_symbol, [[">ACTION</td>
+        <td colspan="]], max_nonterminal_symbol - min_nonterminal_symbol, [[">GOTO</td>
       </tr>
 ]])
 
   out:write('      <tr>\n')
-  for i = 1, max_nonterminal_symbol do
-    out:write('        <td>', symbol_names[i], '</td>\n') -- [TODO] escape
+  for i = 2, min_nonterminal_symbol do
+    if i == min_nonterminal_symbol then
+      i = 1
+    end
+    out:write('        <td>', escape_html(symbol_names[i]), '</td>\n')
+  end
+  for i = min_nonterminal_symbol + 1, max_nonterminal_symbol do
+    out:write('        <td>', escape_html(symbol_names[i]), '</td>\n')
   end
   out:write('      </tr>\n')
 
   for i = 1, max_state do
     out:write([[
       <tr>
-        <td>]], i, [[</td>
+        <td>]], i - 1, [[</td>
 ]])
-    for j = 1, max_nonterminal_symbol do
+    for j = 2, min_nonterminal_symbol do
+      if j == min_nonterminal_symbol then
+        j = 1
+      end
       local action = table[i * max_nonterminal_symbol + j]
       out:write('        <td>')
       if action then
         if action <= max_state then
-          if j <= max_terminal_symbol then
-            out:write('s')
-          end
-          out:write(action)
+          out:write('s', action - 1)
         else
           local reduce = action - max_state
           if reduce == 1 then
             out:write("acc")
           else
-            out:write("r", reduce)
+            out:write("r", reduce - 1)
           end
         end
+      end
+      out:write('</td>\n')
+    end
+    for j = min_nonterminal_symbol + 1, max_nonterminal_symbol do
+      local action = table[i * max_nonterminal_symbol + j]
+      out:write('        <td>')
+      if action then
+        out:write(action - 1)
       end
       out:write('</td>\n')
     end

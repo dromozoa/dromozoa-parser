@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local parser = require "dromozoa.parser.parser"
 local write_conflicts = require "dromozoa.parser.grammar.write_conflicts"
 local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
@@ -254,23 +255,32 @@ end
 
 function class:lr0_goto(items)
   local productions = self.productions
-  local gotos = {}
+  local symbols = {}
+  local map_of_to_items = {}
   for i = 1, #items do
     local item = items[i]
     local id = item.id
     local dot = item.dot
     local symbol = productions[id].body[dot]
     if symbol then
-      local to_items = gotos[symbol]
+      local to_items = map_of_to_items[symbol]
       if to_items then
         to_items[#to_items + 1] = { id = id, dot = dot + 1 }
       else
-        gotos[symbol] = { { id = id, dot = dot + 1 } }
+        symbols[#symbols + 1] = symbol
+        map_of_to_items[symbol] = { { id = id, dot = dot + 1 } }
       end
     end
   end
-  for _, to_items in pairs(gotos) do
+  local gotos = {}
+  for i = 1, #symbols do
+    local symbol = symbols[i]
+    local to_items = map_of_to_items[symbol]
     self:lr0_closure(to_items)
+    gotos[#gotos + 1] = {
+      symbol = symbol;
+      to_items = to_items;
+    }
   end
   return gotos
 end
@@ -288,12 +298,15 @@ function class:lr0_items()
         transition = {}
         transitions[i] = transition
       end
-      for symbol, to_items in pairs(self:lr0_goto(set_of_items[i])) do
+      local gotos = self:lr0_goto(set_of_items[i])
+      for j = 1, #gotos do
+        local data = gotos[j]
+        local to_items = data.to_items
         if to_items[1] then
           local to
-          for j = 1, #set_of_items do
-            if equal(to_items, set_of_items[j]) then
-              to = j
+          for k = 1, #set_of_items do
+            if equal(to_items, set_of_items[k]) then
+              to = k
               break
             end
           end
@@ -302,7 +315,7 @@ function class:lr0_items()
             set_of_items[to] = to_items
             done = false
           end
-          transition[symbol] = to
+          transition[data.symbol] = to
         end
       end
     end
@@ -352,23 +365,32 @@ end
 
 function class:lr1_goto(items)
   local productions = self.productions
-  local gotos = {}
+  local symbols = {}
+  local map_of_to_items = {}
   for i = 1, #items do
     local item = items[i]
     local id = item.id
     local dot = item.dot
     local symbol = productions[id].body[dot]
     if symbol then
-      local to_items = gotos[symbol]
+      local to_items = map_of_to_items[symbol]
       if to_items then
         to_items[#to_items + 1] = { id = id, dot = dot + 1, la = item.la }
       else
-        gotos[symbol] = { { id = id, dot = dot + 1, la = item.la } }
+        symbols[#symbols + 1] = symbol
+        map_of_to_items[symbol] = { { id = id, dot = dot + 1, la = item.la } }
       end
     end
   end
-  for _, to_items in pairs(gotos) do
+  local gotos = {}
+  for i = 1, #symbols do
+    local symbol = symbols[i]
+    local to_items = map_of_to_items[symbol]
     self:lr1_closure(to_items)
+    gotos[#gotos + 1] = {
+      symbol = symbol;
+      to_items = to_items;
+    }
   end
   return gotos
 end
@@ -386,12 +408,15 @@ function class:lr1_items()
         transition = {}
         transitions[i] = transition
       end
-      for symbol, to_items in pairs(self:lr1_goto(set_of_items[i])) do
+      local gotos = self:lr1_goto(set_of_items[i])
+      for j = 1, #gotos do
+        local data = gotos[j]
+        local to_items = data.to_items
         if to_items[1] then
           local to
-          for j = 1, #set_of_items do
-            if equal(to_items, set_of_items[j]) then
-              to = j
+          for k = 1, #set_of_items do
+            if equal(to_items, set_of_items[k]) then
+              to = k
               break
             end
           end
@@ -400,7 +425,7 @@ function class:lr1_items()
             set_of_items[to] = to_items
             done = false
           end
-          transition[symbol] = to
+          transition[data.symbol] = to
         end
       end
     end
@@ -566,7 +591,7 @@ function class:lr1_construct_table(set_of_items, transitions)
                 elseif associativity == 3 then -- nonassoc
                   conflict.resolution = 3 -- error
                   error_table[index] = action
-                  table[index] = 0
+                  table[index] = nil
                 end
               elseif shift_precedence < precedence then
                 conflict.resolution = 2 -- reduce
@@ -617,24 +642,25 @@ function class:lr1_construct_table(set_of_items, transitions)
     sizes[j] = #production.body
   end
 
-  return {
+  return parser({
+    symbol_names = self.symbol_names;
     max_state = m;
     max_symbol = n;
     table = table;
     heads = heads;
     sizes = sizes;
-  }, conflicts
+  }), conflicts
 end
 
 function class:write_set_of_items(out, set_of_items)
   return write_set_of_items(self, out, set_of_items)
 end
 
-function class:write_graphviz(out, transitions)
+function class:write_graphviz(out, set_of_items, transitions)
   if type(out) == "string" then
-    write_graphviz(self, assert(io.open(out, "w")), transitions):close()
+    write_graphviz(self, assert(io.open(out, "w")), set_of_items, transitions):close()
   else
-    return write_graphviz(self, out, transitions)
+    return write_graphviz(self, out, set_of_items, transitions)
   end
 end
 
