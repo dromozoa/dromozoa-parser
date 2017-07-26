@@ -436,9 +436,13 @@ function class:lr1_items()
   self:lr1_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
-  repeat
-    local done = true
-    for i = 1, #set_of_items do
+  local m = 1
+  while true do
+    local n = #set_of_items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local transition = transitions[i]
       if not transition then
         transition = {}
@@ -459,13 +463,13 @@ function class:lr1_items()
           if not to then
             to = #set_of_items + 1
             set_of_items[to] = to_items
-            done = false
           end
           transition[data.symbol] = to
         end
       end
     end
-  until done
+    m = n + 1
+  end
   return set_of_items, transitions
 end
 
