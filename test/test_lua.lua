@@ -15,7 +15,10 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local unix = require "dromozoa.unix"
 local builder = require "dromozoa.parser.builder"
+
+local timer = unix.timer()
 
 local P = builder.pattern
 local R = builder.range
@@ -37,6 +40,8 @@ local function string_lexer(lexer)
     :_ ((-S[[\"]])^"+") :push()
     -- [TODO] more escape sequence
 end
+
+timer:start()
 
 _:lexer()
   :_ (S" \t\n\v\f\r"^"+") :skip()
@@ -95,7 +100,7 @@ _:lexer()
   :_ "."
   :_ ".."
   :_ "..."
-  :_ (R"AZaz__" * R"09AZaz__"^"*") :as "Name"
+  :_ ((R"AZaz" + P"_") * (R"09AZaz" + P"_")^"*") :as "Name"
   :_ [["]] :call "string_dq" :skip()
   :_ [[']] :call "string_sq" :skip()
   -- [TODO] more strings
@@ -110,6 +115,11 @@ string_lexer(_:lexer "string_dq")
 string_lexer(_:lexer "string_sq")
   :_ [[']] :as "LiteralString" :concat() :ret()
 
+timer:stop()
+print("define lexer", timer:elapsed())
+
+timer:start()
+
 _ :left "or"
   :left "and"
   :left "<" ">" "<=" ">=" "~=" "=="
@@ -122,6 +132,11 @@ _ :left "or"
   :left "*" "/" "//" "%"
   :right "not" "#" "UNM" "BNOT"
   :right "^"
+
+timer:stop()
+print("define percedence", timer:elapsed())
+
+timer:start()
 
 _"chunk"
   :_ "block"
@@ -278,9 +293,36 @@ _"fieldsep"
   :_ ","
   :_ ";"
 
+timer:stop()
+print("define grammar", timer:elapsed())
+
+timer:start()
 local lexer, grammar = _:build()
-local set_of_items, transitions = grammar:lalr1_items()
+timer:stop()
+print("build", timer:elapsed())
+
+timer:start()
+local set_of_items, transitions = grammar:lr0_items()
+timer:stop()
+print("lr0_items", timer:elapsed())
+
+timer:start()
+local set_of_items = grammar:lalr1_kernels(set_of_items, transitions)
+timer:stop()
+print("lalr1_kernels", timer:elapsed())
+
+timer:start()
+for i = 1, #set_of_items do
+  grammar:lr1_closure(set_of_items[i])
+end
+timer:stop()
+print("lr1_closure", timer:elapsed())
+
+timer:start()
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+timer:stop()
+print("lr1_construct_table", timer:elapsed())
+
 grammar:write_set_of_items("test.dat", set_of_items)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
