@@ -20,6 +20,7 @@ build = {
     ["dromozoa.parser.builder.pattern"] = "dromozoa/parser/builder/pattern.lua";
     ["dromozoa.parser.builder.precedence"] = "dromozoa/parser/builder/precedence.lua";
     ["dromozoa.parser.builder.production"] = "dromozoa/parser/builder/production.lua";
+    ["dromozoa.parser.escape_html"] = "dromozoa/parser/escape_html.lua";
     ["dromozoa.parser.grammar"] = "dromozoa/parser/grammar.lua";
     ["dromozoa.parser.grammar.write_conflicts"] = "dromozoa/parser/grammar/write_conflicts.lua";
     ["dromozoa.parser.grammar.write_graphviz"] = "dromozoa/parser/grammar/write_graphviz.lua";
@@ -27,6 +28,7 @@ build = {
     ["dromozoa.parser.grammar.write_table"] = "dromozoa/parser/grammar/write_table.lua";
     ["dromozoa.parser.lexer"] = "dromozoa/parser/lexer.lua";
     ["dromozoa.parser.parser"] = "dromozoa/parser/parser.lua";
+    ["dromozoa.parser.parser.write_graphviz"] = "dromozoa/parser/parser/write_graphviz.lua";
     ["dromozoa.parser.regexp"] = "dromozoa/parser/regexp.lua";
     ["dromozoa.parser.regexp.write_graphviz"] = "dromozoa/parser/regexp/write_graphviz.lua";
   };
