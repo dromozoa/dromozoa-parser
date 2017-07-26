@@ -56,7 +56,7 @@ function class.pattern(that)
   end
 end
 
-function class:lexer(name)
+function class:regexp_lexer(name)
   local lexers = self.lexers
   if name == nil then
     return lexers[1]
@@ -67,11 +67,15 @@ function class:lexer(name)
   end
 end
 
-function class:searcher(name)
+function class:search_lexer(name)
   local lexers = self.lexers
   local lexer = search_lexer(name)
   lexers[#lexers + 1] = lexer
   return lexer
+end
+
+function class:lexer(name)
+  return self:regexp_lexer(name)
 end
 
 function class:precedence(name, associativity)

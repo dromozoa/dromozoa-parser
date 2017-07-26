@@ -28,7 +28,7 @@ _:lexer()
   :_ (S" \r\n\t\v\f"^"+") :skip()
   :_ "[====[" "]====]" :hold() :call "search" :skip()
 
-_:searcher "search"
+_:search_lexer "search"
   :when() :ret() :skip()
   :otherwise() :as "string_content"
 
