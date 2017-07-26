@@ -21,8 +21,6 @@ local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
 
-local pairs = pairs
-
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
@@ -333,52 +331,40 @@ function class:lr1_closure(items)
   local productions = self.productions
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
+  local first_table = self.first_table
   local added_table = {}
-  repeat
-    local done = true
-    for i = 1, #items do
+  local m = 1
+  while true do
+    local n = #items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local item = items[i]
       local body = productions[item.id].body
       local dot = item.dot
       local symbol = body[dot]
       if symbol and symbol > max_terminal_symbol then
---[[
-        local symbols = {}
-        for i = dot + 1, #body do
-          symbols[#symbols + 1] = body[i]
-        end
-        symbols[#symbols + 1] = item.la
-        local first = self:first_symbols(symbols)
-]]
-
-        local first_table = self.first_table
         local first = {}
-        local first_done
-
-        for j = dot + 1, #body do
+        for j = dot + 1, #body + 1 do
           local symbol = body[j]
-          if symbol <= max_terminal_symbol then
-            -- assert(0 < symbol)
-            first[symbol] = true
-            first_done = true
-            break
-          else
-            for s in pairs(first_table[symbol]) do
-              first[s] = true
-            end
-            if first[0] then
-              first[0] = nil
-            else
-              first_done = true
+          if symbol then
+            if symbol <= max_terminal_symbol then
+              first[symbol] = true
               break
+            else
+              for symbol in pairs(first_table[symbol]) do
+                first[symbol] = true
+              end
+              if first[0] then -- epsilon
+                first[0] = nil
+              else
+                break
+              end
             end
+          else
+            first[item.la] = true
           end
-        end
-
-        if not first_done then
-          local symbol = item.la
-          -- assert(symbol ~= 0)
-          first[symbol] = true
         end
 
         local production_ids = map_of_production_ids[symbol]
@@ -392,14 +378,14 @@ function class:lr1_closure(items)
           for la in pairs(first) do
             if not added[la] then
               items[#items + 1] = { id = id, dot = 1, la = la }
-              done = false
               added[la] = true
             end
           end
         end
       end
     end
-  until done
+    m = n + 1
+  end
 end
 
 function class:lr1_goto(items)
