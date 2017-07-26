@@ -240,21 +240,25 @@ function class:lr0_closure(items)
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
   local added_table = {}
-  repeat
-    local done = true
-    for i = 1, #items do
+  local m = 1
+  while true do
+    local n = #items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local item = items[i]
       local symbol = productions[item.id].body[item.dot]
       if symbol and symbol > max_terminal_symbol and not added_table[symbol] then
         local production_ids = map_of_production_ids[symbol]
         for j = 1, #production_ids do
           items[#items + 1] = { id = production_ids[j], dot = 1 }
-          done = false
         end
         added_table[symbol] = true
       end
     end
-  until done
+    m = n + 1
+  end
 end
 
 function class:lr0_goto(items)
