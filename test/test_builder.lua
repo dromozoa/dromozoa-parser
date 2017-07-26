@@ -48,8 +48,5 @@ _"E"
 
 local lexer, grammar = _:build()
 
--- _.lexers = nil
--- print(dumper.encode(_, { pretty = true, stable = true }))
--- print(dumper.encode(lexer, { pretty = true, stable = true }))
 print(dumper.encode(grammar, { pretty = true, stable = true }))
--- _.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa1.dot", "w"))):close()
+_.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa.dot", "w"))):close()

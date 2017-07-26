@@ -16,7 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local equal = require "dromozoa.commons.equal"
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
@@ -38,8 +37,7 @@ _"A"
 
 local lexer, grammar = _:build()
 
-local first_table = grammar:eliminate_left_recursion():first()
-print(dumper.encode(first_table, { pretty = true, stable = true }))
+local first_table = grammar.first_table
 
 assert(equal(first_table[6], { -- first(S') = { a, b, c }
   [2] = true;
