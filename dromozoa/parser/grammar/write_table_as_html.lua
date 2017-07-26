@@ -30,6 +30,7 @@ local escape_pattern = "[%z\1-\8\11\12\14-\31\127&<>\"']"
 return function (self, out, data)
   local symbol_names = self.symbol_names
   local max_terminal_symbol = self.max_terminal_symbol
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
   local max_state = data.max_state
   local table = data.table
@@ -58,12 +59,18 @@ return function (self, out, data)
       <tr>
         <td rowspan="2">STATE</td>
         <td colspan="]], max_terminal_symbol, [[">ACTION</td>
-        <td colspan="]], max_nonterminal_symbol - max_terminal_symbol, [[">GOTO</td>
+        <td colspan="]], max_nonterminal_symbol - min_nonterminal_symbol, [[">GOTO</td>
       </tr>
 ]])
 
   out:write('      <tr>\n')
-  for i = 1, max_nonterminal_symbol do
+  for i = 2, min_nonterminal_symbol do
+    if i == min_nonterminal_symbol then
+      i = 1
+    end
+    out:write('        <td>', symbol_names[i]:gsub(escape_pattern, char_table), '</td>\n')
+  end
+  for i = min_nonterminal_symbol + 1, max_nonterminal_symbol do
     out:write('        <td>', symbol_names[i]:gsub(escape_pattern, char_table), '</td>\n')
   end
   out:write('      </tr>\n')
@@ -71,25 +78,33 @@ return function (self, out, data)
   for i = 1, max_state do
     out:write([[
       <tr>
-        <td>]], i, [[</td>
+        <td>]], i - 1, [[</td>
 ]])
-    for j = 1, max_nonterminal_symbol do
+    for j = 2, min_nonterminal_symbol do
+      if j == min_nonterminal_symbol then
+        j = 1
+      end
       local action = table[i * max_nonterminal_symbol + j]
       out:write('        <td>')
       if action then
         if action <= max_state then
-          if j <= max_terminal_symbol then
-            out:write('s')
-          end
-          out:write(action)
+          out:write('s', action - 1)
         else
           local reduce = action - max_state
           if reduce == 1 then
             out:write("acc")
           else
-            out:write("r", reduce)
+            out:write("r", reduce - 1)
           end
         end
+      end
+      out:write('</td>\n')
+    end
+    for j = min_nonterminal_symbol + 1, max_nonterminal_symbol do
+      local action = table[i * max_nonterminal_symbol + j]
+      out:write('        <td>')
+      if action then
+        out:write(action - 1)
       end
       out:write('</td>\n')
     end
