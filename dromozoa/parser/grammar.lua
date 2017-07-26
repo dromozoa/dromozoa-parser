@@ -643,6 +643,7 @@ function class:lr1_construct_table(set_of_items, transitions)
   end
 
   return parser({
+    symbol_names = self.symbol_names;
     max_state = m;
     max_symbol = n;
     table = table;
