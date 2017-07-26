@@ -15,6 +15,18 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local char_table = {}
+for byte = 0, 127 do
+  char_table[string.char(byte)] = ("&#x%x;"):format(byte)
+end
+char_table[string.char(0x26)] = "&amp;"
+char_table[string.char(0x3c)] = "&lt;"
+char_table[string.char(0x3e)] = "&gt;"
+char_table[string.char(0x22)] = "&quot;"
+char_table[string.char(0x27)] = "&apos;"
+
+local escape_pattern = "[%z\1-\8\11\12\14-\31\127&<>\"']"
+
 return function (self, out, data)
   local symbol_names = self.symbol_names
   local max_terminal_symbol = self.max_terminal_symbol
@@ -22,14 +34,11 @@ return function (self, out, data)
   local max_state = data.max_state
   local table = data.table
 
-
   out:write([[
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>table</title>
     <style>
       table {
@@ -55,7 +64,7 @@ return function (self, out, data)
 
   out:write('      <tr>\n')
   for i = 1, max_nonterminal_symbol do
-    out:write('        <td>', symbol_names[i], '</td>\n') -- [TODO] escape
+    out:write('        <td>', symbol_names[i]:gsub(escape_pattern, char_table), '</td>\n')
   end
   out:write('      </tr>\n')
 
