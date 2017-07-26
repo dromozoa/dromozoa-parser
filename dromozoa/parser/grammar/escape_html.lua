@@ -15,32 +15,18 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local builder = require "dromozoa.parser.builder"
+local char_table = {}
+for byte = 0, 127 do
+  char_table[string.char(byte)] = ("&#x%x;"):format(byte)
+end
+char_table[string.char(0x26)] = "&amp;"
+char_table[string.char(0x3c)] = "&lt;"
+char_table[string.char(0x3e)] = "&gt;"
+char_table[string.char(0x22)] = "&quot;"
+char_table[string.char(0x27)] = "&apos;"
 
-local _ = builder()
+local escape_pattern = "[%z\1-\8\11\12\14-\31\127&<>\"']"
 
-_:lexer()
-  :_ "id"
-  :_ "+"
-  :_ "*"
-  :_ "("
-  :_ ")"
-
-_ :left "+"
-  :left "*"
-
-_"E"
-  :_ "E" "+" "E"
-  :_ "E" "*" "E"
-  :_ "(" "E" ")"
-  :_ "id"
-
-local lexer, grammar = _:build()
-local set_of_items, transitions = grammar:lalr1_items()
-grammar:write_set_of_items(io.stdout, set_of_items)
-grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
-
-local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
--- P.281 Figure 4.49
-grammar:write_table("test.html", parser)
-grammar:write_conflicts(io.stdout, conflicts, true)
+return function (s)
+  return (s:gsub(escape_pattern, char_table))
+end

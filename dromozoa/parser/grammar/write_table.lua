@@ -15,21 +15,10 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local char_table = {}
-for byte = 0, 127 do
-  char_table[string.char(byte)] = ("&#x%x;"):format(byte)
-end
-char_table[string.char(0x26)] = "&amp;"
-char_table[string.char(0x3c)] = "&lt;"
-char_table[string.char(0x3e)] = "&gt;"
-char_table[string.char(0x22)] = "&quot;"
-char_table[string.char(0x27)] = "&apos;"
-
-local escape_pattern = "[%z\1-\8\11\12\14-\31\127&<>\"']"
+local escape_html = require "dromozoa.parser.grammar.escape_html"
 
 return function (self, out, data)
   local symbol_names = self.symbol_names
-  local max_terminal_symbol = self.max_terminal_symbol
   local min_nonterminal_symbol = self.min_nonterminal_symbol
   local max_nonterminal_symbol = self.max_nonterminal_symbol
   local max_state = data.max_state
@@ -58,7 +47,7 @@ return function (self, out, data)
   out:write([[
       <tr>
         <td rowspan="2">STATE</td>
-        <td colspan="]], max_terminal_symbol, [[">ACTION</td>
+        <td colspan="]], self.max_terminal_symbol, [[">ACTION</td>
         <td colspan="]], max_nonterminal_symbol - min_nonterminal_symbol, [[">GOTO</td>
       </tr>
 ]])
@@ -68,10 +57,10 @@ return function (self, out, data)
     if i == min_nonterminal_symbol then
       i = 1
     end
-    out:write('        <td>', symbol_names[i]:gsub(escape_pattern, char_table), '</td>\n')
+    out:write('        <td>', escape_html(symbol_names[i]), '</td>\n')
   end
   for i = min_nonterminal_symbol + 1, max_nonterminal_symbol do
-    out:write('        <td>', symbol_names[i]:gsub(escape_pattern, char_table), '</td>\n')
+    out:write('        <td>', escape_html(symbol_names[i]), '</td>\n')
   end
   out:write('      </tr>\n')
 
