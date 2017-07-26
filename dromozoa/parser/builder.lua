@@ -28,6 +28,13 @@ local class = {
   range = atom.range;
   set = atom.set;
 }
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
+
+lexer.super = class
+pattern.super = class
 
 function class.pattern(that)
   local t = type(that)
@@ -104,14 +111,7 @@ function class:build(start_name)
   return build(self, start_name)
 end
 
-lexer.super = class
-pattern.super = class
-
-class.metatable = {
-  __index = class;
-}
-
-function class.metatable:__call(name)
+function metatable:__call(name)
   return production(self.productions, name)
 end
 
@@ -121,6 +121,6 @@ return setmetatable(class, {
       lexers = { regexp_lexer() };
       precedences = {};
       productions = { true };
-    }, class.metatable)
+    }, metatable)
   end;
 })
