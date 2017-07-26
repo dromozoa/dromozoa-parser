@@ -657,7 +657,11 @@ function class:lr1_construct_table(set_of_items, transitions)
 end
 
 function class:write_set_of_items(out, set_of_items)
-  return write_set_of_items(self, out, set_of_items)
+  if type(out) == "string" then
+    write_set_of_items(self, assert(io.open(out, "w")), set_of_items)
+  else
+    return write_set_of_items(self, out, set_of_items)
+  end
 end
 
 function class:write_graphviz(out, set_of_items, transitions)
