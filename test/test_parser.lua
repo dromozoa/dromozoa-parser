@@ -49,11 +49,11 @@ print(dumper.encode(parser, { stable = true }))
 
 local _ = _.symbol_table
 
-assert(parser(_["id"], { value = 17 }))
-assert(parser(_["+"]))
-assert(parser(_["id"], { value = 23 }))
-assert(parser(_["*"]))
-assert(parser(_["id"], { value = 37 }))
+assert(parser(_["id"], { value = "17" }))
+assert(parser(_["+"],  { value = "+" }))
+assert(parser(_["id"], { value = "23" }))
+assert(parser(_["*"],  { value = "*" }))
+assert(parser(_["id"], { value = "37" }))
 local tree = assert(parser(1))
 
 parser:write_graphviz("test.dot", tree)

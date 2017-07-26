@@ -23,11 +23,11 @@ local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT
 return function (self, out, set_of_items, transitions)
   local symbol_names = self.symbol_names
   local productions = self.productions
-  out:write('digraph g {\n  graph [rankdir=LR];\n')
+  out:write('digraph {\n  graph [rankdir=LR];\n')
   for i = 1, #set_of_items do
     local items = set_of_items[i]
     local accept
-    out:write('  ', i, ' [shape=plaintext,margin=0,label=<\n    <table border="1" cellborder="0" cellspacing="0">\n      <tr><td>I<font point-size="10">', i - 1, '</font></td></tr>\n')
+    out:write('  ', i, ' [shape=none,width=0,height=0,margin=0,label=<\n    <table border="1" cellborder="0" cellspacing="0">\n      <tr><td>I<font point-size="10">', i - 1, '</font></td></tr>\n')
     for j = 1, #items do
       local item = items[j]
       local id = item.id
@@ -35,7 +35,7 @@ return function (self, out, set_of_items, transitions)
       local body = production.body
       local dot = item.dot
       local la = item.la
-      out:write('    <tr><td align="left"')
+      out:write('      <tr><td align="left"')
       if id == 1 and dot ~= 1 then
         accept = true
       elseif id ~= 1 and dot == 1 then
@@ -58,8 +58,8 @@ return function (self, out, set_of_items, transitions)
     end
     out:write('    </table>\n  >];\n')
     if accept then
-      out:write('  0 [shape=plaintext,label="accept"];\n')
-      out:write('  ', i, ' -> 0 [label="$"];\n')
+      out:write('  0 [shape=plaintext,label=<accept>];\n')
+      out:write('  ', i, ' -> 0 [label=<$>];\n')
     end
   end
   for from, transition in pairs(transitions) do

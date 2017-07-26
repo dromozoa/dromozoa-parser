@@ -15,10 +15,12 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local escape_html = require "dromozoa.parser.escape_html"
+
 return function (self, out, tree)
   local symbol_names = self.symbol_names
 
-  out:write('digraph g {\n  graph[rankdir=TB];\n')
+  out:write('graph {\n  graph [rankdir=TB];\n')
 
   local stack = { tree }
   local id_table = { [tree] = 1 }
@@ -29,20 +31,25 @@ return function (self, out, tree)
     local u = stack[n]
     if u then stack[n] = nil
       local uid = id_table[u]
-      out:write('  ', id_table[u], ' [shape=box,label="', symbol_names[u[1]])
+      local name = symbol_names[u[1]]
+      local value
       local data = u.data
       if data then
-        local value = data.value
-        if value then
-          out:write(' / ', value)
+        value = data.value
+        if value == name then
+          value = nil
         end
       end
-      out:write('"];\n')
+      out:write('  ', uid, ' [shape=none,width=0,height=0,margin=0,label=<\n    <table border="0" cellborder="1" cellspacing="0">\n      <tr><td>', escape_html(name), '</td></tr>\n')
+      if value then
+        out:write('      <tr><td>', escape_html(value), '</td></tr>\n')
+      end
+      out:write('    </table>\n  >];\n')
       local m = u.n
       for i = 2, m do
         id = id + 1
         id_table[u[i]] = id
-        out:write('  ', uid, ' -> ', id, ';\n')
+        out:write('  ', uid, ' -- ', id, ';\n')
       end
       for i = m, 2, -1 do
         stack[#stack + 1] = u[i]
