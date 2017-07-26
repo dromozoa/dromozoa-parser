@@ -591,7 +591,7 @@ function class:lr1_construct_table(set_of_items, transitions)
                 elseif associativity == 3 then -- nonassoc
                   conflict.resolution = 3 -- error
                   error_table[index] = action
-                  table[index] = 0
+                  table[index] = nil
                 end
               elseif shift_precedence < precedence then
                 conflict.resolution = 2 -- reduce
