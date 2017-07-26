@@ -16,6 +16,10 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class:_(name)
   local items = self.items
@@ -31,11 +35,6 @@ function class:prec(name)
   items[#items].precedence = name
   return self
 end
-
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 function metatable:__call(name)
   local items = self.items

@@ -47,6 +47,7 @@ Parser generator toolkit.
 |    6 | `(table)`       |         1 |      | substitute by `table`    |
 |    7 | `(function)`    |         1 |      | substitute by `function` |
 |    8 | `(string)`      |         1 |      | substitute by `string`   |
+|    9 | `:hold()`       |         0 |      | hold                     |
 
 ## Parser
 
