@@ -37,7 +37,7 @@ function metatable:__call(s, init)
       if #stack == 1 then
         return 1, init, s, init, init -- marker end
       else
-        return nil, ("lexer error at position %d"):format(init)
+        return nil, "lexer error", init
       end
     end
 
@@ -131,7 +131,7 @@ function metatable:__call(s, init)
 
     local accept = automaton.accept_states[state]
     if not accept then
-      return nil, ("lexer error at position %d"):format(init)
+      return nil, "lexer error", init
     end
 
     local actions = items[accept].actions
