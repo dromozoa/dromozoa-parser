@@ -27,9 +27,7 @@ local a2 = regexp(P"aaaa", 2):nfa_to_dfa():minimize()
 local a3 = regexp(P"abba", 3):nfa_to_dfa():minimize()
 local a4 = regexp(P"dddd", 4):nfa_to_dfa():minimize()
 
-regexp.union(a1, a2)
-regexp.union(a1, a3)
-regexp.union(a1, a4)
+a1:union(a2):union(a3):union(a4)
 a1:write_graphviz("test-nfa.dot")
 
 local dfa = a1:nfa_to_dfa():minimize()

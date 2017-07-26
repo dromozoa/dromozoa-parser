@@ -28,7 +28,7 @@ local a2 = regexp(P"def"^"?", 2)
 a1:write_graphviz("test-a1.dot")
 a2:write_graphviz("test-a2.dot")
 
-regexp.concat(a1, a2)
+a1:concat(a2)
 a1:write_graphviz("test-concat.dot")
 
 local dfa1 = a1:nfa_to_dfa()
