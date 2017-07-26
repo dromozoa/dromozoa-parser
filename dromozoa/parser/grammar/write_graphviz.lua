@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local escape_html = require "dromozoa.parser.grammar.escape_html"
+local escape_html = require "dromozoa.parser.escape_html"
 
 local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 local DOT = string.char(0xC2, 0xB7) -- U+00B7 MIDDLE DOT

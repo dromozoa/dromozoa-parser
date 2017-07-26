@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local escape_html = require "dromozoa.parser.grammar.escape_html"
+local escape_html = require "dromozoa.parser.escape_html"
 
 return function (self, out, data)
   local symbol_names = self.symbol_names
