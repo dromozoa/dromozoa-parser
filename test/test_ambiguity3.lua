@@ -15,30 +15,29 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
 
+-- http://www.gnu.org/software/bison/manual/html_node/Reduce_002fReduce.html
 local _ = builder()
 
-_ :lit "word"
+_:lexer()
+  :_ "word"
 
-_ "sequence"
+_"sequence"
   :_ ()
   :_ "maybeword"
   :_ "sequence" "word"
 
-_ "maybeword"
+_"maybeword"
   :_ ()
   :_ "word"
 
-local scanner, grammar, writer = _:build()
-
+local scanner, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
 
-writer:write_set_of_items(io.stdout, set_of_items)
-writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+grammar:write_set_of_items(io.stdout, set_of_items)
+grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
+local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+grammar:write_table("test.html", parser)
+grammar:write_conflicts(io.stdout, conflicts)

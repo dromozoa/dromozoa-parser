@@ -37,6 +37,7 @@ return function (self, start_name)
       lexer_table[name] = i
     end
     local accept_to_symbol = {}
+    local m = #items
     for j = 1, #items do
       local item = items[j]
       if not item.skip then
@@ -55,11 +56,15 @@ return function (self, start_name)
       end
     end
     lexer.accept_to_symbol = accept_to_symbol
-    local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
-    for j = 2, #items do
-      automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
+    if #items == 1 then
+      lexer.automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
+    else
+      local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
+      for j = 2, #items do
+        automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
+      end
+      lexer.automaton = automaton:nfa_to_dfa():minimize()
     end
-    lexer.automaton = automaton:nfa_to_dfa():minimize()
   end
 
   for i = 1, #lexers do
