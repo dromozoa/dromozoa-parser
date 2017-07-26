@@ -41,44 +41,7 @@ _"F"
   :_ "id"
 
 local lexer, grammar = _:build()
-
--- print(dumper.encode(scanner, { pretty = true, stable = true }))
--- print(dumper.encode(grammar, { pretty = true, stable = true }))
--- print(dumper.encode(writer, { pretty = true, stable = true }))
-
 local set_of_items, transitions = grammar:lr0_items()
--- print(dumper.encode(set_of_items, { pretty = true, stable = true }))
--- for from, to in pairs(transitions) do
---   print(dumper.encode({ from = from, to = to }, { stable = true }))
--- end
 grammar:write_set_of_items(io.stdout, set_of_items)
-grammar:write_graphviz("test-graph.dot", transitions)
-
---[====[
-
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-grammar:write_conflicts(io.stdout, conflicts)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
-
-local driver = driver(data)
-
-local source = [[
-17 + - 23 * 37 - 42 / 0x69
-]]
-
-local position = 1
-while true do
-  local symbol, i, j = scanner(source, position)
-  print(symbol, writer.symbol_names[symbol], i, j, source:sub(i, j))
-  if symbol == 1 then
-    assert(driver:parse())
-    break
-  else
-    assert(driver:parse(symbol, { value = source:sub(i, j) }))
-  end
-  position = j + 1
-end
-
-writer:write_tree(assert(io.open("test-tree.dot", "w")), driver.tree):close()
-
-]====]
+-- P.244 Figure 4.31
+grammar:write_graphviz("test-graph.dot", set_of_items, transitions)

@@ -15,17 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local writer = require "dromozoa.parser.writer"
--- local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
 
 local S = builder.set
 
 _:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
   :_ "=="
   :_ "!="
   :_ "<"
@@ -47,23 +43,18 @@ _ "E"
   :_ "id"
 
 local lexer, grammar = _:build()
-local writer = writer(_.symbol_names, grammar.productions, grammar.max_terminal_symbol)
 
 local set_of_items, transitions = grammar:lalr1_items()
 
-writer:write_set_of_items(io.stdout, set_of_items)
-writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
+grammar:write_set_of_items(io.stdout, set_of_items)
+grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts, true)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
-
-os.exit()
+local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+grammar:write_conflicts(io.stdout, conflicts)
+grammar:write_table("test.html", parser)
 
 local _ = _.symbol_table
-
-local driver = driver(data)
-assert(driver:parse(_["id"]))
-assert(driver:parse(_["<"]))
-assert(driver:parse(_["id"]))
-assert(not driver:parse(_["<"]))
+assert(parser(_["id"]))
+assert(parser(_["<"]))
+assert(parser(_["id"]))
+assert(not parser(_["<"]))

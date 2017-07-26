@@ -591,7 +591,7 @@ function class:lr1_construct_table(set_of_items, transitions)
                 elseif associativity == 3 then -- nonassoc
                   conflict.resolution = 3 -- error
                   error_table[index] = action
-                  table[index] = 0
+                  table[index] = nil
                 end
               elseif shift_precedence < precedence then
                 conflict.resolution = 2 -- reduce
@@ -643,6 +643,7 @@ function class:lr1_construct_table(set_of_items, transitions)
   end
 
   return parser({
+    symbol_names = self.symbol_names;
     max_state = m;
     max_symbol = n;
     table = table;
@@ -655,11 +656,11 @@ function class:write_set_of_items(out, set_of_items)
   return write_set_of_items(self, out, set_of_items)
 end
 
-function class:write_graphviz(out, transitions)
+function class:write_graphviz(out, set_of_items, transitions)
   if type(out) == "string" then
-    write_graphviz(self, assert(io.open(out, "w")), transitions):close()
+    write_graphviz(self, assert(io.open(out, "w")), set_of_items, transitions):close()
   else
-    return write_graphviz(self, out, transitions)
+    return write_graphviz(self, out, set_of_items, transitions)
   end
 end
 
