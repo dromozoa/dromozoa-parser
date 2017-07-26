@@ -346,6 +346,43 @@ function class:lr1_closure(items)
         end
         symbols[#symbols + 1] = item.la
         local first = self:first_symbols(symbols)
+
+--[[
+        local first_table = self.first_table
+        local first = {}
+        local first_done
+
+        for j = dot + 1, #body do
+          local symbol = body[j]
+          if symbol <= max_terminal_symbol then
+            first[symbol] = true
+            first_done = true
+            break
+          else
+            for s in pairs(first_table[symbol]) do
+              first[s] = true
+            end
+            if first[0] then
+              first[0] = nil
+            else
+              first_done = true
+              break
+            end
+          end
+        end
+
+        if not first_done then
+          local symbol = item.la
+          if symbol <= max_terminal_symbol then
+            first[symbol] = true
+          else
+            for s in pairs(first_table[symbol]) do
+              first[s] = true
+            end
+          end
+        end
+]]
+
         local production_ids = map_of_production_ids[symbol]
         for j = 1, #production_ids do
           local id = production_ids[j]
@@ -462,7 +499,6 @@ function class:lalr1_kernels(set_of_items, transitions)
         if id == 1 and dot == 1 then
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { true } } -- la = { [marker_end] = true }
         else
-          la = {}
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = {} }
         end
       end

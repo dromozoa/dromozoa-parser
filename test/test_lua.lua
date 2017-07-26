@@ -311,6 +311,8 @@ local set_of_items = grammar:lalr1_kernels(set_of_items, transitions)
 timer:stop()
 print("lalr1_kernels", timer:elapsed())
 
+print("#set_of_items", #set_of_items)
+
 timer:start()
 for i = 1, #set_of_items do
   grammar:lr1_closure(set_of_items[i])
