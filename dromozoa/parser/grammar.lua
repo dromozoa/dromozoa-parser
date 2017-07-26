@@ -58,6 +58,10 @@ local function construct_map_of_production_ids(productions)
 end
 
 local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class:eliminate_left_recursion()
   local productions = self.productions
@@ -675,11 +679,6 @@ end
 function class:write_conflicts(out, conflicts, verbose)
   return write_conflicts(self, out, conflicts, verbose)
 end
-
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 return setmetatable(class, {
   __call = function (_, data)
