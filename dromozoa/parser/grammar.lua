@@ -480,6 +480,9 @@ function class:lalr1_kernels(set_of_items, transitions)
   local set_of_kernel_items = {}
   local map_of_kernel_items = {}
 
+  local timer = unix.timer()
+
+  timer:start()
   for i = 1, #set_of_items do
     local items = set_of_items[i]
     local kernel_items = {}
@@ -505,9 +508,12 @@ function class:lalr1_kernels(set_of_items, transitions)
     set_of_kernel_items[i] = kernel_items
     map_of_kernel_items[i] = kernel_table
   end
+  timer:stop()
+  print("#1", timer:elapsed())
 
   local propagated = {}
 
+  timer:start()
   for i = 1, #set_of_items do
     local from_items = set_of_items[i]
     for j = 1, #from_items do
@@ -537,7 +543,10 @@ function class:lalr1_kernels(set_of_items, transitions)
       end
     end
   end
+  timer:stop()
+  print("#2", timer:elapsed())
 
+  timer:start()
   repeat
     local done = true
     for i = 1, #propagated do
@@ -552,7 +561,10 @@ function class:lalr1_kernels(set_of_items, transitions)
       end
     end
   until done
+  timer:stop()
+  print("#3", timer:elapsed())
 
+  timer:start()
   local expanded_set_of_kernel_items = {}
   for i = 1, #set_of_kernel_items do
     local items = set_of_kernel_items[i]
@@ -567,6 +579,8 @@ function class:lalr1_kernels(set_of_items, transitions)
     end
     expanded_set_of_kernel_items[#expanded_set_of_kernel_items + 1] = expanded_items
   end
+  timer:stop()
+  print("#4", timer:elapsed())
 
   return expanded_set_of_kernel_items
 end
