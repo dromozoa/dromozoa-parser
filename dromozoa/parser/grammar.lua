@@ -21,6 +21,8 @@ local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
 
+local unix = require "dromozoa.unix"
+
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
@@ -298,9 +300,13 @@ function class:lr0_items()
   self:lr0_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
-  repeat
-    local done = true
-    for i = 1, #set_of_items do
+  local m = 1
+  while true do
+    local n = #set_of_items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local transition = transitions[i]
       if not transition then
         transition = {}
@@ -321,13 +327,14 @@ function class:lr0_items()
           if not to then
             to = #set_of_items + 1
             set_of_items[to] = to_items
-            done = false
           end
           transition[data.symbol] = to
         end
       end
     end
-  until done
+    m = n + 1
+  end
+  print(count)
   return set_of_items, transitions
 end
 
