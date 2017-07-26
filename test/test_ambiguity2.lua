@@ -15,39 +15,24 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
 
-_ :lit "i"
-  :lit "e"
-  :lit "a"
+_:lexer()
+  :_ "i"
+  :_ "e"
+  :_ "a"
 
 _ "S"
   :_ "i" "S" "e" "S"
   :_ "i" "S"
   :_ "a"
 
-local scanner, grammar, writer = _:build()
-print(dumper.encode(g, { pretty = true, stable = true }))
-
+local lexer, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
-writer:write_set_of_items(io.stdout, set_of_items)
-writer:write_graph(assert(io.open("test-graph.dot", "w")), transitions):close()
-
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-writer:write_conflicts(io.stdout, conflicts, true)
-writer:write_table(assert(io.open("test.html", "w")), data):close()
-
-local _ = _.symbol_table
-
-local driver = driver(data)
-assert(driver:parse(_["i"]))
-assert(driver:parse(_["i"]))
-assert(driver:parse(_["a"]))
-assert(driver:parse(_["e"]))
-assert(driver:parse(_["a"]))
-assert(driver:parse())
-writer:write_tree(assert(io.open("test-tree.dot", "w")), driver.tree):close()
+grammar:write_set_of_items(io.stdout, set_of_items)
+local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+-- P.282 Figure 4.51
+grammar:write_table_as_html("test.html", parser)
+grammar:write_conflicts(io.stdout, conflicts, false)
