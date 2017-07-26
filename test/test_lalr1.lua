@@ -42,5 +42,5 @@ grammar:write_graphviz("test-graph.dot", transitions)
 
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 -- P.281 Figure 4.49
-grammar:write_table_as_html("test.html", parser)
+grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts, true)
