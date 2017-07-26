@@ -65,6 +65,10 @@ return function (self, start_name)
         end
         lexer.automaton = automaton:nfa_to_dfa():minimize()
       end
+    else
+      if #items ~= 2 or items[1].condition ~= 1 or items[2].condition ~= 2 then
+        error(("invalid when/otherwise at lexer %d"):format(i))
+      end
     end
   end
 

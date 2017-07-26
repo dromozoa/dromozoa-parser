@@ -26,7 +26,7 @@ local _ = builder()
 
 _:lexer()
   :_ (S" \r\n\t\v\f"^"+") :skip()
-  :_ "[====[" (function () return "]====]" end) :hold() :call "search" :skip()
+  :_ "[====[" "]====]" :hold() :call "search" :skip()
 
 _:searcher "search"
   :when() :ret() :skip()
