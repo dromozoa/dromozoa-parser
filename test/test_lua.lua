@@ -251,6 +251,21 @@ _"prefixexp"
   :_ "functioncall"
   :_ "(" "exp" ")"
 
+-- _"prefixexp"
+--   :_ "var"
+--   :_ "prefixexp" "args"
+--   :_ "prefixexp" ":" "Name" "args"
+--   :_ "(" "exp" ")"
+
+-- _"prefixexp"
+--   :_ "var" "prefixexp_impl"
+--   :_ "(" "exp" ")" "prefixexp_impl"
+
+-- _"prefixexp_impl"
+--   :_ ()
+--   :_ "args" "prefixexp_impl"
+--   :_ ":" "Name" "args" "prefixexp_impl"
+
 _"functioncall"
   :_ "prefixexp" "args"
   :_ "prefixexp" ":" "Name" "args"
@@ -301,6 +316,14 @@ timer:start()
 local lexer, grammar = _:build()
 timer:stop()
 print("build", timer:elapsed())
+
+print("== symbols ==")
+for i = 1, #grammar.symbol_names do
+  io.write("(", i, ") ", grammar.symbol_names[i], "\n")
+end
+
+print("== productions ==")
+grammar:write_productions(io.stdout)
 
 timer:start()
 local set_of_items, transitions = grammar:lr0_items()
