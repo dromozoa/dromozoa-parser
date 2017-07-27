@@ -18,6 +18,7 @@
 local parser = require "dromozoa.parser.parser"
 local write_conflicts = require "dromozoa.parser.grammar.write_conflicts"
 local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
+local write_productions = require "dromozoa.parser.grammar.write_productions"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
 
@@ -64,12 +65,18 @@ local metatable = {
 class.metatable = metatable
 
 function class:eliminate_left_recursion()
+  local symbol_names = self.symbol_names
   local productions = self.productions
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
 
   local map_of_productions = {}
   local n = self.max_nonterminal_symbol
+
+  local new_symbol_names = {}
+  for i = 1, n do
+    new_symbol_names[i] = symbol_names[i]
+  end
 
   for i = self.min_nonterminal_symbol, n do
     local left_recursions = {}
@@ -107,6 +114,7 @@ function class:eliminate_left_recursion()
 
     if left_recursions[1] then
       n = n + 1
+      new_symbol_names[n] = symbol_names[i] .. "'"
 
       local productions = {}
       for j = 1, #left_recursions do
@@ -145,12 +153,15 @@ function class:eliminate_left_recursion()
   end
 
   return class({
+    symbol_names = new_symbol_names;
     productions = new_productions;
     map_of_production_ids = construct_map_of_production_ids(new_productions);
     max_terminal_symbol = max_terminal_symbol;
+    min_nonterminal_symbol = max_terminal_symbol + 1;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
     production_precedences = self.production_precedences;
+    lr1_closure_cache = {};
   })
 end
 
@@ -719,6 +730,10 @@ function class:lr1_construct_table(set_of_items, transitions)
     heads = heads;
     sizes = sizes;
   }), conflicts
+end
+
+function class:write_productions(out)
+  return write_productions(self, out)
 end
 
 function class:write_set_of_items(out, set_of_items)
