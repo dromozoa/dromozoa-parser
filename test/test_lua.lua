@@ -142,12 +142,12 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ "stats"
-  :_ "stats" "retstat"
+  :_ "stat_LIST"
+  :_ "stat_LIST" "retstat"
 
-_"stats"
+_"stat_LIST"
   :_ ()
-  :_ "stats" "stat"
+  :_ "stat_LIST" "stat"
 
 _"stat"
   :_ ";"
@@ -159,7 +159,7 @@ _"stat"
   :_ "do" "block" "end"
   :_ "while" "exp" "do" "block" "end"
   :_ "repeat" "block" "until" "exp"
-  :_ "if" "exp" "then" "block" "elseif_clauses" "else_clause" "end"
+  :_ "if" "exp" "then" "block" "elseif_CLAUSE_LIST" "else_CLAUSE" "end"
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
   :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
   :_ "for" "namelist" "in" "explist" "do" "block" "end"
@@ -168,11 +168,11 @@ _"stat"
   :_ "local" "namelist"
   :_ "local" "namelist" "=" "explist"
 
-_"elseif_clauses"
+_"elseif_CLAUSE_LIST"
   :_ ()
-  :_ "elseif_clauses" "elseif" "block"
+  :_ "elseif_CLAUSE_LIST" "elseif" "block"
 
-_"else_clause"
+_"else_CLAUSE"
   :_ ()
   :_ "else" "block"
 
@@ -186,12 +186,12 @@ _"label"
   :_ "::" "Name" "::"
 
 _"funcname"
-  :_ "funcnames"
-  :_ "funcnames" ":" "Name"
+  :_ "funcname_LIST"
+  :_ "funcname_LIST" ":" "Name"
 
-_"funcnames"
+_"funcname_LIST"
   :_ "Name"
-  :_ "funcnames" "." "Name"
+  :_ "funcname_LIST" "." "Name"
 
 _"varlist"
   :_ "var"
