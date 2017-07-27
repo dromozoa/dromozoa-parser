@@ -334,7 +334,6 @@ function class:lr0_items()
     end
     m = n + 1
   end
-  print(count)
   return set_of_items, transitions
 end
 
