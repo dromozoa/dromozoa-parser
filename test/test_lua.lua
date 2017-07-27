@@ -150,6 +150,7 @@ _"stats"
   :_ "stats" "stat"
 
 _"stat"
+  :_ ";"
   :_ "varlist" "=" "explist"
   :_ "functioncall"
   :_ "label"
@@ -328,3 +329,21 @@ print("lr1_construct_table", timer:elapsed())
 grammar:write_set_of_items("test.dat", set_of_items)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
+
+local source = [[
+local a = b + c (f)(42)
+]]
+
+local symbol
+local position = 1
+local rs
+local ri
+local rj
+local tree
+
+repeat
+  symbol, position, rs, ri, rj = assert(lexer(source, position))
+  tree = assert(parser(symbol, { value = rs:sub(ri, rj), position }))
+until symbol == 1
+
+parser:write_graphviz("test.dot", tree)
