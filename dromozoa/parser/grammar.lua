@@ -342,6 +342,7 @@ function class:lr1_closure(items)
   local productions = self.productions
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
+  local lr1_closure_cache = self.lr1_closure_cache
   local first_table = self.first_table
   local added_table = {}
   local m = 1
@@ -352,45 +353,76 @@ function class:lr1_closure(items)
     end
     for i = m, n do
       local item = items[i]
-      local body = productions[item.id].body
+      local id = item.id
       local dot = item.dot
+      local la = item.la
+      local body = productions[id].body
       local symbol = body[dot]
       if symbol and symbol > max_terminal_symbol then
-        local first = {}
-        for j = dot + 1, #body + 1 do
-          local symbol = body[j]
-          if symbol then
-            if symbol <= max_terminal_symbol then
-              first[symbol] = true
-              break
-            else
-              for symbol in pairs(first_table[symbol]) do
-                first[symbol] = true
-              end
-              if first[0] then -- epsilon
-                first[0] = nil
-              else
-                break
-              end
-            end
+        local cache1 = lr1_closure_cache[id]
+        local cache2
+        local closure
+        if cache1 then
+          cache2 = cache1[dot]
+          if cache2 then
+            closure = cache2[la]
           else
-            first[item.la] = true
+            cache2 = {}
+            cache1[dot] = cache2
+          end
+        else
+          cache2 = {}
+          cache1 = { [dot] = cache2 }
+          lr1_closure_cache[id] = cache1
+        end
+
+        if not closure then
+          closure = {}
+          cache2[la] = closure
+
+          local first = {}
+          for j = dot + 1, #body + 1 do
+            local symbol = body[j]
+            if symbol then
+              if symbol <= max_terminal_symbol then
+                first[symbol] = true
+                break
+              else
+                for symbol in pairs(first_table[symbol]) do
+                  first[symbol] = true
+                end
+                if first[0] then -- epsilon
+                  first[0] = nil
+                else
+                  break
+                end
+              end
+            else
+              first[la] = true
+            end
+          end
+
+          local production_ids = map_of_production_ids[symbol]
+          for j = 1, #production_ids do
+            local id = production_ids[j]
+            for la in pairs(first) do
+              closure[#closure + 1] = { id = id, dot = 1, la = la }
+            end
           end
         end
 
-        local production_ids = map_of_production_ids[symbol]
-        for j = 1, #production_ids do
-          local id = production_ids[j]
+        for j = 1, #closure do
+          local item = closure[j]
+          local id = item.id
+          local la = item.la
           local added = added_table[id]
           if not added then
             added = {}
             added_table[id] = added
           end
-          for la in pairs(first) do
-            if not added[la] then
-              items[#items + 1] = { id = id, dot = 1, la = la }
-              added[la] = true
-            end
+          if not added[la] then
+            items[#items + 1] = item
+            added[la] = true
           end
         end
       end
@@ -746,6 +778,7 @@ return setmetatable(class, {
       max_nonterminal_symbol = data.max_nonterminal_symbol;
       symbol_precedences = data.symbol_precedences;
       production_precedences = data.production_precedences;
+      lr1_closure_cache = {};
     }, metatable)
   end;
 })
