@@ -413,13 +413,14 @@ function class:lr1_closure(items)
           local id = item.id
           local la = item.la
           local added = added_table[id]
-          if not added then
-            added = {}
-            added_table[id] = added
-          end
-          if not added[la] then
+          if added then
+            if not added[la] then
+              items[#items + 1] = item
+              added[la] = true
+            end
+          else
             items[#items + 1] = item
-            added[la] = true
+            added_table[id] = { [la] = true }
           end
         end
       end
