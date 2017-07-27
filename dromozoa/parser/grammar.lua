@@ -69,6 +69,7 @@ function class:eliminate_left_recursion()
   local productions = self.productions
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
 
   local map_of_productions = {}
   local n = self.max_nonterminal_symbol
@@ -78,7 +79,7 @@ function class:eliminate_left_recursion()
     new_symbol_names[i] = symbol_names[i]
   end
 
-  for i = self.min_nonterminal_symbol, n do
+  for i = min_nonterminal_symbol, n do
     local left_recursions = {}
     local no_left_recursions = {}
 
@@ -146,9 +147,10 @@ function class:eliminate_left_recursion()
   end
 
   local new_productions = {}
-  for _, productions in pairs(map_of_productions) do
-    for i = 1, #productions do
-      new_productions[#new_productions + 1] = productions[i]
+  for i = min_nonterminal_symbol, n do
+    local productions = map_of_productions[i]
+    for j = 1, #productions do
+      new_productions[#new_productions + 1] = productions[j]
     end
   end
 
