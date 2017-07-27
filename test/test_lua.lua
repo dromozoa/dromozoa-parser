@@ -354,7 +354,9 @@ grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [[
-local a = b + c (f)(42)
+-- local a = b + c (f)(42)
+local a = 1 + 2 + -3^2
+local a = 1 + 2 * 3
 ]]
 
 local symbol
