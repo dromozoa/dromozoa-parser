@@ -21,8 +21,6 @@ local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
 
-local unix = require "dromozoa.unix"
-
 local function equal(items1, items2)
   local n = #items1
   if n ~= #items2 then
