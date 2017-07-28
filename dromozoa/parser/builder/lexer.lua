@@ -16,23 +16,10 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-
-function class:_(that)
-  local items = self.items
-  if type(that) == "string" then
-    items[#items + 1] = {
-      name = that;
-      pattern = class.super.pattern(that);
-      actions = {};
-    }
-  else
-    items[#items + 1] = {
-      pattern = that;
-      actions = {};
-    }
-  end
-  return self
-end
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class:as(name)
   local items = self.items
@@ -79,10 +66,12 @@ function class:ret()
   return self
 end
 
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+function class:hold()
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 9 }
+  return self
+end
 
 function metatable:__call(repl)
   local items = self.items
@@ -98,8 +87,4 @@ function metatable:__call(repl)
   return self
 end
 
-return setmetatable(class, {
-  __call = function (_, name)
-    return setmetatable({ name = name, items = {} }, metatable)
-  end;
-})
+return class

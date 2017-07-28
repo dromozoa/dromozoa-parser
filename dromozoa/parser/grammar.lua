@@ -18,6 +18,7 @@
 local parser = require "dromozoa.parser.parser"
 local write_conflicts = require "dromozoa.parser.grammar.write_conflicts"
 local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
+local write_productions = require "dromozoa.parser.grammar.write_productions"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
 
@@ -58,16 +59,27 @@ local function construct_map_of_production_ids(productions)
 end
 
 local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class:eliminate_left_recursion()
+  local symbol_names = self.symbol_names
   local productions = self.productions
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
+  local min_nonterminal_symbol = self.min_nonterminal_symbol
 
   local map_of_productions = {}
   local n = self.max_nonterminal_symbol
 
-  for i = self.min_nonterminal_symbol, n do
+  local new_symbol_names = {}
+  for i = 1, n do
+    new_symbol_names[i] = symbol_names[i]
+  end
+
+  for i = min_nonterminal_symbol, n do
     local left_recursions = {}
     local no_left_recursions = {}
 
@@ -103,6 +115,7 @@ function class:eliminate_left_recursion()
 
     if left_recursions[1] then
       n = n + 1
+      new_symbol_names[n] = symbol_names[i] .. "'"
 
       local productions = {}
       for j = 1, #left_recursions do
@@ -134,19 +147,23 @@ function class:eliminate_left_recursion()
   end
 
   local new_productions = {}
-  for _, productions in pairs(map_of_productions) do
-    for i = 1, #productions do
-      new_productions[#new_productions + 1] = productions[i]
+  for i = min_nonterminal_symbol, n do
+    local productions = map_of_productions[i]
+    for j = 1, #productions do
+      new_productions[#new_productions + 1] = productions[j]
     end
   end
 
   return class({
+    symbol_names = new_symbol_names;
     productions = new_productions;
     map_of_production_ids = construct_map_of_production_ids(new_productions);
     max_terminal_symbol = max_terminal_symbol;
+    min_nonterminal_symbol = max_terminal_symbol + 1;
     max_nonterminal_symbol = n;
     symbol_precedences = self.symbol_precedences;
     production_precedences = self.production_precedences;
+    lr1_closure_cache = {};
   })
 end
 
@@ -236,21 +253,25 @@ function class:lr0_closure(items)
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
   local added_table = {}
-  repeat
-    local done = true
-    for i = 1, #items do
+  local m = 1
+  while true do
+    local n = #items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local item = items[i]
       local symbol = productions[item.id].body[item.dot]
       if symbol and symbol > max_terminal_symbol and not added_table[symbol] then
         local production_ids = map_of_production_ids[symbol]
         for j = 1, #production_ids do
           items[#items + 1] = { id = production_ids[j], dot = 1 }
-          done = false
         end
         added_table[symbol] = true
       end
     end
-  until done
+    m = n + 1
+  end
 end
 
 function class:lr0_goto(items)
@@ -290,9 +311,13 @@ function class:lr0_items()
   self:lr0_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
-  repeat
-    local done = true
-    for i = 1, #set_of_items do
+  local m = 1
+  while true do
+    local n = #set_of_items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local transition = transitions[i]
       if not transition then
         transition = {}
@@ -313,13 +338,13 @@ function class:lr0_items()
           if not to then
             to = #set_of_items + 1
             set_of_items[to] = to_items
-            done = false
           end
           transition[data.symbol] = to
         end
       end
     end
-  until done
+    m = n + 1
+  end
   return set_of_items, transitions
 end
 
@@ -327,40 +352,94 @@ function class:lr1_closure(items)
   local productions = self.productions
   local map_of_production_ids = self.map_of_production_ids
   local max_terminal_symbol = self.max_terminal_symbol
+  local lr1_closure_cache = self.lr1_closure_cache
+  local first_table = self.first_table
   local added_table = {}
-  repeat
-    local done = true
-    for i = 1, #items do
+  local m = 1
+  while true do
+    local n = #items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local item = items[i]
-      local body = productions[item.id].body
+      local id = item.id
       local dot = item.dot
+      local la = item.la
+      local body = productions[id].body
       local symbol = body[dot]
       if symbol and symbol > max_terminal_symbol then
-        local symbols = {}
-        for i = dot + 1, #body do
-          symbols[#symbols + 1] = body[i]
-        end
-        symbols[#symbols + 1] = item.la
-        local first = self:first_symbols(symbols)
-        local production_ids = map_of_production_ids[symbol]
-        for j = 1, #production_ids do
-          local id = production_ids[j]
-          local added = added_table[id]
-          if not added then
-            added = {}
-            added_table[id] = added
+        local cache1 = lr1_closure_cache[id]
+        local cache2
+        local closure
+        if cache1 then
+          cache2 = cache1[dot]
+          if cache2 then
+            closure = cache2[la]
+          else
+            cache2 = {}
+            cache1[dot] = cache2
           end
-          for la in pairs(first) do
+        else
+          cache2 = {}
+          cache1 = { [dot] = cache2 }
+          lr1_closure_cache[id] = cache1
+        end
+
+        if not closure then
+          closure = {}
+          cache2[la] = closure
+
+          local first = {}
+          for j = dot + 1, #body + 1 do
+            local symbol = body[j]
+            if symbol then
+              if symbol <= max_terminal_symbol then
+                first[symbol] = true
+                break
+              else
+                for symbol in pairs(first_table[symbol]) do
+                  first[symbol] = true
+                end
+                if first[0] then -- epsilon
+                  first[0] = nil
+                else
+                  break
+                end
+              end
+            else
+              first[la] = true
+            end
+          end
+
+          local production_ids = map_of_production_ids[symbol]
+          for j = 1, #production_ids do
+            local id = production_ids[j]
+            for la in pairs(first) do
+              closure[#closure + 1] = { id = id, dot = 1, la = la }
+            end
+          end
+        end
+
+        for j = 1, #closure do
+          local item = closure[j]
+          local id = item.id
+          local la = item.la
+          local added = added_table[id]
+          if added then
             if not added[la] then
-              items[#items + 1] = { id = id, dot = 1, la = la }
-              done = false
+              items[#items + 1] = item
               added[la] = true
             end
+          else
+            items[#items + 1] = item
+            added_table[id] = { [la] = true }
           end
         end
       end
     end
-  until done
+    m = n + 1
+  end
 end
 
 function class:lr1_goto(items)
@@ -400,9 +479,13 @@ function class:lr1_items()
   self:lr1_closure(start_items)
   local set_of_items = { start_items }
   local transitions = {}
-  repeat
-    local done = true
-    for i = 1, #set_of_items do
+  local m = 1
+  while true do
+    local n = #set_of_items
+    if m > n then
+      break
+    end
+    for i = m, n do
       local transition = transitions[i]
       if not transition then
         transition = {}
@@ -423,13 +506,13 @@ function class:lr1_items()
           if not to then
             to = #set_of_items + 1
             set_of_items[to] = to_items
-            done = false
           end
           transition[data.symbol] = to
         end
       end
     end
-  until done
+    m = n + 1
+  end
   return set_of_items, transitions
 end
 
@@ -458,7 +541,6 @@ function class:lalr1_kernels(set_of_items, transitions)
         if id == 1 and dot == 1 then
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = { true } } -- la = { [marker_end] = true }
         else
-          la = {}
           kernel_items[#kernel_items + 1] = { id = id, dot = dot, la = {} }
         end
       end
@@ -484,8 +566,8 @@ function class:lalr1_kernels(set_of_items, transitions)
           local production = productions[id]
           local dot = item.dot
           local symbol = production.body[dot]
-          local la = item.la
           if symbol then
+            local la = item.la
             local to_i = transitions[i][symbol]
             local to_j = map_of_kernel_items[to_i][id][dot + 1]
             if la == -1 then -- marker_lookahead
@@ -652,8 +734,20 @@ function class:lr1_construct_table(set_of_items, transitions)
   }), conflicts
 end
 
+function class:write_productions(out)
+  if type(out) == "string" then
+    write_productions(self, assert(io.open(out, "w"))):close()
+  else
+    return write_productions(self, out)
+  end
+end
+
 function class:write_set_of_items(out, set_of_items)
-  return write_set_of_items(self, out, set_of_items)
+  if type(out) == "string" then
+    write_set_of_items(self, assert(io.open(out, "w")), set_of_items)
+  else
+    return write_set_of_items(self, out, set_of_items)
+  end
 end
 
 function class:write_graphviz(out, set_of_items, transitions)
@@ -673,13 +767,12 @@ function class:write_table(out, data)
 end
 
 function class:write_conflicts(out, conflicts, verbose)
-  return write_conflicts(self, out, conflicts, verbose)
+  if type(out) == "string" then
+    return write_conflicts(self, assert(io.open(out, "w")), conflicts, verbose):close()
+  else
+    return write_conflicts(self, out, conflicts, verbose)
+  end
 end
-
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 return setmetatable(class, {
   __call = function (_, data)
@@ -694,6 +787,7 @@ return setmetatable(class, {
       max_nonterminal_symbol = data.max_nonterminal_symbol;
       symbol_precedences = data.symbol_precedences;
       production_precedences = data.production_precedences;
+      lr1_closure_cache = {};
     }, metatable)
   end;
 })

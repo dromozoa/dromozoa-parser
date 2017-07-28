@@ -22,8 +22,8 @@ for byte = 0, 255 do
   any[byte] = true
 end
 
-local class = {}
 local super = pattern
+local class = {}
 local metatable = {
   __index = class;
   __mul = super.metatable.__mul;

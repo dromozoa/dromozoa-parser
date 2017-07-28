@@ -21,11 +21,20 @@ local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
 local precedence = require "dromozoa.parser.builder.precedence"
 local production = require "dromozoa.parser.builder.production"
+local regexp_lexer = require "dromozoa.parser.builder.regexp_lexer"
+local search_lexer = require "dromozoa.parser.builder.search_lexer"
 
 local class = {
   range = atom.range;
   set = atom.set;
 }
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
+
+lexer.super = class
+pattern.super = class
 
 function class.pattern(that)
   local t = type(that)
@@ -55,14 +64,25 @@ function class.pattern(that)
 end
 
 function class:lexer(name)
+  return self:regexp_lexer(name)
+end
+
+function class:regexp_lexer(name)
   local lexers = self.lexers
   if name == nil then
     return lexers[1]
   else
-    local lexer = lexer(name)
+    local lexer = regexp_lexer(name)
     lexers[#lexers + 1] = lexer
     return lexer
   end
+end
+
+function class:search_lexer(name)
+  local lexers = self.lexers
+  local lexer = search_lexer(name)
+  lexers[#lexers + 1] = lexer
+  return lexer
 end
 
 function class:precedence(name, associativity)
@@ -91,23 +111,16 @@ function class:build(start_name)
   return build(self, start_name)
 end
 
-lexer.super = class
-pattern.super = class
-
-class.metatable = {
-  __index = class;
-}
-
-function class.metatable:__call(name)
+function metatable:__call(name)
   return production(self.productions, name)
 end
 
 return setmetatable(class, {
   __call = function ()
     return setmetatable({
-      lexers = { lexer() };
+      lexers = { regexp_lexer() };
       precedences = {};
       productions = { true };
-    }, class.metatable)
+    }, metatable)
   end;
 })

@@ -15,32 +15,36 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local lexer = require "dromozoa.parser.builder.lexer"
+
+local super = lexer
 local class = {}
 local metatable = {
   __index = class;
+  __call = lexer.metatable.__call;
 }
 class.metatable = metatable
 
-function class:left(name)
-  return self.builder:left(name)
-end
-
-function class:right(name)
-  return self.builder:right(name)
-end
-
-function class:nonassoc(name)
-  return self.builder:nonassoc(name)
-end
-
-function metatable:__call(name)
+function class:_(that)
   local items = self.items
-  items[#items + 1] = name
+  if type(that) == "string" then
+    items[#items + 1] = {
+      name = that;
+      pattern = class.super.pattern(that);
+      actions = {};
+    }
+  else
+    items[#items + 1] = {
+      pattern = that;
+      actions = {};
+    }
+  end
   return self
 end
 
 return setmetatable(class, {
-  __call = function (_, builder, items)
-    return setmetatable({ builder = builder, items = items }, metatable)
+  __index = super;
+  __call = function (_, name)
+    return setmetatable({ type = "regexp_lexer", name = name, items = {} }, metatable)
   end;
 })

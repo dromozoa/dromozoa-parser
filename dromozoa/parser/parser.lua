@@ -18,6 +18,10 @@
 local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
 
 local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
 function class:write_graphviz(out, tree)
   if type(out) == "string" then
@@ -26,11 +30,6 @@ function class:write_graphviz(out, tree)
     return write_graphviz(self, out, tree)
   end
 end
-
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 function metatable:__call(symbol, data)
   local max_state = self.max_state
@@ -48,25 +47,25 @@ function metatable:__call(symbol, data)
   }
 
   while true do
-    local state = stack[#stack]
+    local n1 = #stack
+    local n2 = #nodes
+    local state = stack[n1]
     local action = table[state * max_symbol + symbol]
     if action then
       if action <= max_state then -- shift
-        stack[#stack + 1] = action
-        nodes[#nodes + 1] = node
+        stack[n1 + 1] = action
+        nodes[n2 + 1] = node
         return true
       else
         local symbol = heads[action]
         if symbol then -- reduce
           local n = sizes[action]
-          local m = #stack
-          for i = m - n + 1, m do
+          for i = n1 - n + 1, n1 do
             stack[i] = nil
           end
 
           local reduced_nodes = {}
-          local m = #nodes
-          for i = m - n + 1, m do
+          for i = n2 - n + 1, n2 do
             reduced_nodes[#reduced_nodes + 1] = nodes[i]
             nodes[i] = nil
           end
@@ -79,14 +78,15 @@ function metatable:__call(symbol, data)
             node[i + 1] = reduced_nodes[i]
           end
 
-          local state = stack[#stack]
-          stack[#stack + 1] = table[state * max_symbol + symbol]
-          nodes[#nodes + 1] = node
+          local n1 = #stack
+          local n2 = #nodes
+          local state = stack[n1]
+          stack[n1 + 1] = table[state * max_symbol + symbol]
+          nodes[n2 + 1] = node
         else -- accept
-          stack[#stack] = nil
-          local n = #nodes
-          local node = nodes[n]
-          nodes[n] = nil
+          stack[n1] = nil
+          local node = nodes[n2]
+          nodes[n2] = nil
           return node
         end
       end
