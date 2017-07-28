@@ -44,97 +44,115 @@ function metatable:__call(s, init)
     local lexer = lexers[stack[#stack]]
     local items = lexer.items
     local automaton = lexer.automaton
-    local transitions = automaton.transitions
-
-    local state = automaton.start_state
     local position
+    local accept
+    local actions
 
-    for i = init + 3, n, 4 do
-      local a, b, c, d = s:byte(i - 3, i)
-      local state1 = transitions[a][state]
-      if not state1 then
-        position = i - 3
-        break
-      else
-        local state2 = transitions[b][state1]
-        if not state2 then
-          state = state1
-          position = i - 2
+    if automaton then
+      local transitions = automaton.transitions
+      local state = automaton.start_state
+
+      for i = init + 3, n, 4 do
+        local a, b, c, d = s:byte(i - 3, i)
+        local state1 = transitions[a][state]
+        if not state1 then
+          position = i - 3
           break
         else
-          local state3 = transitions[c][state2]
-          if not state3 then
-            state = state2
-            position = i - 1
+          local state2 = transitions[b][state1]
+          if not state2 then
+            state = state1
+            position = i - 2
             break
           else
-            local state4 = transitions[d][state3]
-            if not state4 then
-              state = state3
-              position = i
+            local state3 = transitions[c][state2]
+            if not state3 then
+              state = state2
+              position = i - 1
               break
             else
-              state = state4
-            end
-          end
-        end
-      end
-    end
-
-    if not position then
-      position = n + 1
-      local m = position - (position - init) % 4
-      if m < position then
-        local a, b, c = s:byte(m, n)
-        if c then
-          local state1 = transitions[a][state]
-          if not state1 then
-            position = m
-          else
-            local state2 = transitions[b][state1]
-            if not state2 then
-              state = state1
-              position = m + 1
-            else
-              local state3 = transitions[c][state2]
-              if not state3 then
-                state = state2
-                position = n
-              else
+              local state4 = transitions[d][state3]
+              if not state4 then
                 state = state3
+                position = i
+                break
+              else
+                state = state4
               end
             end
           end
-        elseif b then
-          local state1 = transitions[a][state]
-          if not state1 then
-            position = m
-          else
-            local state2 = transitions[b][state1]
-            if not state2 then
-              state = state1
-              position = m + 1
+        end
+      end
+
+      if not position then
+        position = n + 1
+        local m = position - (position - init) % 4
+        if m < position then
+          local a, b, c = s:byte(m, n)
+          if c then
+            local state1 = transitions[a][state]
+            if not state1 then
+              position = m
             else
-              state = state2
+              local state2 = transitions[b][state1]
+              if not state2 then
+                state = state1
+                position = m + 1
+              else
+                local state3 = transitions[c][state2]
+                if not state3 then
+                  state = state2
+                  position = n
+                else
+                  state = state3
+                end
+              end
             end
-          end
-        else
-          local state1 = transitions[a][state]
-          if not state1 then
-            position = m
+          elseif b then
+            local state1 = transitions[a][state]
+            if not state1 then
+              position = m
+            else
+              local state2 = transitions[b][state1]
+              if not state2 then
+                state = state1
+                position = m + 1
+              else
+                state = state2
+              end
+            end
           else
-            state = state1
+            local state1 = transitions[a][state]
+            if not state1 then
+              position = m
+            else
+              state = state1
+            end
           end
         end
       end
+
+      accept = automaton.accept_states[state]
+      if not accept then
+        return nil, "lexer error", init
+      end
+      actions = items[accept].actions
+    else
+      local i, j = s:find(self.hold, init, true)
+      if not i then
+        return nil, "lexer error", init
+      end
+      if init == i then
+        position = j + 1
+        accept = 1
+        actions = items[1].actions
+      else
+        position = i
+        accept = 2
+        actions = items[2].actions
+      end
     end
 
-    local accept = automaton.accept_states[state]
-    if not accept then
-      return nil, "lexer error", init
-    end
-
-    local actions = items[accept].actions
     local skip
     local rs = s
     local ri = init
@@ -175,6 +193,8 @@ function metatable:__call(s, init)
         rs = action[2]
         ri = 1
         rj = #rs
+      elseif code == 9 then -- hold
+        self.hold = rs:sub(ri, rj)
       end
     end
     if skip then

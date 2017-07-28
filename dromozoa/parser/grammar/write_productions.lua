@@ -15,32 +15,19 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local TO = string.char(0xE2, 0x86, 0x92) -- U+2192 RIGHWARDS ARROW
 
-function class:left(name)
-  return self.builder:left(name)
+return function (self, out)
+  local symbol_names = self.symbol_names
+  local productions = self.productions
+  for i = 1, #productions do
+    local production = productions[i]
+    local body = production.body
+    out:write("(", i, ") ", symbol_names[production.head], " ", TO)
+    for j = 1, #body do
+      out:write(" ", symbol_names[body[j]])
+    end
+    out:write("\n")
+  end
+  return out
 end
-
-function class:right(name)
-  return self.builder:right(name)
-end
-
-function class:nonassoc(name)
-  return self.builder:nonassoc(name)
-end
-
-function metatable:__call(name)
-  local items = self.items
-  items[#items + 1] = name
-  return self
-end
-
-return setmetatable(class, {
-  __call = function (_, builder, items)
-    return setmetatable({ builder = builder, items = items }, metatable)
-  end;
-})

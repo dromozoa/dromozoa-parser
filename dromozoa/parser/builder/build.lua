@@ -36,9 +36,9 @@ return function (self, start_name)
       lexer_names[i] = name
       lexer_table[name] = i
     end
-    local accept_to_symbol = {}
     local m = #items
-    for j = 1, #items do
+    local accept_to_symbol = {}
+    for j = 1, m do
       local item = items[j]
       if not item.skip then
         local name = item.name
@@ -56,14 +56,20 @@ return function (self, start_name)
       end
     end
     lexer.accept_to_symbol = accept_to_symbol
-    if #items == 1 then
-      lexer.automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
-    else
-      local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
-      for j = 2, #items do
-        automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
+    if lexer.type == "regexp_lexer" then
+      if m == 1 then
+        lexer.automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
+      else
+        local automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
+        for j = 2, m do
+          automaton:union(regexp(items[j].pattern, j):nfa_to_dfa():minimize())
+        end
+        lexer.automaton = automaton:nfa_to_dfa():minimize()
       end
-      lexer.automaton = automaton:nfa_to_dfa():minimize()
+    else
+      if m ~= 2 or items[1].condition ~= 1 or items[2].condition ~= 2 then
+        error(("invalid when/otherwise at lexer %d"):format(i))
+      end
     end
   end
 
@@ -94,7 +100,8 @@ return function (self, start_name)
   self.max_terminal_symbol = max_terminal_symbol
 
   local productions = self.productions
-  if #productions == 1 then
+  local m = #productions
+  if m == 1 then
     return lexer(lexers)
   else
     local precedences = self.precedences
@@ -106,7 +113,7 @@ return function (self, start_name)
     n = n + 1
     symbol_names[n] = start_name .. "'"
 
-    for i = 2, #productions do
+    for i = 2, m do
       local production = productions[i]
       local name = production.head
       local symbol = symbol_table[name]
@@ -122,7 +129,7 @@ return function (self, start_name)
     end
 
     local check_table = {}
-    for i = 2, #productions do
+    for i = 2, m do
       local body = productions[i].body
       for j = 1, #body do
         local name = body[j]
@@ -186,7 +193,7 @@ return function (self, start_name)
       body = { start_symbol };
     }
 
-    for i = 2, #productions do
+    for i = 2, m do
       local production = productions[i]
       production.head = symbol_table[production.head]
       local body = production.body

@@ -1,8 +1,8 @@
 package = "dromozoa-parser"
-version = "1.6-1"
+version = "1.7-1"
 source = {
-  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.6.tar.gz";
-  file = "dromozoa-parser-1.6.tar.gz";
+  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.7.tar.gz";
+  file = "dromozoa-parser-1.7.tar.gz";
 }
 description = {
   summary = "Parser generator toolkit";
@@ -20,10 +20,13 @@ build = {
     ["dromozoa.parser.builder.pattern"] = "dromozoa/parser/builder/pattern.lua";
     ["dromozoa.parser.builder.precedence"] = "dromozoa/parser/builder/precedence.lua";
     ["dromozoa.parser.builder.production"] = "dromozoa/parser/builder/production.lua";
+    ["dromozoa.parser.builder.regexp_lexer"] = "dromozoa/parser/builder/regexp_lexer.lua";
+    ["dromozoa.parser.builder.search_lexer"] = "dromozoa/parser/builder/search_lexer.lua";
     ["dromozoa.parser.escape_html"] = "dromozoa/parser/escape_html.lua";
     ["dromozoa.parser.grammar"] = "dromozoa/parser/grammar.lua";
     ["dromozoa.parser.grammar.write_conflicts"] = "dromozoa/parser/grammar/write_conflicts.lua";
     ["dromozoa.parser.grammar.write_graphviz"] = "dromozoa/parser/grammar/write_graphviz.lua";
+    ["dromozoa.parser.grammar.write_productions"] = "dromozoa/parser/grammar/write_productions.lua";
     ["dromozoa.parser.grammar.write_set_of_items"] = "dromozoa/parser/grammar/write_set_of_items.lua";
     ["dromozoa.parser.grammar.write_table"] = "dromozoa/parser/grammar/write_table.lua";
     ["dromozoa.parser.lexer"] = "dromozoa/parser/lexer.lua";
