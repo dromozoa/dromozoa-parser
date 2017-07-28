@@ -48,25 +48,13 @@ timer:start()
 
 _:lexer()
   :_ (S" \t\n\v\f\r"^"+") :skip()
-  :_ "break"
-  :_ "do"
-  :_ "else"
-  :_ "elseif"
   :_ "end"
   :_ "false"
-  :_ "for"
   :_ "function"
-  :_ "goto"
-  :_ "if"
-  :_ "in"
   :_ "local"
   :_ "nil"
-  :_ "repeat"
   :_ "return"
-  :_ "then"
   :_ "true"
-  :_ "until"
-  :_ "while"
   :_ "="
   :_ "("
   :_ ")"
@@ -74,7 +62,6 @@ _:lexer()
   :_ "}"
   :_ "["
   :_ "]"
-  :_ "::"
   :_ ";"
   :_ ":"
   :_ ","
@@ -124,37 +111,16 @@ _"stat"
   :_ ";"
   :_ "varlist" "=" "explist"
   :_ "functioncall"
-  :_ "label"
-  :_ "break"
-  :_ "goto" "Name"
-  :_ "do" "block" "end"
-  :_ "while" "exp" "do" "block" "end"
-  :_ "repeat" "block" "until" "exp"
-  :_ "if" "exp" "then" "block" "elseif_CLAUSE_LIST" "else_CLAUSE" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
-  :_ "for" "namelist" "in" "explist" "do" "block" "end"
   :_ "function" "funcname" "funcbody"
   :_ "local" "function" "Name" "funcbody"
   :_ "local" "namelist"
   :_ "local" "namelist" "=" "explist"
-
-_"elseif_CLAUSE_LIST"
-  :_ ()
-  :_ "elseif_CLAUSE_LIST" "elseif" "block"
-
-_"else_CLAUSE"
-  :_ ()
-  :_ "else" "block"
 
 _"retstat"
   :_ "return"
   :_ "return" ";"
   :_ "return" "explist"
   :_ "return" "explist" ";"
-
-_"label"
-  :_ "::" "Name" "::"
 
 _"funcname"
   :_ "funcname_LIST"
@@ -247,6 +213,9 @@ timer:start()
 local lexer, grammar = _:build()
 timer:stop()
 print("build", timer:elapsed())
+
+-- grammar = grammar:eliminate_left_recursion()
+-- grammar.first_table = grammar:first()
 
 -- print("== symbols ==")
 -- for i = 1, #grammar.symbol_names do
