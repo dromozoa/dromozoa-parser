@@ -1,8 +1,8 @@
 package = "dromozoa-parser"
-version = "1.6-1"
+version = "1.7-1"
 source = {
-  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.6.tar.gz";
-  file = "dromozoa-parser-1.6.tar.gz";
+  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.7.tar.gz";
+  file = "dromozoa-parser-1.7.tar.gz";
 }
 description = {
   summary = "Parser generator toolkit";
