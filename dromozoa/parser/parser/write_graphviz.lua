@@ -42,7 +42,7 @@ return function (self, out, tree)
       end
       out:write('  ', uid, ' [shape=none,width=0,height=0,margin=0,label=<\n    <table border="0" cellborder="1" cellspacing="0">\n      <tr><td>', escape_html(name), '</td></tr>\n')
       if value then
-        out:write('      <tr><td>', escape_html(value), '</td></tr>\n')
+        out:write('      <tr><td>', (escape_html(value):gsub("\n", "<br/>")), '</td></tr>\n')
       end
       out:write('    </table>\n  >];\n')
       local m = u.n

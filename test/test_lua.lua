@@ -37,8 +37,11 @@ local function string_lexer(lexer)
     :_ [[\\]] "\\" :push()
     :_ [[\"]] "\"" :push()
     :_ [[\']] "\'" :push()
+    :_ (P[[\z]] * S" \t\n\v\f\r"^"*") :skip()
+    :_ (P[[\]] * R"09"^{1,3}) (function (rs, ri, rj) return string.char(tonumber(rs:sub(ri + 1, rj))) end) :push()
+    :_ (P[[\x]] * R"09AFaf"^{2}) (function (rs, ri, rj) return string.char(tonumber(rs:sub(ri + 2, rj), 16)) end) :push()
+    -- \u{...}
     :_ ((-S[[\"]])^"+") :push()
-    -- [TODO] more escape sequence
 end
 
 timer:start()
@@ -101,19 +104,28 @@ _:lexer()
   :_ ".."
   :_ "..."
   :_ ((R"AZaz" + P"_") * (R"09AZaz" + P"_")^"*") :as "Name"
-  :_ [["]] :call "string_dq" :skip()
-  :_ [[']] :call "string_sq" :skip()
-  -- [TODO] more strings
-  :_ (R"09"^"+" * (P"." * R"09"^"*")^"?" * (S"eE" * R"09"^"+")^"?") : as "Numeral"
-  -- [TODO] more numbers
+  :_ [["]] :call "dq_string" :skip()
+  :_ [[']] :call "sq_string" :skip()
+  :_ (P"[" * P"="^"*" * "[\n") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 2) .. "]" end) :hold() :call "long_string": skip()
+  :_ (P"[" * P"="^"*" * "[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 1) .. "]" end) :hold() :call "long_string": skip()
+  :_ ((R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
+  :_ (P"0" * S"xX" * (R"09AFaf"^"+" * (P"." * R"09AFaf"^"*")^"?" + P"." * R"09AFaf"^"+") * (S"pP" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
+  :_ (P"--[" * P"="^"*" * P"[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 3, rj - 1) .. "]" end) :hold() :call "long_comment" :skip()
   :_ (P"--" * ((-S"\n")^"+")) :skip()
-  -- [TODO] more comments
 
-string_lexer(_:lexer "string_dq")
+string_lexer(_:lexer "dq_string")
   :_ [["]] :as "LiteralString" :concat() :ret()
 
-string_lexer(_:lexer "string_sq")
+string_lexer(_:lexer "sq_string")
   :_ [[']] :as "LiteralString" :concat() :ret()
+
+_:search_lexer "long_string"
+  :when() :ret() :skip()
+  :otherwise() :as "LiteralString"
+
+_:search_lexer "long_comment"
+  :when() :ret() :skip()
+  :otherwise() :skip()
 
 timer:stop()
 print("define lexer", timer:elapsed())
@@ -338,12 +350,12 @@ grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
-local source = [[
+local source = [====[
 -- local a = b + c (f)(42)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
-x = f(42)
-]]
+print("\77\79\0890U\x0A\x41\x42")
+]====]
 
 local symbol
 local position = 1
