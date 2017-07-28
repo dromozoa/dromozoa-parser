@@ -251,21 +251,6 @@ _"prefixexp"
   :_ "functioncall"
   :_ "(" "exp" ")"
 
--- _"prefixexp"
---   :_ "var"
---   :_ "prefixexp" "args"
---   :_ "prefixexp" ":" "Name" "args"
---   :_ "(" "exp" ")"
-
--- _"prefixexp"
---   :_ "var" "prefixexp_impl"
---   :_ "(" "exp" ")" "prefixexp_impl"
-
--- _"prefixexp_impl"
---   :_ ()
---   :_ "args" "prefixexp_impl"
---   :_ ":" "Name" "args" "prefixexp_impl"
-
 _"functioncall"
   :_ "prefixexp" "args"
   :_ "prefixexp" ":" "Name" "args"
@@ -317,13 +302,12 @@ local lexer, grammar = _:build()
 timer:stop()
 print("build", timer:elapsed())
 
-print("== symbols ==")
-for i = 1, #grammar.symbol_names do
-  io.write("(", i, ") ", grammar.symbol_names[i], "\n")
-end
+-- print("== symbols ==")
+-- for i = 1, #grammar.symbol_names do
+--   io.write("(", i, ") ", grammar.symbol_names[i], "\n")
+-- end
 
-print("== productions ==")
-grammar:write_productions(io.stdout)
+grammar:write_productions("test-productions.txt")
 
 timer:start()
 local set_of_items, transitions = grammar:lr0_items()
@@ -349,14 +333,16 @@ local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 timer:stop()
 print("lr1_construct_table", timer:elapsed())
 
-grammar:write_set_of_items("test.dat", set_of_items)
+grammar:write_set_of_items("test-set-of-items.txt", set_of_items)
+grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [[
 -- local a = b + c (f)(42)
-local a = 1 + 2 + -3^2
-local a = 1 + 2 * 3
+-- local a = 1 + 2 + -3^2
+-- local a = 1 + 2 * 3
+x = f(42)
 ]]
 
 local symbol

@@ -735,7 +735,11 @@ function class:lr1_construct_table(set_of_items, transitions)
 end
 
 function class:write_productions(out)
-  return write_productions(self, out)
+  if type(out) == "string" then
+    write_productions(self, assert(io.open(out, "w"))):close()
+  else
+    return write_productions(self, out)
+  end
 end
 
 function class:write_set_of_items(out, set_of_items)
@@ -763,7 +767,11 @@ function class:write_table(out, data)
 end
 
 function class:write_conflicts(out, conflicts, verbose)
-  return write_conflicts(self, out, conflicts, verbose)
+  if type(out) == "string" then
+    return write_conflicts(self, assert(io.open(out, "w")), conflicts, verbose):close()
+  else
+    return write_conflicts(self, out, conflicts, verbose)
+  end
 end
 
 return setmetatable(class, {
