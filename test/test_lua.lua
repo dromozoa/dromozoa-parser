@@ -386,10 +386,14 @@ grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [====[
-local a = b + c (f)(42)
+local a = b + c (f)(1, 2, 3, 4, 5)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
 -- print("\77\79\0890U\x0A\x41\x42")
+function f.g.h:i(x, y, z)
+  local a = b + c (f)(42)
+  return a
+end
 ]====]
 
 local symbol
