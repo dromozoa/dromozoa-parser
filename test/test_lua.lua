@@ -280,6 +280,7 @@ _"exp"
   :_ "#" "exp"
   :_ "~" "exp" :prec "BNOT"
 
+-- prefixexp without functioncall
 _"var | ( exp )"
   :_ "var"
   :_ "(" "exp" ")"
@@ -385,10 +386,10 @@ grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [====[
--- local a = b + c (f)(42)
+local a = b + c (f)(42)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
-print("\77\79\0890U\x0A\x41\x42")
+-- print("\77\79\0890U\x0A\x41\x42")
 ]====]
 
 local symbol
