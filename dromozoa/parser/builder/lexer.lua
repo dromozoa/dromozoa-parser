@@ -73,6 +73,13 @@ function class:hold()
   return self
 end
 
+function class:mark()
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 10 }
+  return self
+end
+
 function metatable:__call(repl)
   local items = self.items
   local actions = items[#items].actions

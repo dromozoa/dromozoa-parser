@@ -31,11 +31,16 @@ function metatable:__call(s, init)
   local buffer = self.buffer
 
   local n = #s
+  local position_start = init
+  local position_mark
 
   while true do
     if n < init then
       if #stack == 1 then
-        return 1, init, s, init, init -- marker end
+        if not position_mark then
+          position_mark = init
+        end
+        return 1, position_start, position_mark, init, s, init, init -- marker end
       else
         return nil, "lexer error", init
       end
@@ -195,12 +200,17 @@ function metatable:__call(s, init)
         rj = #rs
       elseif code == 9 then -- hold
         self.hold = rs:sub(ri, rj)
+      elseif code == 10 then -- mark
+        position_mark = init
       end
     end
     if skip then
       init = position
     else
-      return lexer.accept_to_symbol[accept], position, rs, ri, rj
+      if not position_mark then
+        position_mark = init
+      end
+      return lexer.accept_to_symbol[accept], position_start, position_mark, position, rs, ri, rj
     end
   end
 end

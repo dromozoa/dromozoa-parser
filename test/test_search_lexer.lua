@@ -42,14 +42,11 @@ foo [===[ bar ]===] baz
 ]]
 
 local position = 1
-local rs
-local ri
-local rj
-
 local data = {}
 repeat
-  symbol, position, rs, ri, rj = assert(lexer(s, position))
+  local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(s, position))
   data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
+  position = pj
 until symbol == 1
 
 assert(equal(data, {
