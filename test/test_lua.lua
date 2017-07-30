@@ -104,10 +104,10 @@ _:lexer()
   :_ ".."
   :_ "..."
   :_ ((R"AZaz" + P"_") * (R"09AZaz" + P"_")^"*") :as "Name"
-  :_ [["]] :call "dq_string" :skip()
-  :_ [[']] :call "sq_string" :skip()
-  :_ (P"[" * P"="^"*" * "[\n") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 2) .. "]" end) :hold() :call "long_string": skip()
-  :_ (P"[" * P"="^"*" * "[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 1) .. "]" end) :hold() :call "long_string": skip()
+  :_ [["]] :call "dq_string" :mark() :skip()
+  :_ [[']] :call "sq_string" :mark() :skip()
+  :_ (P"[" * P"="^"*" * "[\n") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 2) .. "]" end) :hold() :call "long_string" :mark() :skip()
+  :_ (P"[" * P"="^"*" * "[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 1) .. "]" end) :hold() :call "long_string" :mark() :skip()
   :_ ((R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"0" * S"xX" * (R"09AFaf"^"+" * (P"." * R"09AFaf"^"*")^"?" + P"." * R"09AFaf"^"+") * (S"pP" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"--[" * P"="^"*" * P"[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 3, rj - 1) .. "]" end) :hold() :call "long_comment" :skip()
@@ -120,8 +120,8 @@ string_lexer(_:lexer "sq_string")
   :_ [[']] :as "LiteralString" :concat() :ret()
 
 _:search_lexer "long_string"
-  :when() :ret() :skip()
-  :otherwise() :as "LiteralString"
+  :when() :as "LiteralString" :concat() :ret()
+  :otherwise() :push()
 
 _:search_lexer "long_comment"
   :when() :ret() :skip()
@@ -386,26 +386,32 @@ grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [====[
-local a = b + c (f)(1, 2, 3, 4, 5)
+--[[
+-- local a = b + c (f)(1, 2, 3, 4, 5)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
--- print("\77\79\0890U\x0A\x41\x42")
-function f.g.h:i(x, y, z)
-  local a = b + c (f)(42)
-  return a
-end
+]]
+print("\77\79\0890U\x0A\x41\x42")
+-- local a = [==[
+-- foo
+-- bar
+-- baz
+-- ]==]
+-- function f.g.h:i(x, y, z)
+--   local a = b + c (f)(42)
+--   return a
+-- end
 ]====]
 
-local symbol
 local position = 1
-local rs
-local ri
-local rj
-local tree
-
 repeat
-  symbol, position, rs, ri, rj = assert(lexer(source, position))
-  tree = assert(parser(symbol, { value = rs:sub(ri, rj), position }))
+  local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(source, position))
+  tree = assert(parser(symbol, {
+    value = rs:sub(ri, rj);
+    -- value = source:sub(pi, pj - 1);
+    -- value = source:sub(ps, pj - 1);
+  }))
+  position = pj
 until symbol == 1
 
 parser:write_graphviz("test.dot", tree)

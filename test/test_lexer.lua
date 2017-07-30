@@ -33,7 +33,7 @@ _:lexer()
   :_ ")"
   :_ (R"AZ__az" * R"09AZ__az"^"*") :as "identifier"
   :_ (R"09"^"+") :as "integer"
-  :_ [["]] :call "string" :skip()
+  :_ [["]] :call "string" :mark() :skip()
 
 _:lexer "string"
   :_ [["]] :as "string" :concat() :ret()
@@ -58,19 +58,16 @@ abcd
 
 for i = 1, 8 do
   local source = s .. (" "):rep(i)
-  local symbol
   local position = 1
-  local rs
-  local ri
-  local rj
 
   local data = {}
   repeat
-    symbol, position, rs, ri, rj = assert(lexer(source, position))
+    local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(source, position))
     data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
     if i == 1 then
-      print(_.symbol_names[symbol], symbol, ("%q"):format(rs:sub(ri, rj)))
+      print(_.symbol_names[symbol], symbol, ("%q -> %q"):format(source:sub(pi, pj - 1), rs:sub(ri, rj)))
     end
+    position = pj
   until symbol == 1
 
   assert(equal(data, {
