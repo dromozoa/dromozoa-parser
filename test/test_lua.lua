@@ -104,10 +104,10 @@ _:lexer()
   :_ ".."
   :_ "..."
   :_ ((R"AZaz" + P"_") * (R"09AZaz" + P"_")^"*") :as "Name"
-  :_ [["]] :call "dq_string" :skip()
-  :_ [[']] :call "sq_string" :skip()
-  :_ (P"[" * P"="^"*" * "[\n") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 2) .. "]" end) :hold() :call "long_string": skip()
-  :_ (P"[" * P"="^"*" * "[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 1) .. "]" end) :hold() :call "long_string": skip()
+  :_ [["]] :call "dq_string" :mark() :skip()
+  :_ [[']] :call "sq_string" :mark() :skip()
+  :_ (P"[" * P"="^"*" * "[\n") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 2) .. "]" end) :hold() :call "long_string" :mark() :skip()
+  :_ (P"[" * P"="^"*" * "[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 1) .. "]" end) :hold() :call "long_string" :mark() :skip()
   :_ ((R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"0" * S"xX" * (R"09AFaf"^"+" * (P"." * R"09AFaf"^"*")^"?" + P"." * R"09AFaf"^"+") * (S"pP" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"--[" * P"="^"*" * P"[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 3, rj - 1) .. "]" end) :hold() :call "long_comment" :skip()
@@ -120,8 +120,8 @@ string_lexer(_:lexer "sq_string")
   :_ [[']] :as "LiteralString" :concat() :ret()
 
 _:search_lexer "long_string"
-  :when() :ret() :skip()
-  :otherwise() :as "LiteralString"
+  :when() :as "LiteralString" :concat() :ret()
+  :otherwise() :push()
 
 _:search_lexer "long_comment"
   :when() :ret() :skip()
@@ -154,12 +154,15 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ "stat_LIST"
-  :_ "stat_LIST" "retstat"
+  :_ "{stat}" "[retstat]"
 
-_"stat_LIST"
+_"{stat}"
   :_ ()
-  :_ "stat_LIST" "stat"
+  :_ "{stat}" "stat"
+
+_"[retstat]"
+  :_ ()
+  :_ "retstat"
 
 _"stat"
   :_ ";"
@@ -171,39 +174,53 @@ _"stat"
   :_ "do" "block" "end"
   :_ "while" "exp" "do" "block" "end"
   :_ "repeat" "block" "until" "exp"
-  :_ "if" "exp" "then" "block" "elseif_CLAUSE_LIST" "else_CLAUSE" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
+  :_ "if" "exp" "then" "block" "{elseif exp then block}" "[else block]" "end"
+  :_ "for" "Name" "=" "exp" "," "exp" "[, exp]" "do" "block" "end"
   :_ "for" "namelist" "in" "explist" "do" "block" "end"
   :_ "function" "funcname" "funcbody"
   :_ "local" "function" "Name" "funcbody"
-  :_ "local" "namelist"
-  :_ "local" "namelist" "=" "explist"
+  :_ "local" "namelist" "[= explist]"
 
-_"elseif_CLAUSE_LIST"
+_"{elseif exp then block}"
   :_ ()
-  :_ "elseif_CLAUSE_LIST" "elseif" "block"
+  :_ "{elseif exp then block}" "elseif" "exp" "then" "block"
 
-_"else_CLAUSE"
+_"[else block]"
   :_ ()
   :_ "else" "block"
 
+_"[, exp]"
+  :_ ()
+  :_ "," "exp"
+
+_"[= explist]"
+  :_ ()
+  :_ "=" "explist"
+
 _"retstat"
-  :_ "return"
-  :_ "return" ";"
-  :_ "return" "explist"
-  :_ "return" "explist" ";"
+  :_ "return" "[explist]" "[;]"
+
+_"[explist]"
+  :_ ()
+  :_ "explist"
+
+_"[;]"
+  :_ ()
+  :_ ";"
 
 _"label"
   :_ "::" "Name" "::"
 
 _"funcname"
-  :_ "funcname_LIST"
-  :_ "funcname_LIST" ":" "Name"
+  :_ "Name" "{. Name}" "[: Name]"
 
-_"funcname_LIST"
-  :_ "Name"
-  :_ "funcname_LIST" "." "Name"
+_"{. Name}"
+  :_ ()
+  :_ "{. Name}" "." "Name"
+
+_"[: Name]"
+  :_ ()
+  :_ ":" "Name"
 
 _"varlist"
   :_ "var"
@@ -211,8 +228,10 @@ _"varlist"
 
 _"var"
   :_ "Name"
-  :_ "prefixexp" "[" "exp" "]"
-  :_ "prefixexp" "." "Name"
+  :_ "var | ( exp )" "[" "exp" "]"
+  :_ "var | ( exp )" "." "Name"
+  :_ "functioncall" "[" "exp" "]"
+  :_ "functioncall" "." "Name"
 
 _"namelist"
   :_ "Name"
@@ -230,8 +249,10 @@ _"exp"
   :_ "LiteralString"
   :_ "..."
   :_ "functiondef"
-  :_ "prefixexp"
+  :_ "var | ( exp )"
+  :_ "functioncall"
   :_ "tableconstructor"
+  -- binop
   :_ "exp" "+" "exp"
   :_ "exp" "-" "exp"
   :_ "exp" "*" "exp"
@@ -253,23 +274,25 @@ _"exp"
   :_ "exp" "~=" "exp"
   :_ "exp" "and" "exp"
   :_ "exp" "or" "exp"
+  -- unop
   :_ "-" "exp" :prec "UNM"
   :_ "not" "exp"
   :_ "#" "exp"
   :_ "~" "exp" :prec "BNOT"
 
-_"prefixexp"
+-- prefixexp without functioncall
+_"var | ( exp )"
   :_ "var"
-  :_ "functioncall"
   :_ "(" "exp" ")"
 
 _"functioncall"
-  :_ "prefixexp" "args"
-  :_ "prefixexp" ":" "Name" "args"
+  :_ "var | ( exp )" "args"
+  :_ "var | ( exp )" ":" "Name" "args"
+  :_ "functioncall" "args"
+  :_ "functioncall" ":" "Name" "args"
 
 _"args"
-  :_ "(" ")"
-  :_ "(" "explist" ")"
+  :_ "(" "[explist]" ")"
   :_ "tableconstructor"
   :_ "LiteralString"
 
@@ -277,25 +300,37 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end"
-  :_ "(" "parlist" ")" "block" "end"
+  :_ "(" "[parlist]" ")" "block" "end"
+
+_"[parlist]"
+  :_ ()
+  :_ "parlist"
 
 _"parlist"
-  :_ "namelist"
-  :_ "namelist" "," "..."
+  :_ "namelist" "[, ...]"
   :_ "..."
 
+_"[, ...]"
+  :_ ()
+  :_ "," "..."
+
 _"tableconstructor"
-  :_ "{" "}"
-  :_ "{" "fieldlist" "}"
+  :_ "{" "[fieldlist]" "}"
+
+_"[fieldlist]"
+  :_ ()
+  :_ "fieldlist"
 
 _"fieldlist"
-  :_ "fieldlist_impl"
-  :_ "fieldlist_impl" "fieldsep"
+  :_ "field" "{fieldsep field}" "[fieldsep]"
 
-_"fieldlist_impl"
-  :_ "field"
-  :_ "fieldlist_impl" "fieldsep" "field"
+_"{fieldsep field}"
+  :_ ()
+  :_ "{fieldsep field}" "fieldsep" "field"
+
+_"[fieldsep]"
+  :_ ()
+  :_ "fieldsep"
 
 _"field"
   :_ "[" "exp" "]" "=" "exp"
@@ -351,22 +386,32 @@ grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [====[
--- local a = b + c (f)(42)
+--[[
+-- local a = b + c (f)(1, 2, 3, 4, 5)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
+]]
 print("\77\79\0890U\x0A\x41\x42")
+-- local a = [==[
+-- foo
+-- bar
+-- baz
+-- ]==]
+-- function f.g.h:i(x, y, z)
+--   local a = b + c (f)(42)
+--   return a
+-- end
 ]====]
 
-local symbol
 local position = 1
-local rs
-local ri
-local rj
-local tree
-
 repeat
-  symbol, position, rs, ri, rj = assert(lexer(source, position))
-  tree = assert(parser(symbol, { value = rs:sub(ri, rj), position }))
+  local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(source, position))
+  tree = assert(parser(symbol, {
+    value = rs:sub(ri, rj);
+    -- value = source:sub(pi, pj - 1);
+    -- value = source:sub(ps, pj - 1);
+  }))
+  position = pj
 until symbol == 1
 
 parser:write_graphviz("test.dot", tree)
