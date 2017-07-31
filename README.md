@@ -76,3 +76,9 @@ Parser generator toolkit.
 |    2 | reduce |
 |    3 | error  |
 
+## Actions
+
+| Code | Operator  | #Operands | Description |
+|-----:|-----------|----------:|-------------|
+|    1 | `:list()` |         0 | list        |
+

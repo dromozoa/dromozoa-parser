@@ -239,7 +239,7 @@ _"namelist"
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp"
+  :_ "explist" "," "exp" :list()
 
 _"exp"
   :_ "nil"
@@ -386,11 +386,9 @@ grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [====[
---[[
--- local a = b + c (f)(1, 2, 3, 4, 5)
--- local a = 1 + 2 + -3^2
--- local a = 1 + 2 * 3
-]]
+local a = b + c (f)(1, 2, 3, 4, 5)
+local a = 1 + 2 + -3^2
+local a = 1 + 2 * 3
 print("\77\79\0890U\x0A\x41\x42")
 -- local a = [==[
 -- foo
