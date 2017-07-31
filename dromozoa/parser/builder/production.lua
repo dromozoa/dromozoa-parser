@@ -38,7 +38,7 @@ end
 
 function class:list()
   local items = self.items
-  items[#items].action = 1
+  items[#items].semantic_action = 1
   return self
 end
 

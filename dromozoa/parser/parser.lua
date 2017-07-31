@@ -37,7 +37,7 @@ function metatable:__call(symbol, data)
   local table = self.table
   local heads = self.heads
   local sizes = self.sizes
-  local actions = self.actions
+  local semantic_actions = self.semantic_actions
   local stack = self.stack
   local nodes = self.nodes
 
@@ -72,7 +72,7 @@ function metatable:__call(symbol, data)
           end
 
           local node
-          local semantic_action = actions[action]
+          local semantic_action = semantic_actions[action]
           if semantic_action == 1 then
             node = reduced_nodes[1]
             local m = node.n
@@ -118,7 +118,7 @@ return setmetatable(class, {
       table = data.table;
       heads = data.heads;
       sizes = data.sizes;
-      actions = data.actions;
+      semantic_actions = data.semantic_actions;
       stack = { 1 }; -- start state
       nodes = {};
     }, metatable)
