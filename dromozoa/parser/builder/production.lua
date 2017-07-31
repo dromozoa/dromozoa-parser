@@ -26,7 +26,6 @@ function class:_(name)
   items[#items + 1] = {
     head = self.head;
     body = { name };
-    actions = {};
   }
   return self
 end
@@ -39,8 +38,7 @@ end
 
 function class:list()
   local items = self.items
-  local actions = items[#items].actions
-  actions[#actions + 1] = { 1 }
+  items[#items].action = 1
   return self
 end
 

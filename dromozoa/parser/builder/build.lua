@@ -191,7 +191,6 @@ return function (self, start_name)
     productions[1] = {
       head = max_terminal_symbol + 1;
       body = { start_symbol };
-      actions = {};
     }
 
     for i = 2, m do

@@ -37,6 +37,7 @@ function metatable:__call(symbol, data)
   local table = self.table
   local heads = self.heads
   local sizes = self.sizes
+  local actions = self.actions
   local stack = self.stack
   local nodes = self.nodes
 
@@ -70,12 +71,22 @@ function metatable:__call(symbol, data)
             nodes[i] = nil
           end
 
-          local node = {
-            symbol;
-            n = n + 1;
-          }
-          for i = 1, n do
-            node[i + 1] = reduced_nodes[i]
+          local node
+          local semantic_action = actions[action]
+          if semantic_action == 1 then
+            node = reduced_nodes[1]
+            for i = 2, n do
+              node[node.n + i - 1] = reduced_nodes[i]
+            end
+            node.n = node.n + n - 1
+          else
+            node = {
+              symbol;
+              n = n + 1;
+            }
+            for i = 1, n do
+              node[i + 1] = reduced_nodes[i]
+            end
           end
 
           local n1 = #stack
@@ -105,6 +116,7 @@ return setmetatable(class, {
       table = data.table;
       heads = data.heads;
       sizes = data.sizes;
+      actions = data.actions;
       stack = { 1 }; -- start state
       nodes = {};
     }, metatable)
