@@ -75,10 +75,12 @@ function metatable:__call(symbol, data)
           local semantic_action = actions[action]
           if semantic_action == 1 then
             node = reduced_nodes[1]
+            local m = node.n
             for i = 2, n do
-              node[node.n + i - 1] = reduced_nodes[i]
+              m = m + 1
+              node[m] = reduced_nodes[i]
             end
-            node.n = node.n + n - 1
+            node.n = m
           else
             node = {
               symbol;
