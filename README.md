@@ -76,7 +76,7 @@ Parser generator toolkit.
 |    2 | reduce |
 |    3 | error  |
 
-## Actions
+## Semantic Actions
 
 | Code | Operator  | #Operands | Description |
 |-----:|-----------|----------:|-------------|
