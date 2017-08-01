@@ -42,8 +42,8 @@ function metatable:__call(symbol, data)
   local nodes = self.nodes
 
   local node = {
-    symbol;
-    n = 1;
+    [0] = symbol;
+    n = 0;
     data = data;
   }
 
@@ -83,11 +83,11 @@ function metatable:__call(symbol, data)
             node.n = m
           else
             node = {
-              symbol;
-              n = n + 1;
+              [0] = symbol;
+              n = n;
             }
             for i = 1, n do
-              node[i + 1] = reduced_nodes[i]
+              node[i] = reduced_nodes[i]
             end
           end
 
