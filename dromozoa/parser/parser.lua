@@ -31,7 +31,7 @@ function class:write_graphviz(out, tree)
   end
 end
 
-function metatable:__call(symbol, v, s, p, i, j, rs, ri, rj)
+function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
@@ -44,7 +44,8 @@ function metatable:__call(symbol, v, s, p, i, j, rs, ri, rj)
   local node = {
     [0] = symbol;
     n = 0;
-    v = v;
+    value = value;
+    file = file;
     s = s;
     p = p;
     i = i;
