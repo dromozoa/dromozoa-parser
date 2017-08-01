@@ -415,13 +415,9 @@ return {
 
 local position = 1
 repeat
-  local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(source, position))
-  tree = assert(parser(symbol, {
-    value = rs:sub(ri, rj);
-    -- value = source:sub(pi, pj - 1);
-    -- value = source:sub(ps, pj - 1);
-  }))
-  position = pj
+  local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
+  tree = assert(parser(symbol, rs:sub(ri, rj), soruce, p, i, j - 1, rs, ri, rj))
+  position = j
 until symbol == 1
 
 parser:write_graphviz("test.dot", tree)

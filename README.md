@@ -38,7 +38,7 @@ Parser generator toolkit.
 ### Actions
 
 | Code | Operator        | #Operands | Skip | Description              |
-|-----:|-----------------|----------:|------|--------------------------|
+|-----:|-----------------|----------:|:----:|--------------------------|
 |    1 | `:skip()`       |         0 | yes  | skip                     |
 |    2 | `:push()`       |         0 | yes  | push                     |
 |    3 | `:concat()`     |         0 |      | concat                   |
@@ -84,8 +84,17 @@ Parser generator toolkit.
 
 ### Node
 
-| Name  | Type      | Description  |
-|-------|-----------|--------------|
-| `[0]` | `Integer` | head symbol  |
-| `[n]` | `Integer` | body symbols |
+| Name  | Type      | Terminal Only | Description              |
+|-------|-----------|:-------------:|--------------------------|
+| `[0]` | `integer` |               | head symbol              |
+| `[i]` | `integer` |               | body symbols             |
+| `.n`  | `integer` |               | length of body symbols   |
+| `.v`  | `string`  |      yes      | value string             |
+| `.s`  | `string`  |      yes      | source string            |
+| `.p`  | `integer` |      yes      | skipped position         |
+| `.i`  | `integer` |      yes      | start position           |
+| `.j`  | `integer` |      yes      | end position             |
+| `.rs` | `string`  |      yes      | resulting string         |
+| `.ri` | `integer` |      yes      | resulting start position |
+| `.rj` | `integer` |      yes      | resulting end position   |
 
