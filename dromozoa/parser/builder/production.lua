@@ -36,6 +36,12 @@ function class:prec(name)
   return self
 end
 
+function class:list()
+  local items = self.items
+  items[#items].semantic_action = 1
+  return self
+end
+
 function metatable:__call(name)
   local items = self.items
   local body = items[#items].body

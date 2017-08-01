@@ -38,7 +38,7 @@ Parser generator toolkit.
 ### Actions
 
 | Code | Operator        | #Operands | Skip | Description              |
-|-----:|-----------------|----------:|------|--------------------------|
+|-----:|-----------------|----------:|:----:|--------------------------|
 |    1 | `:skip()`       |         0 | yes  | skip                     |
 |    2 | `:push()`       |         0 | yes  | push                     |
 |    3 | `:concat()`     |         0 |      | concat                   |
@@ -68,11 +68,33 @@ Parser generator toolkit.
 |    1 | `marker_end`       | $      |
 |   -1 | `marker_lookahead` | #      |
 
-## Conflict Resolutions
+### Conflict Resolutions
 
 | Code | Action |
 |-----:|--------|
 |    1 | shift  |
 |    2 | reduce |
 |    3 | error  |
+
+### Semantic Actions
+
+| Code | Operator  | #Operands | Description |
+|-----:|-----------|----------:|-------------|
+|    1 | `:list()` |         0 | list        |
+
+### Node
+
+| Name  | Type      | Terminal Only | Description              |
+|-------|-----------|:-------------:|--------------------------|
+| `[0]` | `integer` |               | head symbol              |
+| `[i]` | `integer` |               | body symbols             |
+| `.n`  | `integer` |               | length of body symbols   |
+| `.v`  | `string`  |      yes      | value string             |
+| `.s`  | `string`  |      yes      | source string            |
+| `.p`  | `integer` |      yes      | skipped position         |
+| `.i`  | `integer` |      yes      | start position           |
+| `.j`  | `integer` |      yes      | end position             |
+| `.rs` | `string`  |      yes      | resulting string         |
+| `.ri` | `integer` |      yes      | resulting start position |
+| `.rj` | `integer` |      yes      | resulting end position   |
 

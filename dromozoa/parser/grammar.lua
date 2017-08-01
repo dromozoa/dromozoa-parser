@@ -717,11 +717,13 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   local heads = {}
   local sizes = {}
+  local semantic_actions = {}
   for i = 2, #productions do
     local production = productions[i]
     local j = m + i
     heads[j] = production.head
     sizes[j] = #production.body
+    semantic_actions[j] = production.semantic_action
   end
 
   return parser({
@@ -731,6 +733,7 @@ function class:lr1_construct_table(set_of_items, transitions)
     table = table;
     heads = heads;
     sizes = sizes;
+    semantic_actions = semantic_actions;
   }), conflicts
 end
 

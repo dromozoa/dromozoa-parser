@@ -158,7 +158,7 @@ _"block"
 
 _"{stat}"
   :_ ()
-  :_ "{stat}" "stat"
+  :_ "{stat}" "stat" :list()
 
 _"[retstat]"
   :_ ()
@@ -224,7 +224,7 @@ _"[: Name]"
 
 _"varlist"
   :_ "var"
-  :_ "varlist" "," "var"
+  :_ "varlist" "," "var" :list()
 
 _"var"
   :_ "Name"
@@ -235,11 +235,11 @@ _"var"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name"
+  :_ "namelist" "," "Name" :list()
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp"
+  :_ "explist" "," "exp" :list()
 
 _"exp"
   :_ "nil"
@@ -326,7 +326,7 @@ _"fieldlist"
 
 _"{fieldsep field}"
   :_ ()
-  :_ "{fieldsep field}" "fieldsep" "field"
+  :_ "{fieldsep field}" "fieldsep" "field" :list()
 
 _"[fieldsep]"
   :_ ()
@@ -386,32 +386,38 @@ grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
 local source = [====[
---[[
+f(a, b, c, d)
 -- local a = b + c (f)(1, 2, 3, 4, 5)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
-]]
-print("\77\79\0890U\x0A\x41\x42")
+-- print("\77\79\0890U\x0A\x41\x42")
 -- local a = [==[
 -- foo
 -- bar
 -- baz
 -- ]==]
--- function f.g.h:i(x, y, z)
+function f.g.h:i(x, y, z)
 --   local a = b + c (f)(42)
 --   return a
--- end
+end
+x, y, z = ...
+local t0 = {}
+local t1 = {"a"}
+local t2 = {"a","b"}
+local t3 = {"a","b","c"}
+return {
+  foo = 17,
+  bar = 23;
+  "baz";
+  qux = 42;
+}
 ]====]
 
 local position = 1
 repeat
-  local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(source, position))
-  tree = assert(parser(symbol, {
-    value = rs:sub(ri, rj);
-    -- value = source:sub(pi, pj - 1);
-    -- value = source:sub(ps, pj - 1);
-  }))
-  position = pj
+  local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
+  tree = assert(parser(symbol, rs:sub(ri, rj), soruce, p, i, j - 1, rs, ri, rj))
+  position = j
 until symbol == 1
 
 parser:write_graphviz("test.dot", tree)

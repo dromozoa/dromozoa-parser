@@ -31,19 +31,27 @@ function class:write_graphviz(out, tree)
   end
 end
 
-function metatable:__call(symbol, data)
+function metatable:__call(symbol, v, s, p, i, j, rs, ri, rj)
   local max_state = self.max_state
   local max_symbol = self.max_symbol
   local table = self.table
   local heads = self.heads
   local sizes = self.sizes
+  local semantic_actions = self.semantic_actions
   local stack = self.stack
   local nodes = self.nodes
 
   local node = {
-    symbol;
-    n = 1;
-    data = data;
+    [0] = symbol;
+    n = 0;
+    v = v;
+    s = s;
+    p = p;
+    i = i;
+    j = j;
+    rs = rs;
+    ri = ri;
+    rj = rj;
   }
 
   while true do
@@ -70,12 +78,24 @@ function metatable:__call(symbol, data)
             nodes[i] = nil
           end
 
-          local node = {
-            symbol;
-            n = n + 1;
-          }
-          for i = 1, n do
-            node[i + 1] = reduced_nodes[i]
+          local node
+          local semantic_action = semantic_actions[action]
+          if semantic_action == 1 then
+            node = reduced_nodes[1]
+            local m = node.n
+            for i = 2, n do
+              m = m + 1
+              node[m] = reduced_nodes[i]
+            end
+            node.n = m
+          else
+            node = {
+              [0] = symbol;
+              n = n;
+            }
+            for i = 1, n do
+              node[i] = reduced_nodes[i]
+            end
           end
 
           local n1 = #stack
@@ -105,6 +125,7 @@ return setmetatable(class, {
       table = data.table;
       heads = data.heads;
       sizes = data.sizes;
+      semantic_actions = data.semantic_actions;
       stack = { 1 }; -- start state
       nodes = {};
     }, metatable)
