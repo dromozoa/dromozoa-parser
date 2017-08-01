@@ -84,17 +84,18 @@ Parser generator toolkit.
 
 ### Node
 
-| Name  | Type      | Terminal Only | Description              |
-|-------|-----------|:-------------:|--------------------------|
-| `[0]` | `integer` |               | head symbol              |
-| `[i]` | `integer` |               | body symbols             |
-| `.n`  | `integer` |               | length of body symbols   |
-| `.v`  | `string`  |      yes      | value string             |
-| `.s`  | `string`  |      yes      | source string            |
-| `.p`  | `integer` |      yes      | skipped position         |
-| `.i`  | `integer` |      yes      | start position           |
-| `.j`  | `integer` |      yes      | end position             |
-| `.rs` | `string`  |      yes      | resulting string         |
-| `.ri` | `integer` |      yes      | resulting start position |
-| `.rj` | `integer` |      yes      | resulting end position   |
+| Name     | Type      | Terminal Only | Description              |
+|----------|-----------|:-------------:|--------------------------|
+| `[0]`    | `integer` |               | head symbol              |
+| `[i]`    | `integer` |               | body symbols             |
+| `.n`     | `integer` |               | length of body symbols   |
+| `.value` | `string`  |      yes      | value                    |
+| `.file`  | `string`  |      yes      | file                     |
+| `.s`     | `string`  |      yes      | string                   |
+| `.p`     | `integer` |      yes      | skipped position         |
+| `.i`     | `integer` |      yes      | start position           |
+| `.j`     | `integer` |      yes      | end position             |
+| `.rs`    | `string`  |      yes      | resulting string         |
+| `.ri`    | `integer` |      yes      | resulting start position |
+| `.rj`    | `integer` |      yes      | resulting end position   |
 
