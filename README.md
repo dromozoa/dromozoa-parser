@@ -68,7 +68,7 @@ Parser generator toolkit.
 |    1 | `marker_end`       | $      |
 |   -1 | `marker_lookahead` | #      |
 
-## Conflict Resolutions
+### Conflict Resolutions
 
 | Code | Action |
 |-----:|--------|
@@ -76,9 +76,16 @@ Parser generator toolkit.
 |    2 | reduce |
 |    3 | error  |
 
-## Semantic Actions
+### Semantic Actions
 
 | Code | Operator  | #Operands | Description |
 |-----:|-----------|----------:|-------------|
 |    1 | `:list()` |         0 | list        |
+
+### Node
+
+| Name  | Type      | Description  |
+|-------|-----------|--------------|
+| `[0]` | `Integer` | head symbol  |
+| `[n]` | `Integer` | body symbols |
 
