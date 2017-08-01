@@ -158,7 +158,7 @@ _"block"
 
 _"{stat}"
   :_ ()
-  :_ "{stat}" "stat"
+  :_ "{stat}" "stat" :list()
 
 _"[retstat]"
   :_ ()
@@ -224,7 +224,7 @@ _"[: Name]"
 
 _"varlist"
   :_ "var"
-  :_ "varlist" "," "var"
+  :_ "varlist" "," "var" :list()
 
 _"var"
   :_ "Name"
@@ -235,7 +235,7 @@ _"var"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name"
+  :_ "namelist" "," "Name" :list()
 
 _"explist"
   :_ "exp"
@@ -326,7 +326,7 @@ _"fieldlist"
 
 _"{fieldsep field}"
   :_ ()
-  :_ "{fieldsep field}" "fieldsep" "field"
+  :_ "{fieldsep field}" "fieldsep" "field" :list()
 
 _"[fieldsep]"
   :_ ()
@@ -400,6 +400,17 @@ function f.g.h:i(x, y, z)
 --   local a = b + c (f)(42)
 --   return a
 end
+x, y, z = ...
+local t0 = {}
+local t1 = {"a"}
+local t2 = {"a","b"}
+local t3 = {"a","b","c"}
+return {
+  foo = 17,
+  bar = 23;
+  "baz";
+  qux = 42;
+}
 ]====]
 
 local position = 1
