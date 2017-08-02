@@ -414,10 +414,51 @@ return {
 ]====]
 
 local position = 1
+local root
+local node = {}
 repeat
   local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
-  tree = assert(parser(symbol, rs:sub(ri, rj), nil, soruce, p, i, j - 1, rs, ri, rj))
+  root = assert(parser(symbol, rs:sub(ri, rj), nil, source, p, i, j - 1, rs, ri, rj))
+  node.p = p
+  node.i = i
+  node.j = j
   position = j
 until symbol == 1
 
-parser:write_graphviz("test.dot", tree)
+parser:write_graphviz("test.dot", root)
+
+print(root[0], root.p)
+
+local result = {}
+
+local stack1 = { root }
+local stack2 = {}
+while true do
+  local n1 = #stack1
+  local n2 = #stack2
+  local node = stack1[n1]
+  if not node then
+    break
+  end
+  if node == stack2[n2] then
+    stack1[n1] = nil
+    stack2[n2] = nil
+    if node.s then
+      local s = node.s
+      local p = node.p
+      local i = node.i
+      local j = node.j
+      result[#result + 1] = s:sub(p, j)
+    end
+  else
+    for i = node.n, 1, -1 do
+      stack1[#stack1 + 1] = node[i]
+    end
+    stack2[n2 + 1] = node
+  end
+end
+result[#result + 1] = source:sub(node.p, node.i - 1)
+
+io.write(table.concat(result))
+assert(table.concat(result) == source)
+

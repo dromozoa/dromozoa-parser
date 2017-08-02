@@ -67,8 +67,8 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
         nodes[n2 + 1] = node
         return true
       else
-        local symbol = heads[action]
-        if symbol then -- reduce
+        local head = heads[action]
+        if head then -- reduce
           local n = sizes[action]
           for i = n1 - n + 1, n1 do
             stack[i] = nil
@@ -92,7 +92,7 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
             node.n = m
           else
             node = {
-              [0] = symbol;
+              [0] = head;
               n = n;
             }
             for i = 1, n do
@@ -103,13 +103,13 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
           local n1 = #stack
           local n2 = #nodes
           local state = stack[n1]
-          stack[n1 + 1] = table[state * max_symbol + symbol]
+          stack[n1 + 1] = table[state * max_symbol + head]
           nodes[n2 + 1] = node
         else -- accept
           stack[n1] = nil
-          local node = nodes[n2]
+          local accepted_node = nodes[n2]
           nodes[n2] = nil
-          return node
+          return accepted_node
         end
       end
     else
