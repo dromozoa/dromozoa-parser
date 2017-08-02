@@ -15,8 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local equal = require "dromozoa.commons.equal"
-local count_position = require "dromozoa.parser.count_position"
+local error_message = require "dromozoa.parser.error_message"
 
 local source = [[
 123456789
@@ -24,14 +23,32 @@ local source = [[
 123456789
 ]]
 
-assert(equal({ count_position(source,  1) }, { 1,  1 }))
-assert(equal({ count_position(source,  5) }, { 1,  5 }))
-assert(equal({ count_position(source, 10) }, { 1, 10 }))
-assert(equal({ count_position(source, 11) }, { 2,  1 }))
-assert(equal({ count_position(source, 15) }, { 2,  5 }))
-assert(equal({ count_position(source, 20) }, { 2, 10 }))
-assert(equal({ count_position(source, 21) }, { 3,  1 }))
-assert(equal({ count_position(source, 25) }, { 3,  5 }))
-assert(equal({ count_position(source, 30) }, { 3, 10 }))
-assert(equal({ count_position(source, 31) }, {}))
-assert(equal({ count_position(source, 32) }, {}))
+local function test(position, i, j)
+  local result = error_message("test", source, position)
+  local expect = ("<unknown>:%d:%d: test"):format(i, j)
+  assert(result == expect)
+end
+
+local function test_eof(position)
+  local result = error_message("test", source, position)
+  local expect = ("<unknown>:eof: test"):format(i, j)
+  assert(result == expect)
+end
+
+print(error_message("test", source,  5))
+print(error_message("test", source, 15))
+print(error_message("test", source, 25))
+print(error_message("test", source, 35))
+
+test( 1, 1,  1)
+test( 5, 1,  5)
+test(10, 1, 10)
+test(11, 2,  1)
+test(15, 2,  5)
+test(20, 2, 10)
+test(21, 3,  1)
+test(25, 3,  5)
+test(30, 3, 10)
+
+test_eof(31)
+test_eof(32)

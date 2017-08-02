@@ -15,13 +15,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local error_message = require "dromozoa.parser.error_message"
+
 local class = {}
 local metatable = {
   __index = class;
 }
 class.metatable = metatable
 
-function metatable:__call(s, init)
+function metatable:__call(s, init, file)
   if not init then
     init = 1
   end
@@ -42,7 +44,7 @@ function metatable:__call(s, init)
         end
         return 1, position_start, position_mark, init, s, init, init -- marker end
       else
-        return nil, "lexer error", init
+        return nil, error_message("lexer error", s, init, file)
       end
     end
 
@@ -139,13 +141,13 @@ function metatable:__call(s, init)
 
       accept = automaton.accept_states[state]
       if not accept then
-        return nil, "lexer error", init
+        return nil, error_message("lexer error", s, init, file)
       end
       actions = items[accept].actions
     else
       local i, j = s:find(self.hold, init, true)
       if not i then
-        return nil, "lexer error", init
+        return nil, error_message("lexer error", s, init, file)
       end
       if init == i then
         position = j + 1

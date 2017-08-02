@@ -15,19 +15,22 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-return function (s, position)
+return function (message, s, position, file)
+  if not file then
+    file = "<unknown>"
+  end
   local n = 1
   local i = 1
   while true do
     local j = s:find("\n", i, true)
     if j then
       if position <= j then
-        return n, position - i + 1
+        return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
       end
       n = n + 1
       i = j + 1
     else
-      break
+      return file .. ":eof: " .. message
     end
   end
 end
