@@ -38,8 +38,8 @@ local function string_lexer(lexer)
     :_ [[\"]] "\"" :push()
     :_ [[\']] "\'" :push()
     :_ (P[[\z]] * S" \t\n\v\f\r"^"*") :skip()
-    :_ (P[[\]] * R"09"^{1,3}) (function (rs, ri, rj) return string.char(tonumber(rs:sub(ri + 1, rj))) end) :push()
-    :_ (P[[\x]] * R"09AFaf"^{2}) (function (rs, ri, rj) return string.char(tonumber(rs:sub(ri + 2, rj), 16)) end) :push()
+    :_ (P[[\]] * R"09"^{1,3}) :sub(2, -1) :int(10) :char() :push()
+    :_ (P[[\x]] * R"09AFaf"^{2}) :sub(3, -1) :int(16) :char() :push()
     -- \u{...}
     :_ ((-S[[\"]])^"+") :push()
 end
@@ -106,11 +106,11 @@ _:lexer()
   :_ ((R"AZaz" + P"_") * (R"09AZaz" + P"_")^"*") :as "Name"
   :_ [["]] :call "dq_string" :mark() :skip()
   :_ [[']] :call "sq_string" :mark() :skip()
-  :_ (P"[" * P"="^"*" * "[\n") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 2) .. "]" end) :hold() :call "long_string" :mark() :skip()
-  :_ (P"[" * P"="^"*" * "[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 1, rj - 1) .. "]" end) :hold() :call "long_string" :mark() :skip()
+  :_ (P"[" * P"="^"*" * "[\n") :sub(2, -3)  :join("]", "]") :hold() :call "long_string" :mark() :skip()
+  :_ (P"[" * P"="^"*" * "[") :sub(2, -2) :join("]", "]") :hold() :call "long_string" :mark() :skip()
   :_ ((R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"0" * S"xX" * (R"09AFaf"^"+" * (P"." * R"09AFaf"^"*")^"?" + P"." * R"09AFaf"^"+") * (S"pP" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
-  :_ (P"--[" * P"="^"*" * P"[") (function (rs, ri, rj) return "]" .. rs:sub(ri + 3, rj - 1) .. "]" end) :hold() :call "long_comment" :skip()
+  :_ (P"--[" * P"="^"*" * P"[") :sub(4, -2) :join("]", "]") :hold() :call "long_comment" :skip()
   :_ (P"--" * ((-S"\n")^"+")) :skip()
 
 string_lexer(_:lexer "dq_string")

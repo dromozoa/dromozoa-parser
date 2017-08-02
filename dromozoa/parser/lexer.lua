@@ -164,6 +164,7 @@ function metatable:__call(s, init, file)
     local rs = s
     local ri = init
     local rj = position - 1
+    local rv
 
     for i = 1, #actions do
       local action = actions[i]
@@ -184,19 +185,11 @@ function metatable:__call(s, init, file)
         stack[#stack + 1] = action[2]
       elseif code == 5 then -- return
         stack[#stack] = nil
-      elseif code == 6 then -- filter table
+      elseif code == 6 then -- substitute by table
         rs = action[2][rs:sub(ri, rj)]
         ri = 1
         rj = #rs
-      elseif code == 7 then -- filter function
-        rs, ri, rj = action[2](rs, ri, rj)
-        if not ri then
-          ri = 1
-        end
-        if not rj then
-          rj = #rs
-        end
-      elseif code == 8 then -- replace
+      elseif code == 8 then -- substitute by string
         rs = action[2]
         ri = 1
         rj = #rs
@@ -204,6 +197,31 @@ function metatable:__call(s, init, file)
         self.hold = rs:sub(ri, rj)
       elseif code == 10 then -- mark
         position_mark = init
+      elseif code == 11 then -- substring
+        local i = action[2]
+        local j = action[3]
+        if i > 0 then
+          i = i + ri - 1
+        else
+          i = i + rj + 1
+        end
+        if j > 0 then
+          j = j + ri - 1
+        else
+          j = j + rj + 1
+        end
+        ri = i
+        rj = j
+      elseif code == 12 then -- convert to integer
+        rv = tonumber(rs:sub(ri, rj), action[2])
+      elseif code == 13 then -- convert to char
+        rs = string.char(rv)
+        ri = 1
+        rj = 1
+      elseif code == 14 then -- join
+        rs = action[2] .. rs:sub(ri, rj) .. action[3]
+        ri = 1
+        rj = #rs
       end
     end
     if skip then
