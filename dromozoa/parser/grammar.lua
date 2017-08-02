@@ -173,11 +173,7 @@ function class:first_symbol(symbol)
   else
     local first_table = self.first_table
     if first_table then
-      local first = first_table[symbol]
-      if not first then
-        error(("first not defined at symbol %d"):format(symbol))
-      end
-      return first
+      return first_table[symbol]
     else
       local productions = self.productions
       local production_ids = self.map_of_production_ids[symbol]
