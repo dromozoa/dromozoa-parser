@@ -30,6 +30,9 @@ return function (message, s, position, file)
       n = n + 1
       i = j + 1
     else
+      if position <= #s then
+        return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
+      end
       return file .. ":eof: " .. message
     end
   end

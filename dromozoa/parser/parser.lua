@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local error_message = require "dromozoa.parser.error_message"
 local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
 
 local class = {}
@@ -112,7 +113,12 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
         end
       end
     else
-      return nil, "parse error", state, node
+      print(node.i, node.j)
+      if file then
+        return nil, error_message("parser error", node.s, node.i, file)
+      else
+        return nil, error_message("parser error", node.s, node.i, "<unknown>")
+      end
     end
   end
 end
