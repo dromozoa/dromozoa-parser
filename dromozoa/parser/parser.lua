@@ -113,11 +113,10 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
         end
       end
     else
-      print(node.i, node.j)
       if file then
-        return nil, error_message("parser error", node.s, node.i, file)
+        return nil, error_message("parser error", s, i, file)
       else
-        return nil, error_message("parser error", node.s, node.i, "<unknown>")
+        return nil, error_message("parser error", s, i, "<unknown>")
       end
     end
   end
