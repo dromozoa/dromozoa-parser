@@ -112,10 +112,8 @@ function metatable:__call(repl)
   local items = self.items
   local actions = items[#items].actions
   local t = type(repl)
-  if t == "table" then
-    actions[#actions + 1] = { 6, repl }
-  elseif t == "string" then
-    actions[#actions + 1] = { 8, repl }
+  if t == "number" or t == "string" then
+    actions[#actions + 1] = { 8, tostring(repl) }
   else
     error(("unsupported repl of type %q"):format(t))
   end

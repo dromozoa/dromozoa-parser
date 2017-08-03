@@ -191,10 +191,6 @@ function metatable:__call(s, init, file)
           stack[#stack + 1] = action[2]
         elseif code == 5 then -- return
           stack[#stack] = nil
-        elseif code == 6 then -- substitute by table
-          rs = action[2][rs:sub(ri, rj)]
-          ri = 1
-          rj = #rs
         elseif code == 8 then -- substitute by string
           rs = action[2]
           ri = 1

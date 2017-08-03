@@ -37,22 +37,22 @@ Parser generator toolkit.
 
 ### Actions
 
-| Code | Operator               | #Operands | Skip | Description            |
-|-----:|------------------------|----------:|:----:|------------------------|
-|    1 | `:skip()`              |         0 | yes  | skip                   |
-|    2 | `:push()`              |         0 | yes  | push                   |
-|    3 | `:concat()`            |         0 |      | concat                 |
-|    4 | `:call "label"`        |         1 |      | call                   |
-|    5 | `:ret()`               |         0 |      | return                 |
-|    6 | `(table)`              |         1 |      | substitute by `table`  |
-|    7 |                        |           |      | N/A                    |
-|    8 | `(string)`             |         1 |      | substitute by `string` |
-|    9 | `:hold()`              |         0 |      | hold                   |
-|   10 | `:mark()`              |         0 |      | mark                   |
-|   11 | `:sub(i, j)`           |         2 |      | substring              |
-|   12 | `:int(base)`           |         1 |      | convert to integer     |
-|   13 | `:char()`              |         0 |      | convert to char        |
-|   14 | `:join(before, after)` |         2 |      | join                   |
+| Code | Operator               | #Operands | Skip | Description        |
+|-----:|------------------------|----------:|:----:|--------------------|
+|    1 | `:skip()`              |         0 | yes  | skip               |
+|    2 | `:push()`              |         0 | yes  | push               |
+|    3 | `:concat()`            |         0 |      | concat             |
+|    4 | `:call "label"`        |         1 |      | call               |
+|    5 | `:ret()`               |         0 |      | return             |
+|    6 |                        |           |      | N/A                |
+|    7 |                        |           |      | N/A                |
+|    8 | `"string"`             |         1 |      | substitute         |
+|    9 | `:hold()`              |         0 |      | hold               |
+|   10 | `:mark()`              |         0 |      | mark               |
+|   11 | `:sub(i, j)`           |         2 |      | substring          |
+|   12 | `:int(base)`           |         1 |      | convert to integer |
+|   13 | `:char()`              |         0 |      | convert to char    |
+|   14 | `:join(before, after)` |         2 |      | join               |
 
 ## Parser
 
