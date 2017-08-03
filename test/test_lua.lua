@@ -393,6 +393,95 @@ grammar:write_conflicts(io.stdout, conflicts)
 -- out:close()
 -- lexer:compile("test_lexer.lua")
 
+do
+  local set_of_transitions = {}
+  do
+    local lexers = lexer.lexers
+    local TMAP = {}
+    for i = 1, #lexers do
+      local lexer = lexers[i]
+      local automaton = lexer.automaton
+      if automaton then
+        local max_state = automaton.max_state
+        local transitions = {}
+--[[
+        for from = 1, max_state do
+          local empty = true
+          local copy = {}
+          for char = 0, 255 do
+            local to = automaton.transitions[char][from]
+            if to then
+              copy[char] = to
+              empty = false
+            end
+          end
+          if not empty then
+            local key = dumper.encode(copy)
+            if TMAP[key] then
+              print("hit!")
+              transitions[from] = TMAP[key]
+            else
+              TMAP[key] = copy
+              transitions[from] = copy
+            end
+          end
+        end
+]]
+
+        for char = 0, 255 do
+          local empty = true
+          local copy = {}
+          for from, to in pairs(automaton.transitions[char]) do
+            copy[from] = to
+            empty = false
+          end
+          if not empty then
+            local key = dumper.encode(copy)
+            if TMAP[key] then
+              -- print("hit!")
+              transitions[char] = TMAP[key]
+            else
+              TMAP[key] = copy
+              transitions[char] = copy
+            end
+          end
+        end
+
+--[[
+        for char = 0, 255 do
+          local empty = true
+          for from, to in pairs(automaton.transitions[char]) do
+            local x = from
+            local y = char
+            -- local x = char
+            -- local y = from
+
+            local t = transitions[x]
+            if not t then
+              t = {}
+              transitions[x] = t
+            end
+            t[y] = to
+            empty = false
+          end
+        end
+]]
+        set_of_transitions[#set_of_transitions + 1] = transitions
+      end
+    end
+  end
+  collectgarbage()
+  collectgarbage()
+  local c1 = collectgarbage("count")
+
+  set_of_transitions = nil
+
+  collectgarbage()
+  collectgarbage()
+  local c2 = collectgarbage("count")
+  print("count", c1 - c2)
+end
+
 local source = [====[
 f(a, b, c, d)
 -- local a = b + c (f)(1, 2, 3, 4, 5)
