@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
 
 local class = {}
@@ -22,6 +23,14 @@ local metatable = {
   __index = class;
 }
 class.metatable = metatable
+
+function class:compile(out)
+  if type(out) == "string" then
+    compile(self, assert(io.open(out, "w"))):close()
+  else
+    return compile(self, out)
+  end
+end
 
 function metatable:__call(s, init, file)
   if not init then
@@ -49,13 +58,11 @@ function metatable:__call(s, init, file)
     end
 
     local lexer = lexers[stack[#stack]]
-    local items = lexer.items
     local automaton = lexer.automaton
     local position
     local accept
-    local actions
 
-    if automaton then
+    if automaton then -- regexp_lexer
       local transitions = automaton.transitions
       local state = automaton.start_state
 
@@ -143,8 +150,7 @@ function metatable:__call(s, init, file)
       if not accept then
         return nil, error_message("lexer error", s, init, file)
       end
-      actions = items[accept].actions
-    else
+    else -- search lexer
       local i, j = s:find(self.hold, init, true)
       if not i then
         return nil, error_message("lexer error", s, init, file)
@@ -152,78 +158,80 @@ function metatable:__call(s, init, file)
       if init == i then
         position = j + 1
         accept = 1
-        actions = items[1].actions
       else
         position = i
         accept = 2
-        actions = items[2].actions
       end
     end
 
+    local actions = lexer.accept_to_actions[accept]
     local skip
     local rs = s
     local ri = init
     local rj = position - 1
     local rv
 
-    for i = 1, #actions do
-      local action = actions[i]
-      local code = action[1]
-      if code == 1 then -- skip
-        skip = true
-      elseif code == 2 then -- push
-        buffer[#buffer + 1] = rs:sub(ri, rj)
-        skip = true
-      elseif code == 3 then -- concat
-        rs = table.concat(buffer)
-        ri = 1
-        rj = #rs
-        for j = 1, #buffer do
-          buffer[j] = nil
+    if actions then
+      for i = 1, #actions do
+        local action = actions[i]
+        local code = action[1]
+        if code == 1 then -- skip
+          skip = true
+        elseif code == 2 then -- push
+          buffer[#buffer + 1] = rs:sub(ri, rj)
+          skip = true
+        elseif code == 3 then -- concat
+          rs = table.concat(buffer)
+          ri = 1
+          rj = #rs
+          for j = 1, #buffer do
+            buffer[j] = nil
+          end
+        elseif code == 4 then -- call
+          stack[#stack + 1] = action[2]
+        elseif code == 5 then -- return
+          stack[#stack] = nil
+        elseif code == 6 then -- substitute by table
+          rs = action[2][rs:sub(ri, rj)]
+          ri = 1
+          rj = #rs
+        elseif code == 8 then -- substitute by string
+          rs = action[2]
+          ri = 1
+          rj = #rs
+        elseif code == 9 then -- hold
+          self.hold = rs:sub(ri, rj)
+        elseif code == 10 then -- mark
+          position_mark = init
+        elseif code == 11 then -- substring
+          local i = action[2]
+          local j = action[3]
+          if i > 0 then
+            i = i + ri - 1
+          else
+            i = i + rj + 1
+          end
+          if j > 0 then
+            j = j + ri - 1
+          else
+            j = j + rj + 1
+          end
+          ri = i
+          rj = j
+        elseif code == 12 then -- convert to integer
+          rv = tonumber(rs:sub(ri, rj), action[2])
+        elseif code == 13 then -- convert to char
+          rs = string.char(rv)
+          ri = 1
+          rj = 1
+        elseif code == 14 then -- join
+          rs = action[2] .. rs:sub(ri, rj) .. action[3]
+          ri = 1
+          rj = #rs
         end
-      elseif code == 4 then -- call
-        stack[#stack + 1] = action[2]
-      elseif code == 5 then -- return
-        stack[#stack] = nil
-      elseif code == 6 then -- substitute by table
-        rs = action[2][rs:sub(ri, rj)]
-        ri = 1
-        rj = #rs
-      elseif code == 8 then -- substitute by string
-        rs = action[2]
-        ri = 1
-        rj = #rs
-      elseif code == 9 then -- hold
-        self.hold = rs:sub(ri, rj)
-      elseif code == 10 then -- mark
-        position_mark = init
-      elseif code == 11 then -- substring
-        local i = action[2]
-        local j = action[3]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + rj + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
-        ri = i
-        rj = j
-      elseif code == 12 then -- convert to integer
-        rv = tonumber(rs:sub(ri, rj), action[2])
-      elseif code == 13 then -- convert to char
-        rs = string.char(rv)
-        ri = 1
-        rj = 1
-      elseif code == 14 then -- join
-        rs = action[2] .. rs:sub(ri, rj) .. action[3]
-        ri = 1
-        rj = #rs
       end
     end
+
     if skip then
       init = position
     else

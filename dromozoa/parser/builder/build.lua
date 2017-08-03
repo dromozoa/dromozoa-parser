@@ -74,7 +74,9 @@ return function (self, start_name)
   end
 
   for i = 1, #lexers do
-    local items = lexers[i].items
+    local lexer = lexers[i]
+    local items = lexer.items
+    local accept_to_actions = {}
     for j = 1, #items do
       local actions = items[j].actions
       for k = 1, #actions do
@@ -88,7 +90,11 @@ return function (self, start_name)
           action[2] = lexer
         end
       end
+      if actions[1] then
+        accept_to_actions[j] = actions
+      end
     end
+    lexer.accept_to_actions = accept_to_actions
   end
 
   local max_terminal_symbol = n

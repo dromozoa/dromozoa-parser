@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
 local unix = require "dromozoa.unix"
 local builder = require "dromozoa.parser.builder"
 
@@ -384,6 +385,13 @@ grammar:write_set_of_items("test-set-of-items.txt", set_of_items)
 grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
+
+local out = assert(io.open("test_lexer_dump.lua", "w"))
+out:write("return ")
+out:write(dumper.encode(lexer.lexers, { pretty = true, stable = true }))
+out:write("\n")
+out:close()
+lexer:compile("test_lexer.lua")
 
 local source = [====[
 f(a, b, c, d)
