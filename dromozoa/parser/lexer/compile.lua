@@ -26,22 +26,49 @@ local function write_action(out, action)
       out:write(("%.17g"):format(operand))
     elseif t == "string" then
       out:write(("%q"):format(operand))
-    elseif t == "table" then
-      error("not impl") -- TODO
     end
   end
   out:write("};")
   return out
 end
 
+local function encode_transition(max_state, transition)
+  local data = {}
+  for i = 1, max_state do
+    local state = transition[i]
+    if state then
+      data[#data + 1] = "[" .. i .. "]=" .. state
+    end
+  end
+  return table.concat(data, ",")
+end
+
 return function (self, out)
   local lexers = self.lexers
 
-  out:write([[
-local lexer = require "dromozoa.parser.lexer"
+  out:write('local lexer = require "dromozoa.parser.lexer"\n\n')
 
-local lexers = {
-]])
+  local n = 0
+  local transition_map = {}
+  for i = 1, #lexers do
+    local lexer = lexers[i]
+    local automaton = lexer.automaton
+    if automaton then
+      local max_state = automaton.max_state
+      local transitions = automaton.transitions
+      for char = 0, 255 do
+        local key = encode_transition(max_state, transitions[char])
+        if not transition_map[key] then
+          n = n + 1
+          transition_map[key] = "_" .. n
+          out:write("local _", n, " = {", key, "}\n")
+        end
+      end
+    end
+  end
+  local format = " [%3d] = %" .. #("_" .. n) .. "s;"
+
+  out:write('\nlocal lexers = {\n')
 
   for i = 1, #lexers do
     local lexer = lexers[i]
@@ -54,31 +81,24 @@ local lexers = {
     else -- search lexer
       max_state = 2
     end
-    out:write([[
-  {
-]])
+    out:write('  {\n')
     if automaton then
-      local transitions = automaton.transitions
+      local start_state = automaton.start_state
       local accept_states = automaton.accept_states
-      out:write([[
-    automaton = {
-      start_state = ]], automaton.start_state, [[;
-      transitions = {
-]])
-      for j = 0, 255 do
-        local transition = transitions[j]
-        out:write("        [", j, "] = {")
-        for k = 1, max_state do
-          local v = transition[k]
-          if v then
-            out:write("[", k, "]=", v, ",")
-          end
+      local transitions = automaton.transitions
+      out:write('    automaton = {\n')
+      out:write('      start_state = ', start_state, ';\n')
+      out:write('      transitions = {')
+      for char = 0, 255 do
+        if char % 8 == 0 then
+          out:write('\n       ')
         end
-        out:write("};\n")
+        local key = encode_transition(max_state, transitions[char])
+        out:write(format:format(char, transition_map[key]))
       end
+      out:write('\n      };\n')
 
       out:write([[
-      };
     };
 ]])
     end
