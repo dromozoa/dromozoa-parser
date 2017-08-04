@@ -34,8 +34,9 @@ end
 
 function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
   local max_state = self.max_state
-  local max_symbol = self.max_symbol
-  local table = self.table
+  local max_terminal_symbol = self.max_terminal_symbol
+  local actions = self.actions
+  local gotos = self.gotos
   local heads = self.heads
   local sizes = self.sizes
   local semantic_actions = self.semantic_actions
@@ -60,7 +61,14 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
     local n1 = #stack
     local n2 = #nodes
     local state = stack[n1]
-    local action = table[state * max_symbol + symbol]
+
+    local action
+    if symbol <= max_terminal_symbol then
+      action = actions[state][symbol]
+    else
+      action = gotos[state][symbol - max_terminal_symbol]
+    end
+
     if action then
       if action <= max_state then -- shift
         stack[n1 + 1] = action
@@ -103,7 +111,8 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
           local n1 = #stack
           local n2 = #nodes
           local state = stack[n1]
-          stack[n1 + 1] = table[state * max_symbol + head]
+          assert(head > max_terminal_symbol)
+          stack[n1 + 1] = gotos[state][head - max_terminal_symbol]
           nodes[n2 + 1] = node
         else -- accept
           stack[n1] = nil
@@ -127,8 +136,9 @@ return setmetatable(class, {
     return setmetatable({
       symbol_names = data.symbol_names;
       max_state = data.max_state;
-      max_symbol = data.max_symbol;
-      table = data.table;
+      max_terminal_symbol = data.max_terminal_symbol;
+      actions = data.actions;
+      gotos = data.gotos;
       heads = data.heads;
       sizes = data.sizes;
       semantic_actions = data.semantic_actions;
