@@ -15,7 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local clone = require "dromozoa.commons.clone"
 local dumper = require "dromozoa.commons.dumper"
+local equal = require "dromozoa.commons.equal"
 local unix = require "dromozoa.unix"
 local builder = require "dromozoa.parser.builder"
 
@@ -386,13 +388,33 @@ grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
-local out = assert(io.open("test_lexer_dump.lua", "w"))
-out:write("return ")
-out:write(dumper.encode(lexer.lexers, { pretty = true, stable = true }))
-out:write("\n")
-out:close()
+local function dump(file, value)
+  local out = assert(io.open(file, "w"))
+  out:write("return ")
+  out:write(dumper.encode(value, { pretty = true, stable = true }))
+  out:write("\n")
+  out:close()
+end
+
+dump("test_lexer_dump.lua", lexer.lexers)
 lexer:compile("test_lexer.lua")
 
+local compiled_lexer = assert(loadfile("test_lexer.lua"))()
+compiled_lexer:compile("test_lexer2.lua")
+-- lexer = compiled_lexer
+
+local source_lexers = clone(lexer.lexers)
+for i = 1, #source_lexers do
+  local lexer = source_lexers[i]
+  lexer.items = nil
+  lexer.name = nil
+  lexer.type = nil
+end
+dump("test_source_lexer_dump.lua", source_lexers)
+dump("test_compiled_lexer_dump.lua", compiled_lexer.lexers)
+assert(equal(source_lexers, compiled_lexer.lexers))
+
+--[====[
 do
   local set_of_transitions = {}
   do
@@ -481,6 +503,7 @@ do
   local c2 = collectgarbage("count")
   print("count", c1 - c2)
 end
+]====]
 
 local source = [====[
 f(a, b, c, d)

@@ -15,60 +15,84 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function write_action(out, action)
-  out:write("{")
-  out:write(action[1])
-  for i = 2, #action do
-    local operand = action[2]
-    out:write(",")
-    local t = type(operand)
-    if t == "number" then
-      out:write(("%.17g"):format(operand))
-    elseif t == "string" then
-      out:write(("%q"):format(operand))
+local function encode(value)
+  local t = type(value)
+  if t == "number" then
+    return ("%.17g"):format(value)
+  elseif t == "string" then
+    return ("%q"):format(value)
+  elseif t == "table" then
+    local min
+    local max
+    local n = 0
+    for k in pairs(value) do
+      assert(type(k) == "number" and k % 1 == 0)
+      if not min or min > k then
+        min = k
+      end
+      if not max or max < k then
+        max = k
+      end
+      n = n + 1
     end
-  end
-  out:write("};")
-  return out
-end
-
-local function encode_transition(max_state, transition)
-  local data = {}
-  for i = 1, max_state do
-    local state = transition[i]
-    if state then
-      data[#data + 1] = "[" .. i .. "]=" .. state
+    if not min then
+      return "{}"
     end
+    local data = {}
+    if min < 1 or n * 1.8 < max then
+      for i = min, max do
+        local v = value[i]
+        if v then
+          data[#data + 1] = "[" .. i .. "]=" .. encode(v)
+        end
+      end
+    else
+      for i = 1, max do
+        local v = value[i]
+        if v then
+          data[#data + 1] = encode(v)
+        else
+          data[#data + 1] = "nil"
+        end
+      end
+    end
+    return "{" .. table.concat(data, ",") .. "}"
   end
-  return table.concat(data, ",")
 end
 
 return function (self, out)
   local lexers = self.lexers
 
-  out:write('local lexer = require "dromozoa.parser.lexer"\n\n')
+  out:write("local lexer = require \"dromozoa.parser.lexer\"\n")
+  out:write("\n")
 
-  local n = 0
+  local transition_table = {}
   local transition_map = {}
+  local n = 0
+
   for i = 1, #lexers do
     local lexer = lexers[i]
     local automaton = lexer.automaton
     if automaton then
-      local max_state = automaton.max_state
       local transitions = automaton.transitions
+      local map = {}
       for char = 0, 255 do
-        local key = encode_transition(max_state, transitions[char])
-        if not transition_map[key] then
+        local key = encode(transitions[char])
+        local name = transition_table[key]
+        if not name then
           n = n + 1
-          transition_map[key] = "_" .. n
-          out:write("local _", n, " = {", key, "}\n")
+          name = "_" .. n
+          transition_table[key] = name
+          out:write("local _", n, " = ", key, "\n")
         end
+        map[char] = name
       end
+      transition_map[i] = map
     end
   end
-  local format = " [%3d] = %" .. #("_" .. n) .. "s;"
 
-  out:write('\nlocal lexers = {\n')
+  out:write("\n")
+  out:write("local lexers = {\n")
 
   for i = 1, #lexers do
     local lexer = lexers[i]
@@ -81,62 +105,38 @@ return function (self, out)
     else -- search lexer
       max_state = 2
     end
-    out:write('  {\n')
+    out:write("  {\n")
     if automaton then
       local start_state = automaton.start_state
-      local accept_states = automaton.accept_states
       local transitions = automaton.transitions
-      out:write('    automaton = {\n')
-      out:write('      start_state = ', start_state, ';\n')
-      out:write('      transitions = {')
+      local map = transition_map[i]
+      out:write("    automaton = {\n")
+      out:write("      max_state = ", encode(automaton.max_state), ";\n")
+      out:write("      start_state = ", encode(automaton.start_state), ";\n")
+      out:write("      transitions = {")
       for char = 0, 255 do
-        if char % 8 == 0 then
-          out:write('\n       ')
+        if char > 0 then
+          out:write(",")
         end
-        local key = encode_transition(max_state, transitions[char])
-        out:write(format:format(char, transition_map[key]))
+        out:write("[", char, "]=", map[char])
       end
-      out:write('\n      };\n')
-
-      out:write([[
-    };
-]])
+      out:write("};\n")
+      out:write("      accept_states = ", encode(automaton.accept_states), ";\n")
+      out:write("    };\n")
     end
-    out:write([[
-    accept_to_actions = {
-]])
+    out:write("    accept_to_actions = {\n")
     for j = 1, max_state do
       local actions = accept_to_actions[j]
       if actions then
-        out:write([[
-      []], j, "] = {")
-        for k = 1, #actions do
-          write_action(out, actions[k])
-        end
-        out:write(" };\n")
+        out:write("       [", j, "] = ", encode(actions), ";\n")
       end
     end
-    out:write([[
-    };
-    accept_to_symbol = {
-]])
-    for j = 1, max_state do
-      local symbol = accept_to_symbol[j]
-      if symbol then
-        out:write([[
-      []], j, "] = ", symbol, ";\n")
-      end
-    end
-
-    out:write([[
-    };
-  };
-]])
+    out:write("    };\n")
+    out:write("    accept_to_symbol = ", encode(accept_to_symbol), ";\n")
+    out:write("  };\n")
   end
-  out:write([[
-}
-
-return lexer(lexers)
-]])
+  out:write("}\n")
+  out:write("\n")
+  out:write("return lexer(lexers)\n")
   return out
 end
