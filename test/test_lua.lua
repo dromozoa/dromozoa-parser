@@ -388,6 +388,91 @@ grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 
+--[====[
+do
+  local max_state = parser.max_state
+  local max_terminal_symbol = grammar.max_terminal_symbol
+  local max_symbol = parser.max_symbol
+  local parser_table = parser.table
+
+  do
+    local actions = {}
+    local gotos = {}
+    local map = {}
+
+    for state = 1, max_state do
+      for symbol = 1, max_symbol do
+        local i = state * max_symbol + symbol
+        local v = parser_table[i]
+        if v then
+          if symbol <= max_terminal_symbol then
+            local t = actions[state]
+            if not t then
+              t = {}
+              actions[state] = t
+            end
+            t[symbol] = v
+          else
+            local k = symbol - max_terminal_symbol
+            local t = gotos[state]
+            if not t then
+              t = {}
+              gotos[state] = t
+            end
+            t[k] = v
+          end
+          -- T[i] = v
+          -- local x = symbol
+          -- local y = state
+          -- local t = T[y]
+          -- if not t then
+          --   t = {}
+          --   T[y] = t
+          -- end
+          -- t[x] = v
+        end
+      end
+    end
+
+    local map = {}
+    for state = 1, max_state do
+      local a = actions[state]
+      if a then
+        local key = dumper.encode(a, {stable=true})
+        local b = map[key]
+        if map[key] then
+          print("hit action", key)
+          actions[state] = b
+        else
+          map[key] = a
+        end
+      end
+      local g = gotos[state]
+      if g then
+        local key = dumper.encode(a, {stable=true})
+        local h = map[key]
+        if not map[key] then
+          print("hit goto")
+          gotos[state] = h
+        else
+          map[key] = g
+        end
+      end
+    end
+
+    collectgarbage()
+    collectgarbage()
+    local c1 = collectgarbage("count")
+    actions = nil
+    gotos = nil
+    collectgarbage()
+    collectgarbage()
+    local c2 = collectgarbage("count")
+    print("count", c1 - c2)
+  end
+end
+]====]
+
 local function dump(file, value)
   local out = assert(io.open(file, "w"))
   out:write("return ")
