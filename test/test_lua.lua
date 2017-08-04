@@ -486,6 +486,18 @@ end
 dump("test_lexer_dump.lua", lexer.lexers)
 lexer:compile("test_lexer.lua")
 
+do
+  local compiled_lexer = assert(loadfile("test_lexer.lua"))()
+  collectgarbage()
+  collectgarbage()
+  local c1 = collectgarbage("count")
+  compiled_lexer = nil
+  collectgarbage()
+  collectgarbage()
+  local c2 = collectgarbage("count")
+  print("lexer memory", c1 - c2)
+end
+
 local compiled_lexer = assert(loadfile("test_lexer.lua"))()
 compiled_lexer:compile("test_lexer2.lua")
 -- lexer = compiled_lexer

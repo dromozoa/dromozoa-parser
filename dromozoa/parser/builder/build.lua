@@ -90,9 +90,7 @@ return function (self, start_name)
           action[2] = lexer
         end
       end
-      if actions[1] then
-        accept_to_actions[j] = actions
-      end
+      accept_to_actions[j] = actions
     end
     lexer.accept_to_actions = accept_to_actions
   end

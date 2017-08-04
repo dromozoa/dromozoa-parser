@@ -22,6 +22,8 @@ return function (self, out)
 
   out:write("local lexer = require \"dromozoa.parser.lexer\"\n\n")
 
+  out:write("local _0 = {}\n")
+
   local n = 0
   local data_table = {}
   local transition_map = {}
@@ -74,10 +76,14 @@ return function (self, out)
       out:write("};\n      accept_states = ", encode(automaton.accept_states), ";\n    };\n")
     end
     out:write("    accept_to_actions = {\n")
-    for j = 1, max_state do
+    for j = 1, max_state do -- [FIX] max_state not suitable
       local actions = accept_to_actions[j]
       if actions then
-        out:write("       [", j, "] = ", encode(actions), ";\n")
+        if actions[1] then
+          out:write("       ", encode(actions), ";\n")
+        else
+          out:write("       _0;\n")
+        end
       end
     end
     out:write("    };\n    accept_to_symbol = ", encode(accept_to_symbol), ";\n  };\n")
