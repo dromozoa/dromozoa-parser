@@ -63,13 +63,11 @@ end
 return function (self, out)
   local lexers = self.lexers
 
-  out:write("local lexer = require \"dromozoa.parser.lexer\"\n")
-  out:write("\n")
+  out:write("local lexer = require \"dromozoa.parser.lexer\"\n\n")
 
   local transition_table = {}
   local transition_map = {}
   local n = 0
-
   for i = 1, #lexers do
     local lexer = lexers[i]
     local automaton = lexer.automaton
@@ -91,8 +89,7 @@ return function (self, out)
     end
   end
 
-  out:write("\n")
-  out:write("local lexers = {\n")
+  out:write("\nlocal lexers = {\n")
 
   for i = 1, #lexers do
     local lexer = lexers[i]
@@ -110,19 +107,14 @@ return function (self, out)
       local start_state = automaton.start_state
       local transitions = automaton.transitions
       local map = transition_map[i]
-      out:write("    automaton = {\n")
-      out:write("      max_state = ", encode(max_state), ";\n")
-      out:write("      start_state = ", encode(automaton.start_state), ";\n")
-      out:write("      transitions = {")
+      out:write("    automaton = {\n      max_state = ", encode(max_state), ";\n      start_state = ", encode(automaton.start_state), ";\n      transitions = {")
       for char = 0, 255 do
         if char > 0 then
           out:write(",")
         end
         out:write("[", char, "]=", map[char])
       end
-      out:write("};\n")
-      out:write("      accept_states = ", encode(automaton.accept_states), ";\n")
-      out:write("    };\n")
+      out:write("};\n      accept_states = ", encode(automaton.accept_states), ";\n    };\n")
     end
     out:write("    accept_to_actions = {\n")
     for j = 1, max_state do
@@ -131,12 +123,10 @@ return function (self, out)
         out:write("       [", j, "] = ", encode(actions), ";\n")
       end
     end
-    out:write("    };\n")
-    out:write("    accept_to_symbol = ", encode(accept_to_symbol), ";\n")
-    out:write("  };\n")
+    out:write("    };\n    accept_to_symbol = ", encode(accept_to_symbol), ";\n  };\n")
   end
-  out:write("}\n")
-  out:write("\n")
-  out:write("return lexer(lexers)\n")
+
+  out:write("}\n\nreturn lexer(lexers)\n")
+
   return out
 end
