@@ -111,7 +111,7 @@ return function (self, out)
       local transitions = automaton.transitions
       local map = transition_map[i]
       out:write("    automaton = {\n")
-      out:write("      max_state = ", encode(automaton.max_state), ";\n")
+      out:write("      max_state = ", encode(max_state), ";\n")
       out:write("      start_state = ", encode(automaton.start_state), ";\n")
       out:write("      transitions = {")
       for char = 0, 255 do
