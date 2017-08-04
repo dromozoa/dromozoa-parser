@@ -383,6 +383,8 @@ local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 timer:stop()
 print("lr1_construct_table", timer:elapsed())
 
+parser:compile("test_parser.lua")
+
 grammar:write_set_of_items("test-set-of-items.txt", set_of_items)
 grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)

@@ -15,59 +15,16 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function encode(value)
-  local t = type(value)
-  if t == "number" then
-    return ("%.17g"):format(value)
-  elseif t == "string" then
-    return ("%q"):format(value)
-  elseif t == "table" then
-    local min
-    local max
-    local n = 0
-    for k in pairs(value) do
-      assert(type(k) == "number" and k % 1 == 0)
-      if not min or min > k then
-        min = k
-      end
-      if not max or max < k then
-        max = k
-      end
-      n = n + 1
-    end
-    if not min then
-      return "{}"
-    end
-    local data = {}
-    if min < 1 or n * 1.8 < max then
-      for i = min, max do
-        local v = value[i]
-        if v then
-          data[#data + 1] = "[" .. i .. "]=" .. encode(v)
-        end
-      end
-    else
-      for i = 1, max do
-        local v = value[i]
-        if v then
-          data[#data + 1] = encode(v)
-        else
-          data[#data + 1] = "nil"
-        end
-      end
-    end
-    return "{" .. table.concat(data, ",") .. "}"
-  end
-end
+local encode = require "dromozoa.parser.encode"
 
 return function (self, out)
   local lexers = self.lexers
 
   out:write("local lexer = require \"dromozoa.parser.lexer\"\n\n")
 
-  local transition_table = {}
-  local transition_map = {}
   local n = 0
+  local data_table = {}
+  local transition_map = {}
   for i = 1, #lexers do
     local lexer = lexers[i]
     local automaton = lexer.automaton
@@ -75,13 +32,13 @@ return function (self, out)
       local transitions = automaton.transitions
       local map = {}
       for char = 0, 255 do
-        local key = encode(transitions[char])
-        local name = transition_table[key]
+        local code = encode(transitions[char])
+        local name = data_table[code]
         if not name then
           n = n + 1
           name = "_" .. n
-          transition_table[key] = name
-          out:write("local _", n, " = ", key, "\n")
+          data_table[code] = name
+          out:write("local ", name, " = ", code, "\n")
         end
         map[char] = name
       end
@@ -127,6 +84,5 @@ return function (self, out)
   end
 
   out:write("}\n\nreturn lexer(lexers)\n")
-
   return out
 end
