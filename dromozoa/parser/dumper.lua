@@ -32,46 +32,51 @@ local function encode(value)
   elseif t == "string" then
     return ("%q"):format(value)
   elseif t == "table" then
-    local min
-    local max
-    local n = 0
-    for k in pairs(value) do
-      assert(type(k) == "number" and k % 1 == 0)
-      if not min or min > k then
-        min = k
-      end
-      if not max or max < k then
-        max = k
-      end
-      n = n + 1
-    end
-    if not min then
-      return "{}"
-    end
-    local data = {}
-    if min < 1 or n * 1.8 < max then
-      for i = min, max do
-        local v = value[i]
-        if v then
-          data[#data + 1] = "[" .. i .. "]=" .. encode(v)
-        end
-      end
+    if getmetatable(value) == placeholder_metatable then
+      return value.name
     else
-      for i = 1, max do
-        local v = value[i]
-        if v then
-          data[#data + 1] = encode(v)
-        else
-          data[#data + 1] = "nil"
+      local min
+      local max
+      local n = 0
+      for k in pairs(value) do
+        assert(type(k) == "number" and k % 1 == 0)
+        if not min or min > k then
+          min = k
+        end
+        if not max or max < k then
+          max = k
+        end
+        n = n + 1
+      end
+      if not min then
+        return "{}"
+      end
+      local data = {}
+      if min < 1 or n * 1.8 < max then
+        for i = min, max do
+          local v = value[i]
+          if v then
+            data[#data + 1] = "[" .. i .. "]=" .. encode(v)
+          end
+        end
+      else
+        for i = 1, max do
+          local v = value[i]
+          if v then
+            data[#data + 1] = encode(v)
+          else
+            data[#data + 1] = "nil"
+          end
         end
       end
+      return "{" .. table.concat(data, ",") .. "}"
     end
-    return "{" .. table.concat(data, ",") .. "}"
   end
 end
 
-local function compact(out, value)
-  local stack1 = { value }
+local function compact(out, root)
+  local nodes = {}
+  local stack1 = { root }
   local stack2 = {}
   while true do
     local n1 = #stack1
@@ -83,11 +88,17 @@ local function compact(out, value)
     if node == stack2[n2] then
       stack1[n1] = nil
       stack2[n2] = nil
-      out:write(encode(node), "\n")
+      local v = {}
+      for i = 1, #node do
+        v[i] = node[i]
+      end
+      -- out:write(encode(node), "\n")
     else
       if type(node) == "table" then
-        for i = #node, 1, -1 do
-          stack1[#stack1 + 1] = node[i]
+        for k, v in ipairs(node) do
+          if type(v) == "table" then
+            stack1[#stack1 + 1] = v
+          end
         end
       end
       stack2[n2 + 1] = node
