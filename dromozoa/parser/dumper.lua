@@ -95,7 +95,7 @@ local function compact(out, root)
       -- out:write(encode(node), "\n")
     else
       if type(node) == "table" then
-        for k, v in ipairs(node) do
+        for k, v in pairs(node) do
           if type(v) == "table" then
             stack1[#stack1 + 1] = v
           end
@@ -106,7 +106,38 @@ local function compact(out, root)
   end
 end
 
+local function compact(out, key, value, map)
+  if type(value) == "table" then
+    local that = {}
+    for k, v in pairs(value) do
+      if type(v) == "table" then
+        that[k] = compact(out, k, v, map)
+      else
+        that[k] = v
+      end
+    end
+    local code = encode(that)
+    local name = map[code]
+    if name then
+      return placeholder(name)
+    else
+      local n = map.n + 1
+      map.n = n
+      name = "_" .. n
+      map[code] = name
+      out:write("local ", name, " = ", code, "\n")
+      return placeholder(name)
+    end
+  else
+    return value
+  end
+end
+
 return function (out, value)
-  compact(out, value)
+  local map = { n = 0 }
+  local that = compact(out, "(root)", value, map)
+  out:write(encode(value), "\n")
+  out:write(encode(that), "\n")
+  -- compact(out, value)
   return out
 end
