@@ -122,6 +122,13 @@ function class:utf8_surrogate_pair(i1, j1, i2, j2)
   return self
 end
 
+function class:add(x)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 17, x }
+  return self
+end
+
 function metatable:__call(repl)
   local items = self.items
   local actions = items[#items].actions

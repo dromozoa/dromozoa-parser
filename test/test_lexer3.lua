@@ -29,6 +29,7 @@ _:lexer()
   :_ ([[\u]] * S"Dd" * S"89ABab" * R"09AFaf"^{2} * [[\u]] * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "pair" :utf8_surrogate_pair(3, 6, 9, 12)
   :_ ([[\u]] * R"09AFaf"^{4}) :as "char" :utf8(3, -1)
   :_ ([[\U]] * R"09AFaf"^{8}) :as "char" :utf8(3, -1)
+  :_ ([[\c]] * R"AZaz") :as "control" :sub(3, -1) :int(36) :add(-9) :char()
 
 local lexer = _:build()
 
@@ -36,6 +37,7 @@ local source = [[
 \u65e5\u672c\u8a9e -- 日本語
 \U00010437 -- string.char(0xf0, 0x90, 0x90, 0xb7)
 \uD801\uDC37
+\cM
 ]]
 
 local position = 1
@@ -53,3 +55,4 @@ assert(data[2] == "本")
 assert(data[3] == "語")
 assert(data[4] == string.char(0xf0, 0x90, 0x90, 0xb7))
 assert(data[5] == string.char(0xf0, 0x90, 0x90, 0xb7))
+assert(data[6] == "\r")

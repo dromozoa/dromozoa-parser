@@ -243,7 +243,7 @@ function metatable:__call(s, init, file)
       elseif code == 13 then -- convert to char
         rs = string.char(rv)
         ri = 1
-        rj = 1
+        rj = #rs
       elseif code == 14 then -- join
         rs = action[2] .. rs:sub(ri, rj) .. action[3]
         ri = 1
@@ -295,6 +295,8 @@ function metatable:__call(s, init, file)
         rs = utf8_char(code1 + code2 + 0x010000)
         ri = 1
         rj = #rs
+      elseif code == 17 then -- add integer
+        rv = rv + action[2]
       end
     end
 

@@ -55,6 +55,7 @@ Parser generator toolkit.
 |   14 | `:join(before, after)`                 |         2 |      | join               |
 |   15 | `:utf8(i, j)`                          |         2 |      | convert to utf8    |
 |   16 | `:utf8_surrogate_pair(i1, j1, i2, j2)` |         4 |      | convert to utf8    |
+|   17 | `:add(x)`                              |         1 |      | add integer        |
 
 ## Parser
 
