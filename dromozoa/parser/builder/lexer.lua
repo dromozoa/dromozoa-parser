@@ -80,16 +80,42 @@ function class:mark()
   return self
 end
 
+function class:sub(i, j)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 11, i, j }
+  return self
+end
+
+function class:int(base)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 12, base }
+  return self
+end
+
+function class:char()
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 13 }
+  return self
+end
+
+function class:join(before, after)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 14 }
+  return self
+end
+
 function metatable:__call(repl)
   local items = self.items
   local actions = items[#items].actions
   local t = type(repl)
-  if t == "table" then
-    actions[#actions + 1] = { 6, repl }
-  elseif t == "function" then
-    actions[#actions + 1] = { 7, repl }
-  else
+  if t == "number" or t == "string" then
     actions[#actions + 1] = { 8, tostring(repl) }
+  else
+    error(("unsupported repl of type %q"):format(t))
   end
   return self
 end

@@ -37,18 +37,22 @@ Parser generator toolkit.
 
 ### Actions
 
-| Code | Operator        | #Operands | Skip | Description              |
-|-----:|-----------------|----------:|------|--------------------------|
-|    1 | `:skip()`       |         0 | yes  | skip                     |
-|    2 | `:push()`       |         0 | yes  | push                     |
-|    3 | `:concat()`     |         0 |      | concat                   |
-|    4 | `:call "label"` |         1 |      | call                     |
-|    5 | `:ret()`        |         0 |      | return                   |
-|    6 | `(table)`       |         1 |      | substitute by `table`    |
-|    7 | `(function)`    |         1 |      | substitute by `function` |
-|    8 | `(string)`      |         1 |      | substitute by `string`   |
-|    9 | `:hold()`       |         0 |      | hold                     |
-|   10 | `:mark()`       |         0 |      | mark                     |
+| Code | Operator               | #Operands | Skip | Description        |
+|-----:|------------------------|----------:|:----:|--------------------|
+|    1 | `:skip()`              |         0 | yes  | skip               |
+|    2 | `:push()`              |         0 | yes  | push               |
+|    3 | `:concat()`            |         0 |      | concat             |
+|    4 | `:call "label"`        |         1 |      | call               |
+|    5 | `:ret()`               |         0 |      | return             |
+|    6 |                        |           |      | N/A                |
+|    7 |                        |           |      | N/A                |
+|    8 | `"string"`             |         1 |      | substitute         |
+|    9 | `:hold()`              |         0 |      | hold               |
+|   10 | `:mark()`              |         0 |      | mark               |
+|   11 | `:sub(i, j)`           |         2 |      | substring          |
+|   12 | `:int(base)`           |         1 |      | convert to integer |
+|   13 | `:char()`              |         0 |      | convert to char    |
+|   14 | `:join(before, after)` |         2 |      | join               |
 
 ## Parser
 
@@ -68,11 +72,34 @@ Parser generator toolkit.
 |    1 | `marker_end`       | $      |
 |   -1 | `marker_lookahead` | #      |
 
-## Conflict Resolutions
+### Conflict Resolutions
 
 | Code | Action |
 |-----:|--------|
 |    1 | shift  |
 |    2 | reduce |
 |    3 | error  |
+
+### Semantic Actions
+
+| Code | Operator  | #Operands | Description |
+|-----:|-----------|----------:|-------------|
+|    1 | `:list()` |         0 | list        |
+
+### Node
+
+| Name     | Type      | Terminal Only | Description              |
+|----------|-----------|:-------------:|--------------------------|
+| `[0]`    | `integer` |               | head symbol              |
+| `[i]`    | `integer` |               | body symbols             |
+| `.n`     | `integer` |               | length of body symbols   |
+| `.value` | `string`  |      yes      | value                    |
+| `.file`  | `string`  |      yes      | file                     |
+| `.s`     | `string`  |      yes      | string                   |
+| `.p`     | `integer` |      yes      | skipped position         |
+| `.i`     | `integer` |      yes      | start position           |
+| `.j`     | `integer` |      yes      | end position             |
+| `.rs`    | `string`  |      yes      | resulting string         |
+| `.ri`    | `integer` |      yes      | resulting start position |
+| `.rj`    | `integer` |      yes      | resulting end position   |
 

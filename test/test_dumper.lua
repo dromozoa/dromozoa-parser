@@ -15,42 +15,25 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
-local metatable = {
-  __index = class;
+local equal = require "dromozoa.commons.equal"
+local dumper = require "dromozoa.parser.dumper"
+
+local data = {}
+for i = 1, 256 do
+  data[#data + 1] = { i, i ^ 2 }
+end
+
+local out = assert(io.open("test_dumper.lua", "w"))
+
+local source = {
+  a = { {1},{1,2},{1,2,3},{1,2},{1} };
+  b = { {1,2,3},{1,2},{1} };
+  c = {1,2,3};
+  d = data;
 }
-class.metatable = metatable
+local root = dumper(out, source)
+out:write("return ", root, "\n")
+out:close()
 
-function class:_(name)
-  local items = self.items
-  items[#items + 1] = {
-    head = self.head;
-    body = { name };
-  }
-  return self
-end
-
-function class:prec(name)
-  local items = self.items
-  items[#items].precedence = name
-  return self
-end
-
-function class:list()
-  local items = self.items
-  items[#items].semantic_action = 1
-  return self
-end
-
-function metatable:__call(name)
-  local items = self.items
-  local body = items[#items].body
-  body[#body + 1] = name
-  return self
-end
-
-return setmetatable(class, {
-  __call = function (_, items, name)
-    return setmetatable({ items = items, head = name }, metatable)
-  end;
-})
+local result = assert(loadfile("test_dumper.lua"))()
+assert(equal(source, result))

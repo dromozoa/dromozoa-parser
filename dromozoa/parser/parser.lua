@@ -15,6 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local compile = require "dromozoa.parser.parser.compile"
+local error_message = require "dromozoa.parser.error_message"
 local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
 
 local class = {}
@@ -22,6 +24,14 @@ local metatable = {
   __index = class;
 }
 class.metatable = metatable
+
+function class:compile(out)
+  if type(out) == "string" then
+    compile(self, assert(io.open(out, "w"))):close()
+  else
+    return compile(self, out)
+  end
+end
 
 function class:write_graphviz(out, tree)
   if type(out) == "string" then
@@ -31,34 +41,51 @@ function class:write_graphviz(out, tree)
   end
 end
 
-function metatable:__call(symbol, data)
+function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
   local max_state = self.max_state
-  local max_symbol = self.max_symbol
-  local table = self.table
+  local max_terminal_symbol = self.max_terminal_symbol
+  local actions = self.actions
+  local gotos = self.gotos
   local heads = self.heads
   local sizes = self.sizes
+  local semantic_actions = self.semantic_actions
   local stack = self.stack
   local nodes = self.nodes
 
   local node = {
-    symbol;
-    n = 1;
-    data = data;
+    [0] = symbol;
+    n = 0;
+    value = value;
+    file = file;
+    s = s;
+    p = p;
+    i = i;
+    j = j;
+    rs = rs;
+    ri = ri;
+    rj = rj;
   }
 
   while true do
     local n1 = #stack
     local n2 = #nodes
     local state = stack[n1]
-    local action = table[state * max_symbol + symbol]
+
+    local action
+    if symbol <= max_terminal_symbol then
+      action = actions[state][symbol]
+    else
+      action = gotos[state][symbol - max_terminal_symbol]
+    end
+
     if action then
       if action <= max_state then -- shift
         stack[n1 + 1] = action
         nodes[n2 + 1] = node
         return true
       else
-        local symbol = heads[action]
-        if symbol then -- reduce
+        local head = heads[action]
+        if head then -- reduce
           local n = sizes[action]
           for i = n1 - n + 1, n1 do
             stack[i] = nil
@@ -70,28 +97,45 @@ function metatable:__call(symbol, data)
             nodes[i] = nil
           end
 
-          local node = {
-            symbol;
-            n = n + 1;
-          }
-          for i = 1, n do
-            node[i + 1] = reduced_nodes[i]
+          local node
+          local semantic_action = semantic_actions[action]
+          if semantic_action == 1 then
+            node = reduced_nodes[1]
+            local m = node.n
+            for i = 2, n do
+              m = m + 1
+              node[m] = reduced_nodes[i]
+            end
+            node.n = m
+          else
+            node = {
+              [0] = head;
+              n = n;
+            }
+            for i = 1, n do
+              node[i] = reduced_nodes[i]
+            end
           end
 
           local n1 = #stack
           local n2 = #nodes
           local state = stack[n1]
-          stack[n1 + 1] = table[state * max_symbol + symbol]
+          assert(head > max_terminal_symbol)
+          stack[n1 + 1] = gotos[state][head - max_terminal_symbol]
           nodes[n2 + 1] = node
         else -- accept
           stack[n1] = nil
-          local node = nodes[n2]
+          local accepted_node = nodes[n2]
           nodes[n2] = nil
-          return node
+          return accepted_node
         end
       end
     else
-      return nil, "parse error", state, node
+      if file then
+        return nil, error_message("parser error", s, i, file)
+      else
+        return nil, error_message("parser error", s, i, "<unknown>")
+      end
     end
   end
 end
@@ -101,10 +145,12 @@ return setmetatable(class, {
     return setmetatable({
       symbol_names = data.symbol_names;
       max_state = data.max_state;
-      max_symbol = data.max_symbol;
-      table = data.table;
+      max_terminal_symbol = data.max_terminal_symbol;
+      actions = data.actions;
+      gotos = data.gotos;
       heads = data.heads;
       sizes = data.sizes;
+      semantic_actions = data.semantic_actions;
       stack = { 1 }; -- start state
       nodes = {};
     }, metatable)

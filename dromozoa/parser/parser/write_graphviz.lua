@@ -31,14 +31,10 @@ return function (self, out, tree)
     local u = stack[n]
     if u then stack[n] = nil
       local uid = id_table[u]
-      local name = symbol_names[u[1]]
-      local value
-      local data = u.data
-      if data then
-        value = data.value
-        if value == name then
-          value = nil
-        end
+      local name = symbol_names[u[0]]
+      local value = u.value
+      if value == name then
+        value = nil
       end
       out:write('  ', uid, ' [shape=none,width=0,height=0,margin=0,label=<\n    <table border="0" cellborder="1" cellspacing="0">\n      <tr><td>', escape_html(name), '</td></tr>\n')
       if value then
@@ -46,12 +42,12 @@ return function (self, out, tree)
       end
       out:write('    </table>\n  >];\n')
       local m = u.n
-      for i = 2, m do
+      for i = 1, m do
         id = id + 1
         id_table[u[i]] = id
         out:write('  ', uid, ' -- ', id, ';\n')
       end
-      for i = m, 2, -1 do
+      for i = m, 1, -1 do
         stack[#stack + 1] = u[i]
       end
     else

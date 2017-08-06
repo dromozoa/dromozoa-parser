@@ -21,36 +21,8 @@ local metatable = {
 }
 class.metatable = metatable
 
-function class:_(name)
-  local items = self.items
-  items[#items + 1] = {
-    head = self.head;
-    body = { name };
-  }
-  return self
-end
-
-function class:prec(name)
-  local items = self.items
-  items[#items].precedence = name
-  return self
-end
-
-function class:list()
-  local items = self.items
-  items[#items].semantic_action = 1
-  return self
-end
-
-function metatable:__call(name)
-  local items = self.items
-  local body = items[#items].body
-  body[#body + 1] = name
-  return self
-end
-
 return setmetatable(class, {
-  __call = function (_, items, name)
-    return setmetatable({ items = items, head = name }, metatable)
+  __call = function (_, name)
+    return setmetatable({ name = name }, metatable)
   end;
 })

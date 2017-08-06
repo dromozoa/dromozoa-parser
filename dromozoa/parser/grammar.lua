@@ -173,11 +173,7 @@ function class:first_symbol(symbol)
   else
     local first_table = self.first_table
     if first_table then
-      local first = first_table[symbol]
-      if not first then
-        error(("first not defined at symbol %d"):format(symbol))
-      end
-      return first
+      return first_table[symbol]
     else
       local productions = self.productions
       local production_ids = self.map_of_production_ids[symbol]
@@ -629,17 +625,19 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   local m = #set_of_items
   local n = self.max_nonterminal_symbol
-  local table = {}
+  local actions = {}
+  local gotos = {}
   local conflicts = {}
 
   for i = 1, m do
     local items = set_of_items[i]
     local terminal_symbol_table = {}
+    local t = {}
     for j = 1, #items do
       local item = items[j]
       local symbol = productions[item.id].body[item.dot]
       if symbol and symbol <= max_terminal_symbol and not terminal_symbol_table[symbol] then
-        table[i * n + symbol] = transitions[i][symbol]
+        t[symbol] = transitions[i][symbol]
         terminal_symbol_table[symbol] = true
       end
     end
@@ -651,8 +649,7 @@ function class:lr1_construct_table(set_of_items, transitions)
       if not symbol then
         local action = m + id
         local symbol = item.la
-        local index = i * n + symbol
-        local value = table[index]
+        local value = t[symbol]
         if value then
           local conflict = {
             state = i;
@@ -669,15 +666,15 @@ function class:lr1_construct_table(set_of_items, transitions)
               if shift_precedence == precedence then
                 if associativity == 1 then -- left
                   conflict.resolution = 2 -- reduce
-                  table[index] = action
+                  t[symbol] = action
                 elseif associativity == 3 then -- nonassoc
                   conflict.resolution = 3 -- error
-                  error_table[index] = action
-                  table[index] = nil
+                  error_table[symbol] = action
+                  t[symbol] = nil
                 end
               elseif shift_precedence < precedence then
                 conflict.resolution = 2 -- reduce
-                table[index] = action
+                t[symbol] = action
               end
             end
           else
@@ -685,12 +682,12 @@ function class:lr1_construct_table(set_of_items, transitions)
             conflict[2] = { action = 2, argument = id }
             if action < value then
               conflict.resolution = 2 -- reduce
-              table[index] = action
+              t[symbol] = action
             end
           end
           conflicts[#conflicts + 1] = conflict
         else
-          if error_table[index] then
+          if error_table[symbol] then
             conflicts[#conflicts + 1] = {
               state = i;
               symbol = symbol;
@@ -698,39 +695,51 @@ function class:lr1_construct_table(set_of_items, transitions)
               { action = 2, argument = id };
             }
           else
-            table[index] = action
+            t[symbol] = action
           end
         end
       end
+    end
+    if next(t) then
+      actions[i] = t
     end
   end
 
   for i = 1, #transitions do
     for symbol, to in pairs(transitions[i]) do
       if symbol > max_terminal_symbol then
-        local index = i * n + symbol
-        local value = table[index]
-        table[index] = to
+        local j = symbol - max_terminal_symbol
+        local t = gotos[i]
+        if t then
+          t[j] = to
+        else
+          gotos[i] = { [j] = to }
+        end
       end
     end
   end
 
   local heads = {}
   local sizes = {}
+  local semantic_actions = {}
   for i = 2, #productions do
     local production = productions[i]
     local j = m + i
     heads[j] = production.head
     sizes[j] = #production.body
+    semantic_actions[j] = production.semantic_action
   end
 
   return parser({
     symbol_names = self.symbol_names;
     max_state = m;
-    max_symbol = n;
-    table = table;
+    max_terminal_symbol = max_terminal_symbol;
+    max_nonterminal_symbol = n;
+    actions = actions;
+    gotos = gotos;
     heads = heads;
     sizes = sizes;
+    semantic_actions = semantic_actions;
   }), conflicts
 end
 

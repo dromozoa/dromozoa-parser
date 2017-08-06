@@ -15,42 +15,25 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
-
-function class:_(name)
-  local items = self.items
-  items[#items + 1] = {
-    head = self.head;
-    body = { name };
-  }
-  return self
+return function (message, s, position, file)
+  if not file then
+    file = "<unknown>"
+  end
+  local n = 1
+  local i = 1
+  while true do
+    local j = s:find("\n", i, true)
+    if j then
+      if position <= j then
+        return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
+      end
+      n = n + 1
+      i = j + 1
+    else
+      if position <= #s then
+        return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
+      end
+      return file .. ":eof: " .. message
+    end
+  end
 end
-
-function class:prec(name)
-  local items = self.items
-  items[#items].precedence = name
-  return self
-end
-
-function class:list()
-  local items = self.items
-  items[#items].semantic_action = 1
-  return self
-end
-
-function metatable:__call(name)
-  local items = self.items
-  local body = items[#items].body
-  body[#body + 1] = name
-  return self
-end
-
-return setmetatable(class, {
-  __call = function (_, items, name)
-    return setmetatable({ items = items, head = name }, metatable)
-  end;
-})

@@ -53,8 +53,18 @@ local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 grammar:write_conflicts(io.stdout, conflicts)
 grammar:write_table("test.html", parser)
 
-local _ = _.symbol_table
-assert(parser(_["id"]))
-assert(parser(_["<"]))
-assert(parser(_["id"]))
-assert(not parser(_["<"]))
+local source = [[id<id<id<id<id<id<]]
+
+local position = 1
+for n = 1, 4 do
+  local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
+  print(n, p, i, j, rs:sub(ri,rj))
+  if n == 4 then
+    local result, message = parser(symbol, rs:sub(ri, rj), "test.lua", source, p, i, j, rs, ri, rj)
+    print(message)
+    assert(not result)
+  else
+    assert(parser(symbol, rs:sub(ri, rj), "test.lua", source, p, i, j, rs, ri, rj))
+  end
+  position = j
+end

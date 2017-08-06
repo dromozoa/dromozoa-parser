@@ -15,45 +15,47 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
-local parser = require "dromozoa.parser.parser"
 
-local _ = builder()
 local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
+local _ = builder()
+
 _:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
-  :_(R"09"^"+") :as "id"
-  :_ "+"
-  :_ "*"
-  :_ "("
-  :_ ")"
+  :_ (S" \r\n\t\v\f"^"+") :skip()
+  :_ "{"
+  :_ "}"
+  :_ "["
+  :_ "]"
+  :_ ":"
+  :_ ","
+  :_ (P[["]] * (-S[[\"]] + P[[\]] * P(1))^"*" * P[["]]) :as "string"
+  :_ (P"0" + R"19" * R"09"^"*") :as "integer"
+  :_ "/*" "*/" :hold() :call "block_comment" :skip()
 
-_ :left "+"
-  :left "*"
+_:search_lexer "block_comment"
+  :when() :ret() :skip()
+  :otherwise() :skip()
 
-_"E"
-  :_ "E" "+" "E"
-  :_ "E" "*" "E"
-  :_ "(" "E" ")"
-  :_ "id"
+local lexer = _:build()
 
-local scanner, grammar = _:build()
-print(dumper.encode(grammar, { pretty = true, stable = true }))
+local file = "test.lua"
+local source = [[
+[
+  42,
+  "foo",
+  3.14
+]
+]]
 
-local parser = grammar:lr1_construct_table(grammar:lalr1_items())
-print(dumper.encode(parser, { stable = true }))
-
-local _ = _.symbol_table
-
-assert(parser(_["id"], "17"))
-assert(parser(_["+"],  "+"))
-assert(parser(_["id"], "23"))
-assert(parser(_["*"],  "*"))
-assert(parser(_["id"], "37"))
-local tree = assert(parser(1))
-
-parser:write_graphviz("test.dot", tree)
+local result, message = pcall(function ()
+  local position = 1
+  repeat
+    local symbol, s, i, j, rs, ri, rj = assert(lexer(source, position, file))
+    position = j
+  until symbol == 1
+end)
+print(result, message)
+assert(message:match("test%.lua:4:4: lexer error"))
