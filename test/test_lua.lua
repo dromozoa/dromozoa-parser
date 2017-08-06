@@ -43,7 +43,7 @@ local function string_lexer(lexer)
     :_ (P[[\z]] * S" \t\n\v\f\r"^"*") :skip()
     :_ (P[[\]] * R"09"^{1,3}) :sub(2, -1) :int(10) :char() :push()
     :_ (P[[\x]] * R"09AFaf"^{2}) :sub(3, -1) :int(16) :char() :push()
-    -- \u{...}
+    :_ (P[[\u{]] * R"09AFaf"^"+" * P[[}]]) :utf8(4, -2) :push()
     :_ ((-S[[\"]])^"+") :push()
 end
 
@@ -114,7 +114,7 @@ _:lexer()
   :_ ((R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"0" * S"xX" * (R"09AFaf"^"+" * (P"." * R"09AFaf"^"*")^"?" + P"." * R"09AFaf"^"+") * (S"pP" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"--[" * P"="^"*" * P"[") :sub(4, -2) :join("]", "]") :hold() :call "long_comment" :skip()
-  :_ (P"--" * ((-S"\n")^"+")) :skip()
+  :_ (P"--" * ((-S"\n")^"*") * P"\n") :skip()
 
 string_lexer(_:lexer "dq_string")
   :_ [["]] :as "LiteralString" :concat() :ret()
@@ -647,6 +647,7 @@ return {
   bar = 23;
   "baz";
   qux = 42;
+  utf8 = "\\u{10437}=\u{10437}";
 }
 ]====]
 
