@@ -26,6 +26,7 @@ function class:_(name)
   items[#items + 1] = {
     head = self.head;
     body = { name };
+    semantic_actions = {};
   }
   return self
 end
@@ -38,7 +39,8 @@ end
 
 function class:list()
   local items = self.items
-  items[#items].semantic_action = 1
+  local semantic_actions = items[#items].semantic_actions
+  semantic_actions[#semantic_actions + 1] = { 1 }
   return self
 end
 

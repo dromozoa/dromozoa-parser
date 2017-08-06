@@ -48,7 +48,7 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
   local gotos = self.gotos
   local heads = self.heads
   local sizes = self.sizes
-  local semantic_actions = self.semantic_actions
+  local reduce_to_semantic_actions = self.reduce_to_semantic_actions
   local stack = self.stack
   local nodes = self.nodes
 
@@ -98,15 +98,21 @@ function metatable:__call(symbol, value, file, s, p, i, j, rs, ri, rj)
           end
 
           local node
-          local semantic_action = semantic_actions[action]
-          if semantic_action == 1 then
-            node = reduced_nodes[1]
-            local m = node.n
-            for i = 2, n do
-              m = m + 1
-              node[m] = reduced_nodes[i]
+          local semantic_actions = reduce_to_semantic_actions[action]
+          if semantic_actions[1] then
+            for i = 1, #semantic_actions do
+              local semantic_action = semantic_actions[1]
+              local code = semantic_action[1]
+              if code == 1 then -- list
+                node = reduced_nodes[1]
+                local m = node.n
+                for i = 2, n do
+                  m = m + 1
+                  node[m] = reduced_nodes[i]
+                end
+                node.n = m
+              end
             end
-            node.n = m
           else
             node = {
               [0] = head;
@@ -150,7 +156,7 @@ return setmetatable(class, {
       gotos = data.gotos;
       heads = data.heads;
       sizes = data.sizes;
-      semantic_actions = data.semantic_actions;
+      reduce_to_semantic_actions = data.reduce_to_semantic_actions;
       stack = { 1 }; -- start state
       nodes = {};
     }, metatable)

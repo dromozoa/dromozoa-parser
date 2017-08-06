@@ -26,7 +26,7 @@ return function (self, out)
     gotos = self.gotos;
     heads = self.heads;
     sizes = self.sizes;
-    semantic_actions = self.semantic_actions;
+    reduce_to_semantic_actions = self.reduce_to_semantic_actions;
   }
 
   out:write("local parser = require \"dromozoa.parser.parser\"\n")
