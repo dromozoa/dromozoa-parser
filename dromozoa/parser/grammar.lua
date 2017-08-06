@@ -700,23 +700,18 @@ function class:lr1_construct_table(set_of_items, transitions)
         end
       end
     end
-    if next(t) then
-      actions[i] = t
-    end
+    actions[i] = t
   end
 
   for i = 1, #transitions do
+    local t = {}
     for symbol, to in pairs(transitions[i]) do
       if symbol > max_terminal_symbol then
         local j = symbol - max_terminal_symbol
-        local t = gotos[i]
-        if t then
-          t[j] = to
-        else
-          gotos[i] = { [j] = to }
-        end
+        t[j] = to
       end
     end
+    gotos[i] = t
   end
 
   local heads = {}
