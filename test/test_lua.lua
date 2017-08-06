@@ -385,6 +385,24 @@ print("lr1_construct_table", timer:elapsed())
 
 parser:compile("test_parser.lua")
 
+do
+  local compiled_parser = assert(loadfile("test_parser.lua"))()
+  collectgarbage()
+  collectgarbage()
+  local c1 = collectgarbage("count")
+  compiled_parser = nil
+  collectgarbage()
+  collectgarbage()
+  local c2 = collectgarbage("count")
+  print("parser memory", c1 - c2)
+end
+
+do
+  local compiled_parser = assert(loadfile("test_parser.lua"))()
+  assert(equal(parser, compiled_parser))
+  parser = compiled_parser
+end
+
 grammar:write_set_of_items("test-set-of-items.txt", set_of_items)
 grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)

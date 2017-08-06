@@ -15,62 +15,22 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local encode = require "dromozoa.parser.encode"
+local dumper = require "dromozoa.parser.dumper"
 
 return function (self, out)
-  local max_state = self.max_state
-  local actions = self.actions
-  local gotos = self.gotos
+  local data = {
+    symbol_names = self.symbol_names;
+    max_state = self.max_state;
+    max_terminal_symbol = self.max_terminal_symbol;
+    actions = self.actions;
+    gotos = self.gotos;
+    heads = self.heads;
+    sizes = self.sizes;
+    semantic_actions = self.semantic_actions;
+  }
 
-  out:write("local parser = require \"dromozoa.parser.parser\"\n\n")
-
-  local n = 0
-  local data_table = {}
-  local action_map = {}
-  for i = 1, max_state do
-    local t = actions[i]
-    if t then
-      local code = encode(t)
-      local name = data_table[code]
-      if not name then
-        n = n + 1
-        name = "_" .. n
-        data_table[code] = name
-        out:write("local ", name, " = ", code, "\n")
-      end
-      action_map[i] = name
-    end
-  end
-  local goto_map = {}
-  for i = 1, max_state do
-    local t = gotos[i]
-    if t then
-      local code = encode(t)
-      local name = data_table[code]
-      if not name then
-        n = n + 1
-        name = "_" .. n
-        data_table[code] = name
-        out:write("local ", name, " = ", code, "\n")
-      end
-      goto_map[i] = name
-    end
-  end
-
-  out:write("\nlocal data = {\n")
-
-  out:write("  symbol_names = ", encode(self.symbol_names), ";\n")
-  out:write("  max_state = ", encode(max_state), ";\n")
-  out:write("  max_terminal_symbol = ", encode(self.max_terminal_symbol), ";\n")
-  out:write("  actions = {")
-  for i = 1, max_state do
-    local map = action_map[i]
-    if map then
-      ;
-    end
-  end
-  out:write("};\n")
-
-  out:write("}\n\nreturn parser(data)\n")
+  out:write("local parser = require \"dromozoa.parser.parser\"\n")
+  local root = dumper(out, data)
+  out:write("return parser(", root,")\n")
   return out
 end
