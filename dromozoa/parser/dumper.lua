@@ -88,7 +88,7 @@ local function encode(value)
   end
 end
 
-local function compact(out, value, map)
+local function compact(self, out, value)
   if type(value) == "table" then
     local that = {}
     local number_keys, string_keys = keys(value)
@@ -96,7 +96,7 @@ local function compact(out, value, map)
       local k = number_keys[i]
       local v = value[k]
       if type(v) == "table" then
-        that[k] = compact(out, v, map)
+        that[k] = compact(self, out, v)
       else
         that[k] = v
       end
@@ -105,18 +105,19 @@ local function compact(out, value, map)
       local k = string_keys[i]
       local v = value[k]
       if type(v) == "table" then
-        that[k] = compact(out, v, map)
+        that[k] = compact(self, out, v)
       else
         that[k] = v
       end
     end
+    local map = self.map
     local code = encode(that)
     local name = map[code]
     if name then
       return reference(name)
     else
-      local n = map.n + 1
-      map.n = n
+      local n = self.n + 1
+      self.n = n
       name = "_[" .. n .. "]"
       map[code] = name
       out:write(name, " = ", code, "\n")
@@ -127,7 +128,19 @@ local function compact(out, value, map)
   end
 end
 
-return function (out, value)
+local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
+
+function class:dump(out, value)
   out:write("local _ = {}\n")
-  return compact(out, value, { n = 0 }).name
+  return compact(self, out, value).name
 end
+
+return setmetatable(class, {
+  __call = function ()
+    return setmetatable({ map = {}, n = 0 }, metatable)
+  end;
+})

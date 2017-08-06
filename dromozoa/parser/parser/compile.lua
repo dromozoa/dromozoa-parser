@@ -30,7 +30,7 @@ return function (self, out)
   }
 
   out:write("local parser = require \"dromozoa.parser.parser\"\n")
-  local root = dumper(out, data)
+  local root = dumper():dump(out, data)
   out:write("return parser(", root,")\n")
   return out
 end

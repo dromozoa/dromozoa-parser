@@ -32,7 +32,7 @@ return function (self, out)
   end
 
   out:write("local lexer = require \"dromozoa.parser.lexer\"\n")
-  local root = dumper(out, data)
+  local root = dumper():dump(out, data)
   out:write("return lexer(", root, ")\n")
   return out
 end
