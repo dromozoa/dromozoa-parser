@@ -32,7 +32,7 @@ return function (self, out, tree)
     if u then stack[n] = nil
       local uid = id_table[u]
       local name = symbol_names[u[0]]
-      local value = u.v
+      local value = u.value
       if value == name then
         value = nil
       end

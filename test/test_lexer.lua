@@ -56,18 +56,18 @@ abcde
 abcd
 ]]
 
-for i = 1, 8 do
-  local source = s .. (" "):rep(i)
+for test = 1, 8 do
+  local source = s .. (" "):rep(test)
   local position = 1
 
   local data = {}
   repeat
-    local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(source, position))
+    local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
     data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
-    if i == 1 then
-      print(_.symbol_names[symbol], symbol, ("%q -> %q"):format(source:sub(pi, pj - 1), rs:sub(ri, rj)))
+    if test == 1 then
+      print(_.symbol_names[symbol], symbol, ("%q -> %q"):format(source:sub(i, j - 1), rs:sub(ri, rj)))
     end
-    position = pj
+    position = j
   until symbol == 1
 
   assert(equal(data, {
