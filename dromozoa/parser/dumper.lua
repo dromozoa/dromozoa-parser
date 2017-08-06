@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local placeholder = require "dromozoa.parser.dumper.placeholder"
+local reference = require "dromozoa.parser.dumper.reference"
 
 local function keys(value)
   local number_keys = {}
@@ -44,7 +44,7 @@ local function encode(value)
   elseif t == "string" then
     return ("%q"):format(value)
   elseif t == "table" then
-    if getmetatable(value) == placeholder.metatable then
+    if getmetatable(value) == reference.metatable then
       return value.name
     else
       local number_keys, string_keys, positive_count = keys(value)
@@ -113,14 +113,14 @@ local function compact(out, value, map)
     local code = encode(that)
     local name = map[code]
     if name then
-      return placeholder(name)
+      return reference(name)
     else
       local n = map.n + 1
       map.n = n
       name = "_[" .. n .. "]"
       map[code] = name
       out:write(name, " = ", code, "\n")
-      return placeholder(name)
+      return reference(name)
     end
   else
     return value
