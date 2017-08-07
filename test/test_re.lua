@@ -26,6 +26,19 @@ local driver = require "dromozoa.parser.driver"
 
 local atom = builder.atom
 
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
+
+local character_classes = {
+  [ [[\d]] ] = R"09";
+  [ [[\D]] ] = -R"09";
+  [ [[\s]] ] = S" \f\n\r\t\v";
+  [ [[\S]] ] = -S" \f\n\r\t\v";
+  [ [[\w]] ] = R"09AZaz" + "_";
+  [ [[\W]] ] = -R"09AZaz" + "_";
+}
+
 local source = arg[1] or [[\/\*.*?\*\/]]
 local parser = regexp_parser()
 local root = driver(regexp_lexer(), parser)(source)
@@ -104,6 +117,7 @@ while true do
         if a_symbol == symbol_table["."] then
           node.value = atom.any()
         elseif a_symbol == symbol_table.CharacterClassEscape then
+          node.value = character_classes[a.value]:clone()
         elseif a_symbol == symbol_table.CharacterClass then
           node.value = a.value
         else
