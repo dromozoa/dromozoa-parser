@@ -82,12 +82,6 @@ while true do
         node.value = node[1].value ^ node[2].value
       end
     elseif symbol == symbol_table.Quantifier then
-      if node.n == 1 then
-        node.value = node[1].value
-      else
-        error("not impl")
-      end
-    elseif symbol == symbol_table.QuantifierPrefix then
       local n = node.n
       if n == 3 then
         node.value = { tonumber(node[2].value, 10) }

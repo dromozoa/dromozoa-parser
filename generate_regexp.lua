@@ -88,10 +88,6 @@ _"Term"
   :_ "Atom" "Quantifier"
 
 _"Quantifier"
-  :_ "QuantifierPrefix"
-  :_ "QuantifierPrefix" "?"
-
-_"QuantifierPrefix"
   :_ "*"
   :_ "+"
   :_ "?"
