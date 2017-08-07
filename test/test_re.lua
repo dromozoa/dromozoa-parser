@@ -23,7 +23,6 @@ local regexp_lexer = require "dromozoa.parser.lexers.regexp_lexer"
 local regexp_parser = require "dromozoa.parser.parsers.regexp_parser"
 
 local atom = builder.atom
-
 local P = builder.pattern
 local R = builder.range
 local S = builder.set
@@ -41,7 +40,7 @@ local character_classes = {
   ["\\W"] = -word;
 }
 
-local source = arg[1] or "abc|bbb|abb" -- or [[\/\*.*?\*\/]]
+local source = arg[1] or "abc|bbb|abb"
 local parser = regexp_parser()
 local root = driver(regexp_lexer(), parser)(source)
 
@@ -100,11 +99,8 @@ while true do
     elseif symbol == symbol_table.Atom then
       if node.n == 1 then
         local that = node[1]
-        local that_symbol = that[0]
-        if that_symbol == symbol_table["."] then
+        if that[0] == symbol_table["."] then
           node.value = P(1)
-        elseif that_symbol == symbol_table.CharacterClass or that_symbol == symbol_table.CharacterClassEscape then
-          node.value = that.value
         else
           node.value = P(that.value)
         end
@@ -115,67 +111,33 @@ while true do
       node.value = character_classes[node[1].value]:clone()
     elseif symbol == symbol_table.CharacterClass then
       if node[1][0] == symbol_table["[^"] then
-        node.value = -atom(node[2].value)
+        node.value = -node[2].value
       else
-        node.value = atom(node[2].value)
+        node.value = node[2].value
       end
     elseif symbol == symbol_table.ClassRanges then
       if node.n == 0 then
-        node.value = {}
+        node.value = atom({})
       else
         node.value = node[1].value
       end
     elseif symbol == symbol_table.NonemptyClassRanges or symbol == symbol_table.NonemptyClassRangesNoDash then
       local n = node.n
-      local that = node[1]
-      if that[0] == symbol_table.CharacterClassEscape then
-        if n == 1 then
-          node.value = that.value
-        elseif n == 2 then
-          local set = {}
-          for byte in pairs(that.value) do
-            set[byte] = true
-          end
-          for byte in pairs(node[2].value) do
-            set[byte] = true
-          end
-          node.value = set
-        else
-          local set = { [0x2d] = true }
-          for byte in pairs(that.value) do
-            set[byte] = true
-          end
-          local that = node[3]
-          if that[0] == symbol_table.CharacterClassEscape then
-            for byte in pairs(that.value) do
-              set[byte] = true
-            end
-          else
-            set[that.value:byte()] = true
-          end
-          for byte in pairs(node[4].value) do
-            set[byte] = true
-          end
-          node.value = set
-        end
+      if n == 1 then
+        node.value = P(node[1].value)
+      elseif n == 2 then
+        node.value = P(node[1].value) + P(node[2].value)
       else
-        if n == 1 then
-          node.value = { [node[1].value:byte()] = true }
-        elseif n == 2 then
-          local set = { [node[1].value:byte()] = true }
-          for byte in pairs(node[2].value) do
-            set[byte] = true
-          end
-          node.value = set
-        else
+        local a = node[1].value
+        local b = node[3].value
+        if type(a) == "string" and type(b) == "string" then
           local set = {}
-          for byte = node[1].value:byte(), node[3].value:byte() do
+          for byte = a:byte(), b:byte() do
             set[byte] = true
           end
-          for byte in pairs(node[4].value) do
-            set[byte] = true
-          end
-          node.value = set
+          node.value = atom(set) + P(node[4].value)
+        else
+          node.value = P(a) + P"-" + P(b) + P(node[4].value)
         end
       end
     end
