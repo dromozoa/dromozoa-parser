@@ -15,6 +15,12 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
+
+local builder = require "dromozoa.parser.builder"
+local regexp = require "dromozoa.parser.regexp"
+local atom = require "dromozoa.parser.builder.atom"
+
 local regexp_lexer = require "dromozoa.parser.lexers.regexp_lexer"
 local regexp_parser = require "dromozoa.parser.parsers.regexp_parser"
 local driver = require "dromozoa.parser.driver"
@@ -25,6 +31,11 @@ local root = driver(regexp_lexer(), parser)(source)
 
 local symbol_table = parser.symbol_table
 local max_terminal_symbol = parser.max_terminal_symbol
+
+local any = {}
+for byte = 0, 255 do
+  any[byte] = true
+end
 
 local stack1 = { root }
 local stack2 = {}
@@ -39,22 +50,114 @@ while true do
     stack1[n1] = nil
     stack2[n2] = nil
     local symbol = node[0]
-    if symbol == symbol_table.CharacterEscape then
-      local a = node[1]
-      node.value = a.value
-    elseif symbol == symbol_table.ClassEscape then
-      local a = node[1]
-      if a[0] == symbol_table.CharacterClassEscape then
-        error("not impl")
+    if symbol == symbol_table.Pattern then
+      node.value = node[1].value
+    elseif symbol == symbol_table.Disjunction then
+      local n = node.n
+      if n == 1 then
+        local a = node[1]
+        node.value = a.value
+      elseif n == 3 then
+        local a = node[1]
+        local b = node[3]
+        if a.value and b.value then
+          node.value = a.value + b.value
+        elseif a.value then
+          node.value = a.value
+        elseif b.value then
+          node.value = b.value
+        end
+      end
+    elseif symbol == symbol_table.Alternative then
+      local n = node.n
+      if n == 2 then
+        local a = node[1]
+        local b = node[2]
+        if a.value then
+          print(a.value, b.value)
+          node.value = a.value * b.value
+        else
+          node.value = b.value
+        end
+      end
+    elseif symbol == symbol_table.Term then
+      local n = node.n
+      if n == 1 then
+        node.value = node[1].value
+      elseif n == 2 then
+        node.value = node[1].value ^ node[2].value
+      end
+    elseif symbol == symbol_table.Quantifier then
+      node.value = node[1].value
+    elseif symbol == symbol_table.QuantifierPrefix then
+      local n = node.n
+      if n == 3 then
+        node.value = { tonumber(node[2].value, 10) }
+      elseif n == 4 then
+        node.value = tonumber(node[2].value, 10)
+      elseif n == 5 then
+        node.value = { tonumber(node[2].value, 10), tonumber(node[4].value, 10) }
       else
+        node.value = node[1].value
+      end
+    elseif symbol == symbol_table.Atom then
+      local n = node.n
+      if n == 1 then
+        local a = node[1]
+        local a_symbol = a[0]
+        if a_symbol == symbol_table["."] then
+          node.value = atom(any)
+        elseif a_symbol == symbol_table.CharacterClassEscape then
+        elseif a_symbol == symbol_table.CharacterClass then
+          node.value = a.value
+        else
+          local set = { [a.value:byte()] = true }
+          node.value = atom(set)
+        end
+      else
+        local b = node[2]
+        node.value = b.value
+      end
+    elseif symbol == symbol_table.CharacterClass then
+      local a = node[1]
+      local b = node[2]
+      if a[0] == symbol_table["[^"] then
+        node.value = -atom(b.value)
+      else
+        node.value = atom(b.value)
+      end
+    elseif symbol == symbol_table.ClassRanges then
+      local n = node.n
+      if n == 0 then
+        node.value = {}
+      else
+        local a = node[1]
         node.value = a.value
       end
-    elseif symbol == symbol_table.ClassAtomNoDash then
+    elseif symbol == symbol_table.NonemptyClassRanges or symbol == symbol_table.NonemptyClassRangesNoDash then
+      local n = node.n
       local a = node[1]
-      node.value = a.value
-    elseif symbol == symbol_table.ClassAtom then
-      local a = node[1]
-      node.value = a.value
+      if n == 1 then
+        node.value = { [a.value:byte()] = true }
+      elseif n == 2 then
+        local b = node[2]
+        local set = { [a.value:byte()] = true }
+        for byte in pairs(b.value) do
+          set[byte] = true
+        end
+        node.value = set
+      else -- n == 4 then
+        local c = node[3]
+        local d = node[4]
+        local set = {}
+        for byte = a.value:byte(), c.value:byte() do
+          set[byte] = true
+        end
+        for byte in pairs(d.value) do
+          set[byte] = true
+        end
+        node.value = set
+      end
     end
     if node.rs then
       print(("%s %q"):format(parser.symbol_names[symbol], node.rs:sub(node.ri, node.rj)))
@@ -73,3 +176,7 @@ while true do
 end
 
 parser:write_graphviz("test.dot", root)
+
+-- print(dumper.encode(root.value, { pretty = true, stable = true }))
+
+regexp(root.value):nfa_to_dfa():minimize():write_graphviz("test-dfa.dot")

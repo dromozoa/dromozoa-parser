@@ -37,7 +37,7 @@ function class:prec(name)
   return self
 end
 
-function class:list()
+function class:collapse()
   local items = self.items
   local semantic_actions = items[#items].semantic_actions
   semantic_actions[#semantic_actions + 1] = { 1 }

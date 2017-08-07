@@ -85,9 +85,9 @@ Parser generator toolkit.
 
 ### Semantic Actions
 
-| Code | Operator  | #Operands | Description |
-|-----:|-----------|----------:|-------------|
-|    1 | `:list()` |         0 | list        |
+| Code | Operator      | #Operands | Description |
+|-----:|---------------|----------:|-------------|
+|    1 | `:collapse()` |         0 | collapse    |
 
 ### Node
 

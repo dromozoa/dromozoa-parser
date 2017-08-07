@@ -161,7 +161,7 @@ _"block"
 
 _"{stat}"
   :_ ()
-  :_ "{stat}" "stat" :list()
+  :_ "{stat}" "stat" :collapse()
 
 _"[retstat]"
   :_ ()
@@ -227,7 +227,7 @@ _"[: Name]"
 
 _"varlist"
   :_ "var"
-  :_ "varlist" "," "var" :list()
+  :_ "varlist" "," "var" :collapse()
 
 _"var"
   :_ "Name"
@@ -238,11 +238,11 @@ _"var"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name" :list()
+  :_ "namelist" "," "Name" :collapse()
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp" :list()
+  :_ "explist" "," "exp" :collapse()
 
 _"exp"
   :_ "nil"
@@ -329,7 +329,7 @@ _"fieldlist"
 
 _"{fieldsep field}"
   :_ ()
-  :_ "{fieldsep field}" "fieldsep" "field" :list()
+  :_ "{fieldsep field}" "fieldsep" "field" :collapse()
 
 _"[fieldsep]"
   :_ ()

@@ -35,7 +35,7 @@ return function (self, out, tree)
       local symbol = u[0]
       local name = symbol_names[symbol]
       local value = u.value
-      if value == name then
+      if type(value) ~= "string" or value == name then
         value = nil
       end
       out:write('  ', uid, ' [shape=none,width=0,height=0,margin=0,label=<\n    <table border="0" cellborder="1" cellspacing="0">\n      <tr><td')
