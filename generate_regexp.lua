@@ -75,8 +75,8 @@ _"Disjunction"
   :_ "Alternative" "|" "Disjunction"
 
 _"Alternative"
-  :_ ()
-  :_ "Alternative" "Term"
+  :_ "Term"
+  :_ "Term" "Alternative"
 
 _"Term"
   :_ "Atom"
@@ -115,8 +115,8 @@ _"CharacterEscape"
   :_ "IdentityEscape" :collapse()
 
 _"CharacterClass"
-  :_ "[" "ClassRanges" "]"
-  :_ "[^" "ClassRanges" "]"
+  :_ "[" "NonemptyClassRanges" "]"
+  :_ "[^" "NonemptyClassRanges" "]"
 
 _"ClassRanges"
   :_ ()

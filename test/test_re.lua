@@ -83,15 +83,13 @@ while true do
       end
     elseif symbol == symbol_table.Alternative then
       local n = node.n
-      if n == 2 then
+      if n == 1 then
+        local a = node[1]
+        node.value = a.value
+      else
         local a = node[1]
         local b = node[2]
-        if a.value then
-          print(a.value, b.value)
-          node.value = a.value * b.value
-        else
-          node.value = b.value
-        end
+        node.value = a.value * b.value
       end
     elseif symbol == symbol_table.Term then
       local n = node.n
