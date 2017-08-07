@@ -19,11 +19,12 @@ local dumper = require "dromozoa.commons.dumper"
 
 local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
-local atom = require "dromozoa.parser.builder.atom"
 
 local regexp_lexer = require "dromozoa.parser.lexers.regexp_lexer"
 local regexp_parser = require "dromozoa.parser.parsers.regexp_parser"
 local driver = require "dromozoa.parser.driver"
+
+local atom = builder.atom
 
 local source = arg[1] or [[\/\*.*?\*\/]]
 local parser = regexp_parser()
@@ -31,11 +32,6 @@ local root = driver(regexp_lexer(), parser)(source)
 
 local symbol_table = parser.symbol_table
 local max_terminal_symbol = parser.max_terminal_symbol
-
-local any = {}
-for byte = 0, 255 do
-  any[byte] = true
-end
 
 local stack1 = { root }
 local stack2 = {}
@@ -106,7 +102,7 @@ while true do
         local a = node[1]
         local a_symbol = a[0]
         if a_symbol == symbol_table["."] then
-          node.value = atom(any)
+          node.value = atom.any()
         elseif a_symbol == symbol_table.CharacterClassEscape then
         elseif a_symbol == symbol_table.CharacterClass then
           node.value = a.value

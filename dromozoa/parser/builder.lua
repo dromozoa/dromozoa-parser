@@ -25,6 +25,7 @@ local regexp_lexer = require "dromozoa.parser.builder.regexp_lexer"
 local search_lexer = require "dromozoa.parser.builder.search_lexer"
 
 local class = {
+  atom = atom;
   range = atom.range;
   set = atom.set;
 }
