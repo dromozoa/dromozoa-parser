@@ -156,6 +156,7 @@ function class:eliminate_left_recursion()
 
   return class({
     symbol_names = new_symbol_names;
+    symbol_table = self.symbol_table;
     productions = new_productions;
     map_of_production_ids = construct_map_of_production_ids(new_productions);
     max_terminal_symbol = max_terminal_symbol;
@@ -727,6 +728,7 @@ function class:lr1_construct_table(set_of_items, transitions)
 
   return parser({
     symbol_names = self.symbol_names;
+    symbol_table = self.symbol_table;
     max_state = m;
     max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
@@ -784,6 +786,7 @@ return setmetatable(class, {
     local productions = data.productions
     return setmetatable({
       symbol_names = data.symbol_names;
+      symbol_table = data.symbol_table;
       productions = productions;
       map_of_production_ids = construct_map_of_production_ids(productions);
       max_terminal_symbol = max_terminal_symbol;

@@ -150,6 +150,7 @@ return setmetatable(class, {
   __call = function (_, data)
     return setmetatable({
       symbol_names = data.symbol_names;
+      symbol_table = data.symbol_table;
       max_state = data.max_state;
       max_terminal_symbol = data.max_terminal_symbol;
       actions = data.actions;

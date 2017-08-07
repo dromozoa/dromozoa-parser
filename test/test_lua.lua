@@ -386,7 +386,7 @@ print("lr1_construct_table", timer:elapsed())
 parser:compile("test_parser.lua")
 
 do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()
+  local compiled_parser = assert(loadfile("test_parser.lua"))()()
   collectgarbage()
   collectgarbage()
   local c1 = collectgarbage("count")
@@ -398,7 +398,7 @@ do
 end
 
 do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()
+  local compiled_parser = assert(loadfile("test_parser.lua"))()()
   assert(equal(parser, compiled_parser))
   parser = compiled_parser
 end
@@ -505,7 +505,7 @@ dump("test_lexer_dump.lua", lexer.lexers)
 lexer:compile("test_lexer.lua")
 
 do
-  local compiled_lexer = assert(loadfile("test_lexer.lua"))()
+  local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
   collectgarbage()
   collectgarbage()
   local c1 = collectgarbage("count")
@@ -516,7 +516,7 @@ do
   print("lexer memory", c1 - c2)
 end
 
-local compiled_lexer = assert(loadfile("test_lexer.lua"))()
+local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
 compiled_lexer:compile("test_lexer2.lua")
 -- lexer = compiled_lexer
 

@@ -117,4 +117,4 @@ _[113] = {_[89],_[89],_[89],_[89],_[89],_[89],_[89],_[89],_[89],_[89],_[89],_[89
 _[114] = {accept_states=_[88],max_state=38,start_state=20,transitions=_[113]}
 _[115] = {accept_to_actions=_[86],accept_to_symbol=_[87],automaton=_[114]}
 _[116] = {_[70],_[81],_[115]}
-return lexer(_[116])
+return function () return lexer(_[116]) end

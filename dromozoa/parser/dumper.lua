@@ -15,6 +15,31 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local reserved_words = {
+  ["and"] = true;
+  ["break"] = true;
+  ["do"] = true;
+  ["else"] = true;
+  ["elseif"] = true;
+  ["end"] = true;
+  ["false"] = true;
+  ["for"] = true;
+  ["function"] = true;
+  ["goto"] = true;
+  ["if"] = true;
+  ["in"] = true;
+  ["local"] = true;
+  ["nil"] = true;
+  ["not"] = true;
+  ["or"] = true;
+  ["repeat"] = true;
+  ["return"] = true;
+  ["then"] = true;
+  ["true"] = true;
+  ["until"] = true;
+  ["while"] = true;
+}
+
 local reference = require "dromozoa.parser.dumper.reference"
 
 local function keys(value)
@@ -77,10 +102,10 @@ local function encode(value)
       end
       for i = 1, #string_keys do
         local k = string_keys[i]
-        if k:match("^[%a_][%w_]*$") then
+        if k:match("^[%a_][%w_]*$") and not reserved_words[k] then
           data[#data + 1] = k .. "=" .. encode(value[k])
         else
-          data[#data + 1] = ("[%q]="):format(k) .. encode(v[k])
+          data[#data + 1] = ("[%q]="):format(k) .. encode(value[k])
         end
       end
       return "{" .. table.concat(data, ",") .. "}"
