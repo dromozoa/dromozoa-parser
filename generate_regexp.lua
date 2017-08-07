@@ -38,7 +38,12 @@ local function atom_escape(lexer)
     :_ ("\\u{" * R"09AFaf"^"+" * "}") :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
     :_ ("\\" * (-(R"09AZaz" + "_"))) :as "IdentityEscape" :sub(2, -1)
     -- CharacterClassEscape
-    :_ ([[\]] * S"dDsSwW") :as "CharacterClassEscape"
+    :_ "\\d"
+    :_ "\\D"
+    :_ "\\s"
+    :_ "\\S"
+    :_ "\\w"
+    :_ "\\W"
 end
 
 atom_escape(_:lexer())
@@ -113,6 +118,14 @@ _"CharacterEscape"
   :_ "HexEscapeSequence" :collapse()
   :_ "RegExpUnicodeEscapeSequence" :collapse()
   :_ "IdentityEscape" :collapse()
+
+_"CharacterClassEscape"
+  :_ "\\d"
+  :_ "\\D"
+  :_ "\\s"
+  :_ "\\S"
+  :_ "\\w"
+  :_ "\\W"
 
 _"CharacterClass"
   :_ "[" "NonemptyClassRanges" "]"
