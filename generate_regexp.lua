@@ -66,7 +66,7 @@ _:lexer "repetition"
   :_ "}" :ret()
 
 atom_escape(_:lexer "character_class")
-  :_ (-S"\\]-") :as "ClassAtomNoDashCharacter"
+  :_ (-S"\\]-") :as "ClassCharacter"
   :_ "\\b" "\b"
   :_ "\\-" "-"
   :_ "-"
@@ -146,7 +146,7 @@ _"ClassAtom"
   :_ "ClassAtomNoDash" :collapse()
 
 _"ClassAtomNoDash"
-  :_ "ClassAtomNoDashCharacter" :collapse()
+  :_ "ClassCharacter" :collapse()
   :_ "ClassEscape" :collapse()
 
 _"ClassEscape"
