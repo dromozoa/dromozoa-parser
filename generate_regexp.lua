@@ -17,7 +17,6 @@
 
 local builder = require "dromozoa.parser.builder"
 
-local P = builder.pattern
 local R = builder.range
 local S = builder.set
 local _ = builder()
@@ -25,19 +24,19 @@ local _ = builder()
 local function atom_escape(lexer)
   return lexer
     -- DecimalEscape
-    :_ ([[\]] * ("0" + R"19" * R"09"^"*")) :as "DecimalEscape" :sub(2, -1) :int(10) :char()
+    :_ "\\0" "\0" :as "DecimalEscape"
     -- CharacterEscape
-    :_ [[\f]] "\f" :as "ControlEscape"
-    :_ [[\n]] "\n" :as "ControlEscape"
-    :_ [[\r]] "\r" :as "ControlEscape"
-    :_ [[\t]] "\t" :as "ControlEscape"
-    :_ [[\v]] "\v" :as "ControlEscape"
-    :_ ([[\c]] * R"AZaz") :as "ControlLetter" :sub(3, -1) :int(36) :add(-9) :char()
-    :_ ([[\x]] * R"09AFaf"^{2}) :as "HexEscapeSequence" :sub(3, -1) :int(16) :char()
-    :_ ([[\u]] * S"Dd" * S"89ABab" * R"09AFaf"^{2} * [[\u]] * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8_surrogate_pair(3, 6, 9, 12)
-    :_ ([[\u]] * R"09AFaf"^{4}) :as "RegExpUnicodeEscapeSequence" :utf8(3, -1)
-    :_ ([[\u{]] * R"09AFaf"^"+" * "}") :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
-    :_ ([[\]] * (-(R"09AZaz" + "_"))) :as "IdentityEscape" :sub(2, -1)
+    :_ "\\f" "\f" :as "ControlEscape"
+    :_ "\\n" "\n" :as "ControlEscape"
+    :_ "\\r" "\r" :as "ControlEscape"
+    :_ "\\t" "\t" :as "ControlEscape"
+    :_ "\\v" "\v" :as "ControlEscape"
+    :_ ("\\c" * R"AZaz") :as "ControlLetter" :sub(3, -1) :int(36) :add(-9) :char()
+    :_ ("\\x" * R"09AFaf"^{2}) :as "HexEscapeSequence" :sub(3, -1) :int(16) :char()
+    :_ ("\\u" * S"Dd" * S"89ABab" * R"09AFaf"^{2} * "\\u" * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8_surrogate_pair(3, 6, 9, 12)
+    :_ ("\\u" * R"09AFaf"^{4}) :as "RegExpUnicodeEscapeSequence" :utf8(3, -1)
+    :_ ("\\u{" * R"09AFaf"^"+" * "}") :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
+    :_ ("\\" * (-(R"09AZaz" + "_"))) :as "IdentityEscape" :sub(2, -1)
     -- CharacterClassEscape
     :_ ([[\]] * S"dDsSwW") :as "CharacterClassEscape"
 end
@@ -48,7 +47,7 @@ atom_escape(_:lexer())
   :_ "+"
   :_ "?"
   :_ "{" :call "repetition"
-  :_ (-S[[^$\.*+?()[]{}|]]) :as "PatternCharacter"
+  :_ (-S"^$\\.*+?()[]{}|") :as "PatternCharacter"
   :_ "."
   :_ "("
   :_ "(?:"
@@ -62,9 +61,9 @@ _:lexer "repetition"
   :_ "}" :ret()
 
 atom_escape(_:lexer "character_class")
-  :_ (-S[[\]-]]) :as "ClassAtomNoDashCharacter"
-  :_ [[\b]] "\b"
-  :_ [[\-]] "-"
+  :_ (-S"\\]-") :as "ClassAtomNoDashCharacter"
+  :_ "\\b" "\b"
+  :_ "\\-" "-"
   :_ "-"
   :_ "]" :ret()
 
@@ -143,8 +142,8 @@ _"ClassAtomNoDash"
 
 _"ClassEscape"
   :_ "DecimalEscape" :collapse()
-  :_ [[\b]] :collapse()
-  :_ [[\-]] :collapse()
+  :_ "\\b" :collapse()
+  :_ "\\-" :collapse()
   :_ "CharacterEscape" :collapse()
   :_ "CharacterClassEscape" :collapse()
 

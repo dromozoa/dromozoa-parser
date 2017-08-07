@@ -30,13 +30,17 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
+local digit = R"09"
+local space = S" \f\n\r\t\v"
+local word = R"09AZaz" + "_"
+
 local character_classes = {
-  [ [[\d]] ] = R"09";
-  [ [[\D]] ] = -R"09";
-  [ [[\s]] ] = S" \f\n\r\t\v";
-  [ [[\S]] ] = -S" \f\n\r\t\v";
-  [ [[\w]] ] = R"09AZaz" + "_";
-  [ [[\W]] ] = -R"09AZaz" + "_";
+  ["\\d"] = digit;
+  ["\\s"] = space;
+  ["\\w"] = word;
+  ["\\D"] = -digit;
+  ["\\S"] = -space;
+  ["\\W"] = -word;
 }
 
 local source = arg[1] or [[\/\*.*?\*\/]]
