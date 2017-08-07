@@ -22,7 +22,7 @@ local R = builder.range
 local S = builder.set
 local _ = builder()
 
-local function common_escape(lexer)
+local function atom_escape(lexer)
   return lexer
     -- DecimalEscape
     :_ ([[\]] * ("0" + R"19" * R"09"^"*")) :as "DecimalEscape" :sub(2, -1) :int(10) :char()
@@ -36,42 +36,37 @@ local function common_escape(lexer)
     :_ ([[\x]] * R"09AFaf"^{2}) :as "HexEscapeSequence" :sub(3, -1) :int(16) :char()
     :_ ([[\u]] * S"Dd" * S"89ABab" * R"09AFaf"^{2} * [[\u]] * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8_surrogate_pair(3, 6, 9, 12)
     :_ ([[\u]] * R"09AFaf"^{4}) :as "RegExpUnicodeEscapeSequence" :utf8(3, -1)
-    :_ ([[\u{]] * R"09AFaf"^"+" * [[}]]) :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
+    :_ ([[\u{]] * R"09AFaf"^"+" * "}") :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
+    :_ ([[\]] * (-(R"09AZaz" + "_"))) :as "IdentityEscape" :sub(2, -1)
     -- CharacterClassEscape
     :_ ([[\]] * S"dDsSwW") :as "CharacterClassEscape"
-    :_ ([[\]] * P(1)) :as "IdentityEscape" :sub(2, -1)
 end
 
-common_escape(
-  _:lexer()
-    :_ "|"
-    :_ "*"
-    :_ "+"
-    :_ "?"
-    :_ "{" :call "repeat"
-    :_ ","
-    :_ (-S[[^$\.*+?()[]{}|]]) :as "PatternCharacter"
-    :_ "."
-    :_ "("
-    :_ "(?:"
-    :_ ")"
-    :_ "[" :call "character_class"
-    :_ "[^" :call "character_class"
-)
+atom_escape(_:lexer())
+  :_ "|"
+  :_ "*"
+  :_ "+"
+  :_ "?"
+  :_ "{" :call "repetition"
+  :_ (-S[[^$\.*+?()[]{}|]]) :as "PatternCharacter"
+  :_ "."
+  :_ "("
+  :_ "(?:"
+  :_ ")"
+  :_ "[" :call "character_class"
+  :_ "[^" :call "character_class"
 
-_:lexer "repeat"
+_:lexer "repetition"
   :_ (R"09"^"+") :as "DecimalDigits"
   :_ ","
   :_ "}" :ret()
 
-common_escape(
-  _:lexer "character_class"
-    :_ (-S[[\]-]]) :as "ClassAtomNoDashCharacter"
-    :_ [[\b]] "\b" :as "ClassEscape"
-    :_ [[\-]] "-" :as "ClassEscape"
-    :_ "-"
-    :_ "]" :ret()
-)
+atom_escape(_:lexer "character_class")
+  :_ (-S[[\]-]]) :as "ClassAtomNoDashCharacter"
+  :_ [[\b]] "\b"
+  :_ [[\-]] "-"
+  :_ "-"
+  :_ "]" :ret()
 
 _"Pattern"
   :_ "Disjunction"
@@ -146,6 +141,13 @@ _"ClassAtomNoDash"
   :_ "ClassAtomNoDashCharacter"
   :_ "ClassEscape"
 
+_"ClassEscape"
+  :_ "DecimalEscape"
+  :_ [[\b]]
+  :_ [[\-]]
+  :_ "CharacterEscape"
+  :_ "CharacterClassEscape"
+
 local lexer, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
@@ -158,7 +160,7 @@ grammar:write_conflicts(io.stdout, conflicts)
 lexer:compile("test_lexer.lua")
 parser:compile("test_parser.lua")
 
-local source = [[\/\*.*?\*\/]]
+local source = arg[1] or [[\/\*.*?\*\/]]
 
 local position = 1
 local root
