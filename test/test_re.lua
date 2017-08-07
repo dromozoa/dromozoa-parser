@@ -22,46 +22,56 @@ local R = builder.range
 local S = builder.set
 local _ = builder()
 
-_:lexer()
-  :_ "|"
-  :_ "?"
-  :_ "*"
-  :_ "+"
-  :_ "+"
-  :_ "{"
-  :_ "}"
-  :_ ","
-  :_ "."
-  :_ "("
-  :_ "(?:"
-  :_ ")"
-  :_ (R"09"^"+") :as "DecimalDigits"
-  :_ (-S[[^$\.*+?()[]{}|]]) :as "PatternCharacter"
-  :_ (P[[\]] * (R"09" + R"19" * R"09"^"*")) :as "DecimalEscape"
-  :_ [[\f]] :as "ControlEscape"
-  :_ [[\n]] :as "ControlEscape"
-  :_ [[\r]] :as "ControlEscape"
-  :_ [[\t]] :as "ControlEscape"
-  :_ [[\v]] :as "ControlEscape"
-  :_ (P[[\c]] * R"azAZ") :as "ControlEscape"
-  :_ (P[[\x]] * R"09afAF"^{2}) :as "HexEscapeSequence"
-  :_ (P[[\]] * S[[^$\.*+?()[]{}|/]]) :as "IdentityEscape"
-  :_ [[\d]] :as "CharacterClassEscape"
-  :_ [[\D]] :as "CharacterClassEscape"
-  :_ [[\s]] :as "CharacterClassEscape"
-  :_ [[\S]] :as "CharacterClassEscape"
-  :_ [[\w]] :as "CharacterClassEscape"
-  :_ [[\W]] :as "CharacterClassEscape"
-  :_ "[" :call "character_class"
-  :_ "[^" :call "character_class"
-  :_ "]"
+local function common_escape(lexer)
+  return lexer
+    -- DecimalEscape
+    :_ ([[\]] * ("0" + R"19" * R"09"^"*")) :as "DecimalEscape" :sub(2, -1) :int(10) :char()
+    -- CharacterEscape
+    :_ [[\f]] "\f" :as "ControlEscape"
+    :_ [[\n]] "\n" :as "ControlEscape"
+    :_ [[\r]] "\r" :as "ControlEscape"
+    :_ [[\t]] "\t" :as "ControlEscape"
+    :_ [[\v]] "\v" :as "ControlEscape"
+    :_ ([[\c]] * R"AZaz") :as "ControlLetter" :sub(3, -1) :int(36) :add(-9) :char()
+    :_ ([[\x]] * R"09AFaf"^{2}) :as "HexEscapeSequence" :sub(3, -1) :int(16) :char()
+    :_ ([[\u]] * S"Dd" * S"89ABab" * R"09AFaf"^{2} * [[\u]] * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8_surrogate_pair(3, 6, 9, 12)
+    :_ ([[\u]] * R"09AFaf"^{4}) :as "RegExpUnicodeEscapeSequence" :utf8(3, -1)
+    :_ ([[\u{]] * R"09AFaf"^"+" * [[}]]) :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
+    -- CharacterClassEscape
+    :_ ([[\]] * S"dDsSwW") :as "CharacterClassEscape"
+    :_ ([[\]] * P(1)) :as "IdentityEscape" :sub(2, -1)
+end
 
-_:lexer "character_class"
-  :_ (-S[[\]-]]) :as [[SourceCharacter but not one of \ or ] or -]]
-  :_ (P[[\]] * (R"09" + R"19" * R"09"^"*")) :as "DecimalEscape"
-  :_ [[\b]]
-  :_ "-"
-  :_ "]" :ret()
+common_escape(
+  _:lexer()
+    :_ "|"
+    :_ "*"
+    :_ "+"
+    :_ "?"
+    :_ "{" :call "repeat"
+    :_ ","
+    :_ (-S[[^$\.*+?()[]{}|]]) :as "PatternCharacter"
+    :_ "."
+    :_ "("
+    :_ "(?:"
+    :_ ")"
+    :_ "[" :call "character_class"
+    :_ "[^" :call "character_class"
+)
+
+_:lexer "repeat"
+  :_ (R"09"^"+") :as "DecimalDigits"
+  :_ ","
+  :_ "}" :ret()
+
+common_escape(
+  _:lexer "character_class"
+    :_ (-S[[\]-]]) :as "ClassAtomNoDashCharacter"
+    :_ [[\b]] "\b" :as "ClassEscape"
+    :_ [[\-]] "-" :as "ClassEscape"
+    :_ "-"
+    :_ "]" :ret()
+)
 
 _"Pattern"
   :_ "Disjunction"
@@ -92,16 +102,22 @@ _"QuantifierPrefix"
 
 _"Atom"
   :_ "PatternCharacter"
-  :_ "DecimalEscape"
-  :_ "CharacterEscape"
-  :_ "CharacterClassEscape"
   :_ "."
+  :_ "AtomEscape"
+  :_ "CharacterClass"
   :_ "(" "Disjunction" ")"
   :_ "(?:" "Disjunction" ")"
 
+_"AtomEscape"
+  :_ "DecimalEscape"
+  :_ "CharacterEscape"
+  :_ "CharacterClassEscape"
+
 _"CharacterEscape"
   :_ "ControlEscape"
+  :_ "ControlLetter"
   :_ "HexEscapeSequence"
+  :_ "RegExpUnicodeEscapeSequence"
   :_ "IdentityEscape"
 
 _"CharacterClass"
@@ -127,9 +143,8 @@ _"ClassAtom"
   :_ "ClassAtomNoDash"
 
 _"ClassAtomNoDash"
-  :_ "???"
-  :_ 
-
+  :_ "ClassAtomNoDashCharacter"
+  :_ "ClassEscape"
 
 local lexer, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
@@ -139,3 +154,18 @@ grammar:write_set_of_items("test-set-of-items.txt", set_of_items)
 grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
+
+lexer:compile("test_lexer.lua")
+parser:compile("test_parser.lua")
+
+local source = [[\/\*.*?\*\/]]
+
+local position = 1
+local root
+repeat
+  local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
+  root = assert(parser(symbol, rs:sub(ri, rj), nil, source, p, i, j - 1, rs, ri, rj))
+  position = j
+until symbol == 1
+
+parser:write_graphviz("test.dot", root)
