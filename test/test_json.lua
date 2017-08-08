@@ -22,7 +22,7 @@ local driver = require "dromozoa.parser.driver"
 local RE = builder.regexp
 local _ = builder()
 
-local lexer_only = false
+local lexer_only = true
 
 local source = "[]"
 if arg[1] == "-" then
@@ -43,6 +43,7 @@ _:lexer()
   :_ "null"
   :_ "true"
   :_ (RE[[-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?]]) :as "number"
+  :_ (RE[["[^\\"]*"]]): as "string" :sub(2, -2)
   :_ "\"" :call "string" :mark() :skip()
 
 _:lexer "string"
@@ -65,12 +66,15 @@ if lexer_only then
   local timer = unix.timer()
   timer:start()
 
+--[[
+  local data = assert(lexer:exp(source, 1))
+]]
   local position = 1
   local data = {}
   repeat
     local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
     if symbol ~= 1 then
-      data[#data + 1] = rs:sub(ri, rj)
+      data[#data + 1] = { symbol, p, i, j, rs, ri, rj }
     end
     position = j
   until symbol == 1
