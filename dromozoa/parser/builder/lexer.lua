@@ -104,7 +104,7 @@ end
 function class:join(before, after)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 14 }
+  actions[#actions + 1] = { 14, before, after }
   return self
 end
 

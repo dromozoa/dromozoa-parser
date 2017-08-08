@@ -26,6 +26,7 @@ local timer = unix.timer()
 local P = builder.pattern
 local R = builder.range
 local S = builder.set
+local RE = builder.regexp
 local _ = builder()
 
 local function string_lexer(lexer)
@@ -40,17 +41,16 @@ local function string_lexer(lexer)
     :_ [[\\]] "\\" :push()
     :_ [[\"]] "\"" :push()
     :_ [[\']] "\'" :push()
-    :_ (P[[\z]] * S" \t\n\v\f\r"^"*") :skip()
-    :_ (P[[\]] * R"09"^{1,3}) :sub(2, -1) :int(10) :char() :push()
-    :_ (P[[\x]] * R"09AFaf"^{2}) :sub(3, -1) :int(16) :char() :push()
-    :_ (P[[\u{]] * R"09AFaf"^"+" * P[[}]]) :utf8(4, -2) :push()
-    :_ ((-S[[\"]])^"+") :push()
+    :_ (RE[[\\z\s*]]) :skip()
+    :_ (RE[[\\\d{1,3}]]) :sub(2, -1) :int(10) :char() :push()
+    :_ (RE[[\\u\{[0-9A-Fa-f]+\}]]) :utf8(4, -2) :push()
+    :_ (RE[[[^\\"]+]]) :push()
 end
 
 timer:start()
 
 _:lexer()
-  :_ (S" \t\n\v\f\r"^"+") :skip()
+  :_ (RE[[\s+]]) :skip()
   :_ "and"
   :_ "break"
   :_ "do"
@@ -106,15 +106,15 @@ _:lexer()
   :_ "."
   :_ ".."
   :_ "..."
-  :_ ((R"AZaz" + P"_") * (R"09AZaz" + P"_")^"*") :as "Name"
+  :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
   :_ [["]] :call "dq_string" :mark() :skip()
   :_ [[']] :call "sq_string" :mark() :skip()
-  :_ (P"[" * P"="^"*" * "[\n") :sub(2, -3)  :join("]", "]") :hold() :call "long_string" :mark() :skip()
-  :_ (P"[" * P"="^"*" * "[") :sub(2, -2) :join("]", "]") :hold() :call "long_string" :mark() :skip()
-  :_ ((R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
-  :_ (P"0" * S"xX" * (R"09AFaf"^"+" * (P"." * R"09AFaf"^"*")^"?" + P"." * R"09AFaf"^"+") * (S"pP" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
-  :_ (P"--[" * P"="^"*" * P"[") :sub(4, -2) :join("]", "]") :hold() :call "long_comment" :skip()
-  :_ (P"--" * ((-S"\n")^"*") * P"\n") :skip()
+  :_ (RE[[\[=*\[\n]]) :sub(2, -3) :join("]", "]") :hold() :call "long_string" :mark() :skip()
+  :_ (RE[[\[=*\[]]) :sub(2, -2) :join("]", "]") :hold() :call "long_string" :mark() :skip()
+  :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "Numeral"
+  :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "Numeral"
+  :_ (RE[[--\[=*\[]]) :sub(4, -2) :join("]", "]") :hold() :call "long_comment" :skip()
+  :_ (RE[[--[^\n]*\n]]) :skip()
 
 string_lexer(_:lexer "dq_string")
   :_ [["]] :as "LiteralString" :concat() :ret()
@@ -628,11 +628,11 @@ f(a, b, c, d)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
 -- print("\77\79\0890U\x0A\x41\x42")
--- local a = [==[
--- foo
--- bar
--- baz
--- ]==]
+local a = [==[
+foo
+bar
+baz
+]==]
 function f.g.h:i(x, y, z)
 --   local a = b + c (f)(42)
 --   return a
