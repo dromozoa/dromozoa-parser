@@ -656,7 +656,7 @@ local root
 local node = {}
 repeat
   local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
-  root = assert(parser(symbol, rs:sub(ri, rj), nil, source, p, i, j - 1, rs, ri, rj))
+  root = assert(parser(symbol, source, nil, p, i, j - 1, rs, ri, rj))
   node.p = p
   node.i = i
   node.j = j
@@ -681,12 +681,10 @@ while true do
   if node == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
-    if node.s then
-      local s = node.s
+    if node[0] <= parser.max_terminal_symbol then
       local p = node.p
-      local i = node.i
       local j = node.j
-      result[#result + 1] = s:sub(p, j)
+      result[#result + 1] = source:sub(p, j)
     end
   else
     for i = node.n, 1, -1 do

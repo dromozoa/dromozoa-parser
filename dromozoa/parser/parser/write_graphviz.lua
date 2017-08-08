@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local escape_html = require "dromozoa.parser.escape_html"
+local value = require "dromozoa.parser.value"
 
 return function (self, out, tree)
   local symbol_names = self.symbol_names
@@ -34,17 +35,17 @@ return function (self, out, tree)
       local uid = id_table[u]
       local symbol = u[0]
       local name = symbol_names[symbol]
-      local value = u.value
-      if type(value) ~= "string" or value == name then
-        value = nil
+      local v = value(u)
+      if type(v) ~= "string" or v == name then
+        v = nil
       end
       out:write('  ', uid, ' [shape=none,width=0,height=0,margin=0,label=<\n    <table border="0" cellborder="1" cellspacing="0">\n      <tr><td')
       if symbol <= max_terminal_symbol then
         out:write(' bgcolor="gray"')
       end
       out:write('>', escape_html(name), '</td></tr>\n')
-      if value then
-        out:write('      <tr><td balign="left">', (escape_html(value):gsub("\n", "<br/>")), '</td></tr>\n')
+      if v then
+        out:write('      <tr><td balign="left">', (escape_html(v):gsub("\n", "<br/>")), '</td></tr>\n')
       end
       out:write('    </table>\n  >];\n')
       local m = u.n

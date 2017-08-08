@@ -96,13 +96,9 @@ Parser generator toolkit.
 | `[0]`    | `integer` |               | head symbol              |
 | `[i]`    | `integer` |               | body symbols             |
 | `.n`     | `integer` |               | length of body symbols   |
-| `.value` | `string`  |      yes      | value                    |
-| `.file`  | `string`  |      yes      | file                     |
-| `.s`     | `string`  |      yes      | string                   |
 | `.p`     | `integer` |      yes      | skipped position         |
 | `.i`     | `integer` |      yes      | start position           |
 | `.j`     | `integer` |      yes      | end position             |
 | `.rs`    | `string`  |      yes      | resulting string         |
 | `.ri`    | `integer` |      yes      | resulting start position |
 | `.rj`    | `integer` |      yes      | resulting end position   |
-

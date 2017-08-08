@@ -21,6 +21,7 @@ local error_message = require "dromozoa.parser.error_message"
 local regexp = require "dromozoa.parser.regexp"
 local regexp_lexer = require "dromozoa.parser.lexers.regexp_lexer"
 local regexp_parser = require "dromozoa.parser.parsers.regexp_parser"
+local value = require "dromozoa.parser.value"
 
 local atom = builder.atom
 local P = builder.pattern
@@ -61,40 +62,40 @@ while true do
     stack2[n2] = nil
     local symbol = node[0]
     if symbol == symbol_table.Pattern then
-      node.value = node[1].value
+      node.value = value(node[1])
     elseif symbol == symbol_table.Disjunction then
       if node.n == 1 then
-        node.value = node[1].value
+        node.value = value(node[1])
       else
-        node.value = node[1].value + node[3].value
+        node.value = value(node[1]) + value(node[3])
       end
     elseif symbol == symbol_table.Alternative then
       if node.n == 1 then
-        node.value = node[1].value
+        node.value = value(node[1])
       else
-        node.value = node[1].value * node[2].value
+        node.value = value(node[1]) * value(node[2])
       end
     elseif symbol == symbol_table.Term then
       if node.n == 1 then
-        node.value = node[1].value
+        node.value = value(node[1])
       else
-        node.value = node[1].value ^ node[2].value
+        node.value = value(node[1]) ^ value(node[2])
       end
     elseif symbol == symbol_table.Quantifier then
       local n = node.n
       if n == 3 then
-        node.value = { tonumber(node[2].value, 10) }
+        node.value = { tonumber(value(node[2]), 10) }
       elseif n == 4 then
-        node.value = tonumber(node[2].value, 10)
+        node.value = tonumber(value(node[2]), 10)
       elseif n == 5 then
-        local m = tonumber(node[2].value, 10)
-        local n = tonumber(node[4].value, 10)
+        local m = tonumber(value(node[2]), 10)
+        local n = tonumber(value(node[4]), 10)
         if m > n then
-          error(error_message("syntax error", node[1].s, node[1].i, node[1].file))
+          error(error_message("syntax error", source, node[1].i))
         end
         node.value = { m, n }
       else
-        node.value = node[1].value
+        node.value = value(node[1])
       end
     elseif symbol == symbol_table.Atom then
       if node.n == 1 then
@@ -102,42 +103,42 @@ while true do
         if that[0] == symbol_table["."] then
           node.value = P(1)
         else
-          node.value = P(that.value)
+          node.value = P(value(that))
         end
       else
-        node.value = node[2].value
+        node.value = value(node[2])
       end
     elseif symbol == symbol_table.CharacterClassEscape then
-      node.value = character_classes[node[1].value]:clone()
+      node.value = character_classes[value(node[1])]:clone()
     elseif symbol == symbol_table.CharacterClass then
       if node[1][0] == symbol_table["[^"] then
-        node.value = -node[2].value
+        node.value = -value(node[2])
       else
-        node.value = node[2].value
+        node.value = value(node[2])
       end
     elseif symbol == symbol_table.ClassRanges then
       if node.n == 0 then
         node.value = atom({})
       else
-        node.value = node[1].value
+        node.value = value(node[1])
       end
     elseif symbol == symbol_table.NonemptyClassRanges or symbol == symbol_table.NonemptyClassRangesNoDash then
       local n = node.n
       if n == 1 then
-        node.value = P(node[1].value)
+        node.value = P(value(node[1]))
       elseif n == 2 then
-        node.value = P(node[1].value) + P(node[2].value)
+        node.value = P(value(node[1])) + P(value(node[2]))
       else
-        local a = node[1].value
-        local b = node[3].value
+        local a = value(node[1])
+        local b = value(node[3])
         if type(a) == "string" and type(b) == "string" then
           local set = {}
           for byte = a:byte(), b:byte() do
             set[byte] = true
           end
-          node.value = atom(set) + P(node[4].value)
+          node.value = atom(set) + P(value(node[4]))
         else
-          node.value = P(a) + P"-" + P(b) + P(node[4].value)
+          node.value = P(a) + P"-" + P(b) + P(value(node[4]))
         end
       end
     end

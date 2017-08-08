@@ -15,29 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
-
-function metatable:__call(s, file)
-  local lexer = self.lexer
-  local parser = self.parser
-  local position = 1
-  while true do
-    local symbol, p, i, j, rs, ri, rj = assert(lexer(s, position))
-    if symbol == 1 then
-      return assert(parser(symbol, s, file, p, i, j - 1, rs, ri, rj))
-    else
-      assert(parser(symbol, s, file, p, i, j - 1, rs, ri, rj))
-    end
-    position = j
+return function (node)
+  local value = node.value
+  if value == nil then
+    return node.rs:sub(node.ri, node.rj)
+  else
+    return value
   end
 end
-
-return setmetatable(class, {
-  __call = function (_, lexer, parser)
-    return setmetatable({ lexer = lexer, parser = parser }, metatable)
-  end;
-})
