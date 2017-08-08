@@ -156,6 +156,7 @@ function class:eliminate_left_recursion()
 
   return class({
     symbol_names = new_symbol_names;
+    symbol_table = self.symbol_table;
     productions = new_productions;
     map_of_production_ids = construct_map_of_production_ids(new_productions);
     max_terminal_symbol = max_terminal_symbol;
@@ -700,38 +701,34 @@ function class:lr1_construct_table(set_of_items, transitions)
         end
       end
     end
-    if next(t) then
-      actions[i] = t
-    end
+    actions[i] = t
   end
 
   for i = 1, #transitions do
+    local t = {}
     for symbol, to in pairs(transitions[i]) do
       if symbol > max_terminal_symbol then
         local j = symbol - max_terminal_symbol
-        local t = gotos[i]
-        if t then
-          t[j] = to
-        else
-          gotos[i] = { [j] = to }
-        end
+        t[j] = to
       end
     end
+    gotos[i] = t
   end
 
   local heads = {}
   local sizes = {}
-  local semantic_actions = {}
+  local reduce_to_semantic_actions = {}
   for i = 2, #productions do
     local production = productions[i]
     local j = m + i
     heads[j] = production.head
     sizes[j] = #production.body
-    semantic_actions[j] = production.semantic_action
+    reduce_to_semantic_actions[j] = production.semantic_actions
   end
 
   return parser({
     symbol_names = self.symbol_names;
+    symbol_table = self.symbol_table;
     max_state = m;
     max_terminal_symbol = max_terminal_symbol;
     max_nonterminal_symbol = n;
@@ -739,7 +736,7 @@ function class:lr1_construct_table(set_of_items, transitions)
     gotos = gotos;
     heads = heads;
     sizes = sizes;
-    semantic_actions = semantic_actions;
+    reduce_to_semantic_actions = reduce_to_semantic_actions;
   }), conflicts
 end
 
@@ -789,6 +786,7 @@ return setmetatable(class, {
     local productions = data.productions
     return setmetatable({
       symbol_names = data.symbol_names;
+      symbol_table = data.symbol_table;
       productions = productions;
       map_of_production_ids = construct_map_of_production_ids(productions);
       max_terminal_symbol = max_terminal_symbol;

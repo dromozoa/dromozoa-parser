@@ -37,22 +37,25 @@ Parser generator toolkit.
 
 ### Actions
 
-| Code | Operator               | #Operands | Skip | Description        |
-|-----:|------------------------|----------:|:----:|--------------------|
-|    1 | `:skip()`              |         0 | yes  | skip               |
-|    2 | `:push()`              |         0 | yes  | push               |
-|    3 | `:concat()`            |         0 |      | concat             |
-|    4 | `:call "label"`        |         1 |      | call               |
-|    5 | `:ret()`               |         0 |      | return             |
-|    6 |                        |           |      | N/A                |
-|    7 |                        |           |      | N/A                |
-|    8 | `"string"`             |         1 |      | substitute         |
-|    9 | `:hold()`              |         0 |      | hold               |
-|   10 | `:mark()`              |         0 |      | mark               |
-|   11 | `:sub(i, j)`           |         2 |      | substring          |
-|   12 | `:int(base)`           |         1 |      | convert to integer |
-|   13 | `:char()`              |         0 |      | convert to char    |
-|   14 | `:join(before, after)` |         2 |      | join               |
+| Code | Operator                               | #Operands | Skip | Description        |
+|-----:|----------------------------------------|----------:|:----:|--------------------|
+|    1 | `:skip()`                              |         0 | yes  | skip               |
+|    2 | `:push()`                              |         0 | yes  | push               |
+|    3 | `:concat()`                            |         0 |      | concat             |
+|    4 | `:call "label"`                        |         1 |      | call               |
+|    5 | `:ret()`                               |         0 |      | return             |
+|    6 |                                        |           |      | N/A                |
+|    7 |                                        |           |      | N/A                |
+|    8 | `"string"`                             |         1 |      | substitute         |
+|    9 | `:hold()`                              |         0 |      | hold               |
+|   10 | `:mark()`                              |         0 |      | mark               |
+|   11 | `:sub(i, j)`                           |         2 |      | substring          |
+|   12 | `:int(base)`                           |         1 |      | convert to integer |
+|   13 | `:char()`                              |         0 |      | convert to char    |
+|   14 | `:join(before, after)`                 |         2 |      | join               |
+|   15 | `:utf8(i, j)`                          |         2 |      | convert to utf8    |
+|   16 | `:utf8_surrogate_pair(i1, j1, i2, j2)` |         4 |      | convert to utf8    |
+|   17 | `:add(x)`                              |         1 |      | add integer        |
 
 ## Parser
 
@@ -82,9 +85,9 @@ Parser generator toolkit.
 
 ### Semantic Actions
 
-| Code | Operator  | #Operands | Description |
-|-----:|-----------|----------:|-------------|
-|    1 | `:list()` |         0 | list        |
+| Code | Operator      | #Operands | Description |
+|-----:|---------------|----------:|-------------|
+|    1 | `:collapse()` |         0 | collapse    |
 
 ### Node
 
@@ -93,13 +96,9 @@ Parser generator toolkit.
 | `[0]`    | `integer` |               | head symbol              |
 | `[i]`    | `integer` |               | body symbols             |
 | `.n`     | `integer` |               | length of body symbols   |
-| `.value` | `string`  |      yes      | value                    |
-| `.file`  | `string`  |      yes      | file                     |
-| `.s`     | `string`  |      yes      | string                   |
 | `.p`     | `integer` |      yes      | skipped position         |
 | `.i`     | `integer` |      yes      | start position           |
 | `.j`     | `integer` |      yes      | end position             |
 | `.rs`    | `string`  |      yes      | resulting string         |
 | `.ri`    | `integer` |      yes      | resulting start position |
 | `.rj`    | `integer` |      yes      | resulting end position   |
-

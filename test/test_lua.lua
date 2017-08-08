@@ -43,7 +43,7 @@ local function string_lexer(lexer)
     :_ (P[[\z]] * S" \t\n\v\f\r"^"*") :skip()
     :_ (P[[\]] * R"09"^{1,3}) :sub(2, -1) :int(10) :char() :push()
     :_ (P[[\x]] * R"09AFaf"^{2}) :sub(3, -1) :int(16) :char() :push()
-    -- \u{...}
+    :_ (P[[\u{]] * R"09AFaf"^"+" * P[[}]]) :utf8(4, -2) :push()
     :_ ((-S[[\"]])^"+") :push()
 end
 
@@ -114,7 +114,7 @@ _:lexer()
   :_ ((R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"0" * S"xX" * (R"09AFaf"^"+" * (P"." * R"09AFaf"^"*")^"?" + P"." * R"09AFaf"^"+") * (S"pP" * S"+-"^"?" * R"09"^"+")^"?") :as "Numeral"
   :_ (P"--[" * P"="^"*" * P"[") :sub(4, -2) :join("]", "]") :hold() :call "long_comment" :skip()
-  :_ (P"--" * ((-S"\n")^"+")) :skip()
+  :_ (P"--" * ((-S"\n")^"*") * P"\n") :skip()
 
 string_lexer(_:lexer "dq_string")
   :_ [["]] :as "LiteralString" :concat() :ret()
@@ -161,7 +161,7 @@ _"block"
 
 _"{stat}"
   :_ ()
-  :_ "{stat}" "stat" :list()
+  :_ "{stat}" "stat" :collapse()
 
 _"[retstat]"
   :_ ()
@@ -227,7 +227,7 @@ _"[: Name]"
 
 _"varlist"
   :_ "var"
-  :_ "varlist" "," "var" :list()
+  :_ "varlist" "," "var" :collapse()
 
 _"var"
   :_ "Name"
@@ -238,11 +238,11 @@ _"var"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name" :list()
+  :_ "namelist" "," "Name" :collapse()
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp" :list()
+  :_ "explist" "," "exp" :collapse()
 
 _"exp"
   :_ "nil"
@@ -329,7 +329,7 @@ _"fieldlist"
 
 _"{fieldsep field}"
   :_ ()
-  :_ "{fieldsep field}" "fieldsep" "field" :list()
+  :_ "{fieldsep field}" "fieldsep" "field" :collapse()
 
 _"[fieldsep]"
   :_ ()
@@ -386,7 +386,7 @@ print("lr1_construct_table", timer:elapsed())
 parser:compile("test_parser.lua")
 
 do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()
+  local compiled_parser = assert(loadfile("test_parser.lua"))()()
   collectgarbage()
   collectgarbage()
   local c1 = collectgarbage("count")
@@ -398,7 +398,7 @@ do
 end
 
 do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()
+  local compiled_parser = assert(loadfile("test_parser.lua"))()()
   assert(equal(parser, compiled_parser))
   parser = compiled_parser
 end
@@ -505,7 +505,7 @@ dump("test_lexer_dump.lua", lexer.lexers)
 lexer:compile("test_lexer.lua")
 
 do
-  local compiled_lexer = assert(loadfile("test_lexer.lua"))()
+  local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
   collectgarbage()
   collectgarbage()
   local c1 = collectgarbage("count")
@@ -516,7 +516,7 @@ do
   print("lexer memory", c1 - c2)
 end
 
-local compiled_lexer = assert(loadfile("test_lexer.lua"))()
+local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
 compiled_lexer:compile("test_lexer2.lua")
 -- lexer = compiled_lexer
 
@@ -647,6 +647,7 @@ return {
   bar = 23;
   "baz";
   qux = 42;
+  utf8 = "\\u{10437}=\u{10437}";
 }
 ]====]
 
@@ -655,7 +656,7 @@ local root
 local node = {}
 repeat
   local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
-  root = assert(parser(symbol, rs:sub(ri, rj), nil, source, p, i, j - 1, rs, ri, rj))
+  root = assert(parser(symbol, source, nil, p, i, j - 1, rs, ri, rj))
   node.p = p
   node.i = i
   node.j = j
@@ -680,12 +681,10 @@ while true do
   if node == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
-    if node.s then
-      local s = node.s
+    if node[0] <= parser.max_terminal_symbol then
       local p = node.p
-      local i = node.i
       local j = node.j
-      result[#result + 1] = s:sub(p, j)
+      result[#result + 1] = source:sub(p, j)
     end
   else
     for i = node.n, 1, -1 do

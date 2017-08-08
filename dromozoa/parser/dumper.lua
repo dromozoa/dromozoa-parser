@@ -15,6 +15,31 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local reserved_words = {
+  ["and"] = true;
+  ["break"] = true;
+  ["do"] = true;
+  ["else"] = true;
+  ["elseif"] = true;
+  ["end"] = true;
+  ["false"] = true;
+  ["for"] = true;
+  ["function"] = true;
+  ["goto"] = true;
+  ["if"] = true;
+  ["in"] = true;
+  ["local"] = true;
+  ["nil"] = true;
+  ["not"] = true;
+  ["or"] = true;
+  ["repeat"] = true;
+  ["return"] = true;
+  ["then"] = true;
+  ["true"] = true;
+  ["until"] = true;
+  ["while"] = true;
+}
+
 local reference = require "dromozoa.parser.dumper.reference"
 
 local function keys(value)
@@ -77,10 +102,10 @@ local function encode(value)
       end
       for i = 1, #string_keys do
         local k = string_keys[i]
-        if k:match("^[%a_][%w_]*$") then
+        if k:match("^[%a_][%w_]*$") and not reserved_words[k] then
           data[#data + 1] = k .. "=" .. encode(value[k])
         else
-          data[#data + 1] = ("[%q]="):format(k) .. encode(v[k])
+          data[#data + 1] = ("[%q]="):format(k) .. encode(value[k])
         end
       end
       return "{" .. table.concat(data, ",") .. "}"
@@ -88,7 +113,7 @@ local function encode(value)
   end
 end
 
-local function compact(out, value, map)
+local function compact(self, out, value)
   if type(value) == "table" then
     local that = {}
     local number_keys, string_keys = keys(value)
@@ -96,7 +121,7 @@ local function compact(out, value, map)
       local k = number_keys[i]
       local v = value[k]
       if type(v) == "table" then
-        that[k] = compact(out, v, map)
+        that[k] = compact(self, out, v)
       else
         that[k] = v
       end
@@ -105,18 +130,19 @@ local function compact(out, value, map)
       local k = string_keys[i]
       local v = value[k]
       if type(v) == "table" then
-        that[k] = compact(out, v, map)
+        that[k] = compact(self, out, v)
       else
         that[k] = v
       end
     end
+    local map = self.map
     local code = encode(that)
     local name = map[code]
     if name then
       return reference(name)
     else
-      local n = map.n + 1
-      map.n = n
+      local n = self.n + 1
+      self.n = n
       name = "_[" .. n .. "]"
       map[code] = name
       out:write(name, " = ", code, "\n")
@@ -127,7 +153,19 @@ local function compact(out, value, map)
   end
 end
 
-return function (out, value)
+local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
+
+function class:dump(out, value)
   out:write("local _ = {}\n")
-  return compact(out, value, { n = 0 }).name
+  return compact(self, out, value).name
 end
+
+return setmetatable(class, {
+  __call = function ()
+    return setmetatable({ map = {}, n = 0 }, metatable)
+  end;
+})

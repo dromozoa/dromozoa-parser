@@ -20,17 +20,18 @@ local dumper = require "dromozoa.parser.dumper"
 return function (self, out)
   local data = {
     symbol_names = self.symbol_names;
+    symbol_table = self.symbol_table;
     max_state = self.max_state;
     max_terminal_symbol = self.max_terminal_symbol;
     actions = self.actions;
     gotos = self.gotos;
     heads = self.heads;
     sizes = self.sizes;
-    semantic_actions = self.semantic_actions;
+    reduce_to_semantic_actions = self.reduce_to_semantic_actions;
   }
 
   out:write("local parser = require \"dromozoa.parser.parser\"\n")
-  local root = dumper(out, data)
-  out:write("return parser(", root,")\n")
+  local root = dumper():dump(out, data)
+  out:write("return function () return parser(", root,") end\n")
   return out
 end
