@@ -154,4 +154,4 @@ end
 
 parser:write_graphviz("test.dot", root)
 
-regexp(root.value):nfa_to_dfa():minimize():write_graphviz("test-dfa.dot")
+regexp(value(root)):nfa_to_dfa():minimize():write_graphviz("test-dfa.dot")

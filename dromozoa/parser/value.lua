@@ -18,7 +18,12 @@
 return function (node)
   local value = node.value
   if value == nil then
-    return node.rs:sub(node.ri, node.rj)
+    local rs = node.rs
+    if rs then
+      return rs:sub(node.ri, node.rj)
+    else
+      return nil
+    end
   else
     return value
   end
