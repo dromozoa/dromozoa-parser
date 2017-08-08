@@ -21,6 +21,7 @@ local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
 local precedence = require "dromozoa.parser.builder.precedence"
 local production = require "dromozoa.parser.builder.production"
+local regexp = require "dromozoa.parser.builder.regexp"
 local regexp_lexer = require "dromozoa.parser.builder.regexp_lexer"
 local search_lexer = require "dromozoa.parser.builder.search_lexer"
 
@@ -36,6 +37,7 @@ class.metatable = metatable
 
 lexer.super = class
 pattern.super = class
+regexp.super = class
 
 function class.pattern(that)
   local t = type(that)
@@ -62,6 +64,10 @@ function class.pattern(that)
   else
     return that
   end
+end
+
+function class.regexp(that)
+  return regexp.parse(that)
 end
 
 function class:lexer(name)
