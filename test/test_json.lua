@@ -22,13 +22,15 @@ local driver = require "dromozoa.parser.driver"
 local RE = builder.regexp
 local _ = builder()
 
-local lexer_only = true
+local lexer_only = false
 
 local source = "[]"
-if arg[1] == "-" then
-  source = io.read("*a")
-else
-  source = arg[1]
+if #arg > 0 then
+  if arg[1] == "-" then
+    source = io.read("*a")
+  else
+    source = arg[1]
+  end
 end
 
 _:lexer()
