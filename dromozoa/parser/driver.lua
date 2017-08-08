@@ -15,24 +15,29 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
+local class = {}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
 
-return function (self, out)
-  local lexers = self.lexers
-
-  local data = {}
-  for i = 1, #lexers do
-    local lexer = lexers[i]
-    data[#data + 1] = {
-      automaton = lexer.automaton;
-      accept_states = lexer.accept_states;
-      accept_to_actions = lexer.accept_to_actions;
-      accept_to_symbol = lexer.accept_to_symbol;
-    }
+function metatable:__call(s, file)
+  local lexer = self.lexer
+  local parser = self.parser
+  local position = 1
+  while true do
+    local symbol, p, i, j, rs, ri, rj = assert(lexer(s, position))
+    if symbol == 1 then
+      return assert(parser(symbol, s, file, p, i, j - 1, rs, ri, rj))
+    else
+      assert(parser(symbol, s, file, p, i, j - 1, rs, ri, rj))
+    end
+    position = j
   end
-
-  out:write("local lexer = require \"dromozoa.parser.lexer\"\n")
-  local root = dumper():dump(out, data)
-  out:write("return function () return lexer(", root, ") end\n")
-  return out
 end
+
+return setmetatable(class, {
+  __call = function (_, lexer, parser)
+    return setmetatable({ lexer = lexer, parser = parser }, metatable)
+  end;
+})

@@ -18,6 +18,31 @@
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
 
+local function utf8_char(a)
+  if a <= 0x7F then
+    return string.char(a)
+  elseif a <= 0x07FF then
+    local b = a % 0x40
+    local a = (a - b) / 0x40
+    return string.char(a + 0xc0, b + 0x80)
+  elseif a <= 0xFFFF then
+    -- assert(not (0xd800 <= a and a <= 0xdffff))
+    local c = a % 0x40
+    local a = (a - c) / 0x40
+    local b = a % 0x40
+    local a = (a - b) / 0x40
+    return string.char(a + 0xe0, b + 0x80, c + 0x80)
+  else -- code <= 0x10FFFF
+    local d = a % 0x40
+    local a = (a - d) / 0x40
+    local c = a % 0x40
+    local a = (a - c) / 0x40
+    local b = a % 0x40
+    local a = (a - b) / 0x40
+    return string.char(a + 0xf0, b + 0x80, c + 0x80, d + 0x80)
+  end
+end
+
 local class = {}
 local metatable = {
   __index = class;
@@ -171,60 +196,107 @@ function metatable:__call(s, init, file)
     local rj = position - 1
     local rv
 
-    if actions then
-      for i = 1, #actions do
-        local action = actions[i]
-        local code = action[1]
-        if code == 1 then -- skip
-          skip = true
-        elseif code == 2 then -- push
-          buffer[#buffer + 1] = rs:sub(ri, rj)
-          skip = true
-        elseif code == 3 then -- concat
-          rs = table.concat(buffer)
-          ri = 1
-          rj = #rs
-          for j = 1, #buffer do
-            buffer[j] = nil
-          end
-        elseif code == 4 then -- call
-          stack[#stack + 1] = action[2]
-        elseif code == 5 then -- return
-          stack[#stack] = nil
-        elseif code == 8 then -- substitute by string
-          rs = action[2]
-          ri = 1
-          rj = #rs
-        elseif code == 9 then -- hold
-          self.hold = rs:sub(ri, rj)
-        elseif code == 10 then -- mark
-          position_mark = init
-        elseif code == 11 then -- substring
-          local i = action[2]
-          local j = action[3]
-          if i > 0 then
-            i = i + ri - 1
-          else
-            i = i + rj + 1
-          end
-          if j > 0 then
-            j = j + ri - 1
-          else
-            j = j + rj + 1
-          end
-          ri = i
-          rj = j
-        elseif code == 12 then -- convert to integer
-          rv = tonumber(rs:sub(ri, rj), action[2])
-        elseif code == 13 then -- convert to char
-          rs = string.char(rv)
-          ri = 1
-          rj = 1
-        elseif code == 14 then -- join
-          rs = action[2] .. rs:sub(ri, rj) .. action[3]
-          ri = 1
-          rj = #rs
+    for i = 1, #actions do
+      local action = actions[i]
+      local code = action[1]
+      if code == 1 then -- skip
+        skip = true
+      elseif code == 2 then -- push
+        buffer[#buffer + 1] = rs:sub(ri, rj)
+        skip = true
+      elseif code == 3 then -- concat
+        rs = table.concat(buffer)
+        ri = 1
+        rj = #rs
+        for j = 1, #buffer do
+          buffer[j] = nil
         end
+      elseif code == 4 then -- call
+        stack[#stack + 1] = action[2]
+      elseif code == 5 then -- return
+        stack[#stack] = nil
+      elseif code == 8 then -- substitute by string
+        rs = action[2]
+        ri = 1
+        rj = #rs
+      elseif code == 9 then -- hold
+        self.hold = rs:sub(ri, rj)
+      elseif code == 10 then -- mark
+        position_mark = init
+      elseif code == 11 then -- substring
+        local i = action[2]
+        local j = action[3]
+        if i > 0 then
+          i = i + ri - 1
+        else
+          i = i + rj + 1
+        end
+        if j > 0 then
+          j = j + ri - 1
+        else
+          j = j + rj + 1
+        end
+        ri = i
+        rj = j
+      elseif code == 12 then -- convert to integer
+        rv = tonumber(rs:sub(ri, rj), action[2])
+      elseif code == 13 then -- convert to char
+        rs = string.char(rv)
+        ri = 1
+        rj = #rs
+      elseif code == 14 then -- join
+        rs = action[2] .. rs:sub(ri, rj) .. action[3]
+        ri = 1
+        rj = #rs
+      elseif code == 15 then -- utf8
+        local i = action[2]
+        local j = action[3]
+        if i > 0 then
+          i = i + ri - 1
+        else
+          i = i + ri + 1
+        end
+        if j > 0 then
+          j = j + ri - 1
+        else
+          j = j + rj + 1
+        end
+        local code = tonumber(rs:sub(i, j), 16)
+        rs = utf8_char(code)
+        ri = 1
+        rj = #rs
+      elseif code == 16 then -- utf8_surrogate_pair
+        local i = action[2]
+        local j = action[3]
+        if i > 0 then
+          i = i + ri - 1
+        else
+          i = i + ri + 1
+        end
+        if j > 0 then
+          j = j + ri - 1
+        else
+          j = j + rj + 1
+        end
+        local code1 = tonumber(rs:sub(i, j), 16) % 0x0400 * 0x0400
+        local i = action[4]
+        local j = action[5]
+        if i > 0 then
+          i = i + ri - 1
+        else
+          i = i + ri + 1
+        end
+        if j > 0 then
+          j = j + ri - 1
+        else
+          j = j + rj + 1
+        end
+        local code2 = tonumber(rs:sub(i, j), 16) % 0x0400
+        rs = utf8_char(code1 + code2 + 0x010000)
+        ri = 1
+        rj = #rs
+      elseif code == 17 then -- add integer
+        rv = rv + action[2]
       end
     end
 

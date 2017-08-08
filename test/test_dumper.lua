@@ -31,7 +31,7 @@ local source = {
   c = {1,2,3};
   d = data;
 }
-local root = dumper(out, source)
+local root = dumper():dump(out, source)
 out:write("return ", root, "\n")
 out:close()
 

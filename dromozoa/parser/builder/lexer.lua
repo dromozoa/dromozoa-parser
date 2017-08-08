@@ -108,6 +108,27 @@ function class:join(before, after)
   return self
 end
 
+function class:utf8(i, j)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 15, i, j }
+  return self
+end
+
+function class:utf8_surrogate_pair(i1, j1, i2, j2)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 16, i1, j1, i2, j2 }
+  return self
+end
+
+function class:add(x)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 17, x }
+  return self
+end
+
 function metatable:__call(repl)
   local items = self.items
   local actions = items[#items].actions
