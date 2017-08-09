@@ -41,7 +41,7 @@ function class:write_graphviz(out, tree)
   end
 end
 
-function metatable:__call(symbol, s, file, p, i, j, rs, ri, rj)
+function metatable:__call(symbol, s, p, i, j, rs, ri, rj)
   local max_state = self.max_state
   local max_terminal_symbol = self.max_terminal_symbol
   local actions = self.actions
@@ -123,7 +123,6 @@ function metatable:__call(symbol, s, file, p, i, j, rs, ri, rj)
           local n1 = #stack
           local n2 = #nodes
           local state = stack[n1]
-          assert(head > max_terminal_symbol)
           stack[n1 + 1] = gotos[state][head - max_terminal_symbol]
           nodes[n2 + 1] = node
         else -- accept
@@ -134,7 +133,7 @@ function metatable:__call(symbol, s, file, p, i, j, rs, ri, rj)
         end
       end
     else
-      return nil, error_message("parser error", s, i, file)
+      return nil, error_message("parser error", s, i, self.file)
     end
   end
 end

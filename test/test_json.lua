@@ -24,7 +24,13 @@ local _ = builder()
 
 local lexer_only = false
 
-local source = "[]"
+local source = [[
+{
+  "foo":[1,2,3,4,5],
+  "bar":true,
+  "baz":{ "qux":[ [ [] ] ] }
+}
+]]
 if #arg > 0 then
   if arg[1] == "-" then
     source = io.read("*a")

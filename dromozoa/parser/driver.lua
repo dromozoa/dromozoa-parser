@@ -24,13 +24,14 @@ class.metatable = metatable
 function metatable:__call(s, file)
   local lexer = self.lexer
   local parser = self.parser
+  parser.file = file
   local position = 1
   while true do
     local symbol, p, i, j, rs, ri, rj = assert(lexer(s, position))
     if symbol == 1 then
       return assert(parser(symbol, s, file, p, i, j - 1, rs, ri, rj))
     else
-      assert(parser(symbol, s, file, p, i, j - 1, rs, ri, rj))
+      assert(parser(symbol, s, p, i, j - 1, rs, ri, rj))
     end
     position = j
   end

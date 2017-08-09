@@ -55,16 +55,17 @@ grammar:write_table("test.html", parser)
 
 local source = [[id<id<id<id<id<id<]]
 
+parser.file = "test.lua"
 local position = 1
 for n = 1, 4 do
   local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
   print(n, p, i, j, rs:sub(ri,rj))
   if n == 4 then
-    local result, message = parser(symbol, rs:sub(ri, rj), "test.lua", source, p, i, j, rs, ri, rj)
+    local result, message = parser(symbol, rs:sub(ri, rj), source, p, i, j, rs, ri, rj)
     print(message)
     assert(not result)
   else
-    assert(parser(symbol, rs:sub(ri, rj), "test.lua", source, p, i, j, rs, ri, rj))
+    assert(parser(symbol, rs:sub(ri, rj), source, p, i, j, rs, ri, rj))
   end
   position = j
 end
