@@ -50,12 +50,7 @@ local source = [[
 ]
 ]]
 
-local result, message = pcall(function ()
-  local position = 1
-  repeat
-    local symbol, s, i, j, rs, ri, rj = assert(lexer(source, position, file))
-    position = j
-  until symbol == 1
-end)
-print(result, message)
+local result, message = lexer(source, file)
+print(message)
+assert(not result)
 assert(message:match("test%.lua:4:4: lexer error"))

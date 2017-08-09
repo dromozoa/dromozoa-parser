@@ -22,24 +22,31 @@ local metatable = {
 class.metatable = metatable
 
 function metatable:__call(s, file)
-  local lexer = self.lexer
   local parser = self.parser
-  parser.file = file
   parser.source = s
-  local position = 1
-  while true do
-    local symbol, p, i, j, rs, ri, rj = lexer(s, position, file)
-    if not symbol then
-      return nil, p
-    end
-    local result, message = parser(symbol, p, i, j - 1, rs, ri, rj)
+  parser.file = file
+
+  local result, message = self.lexer(s, file)
+  if not result then
+    return nil, message
+  end
+  for x = 1, #result do
+    local node = result[x]
+    local symbol = node[0]
+    local p = node.p
+    local i = node.i
+    local j = node.j
+    local rs = node.rs
+    local ri = node.ri
+    local rj = node.rj
+
+    local result, message = parser(symbol, p, i, j, rs, ri, rj)
     if not result then
       return nil, message
     end
     if symbol == 1 then
       return result
     end
-    position = j
   end
 end
 

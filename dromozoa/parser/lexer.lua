@@ -75,26 +75,37 @@ function class:compile(out)
   end
 end
 
-function metatable:__call(s, init, file)
-  if not init then
-    init = 1
-  end
-
+function metatable:__call(s, file)
   local lexers = self.lexers
   local stack = self.stack
   local buffer = self.buffer
 
+  local init = 1
   local n = #s
-  local position_start = init
-  local position_mark
+  local result = {}
 
   while true do
+    local position_start = init
+    local position_mark
+
     if n < init then
       if #stack == 1 then
         if not position_mark then
           position_mark = init
         end
-        return 1, position_start, position_mark, init, s, init, init -- marker end
+        result[#result + 1] = {
+          [0] = 1; -- marker end
+          n = 0;
+--[[
+          p = position_start;
+          i = position_mark;
+          j = init;
+          rs = s;
+          ri = init;
+          rj = init;
+]]
+        }
+        return result
       else
         return nil, error_message("lexer error", s, init, file)
       end
@@ -272,14 +283,22 @@ function metatable:__call(s, init, file)
       end
     end
 
-    if skip then
-      init = position
-    else
+    if not skip then
       if not position_mark then
         position_mark = init
       end
-      return lexer.accept_to_symbol[accept], position_start, position_mark, position, rs, ri, rj
+      result[#result + 1] = {
+        [0] = lexer.accept_to_symbol[accept],
+        n = 0;
+        p = position_start;
+        i = position_mark;
+        j = position - 1;
+        rs = rs;
+        ri = ri;
+        rj = rj;
+      }
     end
+    init = position
   end
 end
 

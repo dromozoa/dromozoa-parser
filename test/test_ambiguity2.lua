@@ -56,5 +56,6 @@ grammar:write_table("test.html", parser)
 
 local source = [[id<id<id<id<id<id<]]
 local root, message = driver(lexer, parser)(source, "test.txt")
+print(message)
 assert(not root)
 assert(message == "test.txt:1:6: parser error")
