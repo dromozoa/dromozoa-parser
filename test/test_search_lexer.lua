@@ -52,5 +52,6 @@ for i = 1, #result do
   local item = result[i]
   data[#data + 1] = source:sub(item.p, item.j)
 end
+print(#source, result[#result].p, result[#result].i, result[#result].j, ("%q"):format(data[#data]))
 io.write(table.concat(data))
 assert(table.concat(data) == source)

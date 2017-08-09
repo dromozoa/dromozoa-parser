@@ -701,4 +701,3 @@ result[#result + 1] = source:sub(node.p, node.i - 1)
 
 io.write(table.concat(result))
 assert(table.concat(result) == source)
-

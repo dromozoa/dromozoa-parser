@@ -289,10 +289,10 @@ function metatable:__call(s, file)
       n = 0;
       p = position_start;
       i = position_mark;
-      j = init;
+      j = n;
       rs = s;
       ri = init;
-      rj = init;
+      rj = n;
     }
     return result
   else
