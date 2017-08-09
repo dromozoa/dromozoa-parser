@@ -18,6 +18,20 @@
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
 
+local function range(ri, rj, i, j)
+  if i > 0 then
+    i = i + ri - 1
+  else
+    i = i + rj + 1
+  end
+  if j > 0 then
+    j = j + ri - 1
+  else
+    j = j + rj + 1
+  end
+  return i, j
+end
+
 local function utf8_char(a)
   if a <= 0x7F then
     return string.char(a)
@@ -26,7 +40,6 @@ local function utf8_char(a)
     local a = (a - b) / 0x40
     return string.char(a + 0xc0, b + 0x80)
   elseif a <= 0xFFFF then
-    -- assert(not (0xd800 <= a and a <= 0xdffff))
     local c = a % 0x40
     local a = (a - c) / 0x40
     local b = a % 0x40
@@ -189,13 +202,13 @@ function metatable:__call(s, init, file)
       end
     end
 
-    local actions = lexer.accept_to_actions[accept]
     local skip
     local rs = s
     local ri = init
     local rj = position - 1
     local rv
 
+    local actions = lexer.accept_to_actions[accept]
     for i = 1, #actions do
       local action = actions[i]
       local code = action[1]
@@ -224,20 +237,7 @@ function metatable:__call(s, init, file)
       elseif code == 10 then -- mark
         position_mark = init
       elseif code == 11 then -- substring
-        local i = action[2]
-        local j = action[3]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + rj + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
-        ri = i
-        rj = j
+        ri, rj = range(ri, rj, action[2], action[3])
       elseif code == 12 then -- convert to integer
         rv = tonumber(rs:sub(ri, rj), action[2])
       elseif code == 13 then -- convert to char
@@ -249,48 +249,15 @@ function metatable:__call(s, init, file)
         ri = 1
         rj = #rs
       elseif code == 15 then -- encode utf8
-        local i = action[2]
-        local j = action[3]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + ri + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
+        local i, j = range(ri, rj, action[2], action[3])
         local code = tonumber(rs:sub(i, j), 16)
         rs = utf8_char(code)
         ri = 1
         rj = #rs
-      elseif code == 16 then -- encode utf8 surrogate pair
-        local i = action[2]
-        local j = action[3]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + ri + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
+      elseif code == 16 then -- encode utf8 (surrogate pair)
+        local i, j = range(ri, rj, action[2], action[3])
         local code1 = tonumber(rs:sub(i, j), 16) % 0x0400 * 0x0400
-        local i = action[4]
-        local j = action[5]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + ri + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
+        local i, j = range(ri, rj, action[4], action[5])
         local code2 = tonumber(rs:sub(i, j), 16) % 0x0400
         rs = utf8_char(code1 + code2 + 0x010000)
         ri = 1

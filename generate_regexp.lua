@@ -33,7 +33,7 @@ local function atom_escape(lexer)
     :_ "\\v" "\v" :as "ControlEscape"
     :_ ("\\c" * R"AZaz") :as "ControlLetter" :sub(3, -1) :int(36) :add(-9) :char()
     :_ ("\\x" * R"09AFaf"^{2}) :as "HexEscapeSequence" :sub(3, -1) :int(16) :char()
-    :_ ("\\u" * S"Dd" * S"89ABab" * R"09AFaf"^{2} * "\\u" * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8_pair(3, 6, 9, 12)
+    :_ ("\\u" * S"Dd" * S"89ABab" * R"09AFaf"^{2} * "\\u" * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8(3, 6, 9, 12)
     :_ ("\\u" * R"09AFaf"^{4}) :as "RegExpUnicodeEscapeSequence" :utf8(3, -1)
     :_ ("\\u{" * R"09AFaf"^"+" * "}") :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
     :_ ("\\" * (-(R"09AZaz" + "_"))) :as "IdentityEscape" :sub(2, -1)
