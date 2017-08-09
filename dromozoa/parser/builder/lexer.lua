@@ -81,6 +81,9 @@ function class:mark()
 end
 
 function class:sub(i, j)
+  if not j then
+    j = -1
+  end
   local items = self.items
   local actions = items[#items].actions
   actions[#actions + 1] = { 11, i, j }
@@ -109,6 +112,12 @@ function class:join(x, y)
 end
 
 function class:utf8(i, j, k, l)
+  if not j then
+    j = -1
+  end
+  if not l then
+    l = -1
+  end
   local items = self.items
   local actions = items[#items].actions
   if k then

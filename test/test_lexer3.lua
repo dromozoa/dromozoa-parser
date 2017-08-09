@@ -25,19 +25,13 @@ local RE = builder.regexp
 local _ = builder()
 
 _:lexer()
--- :_ (S" \r\n\t\v\f"^"+") :skip()
   :_ (RE[[\s+]]) :skip()
--- :_ ("--" * ((-S"\n")^"*") "\n") :skip()
   :_ (RE[[--[^\n]*\n]]) :skip()
--- :_ ([[\u]] * S"Dd" * S"89ABab" * R"09AFaf"^{2} * [[\u]] * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "pair" :utf8(3, 6, 9, 12)
   :_ (RE[[\\u[Dd][89ABab][0-9A-Fa-f]{2}\\u[Dd][C-Fc-f][0-9A-Fa-f]{2}]])  :as "pair" :utf8(3, 6, 9, 12)
--- :_ ([[\u]] * R"09AFaf"^{4}) :as "char" :utf8(3, -1)
-  :_ (RE[[\\u[0-9A-Fa-f]{4}]]) :as "char" :utf8(3, -1)
--- :_ ([[\U]] * R"09AFaf"^{8}) :as "char" :utf8(3, -1)
-  :_ (RE[[\\U[0-9A-Fa-f]{8}]]) :as "char" :utf8(3, -1)
--- :_ ([[\c]] * R"AZaz") :as "control" :sub(3, -1) :int(36) :add(-9) :char()
-  :_ (RE[=[\\c[A-Za-z]]=]) :as "control" :sub(3, -1) :int(36) :add(-9) :char()
-  :_ (RE[[\\x[0-9A-Fa-f]{2}]]) :as "hex" :sub(3, -1) :int(16) :char()
+  :_ (RE[[\\u[0-9A-Fa-f]{4}]]) :as "char" :utf8(3)
+  :_ (RE[[\\U[0-9A-Fa-f]{8}]]) :as "char" :utf8(3)
+  :_ (RE[=[\\c[A-Za-z]]=]) :as "control" :sub(3) :int(36) :add(-9) :char()
+  :_ (RE[[\\x[0-9A-Fa-f]{2}]]) :as "hex" :sub(3) :int(16) :char()
 
 local lexer = _:build()
 

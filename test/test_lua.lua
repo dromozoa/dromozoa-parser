@@ -42,7 +42,7 @@ local function string_lexer(lexer)
     :_ [[\"]] "\"" :push()
     :_ [[\']] "\'" :push()
     :_ (RE[[\\z\s*]]) :skip()
-    :_ (RE[[\\\d{1,3}]]) :sub(2, -1) :int(10) :char() :push()
+    :_ (RE[[\\\d{1,3}]]) :sub(2) :int(10) :char() :push()
     :_ (RE[[\\u\{[0-9A-Fa-f]+\}]]) :utf8(4, -2) :push()
     :_ (RE[[[^\\"]+]]) :push()
 end
