@@ -22,8 +22,6 @@ local driver = require "dromozoa.parser.driver"
 local RE = builder.regexp
 local _ = builder()
 
-local lexer_only = false
-
 local source = [[
 {
   "foo":[1,2,3,4,5],
@@ -31,6 +29,7 @@ local source = [[
   "baz":{ "qux":[ [ [] ] ] }
 }
 ]]
+
 if #arg > 0 then
   if arg[1] == "-" then
     source = io.read("*a")
@@ -68,69 +67,45 @@ _:lexer "string"
   :_ (RE[[[^\\"]+]]) :push()
   :_ "\"" :as "string" :concat() :ret()
 
-if lexer_only then
-  local lexer = _:build()
+_"JSON-text"
+  :_ "value"
 
-  local timer = unix.timer()
-  timer:start()
+_"value"
+  :_ "false"
+  :_ "null"
+  :_ "true"
+  :_ "object"
+  :_ "array"
+  :_ "number"
+  :_ "string"
 
---[[
-  local data = assert(lexer:exp(source, 1))
-]]
-  local position = 1
-  local data = {}
-  repeat
-    local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
-    if symbol ~= 1 then
-      data[#data + 1] = { symbol, p, i, j, rs, ri, rj }
-    end
-    position = j
-  until symbol == 1
+_"object"
+  :_ "{" "}"
+  :_ "{" "members" "}"
 
-  timer:stop()
-  print(timer:elapsed())
-else
-  _"JSON-text"
-    :_ "value"
+_"members"
+  :_ "member"
+  :_ "members" "," "member" :collapse()
 
-  _"value"
-    :_ "false"
-    :_ "null"
-    :_ "true"
-    :_ "object"
-    :_ "array"
-    :_ "number"
-    :_ "string"
+_"member"
+  :_ "string" ":" "value"
 
-  _"object"
-    :_ "{" "}"
-    :_ "{" "members" "}"
+_"array"
+  :_ "[" "]"
+  :_ "[" "values" "]"
 
-  _"members"
-    :_ "member"
-    :_ "members" "," "member" :collapse()
+_"values"
+  :_ "value"
+  :_ "values" "," "value" :collapse()
 
-  _"member"
-    :_ "string" ":" "value"
+local lexer, grammar = _:build()
+local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
+grammar:write_conflicts(io.stderr, conflicts, true)
+local driver = driver(lexer, parser)
 
-  _"array"
-    :_ "[" "]"
-    :_ "[" "values" "]"
-
-  _"values"
-    :_ "value"
-    :_ "values" "," "value" :collapse()
-
-  local lexer, grammar = _:build()
-  local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
-  grammar:write_conflicts(io.stderr, conflicts, true)
-  local driver = driver(lexer, parser)
-
-  local timer = unix.timer()
-  timer:start()
-  local root = driver(source)
-  timer:stop()
-  print(timer:elapsed())
-
-  parser:write_graphviz("test.dot", root)
-end
+local timer = unix.timer()
+timer:start()
+local root = driver(source)
+timer:stop()
+print(timer:elapsed())
+-- parser:write_graphviz("test.dot", root)

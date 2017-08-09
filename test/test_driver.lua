@@ -18,43 +18,40 @@
 local builder = require "dromozoa.parser.builder"
 local driver = require "dromozoa.parser.driver"
 
+local RE = builder.regexp
 local _ = builder()
 
-local S = builder.set
-
 _:lexer()
-  :_ "=="
-  :_ "!="
-  :_ "<"
-  :_ "<="
-  :_ ">"
-  :_ ">="
-  :_ "id"
+  :_ (RE[[//[^\n]*\n]]) :skip()
+  :_ (RE[[\s+]]) :skip()
+  :_ (RE[[0|[1-9]\d*]]) :as "integer"
+  :_ "+"
+  :_ "*"
+  :_ "("
+  :_ ")"
 
-_ :nonassoc "==" "!="
-  :nonassoc "<" "<=" ">" ">="
+_ :left "+"
+  :left "*"
 
-_ "E"
-  :_ "E" "==" "E"
-  :_ "E" "!=" "E"
-  :_ "E" "<" "E"
-  :_ "E" "<=" "E"
-  :_ "E" ">" "E"
-  :_ "E" ">=" "E"
-  :_ "id"
+_"expression"
+  :_ "expression" "+" "expression"
+  :_ "expression" "*" "expression"
+  :_ "(" "expression" ")"
+  :_ "integer"
 
 local lexer, grammar = _:build()
+local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
+grammar:write_conflicts(io.stderr, conflicts)
+local driver = driver(lexer, parser)
 
-local set_of_items, transitions = grammar:lalr1_items()
+local source = [[
+(1 + 2 * 3)
+ *
+  foo
+   (4 * 5 + 6)
+]]
 
-grammar:write_set_of_items(io.stdout, set_of_items)
-grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
-
-local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-grammar:write_conflicts(io.stdout, conflicts)
-grammar:write_table("test.html", parser)
-
-local source = [[id<id<id<id<id<id<]]
-local root, message = driver(lexer, parser)(source, "test.txt")
+local root, message = driver(source, "test.txt")
 assert(not root)
-assert(message == "test.txt:1:6: parser error")
+assert(message == "test.txt:3:3: lexer error")
+-- parser:write_graphviz("test.dot", root)

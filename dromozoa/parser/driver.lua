@@ -28,11 +28,16 @@ function metatable:__call(s, file)
   parser.source = s
   local position = 1
   while true do
-    local symbol, p, i, j, rs, ri, rj = assert(lexer(s, position))
+    local symbol, p, i, j, rs, ri, rj = lexer(s, position, file)
+    if not symbol then
+      return nil, p
+    end
+    local result, message = parser(symbol, p, i, j - 1, rs, ri, rj)
+    if not result then
+      return nil, message
+    end
     if symbol == 1 then
-      return assert(parser(symbol, p, i, j - 1, rs, ri, rj))
-    else
-      assert(parser(symbol, p, i, j - 1, rs, ri, rj))
+      return result
     end
     position = j
   end

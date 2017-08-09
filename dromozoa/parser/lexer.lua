@@ -32,27 +32,32 @@ local function range(ri, rj, i, j)
   return i, j
 end
 
-local function utf8_char(a)
-  if a <= 0x7F then
-    return string.char(a)
-  elseif a <= 0x07FF then
-    local b = a % 0x40
-    local a = (a - b) / 0x40
-    return string.char(a + 0xc0, b + 0x80)
-  elseif a <= 0xFFFF then
-    local c = a % 0x40
-    local a = (a - c) / 0x40
-    local b = a % 0x40
-    local a = (a - b) / 0x40
-    return string.char(a + 0xe0, b + 0x80, c + 0x80)
-  else -- code <= 0x10FFFF
-    local d = a % 0x40
-    local a = (a - d) / 0x40
-    local c = a % 0x40
-    local a = (a - c) / 0x40
-    local b = a % 0x40
-    local a = (a - b) / 0x40
-    return string.char(a + 0xf0, b + 0x80, c + 0x80, d + 0x80)
+local utf8_char
+if utf8 then
+  utf8_char = utf8.char
+else
+  utf8_char = function (a)
+    if a <= 0x7F then
+      return string.char(a)
+    elseif a <= 0x07FF then
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string.char(a + 0xc0, b + 0x80)
+    elseif a <= 0xFFFF then
+      local c = a % 0x40
+      local a = (a - c) / 0x40
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string.char(a + 0xe0, b + 0x80, c + 0x80)
+    else -- code <= 0x10FFFF
+      local d = a % 0x40
+      local a = (a - d) / 0x40
+      local c = a % 0x40
+      local a = (a - c) / 0x40
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string.char(a + 0xf0, b + 0x80, c + 0x80, d + 0x80)
+    end
   end
 end
 
