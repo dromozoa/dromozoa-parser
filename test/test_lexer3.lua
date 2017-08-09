@@ -17,26 +17,22 @@
 
 local builder = require "dromozoa.parser.builder"
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
 local RE = builder.regexp
 
 local _ = builder()
 
 _:lexer()
-  :_ (RE[[\s+]]) :skip()
-  :_ (RE[[--[^\n]*\n]]) :skip()
-  :_ (RE[[\\u[Dd][89ABab][0-9A-Fa-f]{2}\\u[Dd][C-Fc-f][0-9A-Fa-f]{2}]])  :as "pair" :utf8(3, 6, 9, 12)
-  :_ (RE[[\\u[0-9A-Fa-f]{4}]]) :as "char" :utf8(3)
-  :_ (RE[[\\U[0-9A-Fa-f]{8}]]) :as "char" :utf8(3)
-  :_ (RE[=[\\c[A-Za-z]]=]) :as "control" :sub(3) :int(36) :add(-9) :char()
-  :_ (RE[[\\x[0-9A-Fa-f]{2}]]) :as "hex" :sub(3) :int(16) :char()
+  :_(RE[[\s+]]) :skip()
+  :_(RE[[--[^\n]*\n]]) :skip()
+  :_(RE[[\\u[Dd][89ABab][0-9A-Fa-f]{2}\\u[Dd][C-Fc-f][0-9A-Fa-f]{2}]]) :as "pair" :utf8(3, 6, 9, 12)
+  :_(RE[[\\u[0-9A-Fa-f]{4}]]) :as "char" :utf8(3)
+  :_(RE[[\\U[0-9A-Fa-f]{8}]]) :as "char" :utf8(3)
+  :_(RE[=[\\c[A-Za-z]]=]) :as "control" :sub(3) :int(36) :add(-9) :char()
+  :_(RE[[\\x[0-9A-Fa-f]{2}]]) :as "hex" :sub(3) :int(16) :char()
 
 local lexer = _:build()
 
 local source = [[
--- comment
 \u65e5\u672c\u8a9e -- 日本語
 \U00010437 -- string.char(0xf0, 0x90, 0x90, 0xb7)
 \uD801\uDC37
