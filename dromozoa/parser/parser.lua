@@ -41,7 +41,7 @@ function class:write_graphviz(out, tree)
   end
 end
 
-function metatable:__call(symbol, s, p, i, j, rs, ri, rj)
+function metatable:__call(symbol, p, i, j, rs, ri, rj)
   local max_state = self.max_state
   local max_terminal_symbol = self.max_terminal_symbol
   local actions = self.actions
@@ -133,7 +133,7 @@ function metatable:__call(symbol, s, p, i, j, rs, ri, rj)
         end
       end
     else
-      return nil, error_message("parser error", s, i, self.file)
+      return nil, error_message("parser error", self.source, i, self.file)
     end
   end
 end

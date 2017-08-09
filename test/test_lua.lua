@@ -653,12 +653,14 @@ return {
 }
 ]====]
 
+parser.source = source
+
 local position = 1
 local root
 local node = {}
 repeat
   local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
-  root = assert(parser(symbol, source, p, i, j - 1, rs, ri, rj))
+  root = assert(parser(symbol, p, i, j - 1, rs, ri, rj))
   node.p = p
   node.i = i
   node.j = j
