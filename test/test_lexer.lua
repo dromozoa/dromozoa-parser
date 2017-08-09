@@ -78,6 +78,6 @@ for test = 1, 8 do
     { "identifier", "abcdef" };
     { "identifier", "abcde" };
     { "identifier", "abcd" };
-    { "$" };
+    { "$", "" };
   }))
 end

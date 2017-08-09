@@ -46,3 +46,11 @@ local result = assert(lexer(source))
 assert(value(result[1]) == "test")
 assert(value(result[2]) == "\nfoo [===[ bar ]===] baz\n")
 assert(result[3][0] == 1)
+
+local data = {}
+for i = 1, #result do
+  local item = result[i]
+  data[#data + 1] = source:sub(item.p, item.j)
+end
+io.write(table.concat(data))
+assert(table.concat(data) == source)

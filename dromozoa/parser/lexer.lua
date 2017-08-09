@@ -77,40 +77,17 @@ end
 
 function metatable:__call(s, file)
   local lexers = self.lexers
-  local stack = self.stack
-  local buffer = self.buffer
 
   local init = 1
   local n = #s
   local result = {}
 
-  while true do
-    local position_start = init
-    local position_mark
+  local stack = { 1 } -- start lexer
+  local position_start = init
+  local position_mark
+  local buffer = {}
 
-    if n < init then
-      if #stack == 1 then
-        if not position_mark then
-          position_mark = init
-        end
-        result[#result + 1] = {
-          [0] = 1; -- marker end
-          n = 0;
---[[
-          p = position_start;
-          i = position_mark;
-          j = init;
-          rs = s;
-          ri = init;
-          rj = init;
-]]
-        }
-        return result
-      else
-        return nil, error_message("lexer error", s, init, file)
-      end
-    end
-
+  while init <= n do
     local lexer = lexers[stack[#stack]]
     local automaton = lexer.automaton
     local position
@@ -297,17 +274,34 @@ function metatable:__call(s, file)
         ri = ri;
         rj = rj;
       }
+      position_start = position
+      position_mark = nil
     end
     init = position
+  end
+
+  if #stack == 1 then
+    if not position_mark then
+      position_mark = init
+    end
+    result[#result + 1] = {
+      [0] = 1; -- marker end
+      n = 0;
+      p = position_start;
+      i = position_mark;
+      j = init;
+      rs = s;
+      ri = init;
+      rj = init;
+    }
+    return result
+  else
+    return nil, error_message("lexer error", s, init, file)
   end
 end
 
 return setmetatable(class, {
   __call = function (_, lexers)
-    return setmetatable({
-      lexers = lexers;
-      stack = { 1 }; -- start lexer
-      buffer = {};
-    }, metatable)
+    return setmetatable({ lexers = lexers }, metatable)
   end;
 })
