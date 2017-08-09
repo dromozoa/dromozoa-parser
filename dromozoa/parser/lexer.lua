@@ -215,7 +215,7 @@ function metatable:__call(s, init, file)
         stack[#stack + 1] = action[2]
       elseif code == 5 then -- return
         stack[#stack] = nil
-      elseif code == 8 then -- substitute by string
+      elseif code == 8 then -- substitute
         rs = action[2]
         ri = 1
         rj = #rs
@@ -248,7 +248,7 @@ function metatable:__call(s, init, file)
         rs = action[2] .. rs:sub(ri, rj) .. action[3]
         ri = 1
         rj = #rs
-      elseif code == 15 then -- utf8
+      elseif code == 15 then -- encode utf8
         local i = action[2]
         local j = action[3]
         if i > 0 then
@@ -265,7 +265,7 @@ function metatable:__call(s, init, file)
         rs = utf8_char(code)
         ri = 1
         rj = #rs
-      elseif code == 16 then -- utf8_surrogate_pair
+      elseif code == 16 then -- encode utf8 surrogate pair
         local i = action[2]
         local j = action[3]
         if i > 0 then

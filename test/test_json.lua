@@ -57,7 +57,7 @@ _:lexer "string"
   :_ [[\n]] "\n" :push()
   :_ [[\r]] "\r" :push()
   :_ [[\t]] "\t" :push()
-  :_ (RE[[\\u[Dd][89ABab][0-9A-Fa-f]{2}\\u[Dd][CFcf][0-9A-Fa-f]{2}]]) :utf8_surrogate_pair(3, 6, 9, 12) :push()
+  :_ (RE[[\\u[Dd][89ABab][0-9A-Fa-f]{2}\\u[Dd][CFcf][0-9A-Fa-f]{2}]]) :utf8_pair(3, 6, 9, 12) :push()
   :_ (RE[[\\u[0-9A-Fa-f]{4}]]) :utf8(3, -1) :push()
   :_ (RE[[[^\\"]+]]) :push()
   :_ "\"" :as "string" :concat() :ret()
