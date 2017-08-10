@@ -26,7 +26,8 @@ local source = [[
 {
   "foo":[1,2,3,4,5],
   "bar":true,
-  "baz":{ "qux":[ [ [] ] ] }
+  "baz":{ "qux":[ [ [] ] ] },
+  "empty":{}
 }
 ]]
 
@@ -71,32 +72,32 @@ _"JSON-text"
   :_ "value"
 
 _"value"
-  :_ "false"
-  :_ "null"
-  :_ "true"
-  :_ "object"
-  :_ "array"
-  :_ "number"
-  :_ "string"
+  :_ "false" :collapse()
+  :_ "null" :collapse()
+  :_ "true" :collapse()
+  :_ "object" :collapse()
+  :_ "array" :collapse()
+  :_ "number" :collapse()
+  :_ "string" :collapse()
 
 _"object"
   :_ "{" "}"
-  :_ "{" "members" "}"
+  :_ "{" "members" "}" {[2]={}}
 
 _"members"
   :_ "member"
-  :_ "members" "," "member" :collapse()
+  :_ "members" "," "member" {[1]={3}}
 
 _"member"
-  :_ "string" ":" "value"
+  :_ "string" ":" "value" {1,3}
 
 _"array"
   :_ "[" "]"
-  :_ "[" "values" "]"
+  :_ "[" "values" "]" {[2]={}}
 
 _"values"
   :_ "value"
-  :_ "values" "," "value"
+  :_ "values" "," "value" {[1]={3}}
 
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
@@ -108,4 +109,4 @@ timer:start()
 local root = driver(source)
 timer:stop()
 print(timer:elapsed())
--- parser:write_graphviz("test.dot", root)
+parser:write_graphviz("test.dot", root)

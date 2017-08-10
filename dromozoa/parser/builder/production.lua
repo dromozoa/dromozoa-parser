@@ -42,10 +42,23 @@ function class:collapse()
   return self
 end
 
-function metatable:__call(name)
+function metatable:__call(name_or_table)
   local items = self.items
-  local body = items[#items].body
-  body[#body + 1] = name
+  if type(name_or_table) == "string" then
+    local body = items[#items].body
+    body[#body + 1] = name_or_table
+  else
+    local k, v = next(name_or_table)
+    if v then
+      if type(v) == "number" then
+        items[#items].semantic_action = { 3, name_or_table }
+      else
+        items[#items].semantic_action = { 2, k, v }
+      end
+    else
+      items[#items].semantic_action = { 3, {} }
+    end
+  end
   return self
 end
 
