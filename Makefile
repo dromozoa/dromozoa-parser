@@ -16,13 +16,9 @@
 # along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 TARGET_DIR = dromozoa/parser/parsers
-
 TARGET = $(TARGET_DIR)/regexp_parser.lua $(TARGET_DIR)/lua53_parser.lua
 
 all: $(TARGET)
-
-clean:
-	rm -f $(TARGET)
 
 $(TARGET_DIR)/regexp_parser.lua: generate_regexp.lua
 	lua $<
