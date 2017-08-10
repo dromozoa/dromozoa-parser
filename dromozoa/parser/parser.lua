@@ -41,7 +41,7 @@ function class:write_graphviz(out, tree)
   end
 end
 
-function metatable:__call(source)
+function metatable:__call(terminal_nodes, s, file)
   local max_state = self.max_state
   local max_terminal_symbol = self.max_terminal_symbol
   local actions = self.actions
@@ -49,11 +49,11 @@ function metatable:__call(source)
   local heads = self.heads
   local sizes = self.sizes
   local reduce_to_semantic_actions = self.reduce_to_semantic_actions
-  local stack = self.stack
-  local nodes = self.nodes
+  local stack = { 1 } -- start state
+  local nodes = {}
 
-  for i = 1, #source do
-    local node = source[i]
+  for i = 1, #terminal_nodes do
+    local node = terminal_nodes[i]
     local symbol = node[0]
     while true do
       local n1 = #stack
@@ -76,28 +76,28 @@ function metatable:__call(source)
           local head = heads[action]
           if head then -- reduce
             local n = sizes[action]
-            for i = n1 - n + 1, n1 do
-              stack[i] = nil
+            for j = n1 - n + 1, n1 do
+              stack[j] = nil
             end
 
             local reduced_nodes = {}
-            for i = n2 - n + 1, n2 do
-              reduced_nodes[#reduced_nodes + 1] = nodes[i]
-              nodes[i] = nil
+            for j = n2 - n + 1, n2 do
+              reduced_nodes[#reduced_nodes + 1] = nodes[j]
+              nodes[j] = nil
             end
 
             local node
             local semantic_actions = reduce_to_semantic_actions[action]
             if semantic_actions[1] then
-              for i = 1, #semantic_actions do
+              for j = 1, #semantic_actions do
                 local semantic_action = semantic_actions[1]
                 local code = semantic_action[1]
                 if code == 1 then -- list
                   node = reduced_nodes[1]
                   local m = node.n
-                  for i = 2, n do
+                  for j = 2, n do
                     m = m + 1
-                    node[m] = reduced_nodes[i]
+                    node[m] = reduced_nodes[j]
                   end
                   node.n = m
                 end
@@ -107,8 +107,8 @@ function metatable:__call(source)
                 [0] = head;
                 n = n;
               }
-              for i = 1, n do
-                node[i] = reduced_nodes[i]
+              for j = 1, n do
+                node[j] = reduced_nodes[j]
               end
             end
 
@@ -125,11 +125,10 @@ function metatable:__call(source)
           end
         end
       else
-        return nil, error_message("parser error", self.source, node.i, self.file)
+        return nil, error_message("parser error", s, node.i, file)
       end
     end
   end
-  return nil, "parser error"
 end
 
 return setmetatable(class, {
@@ -144,8 +143,6 @@ return setmetatable(class, {
       heads = data.heads;
       sizes = data.sizes;
       reduce_to_semantic_actions = data.reduce_to_semantic_actions;
-      stack = { 1 }; -- start state
-      nodes = {};
     }, metatable)
   end
 })

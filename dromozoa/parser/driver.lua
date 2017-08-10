@@ -22,15 +22,11 @@ local metatable = {
 class.metatable = metatable
 
 function metatable:__call(s, file)
-  local parser = self.parser
-  parser.source = s
-  parser.file = file
-
   local result, message = self.lexer(s, file)
   if not result then
     return nil, message
   end
-  local result, message = parser(result)
+  local result, message = self.parser(result, s, file)
   if not result then
     return nil, message
   end
