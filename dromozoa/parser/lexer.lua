@@ -80,7 +80,7 @@ function metatable:__call(s, file)
 
   local init = 1
   local n = #s
-  local result = {}
+  local terminal_nodes = {}
 
   local stack = { 1 } -- start lexer
   local position_start = init
@@ -264,7 +264,7 @@ function metatable:__call(s, file)
       if not position_mark then
         position_mark = init
       end
-      result[#result + 1] = {
+      terminal_nodes[#terminal_nodes + 1] = {
         [0] = lexer.accept_to_symbol[accept];
         n = 0;
         p = position_start;
@@ -284,7 +284,7 @@ function metatable:__call(s, file)
     if not position_mark then
       position_mark = init
     end
-    result[#result + 1] = {
+    terminal_nodes[#terminal_nodes + 1] = {
       [0] = 1; -- marker end
       n = 0;
       p = position_start;
@@ -294,7 +294,7 @@ function metatable:__call(s, file)
       ri = init;
       rj = n;
     }
-    return result
+    return terminal_nodes
   else
     return nil, error_message("lexer error", s, init, file)
   end
