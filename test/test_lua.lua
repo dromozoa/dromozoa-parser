@@ -18,7 +18,6 @@
 local equal = require "dromozoa.commons.equal"
 local unix = require "dromozoa.unix"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
 
 local timer = unix.timer()
 
