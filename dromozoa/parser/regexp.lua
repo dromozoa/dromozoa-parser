@@ -467,6 +467,7 @@ local function difference(this, that)
   end
 
   for i, accept in pairs(this.accept_states) do
+    accept_states[i] = accept
     for j = 1, that_max_state do
       if not that_accept_states[j] then
         local u = i + n * j

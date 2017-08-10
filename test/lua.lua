@@ -26,8 +26,15 @@ handle:close()
 local lexer = lua53_lexer()
 local parser = lua53_parser()
 
+local symbol_names = parser.symbol_names
+-- for i = 1, #symbol_names do
+--   print(i, symbol_names[i])
+-- end
+
 local terminal_nodes = assert(lexer(source, file))
+-- for i = 1, #terminal_nodes do
+--   local node = terminal_nodes[i]
+--   print(node[0], node.rs:sub(node.ri, node.rj))
+-- end
 local root = assert(parser(terminal_nodes, source, file))
-
 parser:write_graphviz("test.dot", root)
-

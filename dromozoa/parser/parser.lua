@@ -140,6 +140,7 @@ function metatable:__call(terminal_nodes, s, file)
           end
         end
       else
+        print(("%d"):format(node[0]))
         return nil, error_message("parser error", s, node.i, file)
       end
     end

@@ -98,14 +98,17 @@ _:lexer()
   :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
   :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2)
   :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2)
+  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3)
+  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3)
   :_ [["]] :skip() :call "dq_string" :mark()
   :_ [[']] :skip() :call "sq_string" :mark()
   :_ (RE[[\[=*\[\n]]) :sub(2, -3) :join("]", "]") :hold() :skip() :call "long_string" :mark()
   :_ (RE[[\[=*\[]]) :sub(2, -2) :join("]", "]") :hold() :skip() :call "long_string" :mark()
   :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "Numeral"
   :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "Numeral"
-  :_ (RE[[--\[=*\[]]) :sub(4, -2) :join("]", "]") :hold() :skip() :call "long_comment"
-  :_ (RE[[--[^\n]*\n]]) :skip()
+  :_ ("--[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :skip()
+  :_ (RE[[--\[=+\[]]) :sub(4, -2) :join("]", "]") :hold() :skip() :call "long_comment"
+  :_ ("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n") : skip()
 
 string_lexer(_:lexer "dq_string")
   :_ [["]] :as "LiteralString" :concat() :ret()
