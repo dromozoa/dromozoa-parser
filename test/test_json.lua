@@ -96,7 +96,7 @@ _"array"
 
 _"values"
   :_ "value"
-  :_ "values" "," "value" :collapse()
+  :_ "values" "," "value"
 
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
