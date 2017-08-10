@@ -265,7 +265,7 @@ function metatable:__call(s, file)
         position_mark = init
       end
       result[#result + 1] = {
-        [0] = lexer.accept_to_symbol[accept],
+        [0] = lexer.accept_to_symbol[accept];
         n = 0;
         p = position_start;
         i = position_mark;

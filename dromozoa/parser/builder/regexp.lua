@@ -48,7 +48,7 @@ function class.parse(s)
 
   local lexer = regexp_lexer()
   local parser = regexp_parser()
-  local root = driver(lexer, parser)(s)
+  local root = assert(driver(lexer, parser)(s))
 
   local symbol_table = parser.symbol_table
   local max_terminal_symbol = parser.max_terminal_symbol

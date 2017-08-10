@@ -30,24 +30,11 @@ function metatable:__call(s, file)
   if not result then
     return nil, message
   end
-  for x = 1, #result do
-    local node = result[x]
-    local symbol = node[0]
-    local p = node.p
-    local i = node.i
-    local j = node.j
-    local rs = node.rs
-    local ri = node.ri
-    local rj = node.rj
-
-    local result, message = parser(symbol, p, i, j, rs, ri, rj)
-    if not result then
-      return nil, message
-    end
-    if symbol == 1 then
-      return result
-    end
+  local result, message = parser(result)
+  if not result then
+    return nil, message
   end
+  return result
 end
 
 return setmetatable(class, {
