@@ -157,10 +157,7 @@ _"ClassEscape"
   :_ "CharacterClassEscape" :collapse()
 
 local lexer, grammar = _:build()
-local set_of_items, transitions = grammar:lalr1_items()
-local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-
-grammar:write_conflicts(io.stderr, conflicts, true)
-
+local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
+grammar:write_conflicts(io.stderr, conflicts)
 lexer:compile("dromozoa/parser/lexers/regexp_lexer.lua")
 parser:compile("dromozoa/parser/parsers/regexp_parser.lua")
