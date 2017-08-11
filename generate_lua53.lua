@@ -309,19 +309,19 @@ _"[fieldlist]"
   :_ "fieldlist"
 
 _"fieldlist"
-  :_ "field" "{fieldsep field}" "[fieldsep]"
+  :_ "field" "{fieldsep field}" "[fieldsep]" {1,2}
 
 _"{fieldsep field}"
   :_ ()
-  :_ "{fieldsep field}" "fieldsep" "field" :collapse()
+  :_ "{fieldsep field}" "fieldsep" "field" {[1]={3}}
 
 _"[fieldsep]"
   :_ ()
   :_ "fieldsep"
 
 _"field"
-  :_ "[" "exp" "]" "=" "exp"
-  :_ "Name" "=" "exp"
+  :_ "[" "exp" "]" "=" "exp" {2,5}
+  :_ "Name" "=" "exp" {1,3}
   :_ "exp"
 
 _"fieldsep"
