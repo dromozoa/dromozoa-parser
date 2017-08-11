@@ -287,11 +287,8 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" "[parlist]" ")" "block" "end"
-
-_"[parlist]"
-  :_ ()
-  :_ "parlist"
+  :_ "(" ")" "block" "end" {3}
+  :_ "(" "parlist" ")" "block" "end" {2,4}
 
 _"parlist"
   :_ "namelist"
