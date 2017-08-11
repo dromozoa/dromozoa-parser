@@ -15,21 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function f1()
-  print()
-end
-
-local function f2(a, b, c, d)
-  print(a, b, c, d)
-end
-
-local function f3(a, b, c, d, ...)
-  print(a, b, c, d, ...)
-end
-
-local function f4(...)
-  print(...)
-end
-
-local f5 = function (a, b, c, d)
-end
+f()
+f(1)
+f(1, 2, 3)
+f "foo"
+f {}
+f {1, 3, 3}

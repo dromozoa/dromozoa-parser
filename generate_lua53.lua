@@ -141,15 +141,12 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ "{stat}" "[retstat]"
+  :_ "{stat}"
+  :_ "{stat}" "retstat"
 
 _"{stat}"
   :_ ()
   :_ "{stat}" "stat" :collapse()
-
-_"[retstat]"
-  :_ ()
-  :_ "retstat"
 
 _"stat"
   :_ ";"
@@ -185,15 +182,10 @@ _"[= explist]"
   :_ "=" "explist"
 
 _"retstat"
-  :_ "return" "[explist]" "[;]"
-
-_"[explist]"
-  :_ ()
-  :_ "explist"
-
-_"[;]"
-  :_ ()
-  :_ ";"
+  :_ "return" {}
+  :_ "return" ";" {}
+  :_ "return" "explist" {2}
+  :_ "return" "explist" ";" {2}
 
 _"label"
   :_ "::" "Name" "::"
@@ -226,7 +218,7 @@ _"namelist"
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp" :collapse()
+  :_ "explist" "," "exp" {[1]={3}}
 
 _"exp"
   :_ "nil"
@@ -279,7 +271,8 @@ _"functioncall"
   :_ "functioncall" ":" "Name" "args"
 
 _"args"
-  :_ "(" "[explist]" ")"
+  :_ "(" ")" {}
+  :_ "(" "explist" ")" {2}
   :_ "tableconstructor"
   :_ "LiteralString"
 
