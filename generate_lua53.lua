@@ -141,12 +141,14 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ "{stat}"
-  :_ "{stat}" "retstat"
-
-_"{stat}"
   :_ ()
-  :_ "{stat}" "stat" :collapse()
+  :_ "retstat"
+  :_ "statlist"
+  :_ "statlist" "retstat"
+
+_"statlist"
+  :_ "stat"
+  :_ "statlist" "stat" {[1]={2}}
 
 _"stat"
   :_ ";"
@@ -159,11 +161,13 @@ _"stat"
   :_ "while" "exp" "do" "block" "end"
   :_ "repeat" "block" "until" "exp"
   :_ "if" "exp" "then" "block" "{elseif exp then block}" "[else block]" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "[, exp]" "do" "block" "end"
+  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
+  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
   :_ "for" "namelist" "in" "explist" "do" "block" "end"
   :_ "function" "funcname" "funcbody"
   :_ "local" "function" "Name" "funcbody"
-  :_ "local" "namelist" "[= explist]"
+  :_ "local" "namelist"
+  :_ "local" "namelist" "=" "explist"
 
 _"{elseif exp then block}"
   :_ ()
@@ -172,14 +176,6 @@ _"{elseif exp then block}"
 _"[else block]"
   :_ ()
   :_ "else" "block"
-
-_"[, exp]"
-  :_ ()
-  :_ "," "exp"
-
-_"[= explist]"
-  :_ ()
-  :_ "=" "explist"
 
 _"retstat"
   :_ "return" {}

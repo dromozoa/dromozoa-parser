@@ -15,6 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-a, b = 0
-local t = { 42, foo = 69 }
-print(a, t[1], t.foo, (t).foo, f(1, 2, 3).foo)
+for i = 1, 4 do
+  print(i)
+end
+
+for i = 4, 1, -1 do
+  print(i)
+end
+
+local a, b, c
+local d, e, f = 1, 2, 3
