@@ -203,7 +203,7 @@ _"[: Name]"
 
 _"varlist"
   :_ "var"
-  :_ "varlist" "," "var" :collapse()
+  :_ "varlist" "," "var" {[1]={3}}
 
 _"var"
   :_ "Name"
@@ -261,8 +261,8 @@ _"exp"
 
 -- prefixexp without functioncall
 _"var | ( exp )"
-  :_ "var"
-  :_ "(" "exp" ")"
+  :_ "var" {[1]={}}
+  :_ "(" "exp" ")" {[2]={}}
 
 _"functioncall"
   :_ "var | ( exp )" "args"
