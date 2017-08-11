@@ -160,8 +160,10 @@ _"stat"
   :_ "do" "block" "end"
   :_ "while" "exp" "do" "block" "end"
   :_ "repeat" "block" "until" "exp"
-  :_ "if_clause" "end"
-  :_ "if_clause" "else" "block" "end"
+  :_ "if_clause" "end" {1}
+  :_ "if_clause" "else_clause" "end" {1,2}
+  :_ "if_clause" "elseif_clause_list" "end" {1,2}
+  :_ "if_clause" "elseif_clause_list" "else_clause" "end" {1,2,3}
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
   :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
   :_ "for" "namelist" "in" "explist" "do" "block" "end"
@@ -171,8 +173,17 @@ _"stat"
   :_ "local" "namelist" "=" "explist"
 
 _"if_clause"
-  :_ "if" "exp" "then" "block"
-  :_ "if_clause" "elseif" "exp" "then" "block"
+  :_ "if" "exp" "then" "block" {2,4}
+
+_"elseif_clause_list"
+  :_ "elseif_clause"
+  :_ "elseif_clause_list" "elseif_clause" {[1]={2}}
+
+_"elseif_clause"
+  :_ "elseif" "exp" "then" "block" {2,4}
+
+_"else_clause"
+  :_ "else" "block" {2}
 
 _"retstat"
   :_ "return" {}

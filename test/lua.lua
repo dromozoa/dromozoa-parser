@@ -27,14 +27,51 @@ local lexer = lua53_lexer()
 local parser = lua53_parser()
 
 local symbol_names = parser.symbol_names
--- for i = 1, #symbol_names do
---   print(i, symbol_names[i])
--- end
-
 local terminal_nodes = assert(lexer(source, file))
--- for i = 1, #terminal_nodes do
---   local node = terminal_nodes[i]
---   print(node[0], node.rs:sub(node.ri, node.rj))
--- end
 local root = assert(parser(terminal_nodes, source, file))
 parser:write_graphviz("test.dot", root)
+
+local max_terminal_symbol = parser.max_terminal_symbol
+local symbol_names = parser.symbol_names
+local symbol_table = parser.symbol_table
+
+local id = 0
+local dfs = {}
+
+local stack1 = { root }
+local stack2 = {}
+while true do
+  local n1 = #stack1
+  local n2 = #stack2
+  local node = stack1[n1]
+  if not node then
+    break
+  end
+  if node == stack2[n2] then
+    stack1[n1] = nil
+    stack2[n2] = nil
+    id = id + 1
+    node.id = id
+    dfs[id] = node
+    for i = 1, node.n do
+      node[i].parent = node
+    end
+  else
+    for i = node.n, 1, -1 do
+      stack1[#stack1 + 1] = node[i]
+    end
+    stack2[n2 + 1] = node
+  end
+end
+
+for i = 1, #dfs do
+  local node = dfs[i]
+  local parent_node = node.parent
+  if parent_node then
+    print(i, symbol_names[node[0]], parent_node.id)
+  else
+    print(i, symbol_names[node[0]])
+  end
+end
+
+
