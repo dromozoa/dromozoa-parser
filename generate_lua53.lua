@@ -304,17 +304,11 @@ _"[, ...]"
 _"tableconstructor"
   :_ "{" "}" {}
   :_ "{" "fieldlist" "}" {2}
+  :_ "{" "fieldlist" "fieldsep" "}" {2}
 
 _"fieldlist"
-  :_ "field {fieldsep field}" "[fieldsep]" {[1]={}}
-
-_"field {fieldsep field}"
   :_ "field"
-  :_ "field {fieldsep field}" "fieldsep" "field" {[1]={3}}
-
-_"[fieldsep]"
-  :_ ()
-  :_ "fieldsep"
+  :_ "fieldlist" "fieldsep" "field" {[1]={3}}
 
 _"field"
   :_ "[" "exp" "]" "=" "exp" {2,5}
