@@ -222,7 +222,7 @@ _"var"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name" :collapse()
+  :_ "namelist" "," "Name" {[1]={3}}
 
 _"explist"
   :_ "exp"
@@ -294,12 +294,9 @@ _"[parlist]"
   :_ "parlist"
 
 _"parlist"
-  :_ "namelist" "[, ...]"
+  :_ "namelist"
+  :_ "namelist" "," "..." {1,3}
   :_ "..."
-
-_"[, ...]"
-  :_ ()
-  :_ "," "..."
 
 _"tableconstructor"
   :_ "{" "}" {}
