@@ -309,11 +309,11 @@ _"[fieldlist]"
   :_ "fieldlist"
 
 _"fieldlist"
-  :_ "field" "{fieldsep field}" "[fieldsep]" {1,2}
+  :_ "field {fieldsep field}" "[fieldsep]" -- {1,2}
 
-_"{fieldsep field}"
-  :_ ()
-  :_ "{fieldsep field}" "fieldsep" "field" {[1]={3}}
+_"field {fieldsep field}"
+  :_ "field"
+  :_ "field {fieldsep field}" "fieldsep" "field" {[1]={3}}
 
 _"[fieldsep]"
   :_ ()
