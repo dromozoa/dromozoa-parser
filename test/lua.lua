@@ -36,42 +36,56 @@ local symbol_names = parser.symbol_names
 local symbol_table = parser.symbol_table
 
 local id = 0
-local dfs = {}
+local nodes = {}
+local dfs_events = {}
+local dfs_nodes = {}
 
 local stack1 = { root }
 local stack2 = {}
 while true do
   local n1 = #stack1
   local n2 = #stack2
-  local node = stack1[n1]
-  if not node then
+  local u = stack1[n1]
+  if not u then
     break
   end
-  if node == stack2[n2] then
+  if u == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
+    local m = #dfs_events + 1
+    dfs_events[m] = 2 -- finish
+    dfs_nodes[m] = u
+  else
     id = id + 1
-    node.id = id
-    dfs[id] = node
-    for i = 1, node.n do
-      node[i].parent = node
+    u.id = id
+    nodes[id] = u
+    local m = #dfs_events + 1
+    dfs_events[m] = 1 -- discover
+    dfs_nodes[m] = u
+    local n = u.n
+    for i = 1, n do
+      local v = u[i]
+      v.parent = u
     end
-  else
-    for i = node.n, 1, -1 do
-      stack1[#stack1 + 1] = node[i]
+    for i = n, 1, -1 do
+      local v = u[i]
+      stack1[#stack1 + 1] = v
     end
-    stack2[n2 + 1] = node
+    stack2[n2 + 1] = u
   end
 end
 
-for i = 1, #dfs do
-  local node = dfs[i]
-  local parent_node = node.parent
-  if parent_node then
-    print(i, symbol_names[node[0]], parent_node.id)
-  else
-    print(i, symbol_names[node[0]])
+local depth = 0
+for i = 1, #dfs_events do
+  local event = dfs_events[i]
+  local u = dfs_nodes[i]
+
+  if event == 2 then
+    depth = depth - 1
+  end
+  -- io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], "\n")
+  if event == 1 then
+    io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], "\n")
+    depth = depth + 1
   end
 end
-
-
