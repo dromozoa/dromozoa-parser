@@ -33,7 +33,7 @@ re:minimize():write_graphviz("test-re.dot")
 local re3 = regexp(RE[[--(([^\n\[][^\n]*|\[([^\n\[=][^\n]*|=*([^\n\[=][^\n]*)?)?)?)?\n]])
 re3:nfa_to_dfa():minimize():write_graphviz("test-re3.dot")
 
-local re4 = regexp(RE[[--[^\n]*\n]] - RE[[--\[=*\[[^\n]*\n]])
+local re4 = regexp(RE[[--[^\n]*\n]] - RE[=[--\[=*\[[^\n]*\n]=])
 re4:nfa_to_dfa():minimize():write_graphviz("test-re4.dot")
 
 local re5 = regexp("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n")

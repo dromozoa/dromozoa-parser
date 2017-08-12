@@ -130,10 +130,12 @@ for i = 1, #dfs_events do
   end
   -- io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], "\n")
   if event == 1 then
-    io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], (" %q"):format(value(u)), "\n")
+    local value = value(u)
+    if value then
+      io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], (" %q"):format(value), "\n")
+    else
+      io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], "\n")
+    end
     depth = depth + 1
   end
 end
-
-
-
