@@ -15,8 +15,10 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.commons.dumper"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+local value = require "dromozoa.parser.value"
 
 local file = ...
 local handle = assert(io.open(file))
@@ -75,17 +77,63 @@ while true do
   end
 end
 
+local global_symbols = {}
+local symbols = global_symbols
+for i = 1, #dfs_events do
+  local event = dfs_events[i]
+  local u = dfs_nodes[i]
+  local symbol = u[0]
+  if event == 1 then -- discover
+    local create_symbols
+    local n = u.n
+    for j = 1, n do
+      local v = u[j]
+      if v[0] == symbol_table.block then
+        create_symbols = true
+        break
+      end
+    end
+    if create_symbols then
+      local new_symbols = setmetatable({}, { __index = symbols })
+      u.symbols = new_symbols
+      symbols = new_symbols
+    end
+  else -- finish
+    local symbol = u[0]
+    if symbol == symbol_table.stat then
+      local symbol = u[1][0]
+      if symbol == symbol_table["for"] then
+        if u[2][0] == symbol_table.Name then
+          symbols[value(u[2])] = true
+        else
+          assert(u[2][0] == symbol_table.namelist)
+          for j = 1, u[2].n do
+            symbols[value(u[2][j])] = true
+          end
+        end
+      end
+    end
+
+    if u.symbols then
+      print(dumper.encode(symbols, { stable = true }))
+      symbols = getmetatable(symbols).__index
+    end
+  end
+end
+
 local depth = 0
 for i = 1, #dfs_events do
   local event = dfs_events[i]
   local u = dfs_nodes[i]
-
   if event == 2 then
     depth = depth - 1
   end
   -- io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], "\n")
   if event == 1 then
-    io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], "\n")
+    io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], (" %q"):format(value(u)), "\n")
     depth = depth + 1
   end
 end
+
+
+
