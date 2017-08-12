@@ -15,22 +15,21 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
+local builder = require "dromozoa.parser.builder"
+local regexp = require "dromozoa.parser.regexp"
 
-return function (self, out)
-  local data = {
-    symbol_names = self.symbol_names;
-    symbol_table = self.symbol_table;
-    max_state = self.max_state;
-    max_terminal_symbol = self.max_terminal_symbol;
-    actions = self.actions;
-    gotos = self.gotos;
-    heads = self.heads;
-    sizes = self.sizes;
-    reduce_to_semantic_action = self.reduce_to_semantic_action;
-  }
-  out:write("local parser = require \"dromozoa.parser.parser\"\n")
-  local root = dumper():dump(out, data)
-  out:write("return function () return parser(", root,") end\n")
-  return out
-end
+local P = builder.pattern
+local R = builder.range
+local S = builder.set
+local RE = builder.regexp
+
+local _ = builder()
+
+local p1 = P"[" * P"="^"*" * "[\n"
+local p2 = RE[[\[=*\[\n]]
+
+local p1 = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
+local p2 = RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]
+
+regexp(p1):nfa_to_dfa():minimize():write_graphviz("test-dfa1.dot")
+regexp(p2):nfa_to_dfa():minimize():write_graphviz("test-dfa2.dot")

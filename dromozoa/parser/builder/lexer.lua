@@ -81,6 +81,9 @@ function class:mark()
 end
 
 function class:sub(i, j)
+  if not j then
+    j = -1
+  end
   local items = self.items
   local actions = items[#items].actions
   actions[#actions + 1] = { 11, i, j }
@@ -101,24 +104,27 @@ function class:char()
   return self
 end
 
-function class:join(before, after)
+function class:join(x, y)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 14 }
+  actions[#actions + 1] = { 14, x, y }
   return self
 end
 
-function class:utf8(i, j)
+function class:utf8(i, j, k, l)
+  if not j then
+    j = -1
+  end
+  if not l then
+    l = -1
+  end
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 15, i, j }
-  return self
-end
-
-function class:utf8_surrogate_pair(i1, j1, i2, j2)
-  local items = self.items
-  local actions = items[#items].actions
-  actions[#actions + 1] = { 16, i1, j1, i2, j2 }
+  if k then
+    actions[#actions + 1] = { 16, i, j, k, l }
+  else
+    actions[#actions + 1] = { 15, i, j }
+  end
   return self
 end
 

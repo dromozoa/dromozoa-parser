@@ -15,22 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
-
-return function (self, out)
-  local data = {
-    symbol_names = self.symbol_names;
-    symbol_table = self.symbol_table;
-    max_state = self.max_state;
-    max_terminal_symbol = self.max_terminal_symbol;
-    actions = self.actions;
-    gotos = self.gotos;
-    heads = self.heads;
-    sizes = self.sizes;
-    reduce_to_semantic_action = self.reduce_to_semantic_action;
-  }
-  out:write("local parser = require \"dromozoa.parser.parser\"\n")
-  local root = dumper():dump(out, data)
-  out:write("return function () return parser(", root,") end\n")
-  return out
+for i = 1, 4 do
+  print(i)
 end
+
+for i = 4, 1, -1 do
+  print(i)
+end
+
+local a, b, c
+local d, e, f = 1, 2, 3
