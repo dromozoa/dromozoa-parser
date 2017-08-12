@@ -1,5 +1,3 @@
-#! /bin/sh -e
-
 # Copyright (C) 2015,2017 Tomoyuki Fujimori <moyu@dromozoa.com>
 #
 # This file is part of dromozoa-parser.
@@ -17,17 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-case x$1 in
-  x) lua=lua;;
-  *) lua=$1;;
-esac
+TARGET_DIR = dromozoa/parser/parsers
+TARGET = $(TARGET_DIR)/regexp_parser.lua $(TARGET_DIR)/lua53_parser.lua
 
-for i in test/test*.lua
-do
-  "$lua" "$i"
-done
-for i in test/data/test*.lua
-do
-  "$lua" test/lua.lua "$i"
-done
-rm -f test*.dot test*.lua test*.html test*.txt
+all: $(TARGET)
+
+$(TARGET_DIR)/regexp_parser.lua: generate_regexp.lua
+	lua $<
+
+$(TARGET_DIR)/lua53_parser.lua: generate_lua53.lua
+	lua $<

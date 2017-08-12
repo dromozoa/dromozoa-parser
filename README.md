@@ -37,25 +37,25 @@ Parser generator toolkit.
 
 ### Actions
 
-| Code | Operator                               | #Operands | Skip | Description        |
-|-----:|----------------------------------------|----------:|:----:|--------------------|
-|    1 | `:skip()`                              |         0 | yes  | skip               |
-|    2 | `:push()`                              |         0 | yes  | push               |
-|    3 | `:concat()`                            |         0 |      | concat             |
-|    4 | `:call "label"`                        |         1 |      | call               |
-|    5 | `:ret()`                               |         0 |      | return             |
-|    6 |                                        |           |      | N/A                |
-|    7 |                                        |           |      | N/A                |
-|    8 | `"string"`                             |         1 |      | substitute         |
-|    9 | `:hold()`                              |         0 |      | hold               |
-|   10 | `:mark()`                              |         0 |      | mark               |
-|   11 | `:sub(i, j)`                           |         2 |      | substring          |
-|   12 | `:int(base)`                           |         1 |      | convert to integer |
-|   13 | `:char()`                              |         0 |      | convert to char    |
-|   14 | `:join(before, after)`                 |         2 |      | join               |
-|   15 | `:utf8(i, j)`                          |         2 |      | convert to utf8    |
-|   16 | `:utf8_surrogate_pair(i1, j1, i2, j2)` |         4 |      | convert to utf8    |
-|   17 | `:add(x)`                              |         1 |      | add integer        |
+| Code | Operator            | #Operands | Skip | Description                  |
+|-----:|---------------------|----------:|:----:|------------------------------|
+|    1 | `:skip()`           |         0 | yes  | skip                         |
+|    2 | `:push()`           |         0 | yes  | push                         |
+|    3 | `:concat()`         |         0 |      | concat                       |
+|    4 | `:call "label"`     |         1 |      | call                         |
+|    5 | `:ret()`            |         0 |      | return                       |
+|    6 |                     |           |      | N/A                          |
+|    7 |                     |           |      | N/A                          |
+|    8 | `"string"`          |         1 |      | substitute                   |
+|    9 | `:hold()`           |         0 |      | hold                         |
+|   10 | `:mark()`           |         0 |      | mark                         |
+|   11 | `:sub(i, j)`        |         2 |      | substring                    |
+|   12 | `:int(base)`        |         1 |      | convert to integer           |
+|   13 | `:char()`           |         0 |      | convert to char              |
+|   14 | `:join(x, y)`       |         2 |      | join                         |
+|   15 | `:utf8(i, j)`       |         2 |      | encode utf8                  |
+|   16 | `:utf8(i, j, k, l)` |         4 |      | encode utf8 (surrogate pair) |
+|   17 | `:add(x)`           |         1 |      | add integer                  |
 
 ## Parser
 
@@ -85,9 +85,11 @@ Parser generator toolkit.
 
 ### Semantic Actions
 
-| Code | Operator      | #Operands | Description |
-|-----:|---------------|----------:|-------------|
-|    1 | `:collapse()` |         0 | collapse    |
+| Code | Operator      | #Operands | Description   |
+|-----:|---------------|----------:|---------------|
+|    1 | `:collapse()` |         0 | collapse node |
+|    2 | `{[1]={2,3}}  |         2 | collapse node |
+|    3 | `{1,2,3}`     |         1 | create node   |
 
 ### Node
 

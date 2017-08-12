@@ -16,33 +16,24 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local builder = require "dromozoa.parser.builder"
+local value = require "dromozoa.parser.value"
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
 local RE = builder.regexp
 
 local _ = builder()
 
 _:lexer()
--- :_ (S" \r\n\t\v\f"^"+") :skip()
-  :_ (RE[[\s+]]) :skip()
--- :_ ("--" * ((-S"\n")^"*") "\n") :skip()
-  :_ (RE[[--[^\n]*\n]]) :skip()
--- :_ ([[\u]] * S"Dd" * S"89ABab" * R"09AFaf"^{2} * [[\u]] * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "pair" :utf8_surrogate_pair(3, 6, 9, 12)
-  :_ (RE[[\\u[Dd][89ABab][0-9A-Fa-f]{2}\\u[Dd][C-Fc-f][0-9A-Fa-f]{2}]])  :as "pair" :utf8_surrogate_pair(3, 6, 9, 12)
--- :_ ([[\u]] * R"09AFaf"^{4}) :as "char" :utf8(3, -1)
-  :_ (RE[[\\u[0-9A-Fa-f]{4}]]) :as "char" :utf8(3, -1)
--- :_ ([[\U]] * R"09AFaf"^{8}) :as "char" :utf8(3, -1)
-  :_ (RE[[\\U[0-9A-Fa-f]{8}]]) :as "char" :utf8(3, -1)
--- :_ ([[\c]] * R"AZaz") :as "control" :sub(3, -1) :int(36) :add(-9) :char()
-  :_ (RE[=[\\c[A-Za-z]]=]) :as "control" :sub(3, -1) :int(36) :add(-9) :char()
-  :_ (RE[[\\x[0-9A-Fa-f]{2}]]) :as "hex" :sub(3, -1) :int(16) :char()
+  :_(RE[[\s+]]) :skip()
+  :_(RE[[--[^\n]*\n]]) :skip()
+  :_(RE[[\\u[Dd][89ABab][0-9A-Fa-f]{2}\\u[Dd][C-Fc-f][0-9A-Fa-f]{2}]]) :as "pair" :utf8(3, 6, 9, 12)
+  :_(RE[[\\u[0-9A-Fa-f]{4}]]) :as "char" :utf8(3)
+  :_(RE[[\\U[0-9A-Fa-f]{8}]]) :as "char" :utf8(3)
+  :_(RE[=[\\c[A-Za-z]]=]) :as "control" :sub(3) :int(36) :add(-9) :char()
+  :_(RE[[\\x[0-9A-Fa-f]{2}]]) :as "hex" :sub(3) :int(16) :char()
 
 local lexer = _:build()
 
 local source = [[
--- comment
 \u65e5\u672c\u8a9e -- 日本語
 \U00010437 -- string.char(0xf0, 0x90, 0x90, 0xb7)
 \uD801\uDC37
@@ -50,20 +41,11 @@ local source = [[
 \x40
 ]]
 
-local position = 1
-local data = {}
-repeat
-  local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
-  if symbol ~= 1 then
-    data[#data + 1] = rs:sub(ri, rj)
-  end
-  position = j
-until symbol == 1
-
-assert(data[1] == "日")
-assert(data[2] == "本")
-assert(data[3] == "語")
-assert(data[4] == string.char(0xf0, 0x90, 0x90, 0xb7))
-assert(data[5] == string.char(0xf0, 0x90, 0x90, 0xb7))
-assert(data[6] == "\r")
-assert(data[7] == "@")
+local result = assert(lexer(source))
+assert(value(result[1]) == "日")
+assert(value(result[2]) == "本")
+assert(value(result[3]) == "語")
+assert(value(result[4]) == string.char(0xf0, 0x90, 0x90, 0xb7))
+assert(value(result[5]) == string.char(0xf0, 0x90, 0x90, 0xb7))
+assert(value(result[6]) == "\r")
+assert(value(result[7]) == "@")

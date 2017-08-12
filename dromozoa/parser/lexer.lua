@@ -18,28 +18,46 @@
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
 
-local function utf8_char(a)
-  if a <= 0x7F then
-    return string.char(a)
-  elseif a <= 0x07FF then
-    local b = a % 0x40
-    local a = (a - b) / 0x40
-    return string.char(a + 0xc0, b + 0x80)
-  elseif a <= 0xFFFF then
-    -- assert(not (0xd800 <= a and a <= 0xdffff))
-    local c = a % 0x40
-    local a = (a - c) / 0x40
-    local b = a % 0x40
-    local a = (a - b) / 0x40
-    return string.char(a + 0xe0, b + 0x80, c + 0x80)
-  else -- code <= 0x10FFFF
-    local d = a % 0x40
-    local a = (a - d) / 0x40
-    local c = a % 0x40
-    local a = (a - c) / 0x40
-    local b = a % 0x40
-    local a = (a - b) / 0x40
-    return string.char(a + 0xf0, b + 0x80, c + 0x80, d + 0x80)
+local function range(ri, rj, i, j)
+  if i > 0 then
+    i = i + ri - 1
+  else
+    i = i + rj + 1
+  end
+  if j > 0 then
+    j = j + ri - 1
+  else
+    j = j + rj + 1
+  end
+  return i, j
+end
+
+local utf8_char
+if utf8 then
+  utf8_char = utf8.char
+else
+  utf8_char = function (a)
+    if a <= 0x7F then
+      return string.char(a)
+    elseif a <= 0x07FF then
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string.char(a + 0xc0, b + 0x80)
+    elseif a <= 0xFFFF then
+      local c = a % 0x40
+      local a = (a - c) / 0x40
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string.char(a + 0xe0, b + 0x80, c + 0x80)
+    else -- code <= 0x10FFFF
+      local d = a % 0x40
+      local a = (a - d) / 0x40
+      local c = a % 0x40
+      local a = (a - c) / 0x40
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string.char(a + 0xf0, b + 0x80, c + 0x80, d + 0x80)
+    end
   end
 end
 
@@ -57,31 +75,19 @@ function class:compile(out)
   end
 end
 
-function metatable:__call(s, init, file)
-  if not init then
-    init = 1
-  end
-
+function metatable:__call(s, file)
   local lexers = self.lexers
-  local stack = self.stack
-  local buffer = self.buffer
 
+  local init = 1
   local n = #s
+  local terminal_nodes = {}
+
+  local stack = { 1 } -- start lexer
   local position_start = init
   local position_mark
+  local buffer = {}
 
-  while true do
-    if n < init then
-      if #stack == 1 then
-        if not position_mark then
-          position_mark = init
-        end
-        return 1, position_start, position_mark, init, s, init, init -- marker end
-      else
-        return nil, error_message("lexer error", s, init, file)
-      end
-    end
-
+  while init <= n do
     local lexer = lexers[stack[#stack]]
     local automaton = lexer.automaton
     local position
@@ -189,13 +195,13 @@ function metatable:__call(s, init, file)
       end
     end
 
-    local actions = lexer.accept_to_actions[accept]
     local skip
     local rs = s
     local ri = init
     local rj = position - 1
     local rv
 
+    local actions = lexer.accept_to_actions[accept]
     for i = 1, #actions do
       local action = actions[i]
       local code = action[1]
@@ -215,7 +221,7 @@ function metatable:__call(s, init, file)
         stack[#stack + 1] = action[2]
       elseif code == 5 then -- return
         stack[#stack] = nil
-      elseif code == 8 then -- substitute by string
+      elseif code == 8 then -- substitute
         rs = action[2]
         ri = 1
         rj = #rs
@@ -224,20 +230,7 @@ function metatable:__call(s, init, file)
       elseif code == 10 then -- mark
         position_mark = init
       elseif code == 11 then -- substring
-        local i = action[2]
-        local j = action[3]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + rj + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
-        ri = i
-        rj = j
+        ri, rj = range(ri, rj, action[2], action[3])
       elseif code == 12 then -- convert to integer
         rv = tonumber(rs:sub(ri, rj), action[2])
       elseif code == 13 then -- convert to char
@@ -248,49 +241,16 @@ function metatable:__call(s, init, file)
         rs = action[2] .. rs:sub(ri, rj) .. action[3]
         ri = 1
         rj = #rs
-      elseif code == 15 then -- utf8
-        local i = action[2]
-        local j = action[3]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + ri + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
+      elseif code == 15 then -- encode utf8
+        local i, j = range(ri, rj, action[2], action[3])
         local code = tonumber(rs:sub(i, j), 16)
         rs = utf8_char(code)
         ri = 1
         rj = #rs
-      elseif code == 16 then -- utf8_surrogate_pair
-        local i = action[2]
-        local j = action[3]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + ri + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
+      elseif code == 16 then -- encode utf8 (surrogate pair)
+        local i, j = range(ri, rj, action[2], action[3])
         local code1 = tonumber(rs:sub(i, j), 16) % 0x0400 * 0x0400
-        local i = action[4]
-        local j = action[5]
-        if i > 0 then
-          i = i + ri - 1
-        else
-          i = i + ri + 1
-        end
-        if j > 0 then
-          j = j + ri - 1
-        else
-          j = j + rj + 1
-        end
+        local i, j = range(ri, rj, action[4], action[5])
         local code2 = tonumber(rs:sub(i, j), 16) % 0x0400
         rs = utf8_char(code1 + code2 + 0x010000)
         ri = 1
@@ -300,23 +260,48 @@ function metatable:__call(s, init, file)
       end
     end
 
-    if skip then
-      init = position
-    else
+    if not skip then
       if not position_mark then
         position_mark = init
       end
-      return lexer.accept_to_symbol[accept], position_start, position_mark, position, rs, ri, rj
+      terminal_nodes[#terminal_nodes + 1] = {
+        [0] = lexer.accept_to_symbol[accept];
+        n = 0;
+        p = position_start;
+        i = position_mark;
+        j = position - 1;
+        rs = rs;
+        ri = ri;
+        rj = rj;
+      }
+      position_start = position
+      position_mark = nil
     end
+    init = position
+  end
+
+  if #stack == 1 then
+    if not position_mark then
+      position_mark = init
+    end
+    terminal_nodes[#terminal_nodes + 1] = {
+      [0] = 1; -- marker end
+      n = 0;
+      p = position_start;
+      i = position_mark;
+      j = n;
+      rs = s;
+      ri = init;
+      rj = n;
+    }
+    return terminal_nodes
+  else
+    return nil, error_message("lexer error", s, init, file)
   end
 end
 
 return setmetatable(class, {
   __call = function (_, lexers)
-    return setmetatable({
-      lexers = lexers;
-      stack = { 1 }; -- start lexer
-      buffer = {};
-    }, metatable)
+    return setmetatable({ lexers = lexers }, metatable)
   end;
 })

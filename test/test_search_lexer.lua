@@ -17,6 +17,7 @@
 
 local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
+local value = require "dromozoa.parser.value"
 
 local P = builder.pattern
 local R = builder.range
@@ -34,23 +35,23 @@ _:search_lexer "search"
 
 local lexer = _:build()
 
-local s = [[
+local source = [[
 [====[test]====]
 [====[
 foo [===[ bar ]===] baz
 ]====]
 ]]
 
-local position = 1
-local data = {}
-repeat
-  local symbol, ps, pi, pj, rs, ri, rj = assert(lexer(s, position))
-  data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
-  position = pj
-until symbol == 1
+local result = assert(lexer(source))
+assert(value(result[1]) == "test")
+assert(value(result[2]) == "\nfoo [===[ bar ]===] baz\n")
+assert(result[3][0] == 1)
 
-assert(equal(data, {
-  { "string_content", "test" };
-  { "string_content", "\nfoo [===[ bar ]===] baz\n" };
-  { "$", "" };
-}))
+local data = {}
+for i = 1, #result do
+  local item = result[i]
+  data[#data + 1] = source:sub(item.p, item.j)
+end
+print(#source, result[#result].p, result[#result].i, result[#result].j, ("%q"):format(data[#data]))
+io.write(table.concat(data))
+assert(table.concat(data) == source)

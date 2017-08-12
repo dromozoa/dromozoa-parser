@@ -16,41 +16,42 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local builder = require "dromozoa.parser.builder"
+local driver = require "dromozoa.parser.driver"
 
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
-
+local RE = builder.regexp
 local _ = builder()
 
 _:lexer()
-  :_ (S" \r\n\t\v\f"^"+") :skip()
-  :_ "{"
-  :_ "}"
-  :_ "["
-  :_ "]"
-  :_ ":"
-  :_ ","
-  :_ (P[["]] * (-S[[\"]] + P[[\]] * P(1))^"*" * P[["]]) :as "string"
-  :_ (P"0" + R"19" * R"09"^"*") :as "integer"
-  :_ "/*" "*/" :hold() :call "block_comment" :skip()
+  :_ (RE[[//[^\n]*\n]]) :skip()
+  :_ (RE[[\s+]]) :skip()
+  :_ (RE[[0|[1-9]\d*]]) :as "integer"
+  :_ "+"
+  :_ "*"
+  :_ "("
+  :_ ")"
 
-_:search_lexer "block_comment"
-  :when() :ret() :skip()
-  :otherwise() :skip()
+_ :left "+"
+  :left "*"
 
-local lexer = _:build()
+_"expression"
+  :_ "expression" "+" "expression"
+  :_ "expression" "*" "expression"
+  :_ "(" "expression" ")"
+  :_ "integer"
 
-local file = "test.lua"
+local lexer, grammar = _:build()
+local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
+grammar:write_conflicts(io.stderr, conflicts)
+local driver = driver(lexer, parser)
+
 local source = [[
-[
-  42,
-  "foo",
-  3.14
-]
+(1 + 2 * 3)
+ *
+  foo
+   (4 * 5 + 6)
 ]]
 
-local result, message = lexer(source, file)
-print(message)
-assert(not result)
-assert(message:match("test%.lua:4:4: lexer error"))
+local root, message = driver(source, "test.txt")
+assert(not root)
+assert(message == "test.txt:3:3: lexer error")
+-- parser:write_graphviz("test.dot", root)

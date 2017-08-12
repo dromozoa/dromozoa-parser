@@ -17,6 +17,7 @@
 
 local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
+local value = require "dromozoa.parser.value"
 
 local P = builder.pattern
 local R = builder.range
@@ -58,18 +59,12 @@ abcd
 
 for test = 1, 8 do
   local source = s .. (" "):rep(test)
-  local position = 1
-
+  local items = assert(lexer(source))
   local data = {}
-  repeat
-    local symbol, p, i, j, rs, ri, rj = assert(lexer(source, position))
-    data[#data + 1] = { _.symbol_names[symbol], rs:sub(ri, rj) }
-    if test == 1 then
-      print(_.symbol_names[symbol], symbol, ("%q -> %q"):format(source:sub(i, j - 1), rs:sub(ri, rj)))
-    end
-    position = j
-  until symbol == 1
-
+  for i = 1, #items do
+    local item = items[i]
+    data[#data + 1] = { _.symbol_names[item[0]], value(item) }
+  end
   assert(equal(data, {
     { "integer", "12" };
     { "+", "+" };

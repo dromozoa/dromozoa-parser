@@ -47,13 +47,13 @@ print(dumper.encode(grammar, { pretty = true, stable = true }))
 local parser = grammar:lr1_construct_table(grammar:lalr1_items())
 print(dumper.encode(parser, { stable = true }))
 
-local _ = _.symbol_table
-
-assert(parser(_["id"], "17"))
-assert(parser(_["+"],  "+"))
-assert(parser(_["id"], "23"))
-assert(parser(_["*"],  "*"))
-assert(parser(_["id"], "37"))
-local tree = assert(parser(1))
+local tree = assert(parser({
+  { [0] = parser.symbol_table["id"], n = 0 };
+  { [0] = parser.symbol_table["+"], n = 0 };
+  { [0] = parser.symbol_table["id"], n = 0 };
+  { [0] = parser.symbol_table["*"], n = 0 };
+  { [0] = parser.symbol_table["id"], n = 0 };
+  { [0] = 1, n = 0 };
+}))
 
 parser:write_graphviz("test.dot", tree)

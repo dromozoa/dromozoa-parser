@@ -15,11 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local equal = require "dromozoa.commons.equal"
-local unix = require "dromozoa.unix"
 local builder = require "dromozoa.parser.builder"
-
-local timer = unix.timer()
 
 local RE = builder.regexp
 local _ = builder()
@@ -41,8 +37,6 @@ local function string_lexer(lexer)
     :_ (RE[[\\u\{[0-9A-Fa-f]+\}]]) :utf8(4, -2) :push()
     :_ (RE[[[^\\"]+]]) :push()
 end
-
-timer:start()
 
 _:lexer()
   :_ (RE[[\s+]]) :skip()
@@ -104,14 +98,17 @@ _:lexer()
   :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
   :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2)
   :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2)
+  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3)
+  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3)
   :_ [["]] :skip() :call "dq_string" :mark()
   :_ [[']] :skip() :call "sq_string" :mark()
   :_ (RE[[\[=*\[\n]]) :sub(2, -3) :join("]", "]") :hold() :skip() :call "long_string" :mark()
   :_ (RE[[\[=*\[]]) :sub(2, -2) :join("]", "]") :hold() :skip() :call "long_string" :mark()
   :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "Numeral"
   :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "Numeral"
-  :_ (RE[[--\[=*\[]]) :sub(4, -2) :join("]", "]") :hold() :skip() :call "long_comment"
-  :_ (RE[[--[^\n]*\n]]) :skip()
+  :_ ("--[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :skip()
+  :_ (RE[[--\[=+\[]]) :sub(4, -2) :join("]", "]") :hold() :skip() :call "long_comment"
+  :_ ("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n") : skip()
 
 string_lexer(_:lexer "dq_string")
   :_ [["]] :as "LiteralString" :concat() :ret()
@@ -144,15 +141,14 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ "{stat}" "[retstat]"
-
-_"{stat}"
-  :_ ()
-  :_ "{stat}" "stat" :collapse()
-
-_"[retstat]"
   :_ ()
   :_ "retstat"
+  :_ "statlist"
+  :_ "statlist" "retstat"
+
+_"statlist"
+  :_ "stat"
+  :_ "statlist" "stat" {[1]={2}}
 
 _"stat"
   :_ ";"
@@ -164,39 +160,36 @@ _"stat"
   :_ "do" "block" "end"
   :_ "while" "exp" "do" "block" "end"
   :_ "repeat" "block" "until" "exp"
-  :_ "if" "exp" "then" "block" "{elseif exp then block}" "[else block]" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "[, exp]" "do" "block" "end"
+  :_ "if_clause" "end" {1}
+  :_ "if_clause" "else_clause" "end" {1,2}
+  :_ "if_clause" "elseif_clause_list" "end" {1,2}
+  :_ "if_clause" "elseif_clause_list" "else_clause" "end" {1,2,3}
+  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
+  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
   :_ "for" "namelist" "in" "explist" "do" "block" "end"
   :_ "function" "funcname" "funcbody"
   :_ "local" "function" "Name" "funcbody"
-  :_ "local" "namelist" "[= explist]"
+  :_ "local" "namelist"
+  :_ "local" "namelist" "=" "explist"
 
-_"{elseif exp then block}"
-  :_ ()
-  :_ "{elseif exp then block}" "elseif" "exp" "then" "block"
+_"if_clause"
+  :_ "if" "exp" "then" "block" {2,4}
 
-_"[else block]"
-  :_ ()
-  :_ "else" "block"
+_"elseif_clause_list"
+  :_ "elseif_clause"
+  :_ "elseif_clause_list" "elseif_clause" {[1]={2}}
 
-_"[, exp]"
-  :_ ()
-  :_ "," "exp"
+_"elseif_clause"
+  :_ "elseif" "exp" "then" "block" {2,4}
 
-_"[= explist]"
-  :_ ()
-  :_ "=" "explist"
+_"else_clause"
+  :_ "else" "block" {2}
 
 _"retstat"
-  :_ "return" "[explist]" "[;]"
-
-_"[explist]"
-  :_ ()
-  :_ "explist"
-
-_"[;]"
-  :_ ()
-  :_ ";"
+  :_ "return" {}
+  :_ "return" ";" {}
+  :_ "return" "explist" {2}
+  :_ "return" "explist" ";" {2}
 
 _"label"
   :_ "::" "Name" "::"
@@ -214,7 +207,7 @@ _"[: Name]"
 
 _"varlist"
   :_ "var"
-  :_ "varlist" "," "var" :collapse()
+  :_ "varlist" "," "var" {[1]={3}}
 
 _"var"
   :_ "Name"
@@ -225,11 +218,11 @@ _"var"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name" :collapse()
+  :_ "namelist" "," "Name" {[1]={3}}
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp" :collapse()
+  :_ "explist" "," "exp" {[1]={3}}
 
 _"exp"
   :_ "nil"
@@ -272,8 +265,8 @@ _"exp"
 
 -- prefixexp without functioncall
 _"var | ( exp )"
-  :_ "var"
-  :_ "(" "exp" ")"
+  :_ "var" {[1]={}}
+  :_ "(" "exp" ")" {[2]={}}
 
 _"functioncall"
   :_ "var | ( exp )" "args"
@@ -282,7 +275,8 @@ _"functioncall"
   :_ "functioncall" ":" "Name" "args"
 
 _"args"
-  :_ "(" "[explist]" ")"
+  :_ "(" ")" {}
+  :_ "(" "explist" ")" {2}
   :_ "tableconstructor"
   :_ "LiteralString"
 
@@ -290,189 +284,34 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" "[parlist]" ")" "block" "end"
-
-_"[parlist]"
-  :_ ()
-  :_ "parlist"
+  :_ "(" ")" "block" "end" {3}
+  :_ "(" "parlist" ")" "block" "end" {2,4}
 
 _"parlist"
-  :_ "namelist" "[, ...]"
+  :_ "namelist"
+  :_ "namelist" "," "..." {1,3}
   :_ "..."
 
-_"[, ...]"
-  :_ ()
-  :_ "," "..."
-
 _"tableconstructor"
-  :_ "{" "[fieldlist]" "}"
-
-_"[fieldlist]"
-  :_ ()
-  :_ "fieldlist"
+  :_ "{" "}" {}
+  :_ "{" "fieldlist" "}" {2}
+  :_ "{" "fieldlist" "fieldsep" "}" {2}
 
 _"fieldlist"
-  :_ "field" "{fieldsep field}" "[fieldsep]"
-
-_"{fieldsep field}"
-  :_ ()
-  :_ "{fieldsep field}" "fieldsep" "field" :collapse()
-
-_"[fieldsep]"
-  :_ ()
-  :_ "fieldsep"
+  :_ "field"
+  :_ "fieldlist" "fieldsep" "field" {[1]={3}}
 
 _"field"
-  :_ "[" "exp" "]" "=" "exp"
-  :_ "Name" "=" "exp"
+  :_ "[" "exp" "]" "=" "exp" {2,5}
+  :_ "Name" "=" "exp" {1,3}
   :_ "exp"
 
 _"fieldsep"
   :_ ","
   :_ ";"
 
-timer:start()
 local lexer, grammar = _:build()
-timer:stop()
-print("build", timer:elapsed())
-
-grammar:write_productions("test-productions.txt")
-
-timer:start()
-local set_of_items, transitions = grammar:lr0_items()
-timer:stop()
-print("lr0_items", timer:elapsed())
-
-timer:start()
-local set_of_items = grammar:lalr1_kernels(set_of_items, transitions)
-timer:stop()
-print("lalr1_kernels", timer:elapsed())
-
-print("#set_of_items", #set_of_items)
-
-timer:start()
-for i = 1, #set_of_items do
-  grammar:lr1_closure(set_of_items[i])
-end
-timer:stop()
-print("lr1_closure", timer:elapsed())
-
-timer:start()
-local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-timer:stop()
-print("lr1_construct_table", timer:elapsed())
-
-lexer:compile("test_lexer.lua")
-parser:compile("test_parser.lua")
-
-do
-  local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
-  collectgarbage()
-  collectgarbage()
-  local c1 = collectgarbage("count")
-  compiled_lexer = nil
-  collectgarbage()
-  collectgarbage()
-  local c2 = collectgarbage("count")
-  print("lexer memory", c1 - c2)
-end
-
--- do
---   local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
---   for i = 1, #lexer.lexers do
---     lexer.lexers[i].items = nil
---     lexer.lexers[i].name = nil
---     lexer.lexers[i].type = nil
---   end
---   assert(equal(lexer, compiled_lexer))
---   lexer = compiled_lexer
--- end
-
-do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()()
-  collectgarbage()
-  collectgarbage()
-  local c1 = collectgarbage("count")
-  compiled_parser = nil
-  collectgarbage()
-  collectgarbage()
-  local c2 = collectgarbage("count")
-  print("parser memory", c1 - c2)
-end
-
-do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()()
-  assert(equal(parser, compiled_parser))
-  parser = compiled_parser
-end
-
-grammar:write_set_of_items("test-set-of-items.txt", set_of_items)
-grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
-grammar:write_table("test.html", parser)
-grammar:write_conflicts(io.stdout, conflicts)
-
-local source = [====[
-f(a, b, c, d)
--- local a = b + c (f)(1, 2, 3, 4, 5)
--- local a = 1 + 2 + -3^2
--- local a = 1 + 2 * 3
--- print("\77\79\0890U\x0A\x41\x42")
-local a = [==[
-foo
-bar
-baz
-]==]
-function f.g.h:i(x, y, z)
---   local a = b + c (f)(42)
---   return a
-end
-x, y, z = ...
-local t0 = {}
-local t1 = {"a"}
-local t2 = {"a","b"}
-local t3 = {"a","b","c"}
-return {
-  foo = 17,
-  bar = 23;
-  "baz";
-  qux = 42;
-  utf8 = "\\u{10437}=\u{10437}";
-}
-]====]
-
-local terminal_nodes = assert(lexer(source))
-local root = assert(parser(terminal_nodes, source))
-
-parser:write_graphviz("test.dot", root)
-
-local result = {}
-
-local stack1 = { root }
-local stack2 = {}
-while true do
-  local n1 = #stack1
-  local n2 = #stack2
-  local node = stack1[n1]
-  if not node then
-    break
-  end
-  if node == stack2[n2] then
-    stack1[n1] = nil
-    stack2[n2] = nil
-    if node[0] <= parser.max_terminal_symbol then
-      local p = node.p
-      local j = node.j
-      result[#result + 1] = source:sub(p, j)
-    end
-  else
-    for i = node.n, 1, -1 do
-      stack1[#stack1 + 1] = node[i]
-    end
-    stack2[n2 + 1] = node
-  end
-end
-local node = terminal_nodes[#terminal_nodes]
-result[#result + 1] = source:sub(node.p, node.i - 1)
-
-io.write(table.concat(result))
-assert(table.concat(result) == source)
+local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
+grammar:write_conflicts(io.stderr, conflicts)
+lexer:compile("dromozoa/parser/lexers/lua53_lexer.lua")
+parser:compile("dromozoa/parser/parsers/lua53_parser.lua")
