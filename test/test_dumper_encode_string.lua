@@ -15,18 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local char_table = {}
-for byte = 0, 127 do
-  char_table[string.char(byte)] = ("&#x%x;"):format(byte)
-end
-char_table[string.char(0x26)] = "&amp;"
-char_table[string.char(0x3c)] = "&lt;"
-char_table[string.char(0x3e)] = "&gt;"
-char_table[string.char(0x22)] = "&quot;"
-char_table[string.char(0x27)] = "&apos;"
+local encode_string = require "dromozoa.parser.dumper.encode_string"
 
-local pattern = "[%z\1-\8\11\12\14-\31%]\127&<>\"']"
+local source = "foo\a\b\f\n\r\t\v\\\"\'\000\127\255bar日本語"
 
-return function (s)
-  return (s:gsub(pattern, char_table))
-end
+-- print(("%q"):format(source))
+print(encode_string(source))
+
+local loadstring = loadstring or load
+local chunk = assert(loadstring("return " .. encode_string(source)))
+assert(chunk() == source)
