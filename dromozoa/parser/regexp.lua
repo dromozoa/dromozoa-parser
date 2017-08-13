@@ -211,9 +211,13 @@ local function minimize(this)
 
   local stack = {}
   local color = {}
+  local color_max
   for u in pairs(accept_states) do
     stack[#stack + 1] = u
     color[u] = true
+    if not color_max or color_max < u then
+      color_max = u
+    end
   end
   while true do
     local n = #stack
@@ -228,6 +232,9 @@ local function minimize(this)
         if not color[v] then
           stack[#stack + 1] = v
           color[v] = true
+          if not color_max or color_max < v then
+            color_max = v
+          end
         end
       end
     end
@@ -235,20 +242,22 @@ local function minimize(this)
 
   local accept_partitions = {}
   local partition
-  for u in pairs(color) do
-    local accept = accept_states[u]
-    if accept then
-      local partition = accept_partitions[accept]
-      if partition then
-        partition[#partition + 1] = u
+  for u = 1, color_max do
+    if color[u] then
+      local accept = accept_states[u]
+      if accept then
+        local partition = accept_partitions[accept]
+        if partition then
+          partition[#partition + 1] = u
+        else
+          accept_partitions[accept] = { u }
+        end
       else
-        accept_partitions[accept] = { u }
-      end
-    else
-      if partition then
-        partition[#partition + 1] = u
-      else
-        partition = { u }
+        if partition then
+          partition[#partition + 1] = u
+        else
+          partition = { u }
+        end
       end
     end
   end
