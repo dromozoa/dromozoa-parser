@@ -160,10 +160,10 @@ _"stat"
   :_ "do" "block" "end"
   :_ "while" "exp" "do" "block" "end"
   :_ "repeat" "block" "until" "exp"
-  :_ "if_clause" "end" {1}
-  :_ "if_clause" "else_clause" "end" {1,2}
-  :_ "if_clause" "elseif_clause_list" "end" {1,2}
-  :_ "if_clause" "elseif_clause_list" "else_clause" "end" {1,2,3}
+  :_ "if_clause" "end"
+  :_ "if_clause" "else_clause" "end"
+  :_ "if_clause" "elseif_clause_list" "end"
+  :_ "if_clause" "elseif_clause_list" "else_clause" "end"
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
   :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
   :_ "for" "namelist" "in" "explist" "do" "block" "end"
