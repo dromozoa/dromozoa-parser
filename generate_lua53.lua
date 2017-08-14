@@ -289,21 +289,21 @@ _"funcbody"
 
 _"parlist"
   :_ "namelist"
-  :_ "namelist" "," "..." {1,3}
+  :_ "namelist" "," "..."
   :_ "..."
 
 _"tableconstructor"
-  :_ "{" "}" {}
-  :_ "{" "fieldlist" "}" {2}
-  :_ "{" "fieldlist" "fieldsep" "}" {2}
+  :_ "{" "}"
+  :_ "{" "fieldlist" "}"
+  :_ "{" "fieldlist" "fieldsep" "}"
 
 _"fieldlist"
   :_ "field"
   :_ "fieldlist" "fieldsep" "field" {[1]={3}}
 
 _"field"
-  :_ "[" "exp" "]" "=" "exp" {2,5}
-  :_ "Name" "=" "exp" {1,3}
+  :_ "[" "exp" "]" "=" "exp"
+  :_ "Name" "=" "exp"
   :_ "exp"
 
 _"fieldsep"

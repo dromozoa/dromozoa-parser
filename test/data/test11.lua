@@ -18,5 +18,3 @@
 local a = 1
 local b, c, d = 2, 3, 4
 local a, b = 5, 6
-
-
