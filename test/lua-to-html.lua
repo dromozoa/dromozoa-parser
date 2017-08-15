@@ -42,19 +42,36 @@ local out = io.stdout
 out:write([[
 <html>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8">
     <title>lua-to-html</title>
     <style>
+      @font-face {
+        font-family: 'Noto Sans Mono CJK JP';
+        font-style: normal;
+        font-weight: 400;
+        src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Regular.otf') format('opentype');
+      }
+
+      @font-face {
+        font-family: 'Noto Sans Mono CJK JP';
+        font-style: normal;
+        font-weight: 700;
+        src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Bold.otf') format('opentype');
+      }
+
       body {
         color: white;
         background-color: black;
+        margin: 0;
       }
       .source {
-        font-family: 'Osaka-mono', monospace;
+        font-family: 'Noto Sans Mono CJK JP', monospace;
         white-space: pre;
+        font-weight: 400;
       }
+
       .skip {
         color: red;
       }

@@ -25,7 +25,8 @@ def
 ghi
 ]])
 
-data = { 1, 2, 3, 4 }
+--12345678901234567890123456789
+data = { 1, 2, 3, 4, "日本語" }
 repeat
   local n = #data
   print(data[n])
@@ -37,5 +38,3 @@ do
   local b = 3
   print(a, b)
 end
-
-
