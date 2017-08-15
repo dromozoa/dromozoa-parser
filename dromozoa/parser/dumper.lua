@@ -69,6 +69,12 @@ local function encode(value)
     return ("%.17g"):format(value)
   elseif t == "string" then
     return encode_string(value)
+  elseif t == "boolean" then
+    if value then
+      return "true"
+    else
+      return "false"
+    end
   elseif t == "table" then
     if getmetatable(value) == reference.metatable then
       return value.name

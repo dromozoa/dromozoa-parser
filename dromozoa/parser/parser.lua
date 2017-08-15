@@ -49,6 +49,7 @@ function metatable:__call(terminal_nodes, s, file)
   local heads = self.heads
   local sizes = self.sizes
   local reduce_to_semantic_action = self.reduce_to_semantic_action
+  local reduce_to_attribute_actions = self.reduce_to_attribute_actions
   local stack = { 1 } -- start state
   local nodes = {}
 
@@ -127,6 +128,17 @@ function metatable:__call(terminal_nodes, s, file)
               end
             end
 
+            local attribute_actions = reduce_to_attribute_actions[action]
+            if attribute_actions then
+              for i = 1, #attribute_actions do
+                local attribute_action = attribute_actions[i]
+                local code = attribute_action[1]
+                if code == 1 then
+                  node[attribute_action[2]] = attribute_action[3]
+                end
+              end
+            end
+
             local n1 = #stack
             local n2 = #nodes
             local state = stack[n1]
@@ -140,7 +152,6 @@ function metatable:__call(terminal_nodes, s, file)
           end
         end
       else
-        print(("%d"):format(node[0]))
         return nil, error_message("parser error", s, node.i, file)
       end
     end
@@ -159,6 +170,7 @@ return setmetatable(class, {
       heads = data.heads;
       sizes = data.sizes;
       reduce_to_semantic_action = data.reduce_to_semantic_action;
+      reduce_to_attribute_actions = data.reduce_to_attribute_actions;
     }, metatable)
   end
 })

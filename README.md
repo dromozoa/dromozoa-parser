@@ -91,6 +91,12 @@ Parser generator toolkit.
 |    2 | `{[1]={2,3}}  |         2 | collapse node |
 |    3 | `{1,2,3}`     |         1 | create node   |
 
+### Attribute Actions
+
+| Code | Operand                 | #Operands | Description |
+|-----:|-------------------------|----------:|-------------|
+|    1 | `:attr("key", "value")` |         2 | attribute   |
+
 ### Node
 
 | Name     | Type      | Terminal Only | Description              |

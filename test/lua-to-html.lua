@@ -142,6 +142,7 @@ while true do
       u.html = { "span",
         id = id;
         ["data-symbol-name"] = symbol_names[symbol];
+        ["data-local"] = u["local"];
       }
     end
 

@@ -718,12 +718,17 @@ function class:lr1_construct_table(set_of_items, transitions)
   local heads = {}
   local sizes = {}
   local reduce_to_semantic_action = {}
+  local reduce_to_attribute_actions = {}
   for i = 2, #productions do
     local production = productions[i]
     local j = m + i
     heads[j] = production.head
     sizes[j] = #production.body
     reduce_to_semantic_action[j] = production.semantic_action
+    local attribute_actions = production.attribute_actions
+    if attribute_actions[1] then
+      reduce_to_attribute_actions[j] = attribute_actions
+    end
   end
 
   return parser({
@@ -737,6 +742,7 @@ function class:lr1_construct_table(set_of_items, transitions)
     heads = heads;
     sizes = sizes;
     reduce_to_semantic_action = reduce_to_semantic_action;
+    reduce_to_attribute_actions = reduce_to_attribute_actions;
   }), conflicts
 end
 
