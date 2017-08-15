@@ -158,34 +158,35 @@ while true do
   end
 end
 
-local code_html = root.html
+local root_html = root.html
 local node = terminal_nodes[#terminal_nodes]
 local p = node.p
 local i = node.i
 if p < i then
-  code_html[#code_html + 1] = { "span";
+  root_html[#root_html + 1] = { "span";
     class = "skip";
     source:sub(p, i - 1);
   }
 end
 
-local line_count
+local line_number
 if source:find("\n$") then
-  line_count = 0
+  line_number = 0
 else
-  line_count = 1
+  line_number = 1
 end
 for _ in source:gmatch("\n") do
-  line_count = line_count + 1
+  line_number = line_number + 1
 end
 
 local number_html = { "div"; class="number" }
-for i = 1, line_count do
+for i = 1, line_number do
   number_html[#number_html + 1] = { "span";
     i;
     "\n";
   }
 end
+local number_width = math.ceil(math.log(line_number, 10)) * 0.5
 
 local style = [[
 @font-face {
@@ -206,26 +207,69 @@ body {
   margin: 0;
 }
 
-.source {
+.body {
+  position: relative;
+}
+
+.number {
+  position: absolute;
+  top: 0;
+  left: 0.5rem;
+
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
+  text-align: right;
+}
+
+.code {
+  position: absolute;
+  top: 0;
+  left: ]] .. number_width + 1.5 .. [[rem;
+
   font-family: 'Noto Sans Mono CJK JP', monospace;
   white-space: pre;
   font-weight: 400;
 }
 
-.number {
-  width: ]] .. "3ex" .. [[;
-  float: left;
-  text-align: right;
-  padding-right: 1ex;
-}
-
-.code {
-  float: left;
-}
+/*
+ * https://github.com/reedes/vim-colors-pencil
+ */
 
 .skip {
-  color: red;
+  color: #767676;
 }
+
+[data-symbol-name='nil'],
+[data-symbol-name='true'],
+[data-symbol-name='false'],
+[data-symbol-name='LiteralString'],
+[data-symbol-name='Numeral'] {
+  color: #20A5BA;
+}
+
+[data-symbol-name='Name'] {
+  color: #008EC4;
+}
+
+[data-symbol-name='break'],
+[data-symbol-name='do'],
+[data-symbol-name='else'],
+[data-symbol-name='elseif'],
+[data-symbol-name='end'],
+[data-symbol-name='for'],
+[data-symbol-name='goto'],
+[data-symbol-name='if'],
+[data-symbol-name='in'],
+[data-symbol-name='local'],
+[data-symbol-name='repeat'],
+[data-symbol-name='return'],
+[data-symbol-name='then'],
+[data-symbol-name='until'],
+[data-symbol-name='while'] {
+  color: #10A778;
+}
+
 ]]
 
 write_html(io.stdout, { "html";
@@ -235,10 +279,10 @@ write_html(io.stdout, { "html";
     { "style"; style };
   };
   { "body";
-    { "div"; class="source";
+    { "div"; class="body";
       number_html;
-      { "div"; class="code"; code_html };
-    }
+      { "div"; class="code"; root_html };
+    };
   };
 })
 io.write("\n")
