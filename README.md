@@ -56,6 +56,7 @@ Parser generator toolkit.
 |   15 | `:utf8(i, j)`       |         2 |      | encode utf8                  |
 |   16 | `:utf8(i, j, k, l)` |         4 |      | encode utf8 (surrogate pair) |
 |   17 | `:add(x)`           |         1 |      | add integer                  |
+|   18 | `:attr(key, value)  |         2 |      | attribute                    |
 
 ## Parser
 
@@ -93,9 +94,9 @@ Parser generator toolkit.
 
 ### Attribute Actions
 
-| Code | Operand                 | #Operands | Description |
-|-----:|-------------------------|----------:|-------------|
-|    1 | `:attr("key", "value")` |         2 | attribute   |
+| Code | Operand             | #Operands | Description |
+|-----:|---------------------|----------:|-------------|
+|    1 | `:attr(key, value)` |         2 | attribute   |
 
 ### Node
 

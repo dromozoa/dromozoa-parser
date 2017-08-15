@@ -125,6 +125,7 @@ while true do
         parent_html[#parent_html + 1] = { "span";
           id = u.id;
           ["data-symbol-name"] = symbol_names[symbol];
+          ["data-literal"] = u.Literal;
           source:sub(i, j);
         }
       end
