@@ -155,7 +155,9 @@ local function compact(self, out, value)
   end
 end
 
-local class = {}
+local class = {
+  keys = keys;
+}
 local metatable = {
   __index = class;
 }

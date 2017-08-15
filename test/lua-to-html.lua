@@ -15,9 +15,56 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.parser.dumper"
 local escape_html = require "dromozoa.parser.escape_html"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+
+local keys = dumper.keys
+
+local function write_html(out, node)
+  local number_keys, string_keys = keys(node)
+  local name = assert(node[1])
+  out:write("<", name)
+  for i = 1, #string_keys do
+    local key = string_keys[i]
+    out:write(" ", escape_html(key), "=\"", escape_html(tostring(node[key])), "\"")
+  end
+  local n = #number_keys
+  if name == "script" or name == "style" then
+    local value = table.concat(node, 2, number_keys[n])
+    out:write(">")
+    if value:find("[<&]") then
+      out:write(value)
+    else
+      assert(not value:find("%]%]>"))
+      if name == "script" then
+        out:write("//<![CDATA[\n", value, "//]]>")
+      else
+        out:write("/*<![CDATA[*/\n", value, "/*]]>*/")
+      end
+    end
+    out:write("</", name, ">")
+  else
+    if n > 1 then
+      out:write(">")
+      for i = 1, #number_keys do
+        local key = number_keys[i]
+        if key ~= 1 then
+          local value = node[key]
+          if type(value) == "table" then
+            write_html(out, value)
+          else
+            out:write(escape_html(tostring(value)))
+          end
+        end
+      end
+      out:write("</", name, ">")
+    else
+      out:write("/>")
+    end
+  end
+end
 
 local file = ...
 local source
@@ -36,84 +83,116 @@ local parser = lua53_parser()
 local symbol_names = parser.symbol_names
 local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
-parser:write_graphviz("test.dot", root)
 
-local out = io.stdout
-out:write([[
-<html>
-<!DOCTYPE html>
-<html lang="ja">
-  <head>
-    <meta charset="utf-8">
-    <title>lua-to-html</title>
-    <style>
-      @font-face {
-        font-family: 'Noto Sans Mono CJK JP';
-        font-style: normal;
-        font-weight: 400;
-        src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Regular.otf') format('opentype');
-      }
+local id = 0
+local nodes = {}
+local dfs_events = {}
+local dfs_nodes = {}
 
-      @font-face {
-        font-family: 'Noto Sans Mono CJK JP';
-        font-style: normal;
-        font-weight: 700;
-        src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Bold.otf') format('opentype');
-      }
+local stack1 = { root }
+local stack2 = {}
+while true do
+  local n1 = #stack1
+  local n2 = #stack2
+  local u = stack1[n1]
+  if not u then
+    break
+  end
+  if u == stack2[n2] then
+    stack1[n1] = nil
+    stack2[n2] = nil
+    local m = #dfs_events + 1
+    dfs_events[m] = 2 -- finish
+    dfs_nodes[m] = u
+  else
+    id = id + 1
+    u.id = id
+    nodes[id] = u
+    local m = #dfs_events + 1
+    dfs_events[m] = 1 -- discover
+    dfs_nodes[m] = u
+    local n = u.n
+    for i = 1, n do
+      local v = u[i]
+      v.parent = u
+    end
+    for i = n, 1, -1 do
+      local v = u[i]
+      stack1[#stack1 + 1] = v
+    end
+    stack2[n2 + 1] = u
+  end
+end
 
-      body {
-        color: white;
-        background-color: black;
-        margin: 0;
-      }
-      .source {
-        font-family: 'Noto Sans Mono CJK JP', monospace;
-        white-space: pre;
-        font-weight: 400;
-      }
+style = [[
+@font-face {
+  font-family: 'Noto Sans Mono CJK JP';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Regular.otf') format('opentype');
+}
 
-      .skip {
-        color: red;
-      }
-      .terminal-symbol-2,
-      .terminal-symbol-3,
-      .terminal-symbol-4,
-      .terminal-symbol-5,
-      .terminal-symbol-6,
-      .terminal-symbol-7,
-      .terminal-symbol-8,
-      .terminal-symbol-9,
-      .terminal-symbol-10,
-      .terminal-symbol-11,
-      .terminal-symbol-12,
-      .terminal-symbol-13,
-      .terminal-symbol-14,
-      .terminal-symbol-15,
-      .terminal-symbol-16,
-      .terminal-symbol-17,
-      .terminal-symbol-18,
-      .terminal-symbol-19,
-      .terminal-symbol-20,
-      .terminal-symbol-21,
-      .terminal-symbol-22,
-      .terminal-symbol-23 {
-        color: yellow;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="source">]])
+@font-face {
+  font-family: 'Noto Sans Mono CJK JP';
+  font-style: normal;
+  font-weight: 700;
+  src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Bold.otf') format('opentype');
+}
+
+body {
+  color: white;
+  background-color: black;
+  margin: 0;
+}
+.source {
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
+}
+
+.skip {
+  color: red;
+}
+
+[data-symbol-name='end'] {
+  color: yellow;
+}
+
+[data-symbol-name='Numeral'] {
+  color: pink;
+}
+
+[data-symbol-name=','] {
+  color: cyan;
+}
+]]
+
+local div = { "div" }
 for i = 1, #terminal_nodes do
   local u = terminal_nodes[i]
   local p = u.p
   local i = u.i
   local j = u.j
   if p < i then
-    io.write('<span class="skip">', escape_html(source:sub(p, i - 1)), '</span>')
+    div[#div + 1] = { "span",
+      class = "skip";
+      source:sub(p, i - 1);
+    }
   end
-  io.write('<span class="terminal-symbol-', u[0], '">', escape_html(source:sub(i, j)), '</span>')
+  div[#div + 1] = { "span",
+    class = "terminate-symbol-" .. u[0];
+    ["data-symbol-name"] = symbol_names[u[0]];
+    source:sub(i, j);
+  }
 end
-out:write([[</div>
-  </body>
-</html>
-]])
+div.class = "source"
+
+write_html(io.stdout, { "html",
+  { "head",
+    { "meta", charset="utf-8" };
+    { "title", "lua-to-html" };
+    { "style", style };
+  };
+  { "body", div };
+})
+io.write("\n")
