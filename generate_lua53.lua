@@ -143,12 +143,12 @@ _"chunk"
 _"block"
   :_ ()
   :_ "retstat"
-  :_ "statlist"
-  :_ "statlist" "retstat"
+  :_ "stats"
+  :_ "stats" "retstat"
 
-_"statlist"
+_"stats"
   :_ "stat"
-  :_ "statlist" "stat" {[1]={2}}
+  :_ "stats" "stat" {[1]={2}}
 
 _"stat"
   :_ ";"
@@ -162,8 +162,8 @@ _"stat"
   :_ "repeat" "block" "until" "exp"
   :_ "if_clause" "end"
   :_ "if_clause" "else_clause" "end"
-  :_ "if_clause" "elseif_clause_list" "end"
-  :_ "if_clause" "elseif_clause_list" "else_clause" "end"
+  :_ "if_clause" "elseif_clauses" "end"
+  :_ "if_clause" "elseif_clauses" "else_clause" "end"
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
   :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
   :_ "for" "namelist" "in" "explist" "do" "block" "end"
@@ -173,41 +173,38 @@ _"stat"
   :_ "local" "namelist" "=" "explist"
 
 _"if_clause"
-  :_ "if" "exp" "then" "block" {2,4}
+  :_ "if" "exp" "then" "block"
 
-_"elseif_clause_list"
+_"elseif_clauses"
   :_ "elseif_clause"
-  :_ "elseif_clause_list" "elseif_clause" {[1]={2}}
+  :_ "elseif_clauses" "elseif_clause"
 
 _"elseif_clause"
-  :_ "elseif" "exp" "then" "block" {2,4}
+  :_ "elseif" "exp" "then" "block"
 
 _"else_clause"
-  :_ "else" "block" {2}
+  :_ "else" "block"
 
 _"retstat"
-  :_ "return" {}
-  :_ "return" ";" {}
-  :_ "return" "explist" {2}
-  :_ "return" "explist" ";" {2}
+  :_ "return"
+  :_ "return" ";"
+  :_ "return" "explist"
+  :_ "return" "explist" ";"
 
 _"label"
   :_ "::" "Name" "::"
 
 _"funcname"
-  :_ "Name" "{. Name}" "[: Name]"
+  :_ "funcnames"
+  :_ "funcnames" ":" "Name"
 
-_"{. Name}"
-  :_ ()
-  :_ "{. Name}" "." "Name"
-
-_"[: Name]"
-  :_ ()
-  :_ ":" "Name"
+_"funcnames"
+  :_ "Name"
+  :_ "funcnames" "." "Name" {[1]={2,3}}
 
 _"varlist"
   :_ "var"
-  :_ "varlist" "," "var" {[1]={3}}
+  :_ "varlist" "," "var" {[1]={2,3}}
 
 _"var"
   :_ "Name"
@@ -218,11 +215,11 @@ _"var"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name" {[1]={3}}
+  :_ "namelist" "," "Name" {[1]={2,3}}
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp" {[1]={3}}
+  :_ "explist" "," "exp" {[1]={2,3}}
 
 _"exp"
   :_ "nil"
@@ -265,8 +262,8 @@ _"exp"
 
 -- prefixexp without functioncall
 _"var | ( exp )"
-  :_ "var" {[1]={}}
-  :_ "(" "exp" ")" {[2]={}}
+  :_ "var"
+  :_ "(" "exp" ")"
 
 _"functioncall"
   :_ "var | ( exp )" "args"
@@ -275,8 +272,8 @@ _"functioncall"
   :_ "functioncall" ":" "Name" "args"
 
 _"args"
-  :_ "(" ")" {}
-  :_ "(" "explist" ")" {2}
+  :_ "(" ")"
+  :_ "(" "explist" ")"
   :_ "tableconstructor"
   :_ "LiteralString"
 
@@ -284,8 +281,8 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" {3}
-  :_ "(" "parlist" ")" "block" "end" {2,4}
+  :_ "(" ")" "block" "end"
+  :_ "(" "parlist" ")" "block" "end"
 
 _"parlist"
   :_ "namelist"
@@ -299,7 +296,7 @@ _"tableconstructor"
 
 _"fieldlist"
   :_ "field"
-  :_ "fieldlist" "fieldsep" "field" {[1]={3}}
+  :_ "fieldlist" "fieldsep" "field"
 
 _"field"
   :_ "[" "exp" "]" "=" "exp"

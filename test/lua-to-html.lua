@@ -81,6 +81,7 @@ local lexer = lua53_lexer()
 local parser = lua53_parser()
 
 local symbol_names = parser.symbol_names
+local max_terminal_symbol = parser.max_terminal_symbol
 local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
@@ -104,6 +105,16 @@ while true do
     local m = #dfs_events + 1
     dfs_events[m] = 2 -- finish
     dfs_nodes[m] = u
+
+    local symbol = u[0]
+    if symbol > max_terminal_symbol then
+      local parent = u.parent
+      if parent then
+        local parent_html = parent.html
+        parent_html[#parent_html + 1] = u.html
+      end
+    end
+
   else
     id = id + 1
     u.id = id
@@ -111,6 +122,15 @@ while true do
     local m = #dfs_events + 1
     dfs_events[m] = 1 -- discover
     dfs_nodes[m] = u
+
+    local symbol = u[0]
+    if symbol > max_terminal_symbol then
+      u.html = { "span",
+        id = id;
+        ["data-symbol-name"] = symbol_names[symbol];
+      }
+    end
+
     local n = u.n
     for i = 1, n do
       local v = u[i]
@@ -123,6 +143,44 @@ while true do
     stack2[n2 + 1] = u
   end
 end
+
+local root_html = { "span" }
+local parent_html = root_html
+
+for i = 1, #terminal_nodes do
+  local u = terminal_nodes[i]
+  local parent = u.parent
+  if parent then
+    parent_html = assert(parent.html)
+  end
+
+  io.stderr:write(("%d\t%s\n"):format(i, u.id))
+
+  local p = u.p
+  local i = u.i
+  local j = u.j
+
+  if p < i then
+    local span = { "span",
+      class = "skip";
+      source:sub(p, i - 1);
+    }
+    parent_html[#parent_html + 1] = span
+  end
+
+  local symbol = u[0]
+  if symbol ~= 1 then
+    local span = { "span",
+      id = u.id;
+      class = "terminate-symbol-" .. u[0];
+      ["data-symbol-name"] = symbol_names[u[0]];
+      source:sub(i, j);
+    }
+    parent_html[#parent_html + 1] = span
+  end
+end
+
+root_html[#root_html + 1] = root.html
 
 style = [[
 @font-face {
@@ -167,32 +225,14 @@ body {
 }
 ]]
 
-local div = { "div" }
-for i = 1, #terminal_nodes do
-  local u = terminal_nodes[i]
-  local p = u.p
-  local i = u.i
-  local j = u.j
-  if p < i then
-    div[#div + 1] = { "span",
-      class = "skip";
-      source:sub(p, i - 1);
-    }
-  end
-  div[#div + 1] = { "span",
-    class = "terminate-symbol-" .. u[0];
-    ["data-symbol-name"] = symbol_names[u[0]];
-    source:sub(i, j);
-  }
-end
-div.class = "source"
-
 write_html(io.stdout, { "html",
   { "head",
     { "meta", charset="utf-8" };
     { "title", "lua-to-html" };
     { "style", style };
   };
-  { "body", div };
+  { "body",
+    { "div", class = "source", root_html };
+  };
 })
 io.write("\n")
