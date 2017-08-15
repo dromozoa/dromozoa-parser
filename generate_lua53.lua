@@ -177,7 +177,7 @@ _"if_clause"
 
 _"elseif_clauses"
   :_ "elseif_clause"
-  :_ "elseif_clauses" "elseif_clause"
+  :_ "elseif_clauses" "elseif_clause" {[1]={2}}
 
 _"elseif_clause"
   :_ "elseif" "exp" "then" "block"
@@ -296,7 +296,7 @@ _"tableconstructor"
 
 _"fieldlist"
   :_ "field"
-  :_ "fieldlist" "fieldsep" "field"
+  :_ "fieldlist" "fieldsep" "field" {[1]={2,3}}
 
 _"field"
   :_ "[" "exp" "]" "=" "exp"

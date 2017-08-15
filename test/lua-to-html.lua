@@ -106,15 +106,29 @@ while true do
     dfs_events[m] = 2 -- finish
     dfs_nodes[m] = u
 
-    local symbol = u[0]
-    if symbol > max_terminal_symbol then
-      local parent = u.parent
-      if parent then
-        local parent_html = parent.html
+    local parent = u.parent
+    if parent then
+      local parent_html = parent.html
+      local symbol = u[0]
+      if symbol > max_terminal_symbol then
         parent_html[#parent_html + 1] = u.html
+      else
+        local p = u.p
+        local i = u.i
+        local j = u.j
+        if p < i then
+          parent_html[#parent_html + 1] = { "span";
+            class = "skip";
+            source:sub(p, i - 1);
+          }
+        end
+        parent_html[#parent_html + 1] = { "span";
+          id = u.id;
+          ["data-symbol-name"] = symbol_names[symbol];
+          source:sub(i, j);
+        }
       end
     end
-
   else
     id = id + 1
     u.id = id
@@ -144,45 +158,36 @@ while true do
   end
 end
 
-local root_html = { "span" }
-local parent_html = root_html
-
-for i = 1, #terminal_nodes do
-  local u = terminal_nodes[i]
-  local parent = u.parent
-  if parent then
-    parent_html = assert(parent.html)
-  end
-
-  io.stderr:write(("%d\t%s\n"):format(i, u.id))
-
-  local p = u.p
-  local i = u.i
-  local j = u.j
-
-  if p < i then
-    local span = { "span",
-      class = "skip";
-      source:sub(p, i - 1);
-    }
-    parent_html[#parent_html + 1] = span
-  end
-
-  local symbol = u[0]
-  if symbol ~= 1 then
-    local span = { "span",
-      id = u.id;
-      class = "terminate-symbol-" .. u[0];
-      ["data-symbol-name"] = symbol_names[u[0]];
-      source:sub(i, j);
-    }
-    parent_html[#parent_html + 1] = span
-  end
+local code_html = root.html
+local node = terminal_nodes[#terminal_nodes]
+local p = node.p
+local i = node.i
+if p < i then
+  code_html[#code_html + 1] = { "span";
+    class = "skip";
+    source:sub(p, i - 1);
+  }
 end
 
-root_html[#root_html + 1] = root.html
+local line_count
+if source:find("\n$") then
+  line_count = 0
+else
+  line_count = 1
+end
+for _ in source:gmatch("\n") do
+  line_count = line_count + 1
+end
 
-style = [[
+local number_html = { "div"; class="number" }
+for i = 1, line_count do
+  number_html[#number_html + 1] = { "span";
+    i;
+    "\n";
+  }
+end
+
+local style = [[
 @font-face {
   font-family: 'Noto Sans Mono CJK JP';
   font-style: normal;
@@ -198,41 +203,42 @@ style = [[
 }
 
 body {
-  color: white;
-  background-color: black;
   margin: 0;
 }
+
 .source {
   font-family: 'Noto Sans Mono CJK JP', monospace;
   white-space: pre;
   font-weight: 400;
 }
 
+.number {
+  width: ]] .. "3ex" .. [[;
+  float: left;
+  text-align: right;
+  padding-right: 1ex;
+}
+
+.code {
+  float: left;
+}
+
 .skip {
   color: red;
 }
-
-[data-symbol-name='end'] {
-  color: yellow;
-}
-
-[data-symbol-name='Numeral'] {
-  color: pink;
-}
-
-[data-symbol-name=','] {
-  color: cyan;
-}
 ]]
 
-write_html(io.stdout, { "html",
-  { "head",
-    { "meta", charset="utf-8" };
-    { "title", "lua-to-html" };
-    { "style", style };
+write_html(io.stdout, { "html";
+  { "head";
+    { "meta"; charset="utf-8"; };
+    { "title"; "lua-to-html" };
+    { "style"; style };
   };
-  { "body",
-    { "div", class = "source", root_html };
+  { "body";
+    { "div"; class="source";
+      number_html;
+      { "div"; class="code"; code_html };
+    }
   };
 })
 io.write("\n")
