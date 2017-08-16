@@ -402,8 +402,6 @@ local script = [[
             .classed("node", true)
             .each(function (d) {
               var node_group = d3.select(this);
-              node_group
-                .attr("transform", "translate(" + d.y + "," + d.x + ")");
 
               node_group
                 .append("rect")
@@ -420,7 +418,7 @@ local script = [[
               var r = h / 2;
               var x = bbox.x - r;
               // var y = bbox.y - (24 - h) * 0.5;
-              var y = bbox.y - (24 - h) * 0.5;
+              var y = bbox.y;
               node_group.select("rect")
                 .attr("x", x)
                 .attr("y", y)
@@ -428,7 +426,8 @@ local script = [[
                 .attr("height", h)
                 .attr("rx", r)
                 .attr("ry", r);
-
+              node_group
+                .attr("transform", "translate(" + d.y + "," + (d.x - (y + r)) + ")");
             });
   });
 }(this));
