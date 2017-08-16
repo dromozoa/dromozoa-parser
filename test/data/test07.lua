@@ -17,4 +17,4 @@
 
 a, b = 0
 local t = { 42, foo = 69 }
-print(a, t[1], t.foo, (t).foo, f(1, 2, 3).foo)
+print(a, t[1], t.foo, (t).foo, f(1, 2, 3).foo, t:foo())

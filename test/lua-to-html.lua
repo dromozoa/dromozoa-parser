@@ -125,7 +125,10 @@ while true do
         parent_html[#parent_html + 1] = { "span";
           id = u.id;
           ["data-symbol-name"] = symbol_names[symbol];
-          ["data-literal"] = u.Literal;
+          ["data-constant"] = u.constant;
+          ["data-operator"] = u.operator;
+          ["data-statement"] = u.statement;
+          ["data-structure"] = u.structure;
           source:sub(i, j);
         }
       end
@@ -143,7 +146,6 @@ while true do
       u.html = { "span",
         id = id;
         ["data-symbol-name"] = symbol_names[symbol];
-        ["data-local"] = u["local"];
       }
     end
 
@@ -190,49 +192,6 @@ for i = 1, line_number do
 end
 local number_width = math.ceil(math.log(line_number, 10)) * 0.5
 
--- https://github.com/reedes/vim-colors-pencil
-local colors = {
-  black = "#212121";
-  medium_gray = "#767676";
-  white = "#F1F1F1";
-  actual_white = "#FFFFFF";
-  light_black = "#424242";
-  lighter_black = "#545454";
-
-  -- higher contrast
-  subtle_black = "#303030";
-  light_gray = "#B2B2B2";
-  lighter_gray = "#C6C6C6";
-
-  pink = "#fb007a";
-  dark_red = "#C30771";
-  light_red = "#E32791";
-  orange = "#D75F5F";
-  darker_blue = "#005F87";
-  dark_blue = "#008EC4";
-  blue = "#20BBFC";
-  light_blue = "#b6d6fd";
-  dark_cyan = "#20A5BA";
-  light_cyan = "#4FB8CC";
-  dark_green = "#10A778";
-  light_green = "#5FD7A7";
-  dark_purple = "#523C79";
-  light_purple = "#6855DE";
-  yellow = "#F3E430";
-  dark_yellow = "#A89C14";
-}
-
-colors.bg             = colors.white
-colors.bg_subtle      = colors.light_gray
-colors.bg_very_subtle = colors.lighter_gray
-colors.norm           = colors.light_black
-colors.norm_subtle    = colors.lighter_black
-colors.purple         = colors.dark_purple
-colors.cyan           = colors.dark_cyan
-colors.green          = colors.dark_green
-colors.red            = colors.dark_red
-colors.visual         = colors.light_blue
-
 local style = [[
 @font-face {
   font-family: 'Noto Sans Mono CJK JP';
@@ -256,6 +215,10 @@ body {
   position: relative;
 }
 
+/*
+ * https://github.com/reedes/vim-colors-pencil
+ */
+
 .number {
   position: absolute;
   top: 0;
@@ -265,6 +228,8 @@ body {
   white-space: pre;
   font-weight: 400;
   text-align: right;
+
+  color: #C6C6C6; /* ligher_gray */
 }
 
 .code {
@@ -277,44 +242,23 @@ body {
   font-weight: 400;
 }
 
-/*
- * https://github.com/reedes/vim-colors-pencil
- */
-
 .skip {
-  color: #767676;
+  color: #B2B2B2; /* light_gray */
 }
 
-[data-symbol-name='nil'],
-[data-symbol-name='true'],
-[data-symbol-name='false'],
-[data-symbol-name='LiteralString'],
-[data-symbol-name='Numeral'] {
-  color: #20A5BA;
+[data-constant] {
+  color: #20A5BA; /* dark_cyan */
 }
 
-[data-symbol-name='Name'] {
-  color: #008EC4;
+[data-operator],
+[data-statement] {
+  color: #10A778; /* dark_green */
 }
 
-[data-symbol-name='break'],
-[data-symbol-name='do'],
-[data-symbol-name='else'],
-[data-symbol-name='elseif'],
-[data-symbol-name='end'],
-[data-symbol-name='for'],
-[data-symbol-name='goto'],
-[data-symbol-name='if'],
-[data-symbol-name='in'],
-[data-symbol-name='local'],
-[data-symbol-name='repeat'],
-[data-symbol-name='return'],
-[data-symbol-name='then'],
-[data-symbol-name='until'],
-[data-symbol-name='while'] {
-  color: ]] .. colors.green .. [[;
+[data-structure],
+[data-symbol-name='funcbody'] > [data-symbol-name='end'] {
+  color: #C30771; /* dark_red */
 }
-
 ]]
 
 write_html(io.stdout, { "html";
