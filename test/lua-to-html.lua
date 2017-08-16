@@ -79,6 +79,12 @@ end
 
 local lexer = lua53_lexer()
 local parser = lua53_parser()
+local color_attributes = {
+  "color_constant";
+  "color_operator";
+  "color_statement";
+  "color_structure";
+}
 
 local symbol_names = parser.symbol_names
 local max_terminal_symbol = parser.max_terminal_symbol
@@ -118,17 +124,21 @@ while true do
         local j = u.j
         if p < i then
           parent_html[#parent_html + 1] = { "span";
-            class = "skip";
+            class = "color_skip";
             source:sub(p, i - 1);
           }
+        end
+        local class
+        for k = 1, #color_attributes do
+          local key = color_attributes[k]
+          if u[key] then
+            class = key
+          end
         end
         parent_html[#parent_html + 1] = { "span";
           id = u.id;
           ["data-symbol-name"] = symbol_names[symbol];
-          ["data-constant"] = u.constant;
-          ["data-operator"] = u.operator;
-          ["data-statement"] = u.statement;
-          ["data-structure"] = u.structure;
+          class = class;
           source:sub(i, j);
         }
       end
@@ -168,7 +178,7 @@ local p = node.p
 local i = node.i
 if p < i then
   root_html[#root_html + 1] = { "span";
-    class = "skip";
+    class = "color_skip";
     source:sub(p, i - 1);
   }
 end
@@ -242,20 +252,20 @@ body {
   font-weight: 400;
 }
 
-.skip {
+.color_skip {
   color: #B2B2B2; /* light_gray */
 }
 
-[data-constant] {
+.color_constant {
   color: #20A5BA; /* dark_cyan */
 }
 
-[data-operator],
-[data-statement] {
+.color_operator,
+.color_statement {
   color: #10A778; /* dark_green */
 }
 
-[data-structure],
+.color_structure,
 [data-symbol-name='funcbody'] > [data-symbol-name='end'] {
   color: #C30771; /* dark_red */
 }
