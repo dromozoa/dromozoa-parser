@@ -124,7 +124,9 @@ while true do
         end
         parent_html[#parent_html + 1] = { "span";
           id = "_" .. u.id;
+          ["data-symbol"] = symbol;
           ["data-symbol-name"] = symbol_names[symbol];
+          ["data-terminal-symbol"] = true;
           class = u.color;
           source:sub(i, j);
         }
@@ -142,6 +144,7 @@ while true do
     if symbol > max_terminal_symbol then
       u.html = { "span",
         id = "_" .. id;
+        ["data-symbol"] = symbol;
         ["data-symbol-name"] = symbol_names[symbol];
       }
     end
@@ -262,13 +265,27 @@ body {
 [data-symbol-name='funcbody'] > [data-symbol-name='end'] {
   color: #C30771; /* dark_red */
 }
+
+.color-selection {
+  background-color: #B6D6FD;
+}
 ]]
 
 local script = [[
 (function (root) {
+  var module = {};
+
+  module.select = function (node) {
+  };
+
   $(function () {
     $("[data-number]").on("click", function () {
-      root.location.href = new URI().hash($(this).attr("id")).toString();
+      $("[data-number]").removeClass("color-selection");
+      $(this).addClass("color-selection");
+    });
+    $("[data-terminal-symbol]").on("click", function (ev) {
+      $("[data-symbol]").removeClass("color-selection");
+      $(this).addClass("color-selection");
     });
   });
 }(this, jQuery));
