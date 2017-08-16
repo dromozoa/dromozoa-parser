@@ -46,23 +46,19 @@ local function write_html(out, node)
     end
     out:write("</", name, ">")
   else
-    if n > 1 then
-      out:write(">")
-      for i = 1, #number_keys do
-        local key = number_keys[i]
-        if key ~= 1 then
-          local value = node[key]
-          if type(value) == "table" then
-            write_html(out, value)
-          else
-            out:write(escape_html(tostring(value)))
-          end
+    out:write(">")
+    for i = 1, #number_keys do
+      local key = number_keys[i]
+      if key ~= 1 then
+        local value = node[key]
+        if type(value) == "table" then
+          write_html(out, value)
+        else
+          out:write(escape_html(tostring(value)))
         end
       end
-      out:write("</", name, ">")
-    else
-      out:write("/>")
     end
+    out:write("</", name, ">")
   end
 end
 
@@ -195,6 +191,14 @@ for i = 1, line_number do
 end
 local number_width = math.ceil(math.log(line_number, 10)) * 0.5
 
+local tree_html = { "div";
+  { "div"; class = "tree-head";
+    { "span"; class = "icon fa fa-plus-square-o" };
+    { "span"; "Tree" };
+  };
+  { "div"; class = "tree-body"; style = "display: none" };
+}
+
 local style = [[
 @font-face {
   font-family: 'Noto Sans Mono CJK JP';
@@ -212,6 +216,9 @@ local style = [[
 
 body {
   margin: 0;
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
 }
 
 .body {
@@ -222,10 +229,6 @@ body {
   position: absolute;
   top: 0;
   left: 0.5rem;
-
-  font-family: 'Noto Sans Mono CJK JP', monospace;
-  white-space: pre;
-  font-weight: 400;
   text-align: right;
 }
 
@@ -233,13 +236,27 @@ body {
   position: absolute;
   top: 0;
   left: ]] .. number_width + 1.5 .. [[rem;
-
-  font-family: 'Noto Sans Mono CJK JP', monospace;
-  white-space: pre;
-  font-weight: 400;
 }
 
-/* <&>
+.tree {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 30rem;
+  background-color: rgba(241, 241, 241, 0.8); /* white */
+}
+
+.tree-body {
+  width: 30rem;
+  height: 30rem;
+}
+
+.icon {
+  width: 1.5rem;
+  text-align: center;
+}
+
+/*
  * https://github.com/tbastos/vim-lua
  * https://github.com/reedes/vim-colors-pencil
  */
@@ -274,9 +291,8 @@ body {
 local script = [[
 (function (root) {
   var module = {};
-
-  module.select = function (node) {
-  };
+  var $ = root.jQuery;
+  var d3 = root.d3;
 
   $(function () {
     $("[data-number]").on("click", function () {
@@ -286,9 +302,61 @@ local script = [[
     $("[data-terminal-symbol]").on("click", function (ev) {
       $("[data-symbol]").removeClass("color-selection");
       $(this).addClass("color-selection");
+      console.log($(".tree-body").width(), $(".tree-body").height());
     });
+    $(".tree-head").on("click", function () {
+      $(".tree-head > .icon")
+        .toggleClass("fa-plus-square-o")
+        .toggleClass("fa-minus-square-o");
+      $(".tree-body").toggle();
+    });
+
+    var initial_zoom_x = 0;
+    var initial_zoom_y = 0;
+    var initial_zoom_scale = 1;
+
+    var $tree_body = $(".tree-body");
+    var w = $tree_body.width();
+    var h = $tree_body.height();
+
+    var svg = d3.select(".tree-body")
+      .append("svg")
+        .attr("width", w)
+        .attr("height", h)
+        .style("display", "block");
+
+    svg
+      .append("g")
+        .classed("viewport", true)
+          .call(d3.zoom().on("zoom", function () {
+            var transform = d3.event.transform
+              .translate(initial_zoom_x, initial_zoom_y)
+              .scale(initial_zoom_scale);
+            svg.select(".view")
+              .attr("transform", transform);
+          }))
+          .append("rect")
+            .attr("width", w)
+            .attr("height", h)
+            .attr("fill-opacity", "0");
+
+    svg.select(".viewport")
+      .append("g")
+        .classed("view", true)
+        .attr("transform", function () {
+          var transform = d3.zoomTransform(this)
+            .translate(initial_zoom_x, initial_zoom_y)
+            .scale(initial_zoom_scale);
+          return transform.toString();
+        })
+        .append("g")
+          .classed("model", true)
+          .append("rect")
+            .attr("width", w * 0.5)
+            .attr("height", h * 0.5)
+            .attr("fill", "red");
   });
-}(this, jQuery));
+}(this));
 ]]
 
 write_html(io.stdout, { "html";
@@ -302,6 +370,7 @@ write_html(io.stdout, { "html";
     { "div"; class="body";
       number_html;
       { "div"; class="code"; root_html };
+      { "div"; class="tree"; tree_html };
     };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.12/URI.min.js" };
