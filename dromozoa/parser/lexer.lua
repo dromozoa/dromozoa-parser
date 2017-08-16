@@ -275,7 +275,6 @@ function metatable:__call(s, file)
       end
       local node = {
         [0] = lexer.accept_to_symbol[accept];
-        n = 0;
         p = position_start;
         i = position_mark;
         j = position - 1;
@@ -301,7 +300,6 @@ function metatable:__call(s, file)
     end
     terminal_nodes[#terminal_nodes + 1] = {
       [0] = 1; -- marker end
-      n = 0;
       p = position_start;
       i = position_mark;
       j = n;

@@ -146,7 +146,7 @@ while true do
       }
     end
 
-    local n = u.n
+    local n = #u
     for i = 1, n do
       local v = u[i]
       v.parent = u

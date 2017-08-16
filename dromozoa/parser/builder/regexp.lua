@@ -69,25 +69,25 @@ function class.parse(s)
       if symbol == symbol_table.Pattern then
         node.value = value(node[1])
       elseif symbol == symbol_table.Disjunction then
-        if node.n == 1 then
+        if #node == 1 then
           node.value = value(node[1])
         else
           node.value = value(node[1]) + value(node[3])
         end
       elseif symbol == symbol_table.Alternative then
-        if node.n == 1 then
+        if #node == 1 then
           node.value = value(node[1])
         else
           node.value = value(node[1]) * value(node[2])
         end
       elseif symbol == symbol_table.Term then
-        if node.n == 1 then
+        if #node == 1 then
           node.value = value(node[1])
         else
           node.value = value(node[1]) ^ value(node[2])
         end
       elseif symbol == symbol_table.Quantifier then
-        local n = node.n
+        local n = #node
         if n == 3 then
           node.value = { tonumber(value(node[2]), 10) }
         elseif n == 4 then
@@ -103,7 +103,7 @@ function class.parse(s)
           node.value = value(node[1])
         end
       elseif symbol == symbol_table.Atom then
-        if node.n == 1 then
+        if #node == 1 then
           local that = node[1]
           if that[0] == symbol_table["."] then
             node.value = P(1)
@@ -122,13 +122,13 @@ function class.parse(s)
           node.value = value(node[2])
         end
       elseif symbol == symbol_table.ClassRanges then
-        if node.n == 0 then
+        if #node == 0 then
           node.value = atom({})
         else
           node.value = value(node[1])
         end
       elseif symbol == symbol_table.NonemptyClassRanges or symbol == symbol_table.NonemptyClassRangesNoDash then
-        local n = node.n
+        local n = #node
         if n == 1 then
           node.value = P(value(node[1]))
         elseif n == 2 then
@@ -148,7 +148,7 @@ function class.parse(s)
         end
       end
     else
-      for i = node.n, 1, -1 do
+      for i = #node, 1, -1 do
         if node[i][0] > max_terminal_symbol then
           stack1[#stack1 + 1] = node[i]
         end

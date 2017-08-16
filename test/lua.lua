@@ -64,7 +64,7 @@ while true do
     local m = #dfs_events + 1
     dfs_events[m] = 1 -- discover
     dfs_nodes[m] = u
-    local n = u.n
+    local n = #u
     for i = 1, n do
       local v = u[i]
       v.parent = u
@@ -104,7 +104,7 @@ for i = 1, #dfs_events do
   local symbol = u[0]
   if event == 1 then -- discover
     local push_scope
-    for j = 1, u.n do
+    for j = 1, #u do
       if u[j][0] == symbol_table.block then
         push_scope = true
         break
@@ -122,7 +122,7 @@ for i = 1, #dfs_events do
     local scope = scope_stack[#scope_stack]
     if symbol == symbol_table.stat then
       if u[2] and u[2][0] == symbol_table.namelist then
-        for j = 1, u[2].n do
+        for j = 1, #u[2] do
           local name = value(u[2][j])
           local n = scope.n + 1
           scope.nodes[n] = u[2][j].id
