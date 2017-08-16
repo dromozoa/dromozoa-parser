@@ -179,6 +179,7 @@ for _ in source:gmatch("\n") do
   line_number = line_number + 1
 end
 
+local number_width_rem = math.ceil(math.log(line_number, 10)) * 0.5
 local number_html = { "div"; class="number" }
 for i = 1, line_number do
   number_html[#number_html + 1] = { "span";
@@ -189,8 +190,8 @@ for i = 1, line_number do
     "\n";
   }
 end
-local number_width = math.ceil(math.log(line_number, 10)) * 0.5
 
+local panel_width_rem = 40
 local panel_html = { "div"; class="panel";
   { "div"; class = "tree-head";
     { "span"; class = "icon fa fa-minus-square-o" };
@@ -199,6 +200,8 @@ local panel_html = { "div"; class="panel";
   { "div"; class = "tree" };
 }
 
+-- https://github.com/tbastos/vim-lua
+-- https://github.com/reedes/vim-colors-pencil
 local style = [[
 @font-face {
   font-family: 'Noto Sans Mono CJK JP';
@@ -235,30 +238,29 @@ body {
 .code {
   position: absolute;
   top: 0;
-  left: ]] .. number_width + 1.5 .. [[rem;
-}
-
-.tree {
-  height: 30rem;
+  left: ]] .. number_width_rem + 1.5 .. [[rem;
 }
 
 .panel {
   position: fixed;
   top: 0;
   right: 0;
-  width: 40rem;
-  background-color: rgba(241, 241, 241, 0.8); /* white */
+  width: ]] .. panel_width_rem .. [[rem;
+  background-color: rgba(241, 241, 241, 0.75); /* white */
+}
+
+.tree {
+  height: 30rem;
+}
+
+.tree-head {
+  background-color: rgba(198, 198, 198, 0.75); /* lighter_gray */
 }
 
 .icon {
   width: 1.5rem;
   text-align: center;
 }
-
-/*
- * https://github.com/tbastos/vim-lua
- * https://github.com/reedes/vim-colors-pencil
- */
 
 .color-number {
   color: #C6C6C6; /* ligher_gray */
@@ -289,77 +291,69 @@ body {
 
 local script = [[
 (function (root) {
-  var module = {};
   var $ = root.jQuery;
   var d3 = root.d3;
+  var panel_width_rem = ]] .. panel_width_rem .. [[;
 
   $(function () {
-    $("[data-number]").on("click", function () {
-      $("[data-number]").removeClass("color-selection");
-      $(this).addClass("color-selection");
-    });
-    $("[data-terminal-symbol]").on("click", function (ev) {
-      $("[data-symbol]").removeClass("color-selection");
-      $(this).addClass("color-selection");
-    });
-    $(".tree-head").on("click", function () {
-      $(".tree-head > .icon")
-        .toggleClass("fa-plus-square-o")
-        .toggleClass("fa-minus-square-o");
-      $(".tree").toggle();
-    });
+    var $tree = $(".tree");
+    var tree_width = $tree.width();
+    var tree_height = $tree.height();
+    var rem = tree_width / panel_width_rem;
 
     var initial_zoom_x = 0;
     var initial_zoom_y = 0;
     var initial_zoom_scale = 1;
+    var node_width = 160;
+    var node_height = 32;
 
-    var $tree = $(".tree");
-    var w = $tree.width();
-    var h = $tree.height();
+    $("[data-terminal-symbol]").on("click", function (ev) {
+      console.log(this);
+    });
+
+    $(".tree-head").on("click", function () {
+      var $icon = $(".tree-head > .icon")
+        .attr("class", "icon fa fa-spinner fa-spin");
+      if ($tree.is(":visible")) {
+        $tree.hide("normal", function () {
+          $icon.attr("class", "icon fa fa-plus-square-o");
+        });
+      } else {
+        $tree.show("normal", function () {
+          $icon.attr("class", "icon fa fa-minus-square-o");
+        });
+      }
+    });
 
     var svg = d3.select(".tree")
       .append("svg")
-        .attr("width", w)
-        .attr("height", h)
+        .attr("width", tree_width)
+        .attr("height", tree_height)
         .style("display", "block");
-
-    svg
-      .append("g")
-        .classed("viewport", true)
-          .call(d3.zoom().on("zoom", function () {
-            var transform = d3.event.transform
-              .translate(initial_zoom_x, initial_zoom_y)
-              .scale(initial_zoom_scale);
-            svg.select(".view")
-              .attr("transform", transform);
-          }))
-          .append("rect")
-            .attr("width", w)
-            .attr("height", h)
-            .attr("fill-opacity", "0");
-
-    var model_group = svg.select(".viewport")
-      .append("g")
-        .classed("view", true)
-        .attr("transform", function () {
-          var transform = d3.zoomTransform(this)
-            .translate(initial_zoom_x, initial_zoom_y)
-            .scale(initial_zoom_scale);
-          return transform.toString();
-        })
-        .append("g")
-          .classed("model", true);
-
-    // model_group
-    //   .append("rect")
-    //     .attr("width", w * 0.5)
-    //     .attr("height", h * 0.5);
-    model_group
-      .append("g")
-        .classed("edges", true);
-    model_group
-      .append("g")
-        .classed("nodes", true);
+    var view_group;
+    var viewport_group = svg.append("g")
+      .classed("viewport", true)
+      .call(d3.zoom().on("zoom", function () {
+        var transform = d3.event.transform
+          .translate(initial_zoom_x, initial_zoom_y)
+          .scale(initial_zoom_scale);
+        view_group
+          .attr("transform", transform);
+      }));
+    viewport_group.append("rect")
+      .attr("width", tree_width)
+      .attr("height", tree_height)
+      .attr("fill-opacity", "0");
+    view_group =  viewport_group.append("g")
+      .classed("view", true)
+      .attr("transform", function () {
+        var transform = d3.zoomTransform(this)
+          .translate(initial_zoom_x, initial_zoom_y)
+          .scale(initial_zoom_scale);
+        return transform.toString();
+      })
+    var model_group = view_group.append("g")
+      .classed("model", true);
 
     var root = d3.hierarchy({ $node: $("#_1") }, function (node) {
       var children = [];
@@ -369,66 +363,63 @@ local script = [[
       return children;
     });
 
-    var rem = 16;
     var tree = d3.tree();
-    tree.nodeSize([ 16 + 16, 8 * 16 + 32]);
+    tree.nodeSize([ node_height, node_width ]);
     tree(root);
 
-    svg.select(".edges")
+    model_group.append("g")
+      .classed("edges", true)
       .selectAll(".edge")
         .data(root.descendants().slice(1))
-        .enter()
-          .append("path")
-            .classed("edge", true)
-            .attr("d", function (d) {
-              var sx = d.parent.y;
-              var sy = d.parent.x;
-              var ex = d.y;
-              var ey = d.x;
-              var hx = (sx + ex) * 0.5;
-              var path = d3.path();
-              path.moveTo(sx, sy);
-              path.bezierCurveTo(hx, sy, hx, ey, ex, ey)
-              return path.toString();
-            })
-            .attr("fill", "none")
-            .attr("stroke", "black");
+        .enter().append("path")
+          .classed("edge", true)
+          .attr("d", function (d) {
+            var sx = d.parent.y;
+            var sy = d.parent.x;
+            var ex = d.y;
+            var ey = d.x;
+            var hx = (sx + ex) * 0.5;
+            var path = d3.path();
+            path.moveTo(sx, sy);
+            path.bezierCurveTo(hx, sy, hx, ey, ex, ey)
+            return path.toString();
+          })
+          .attr("fill", "none")
+          .attr("stroke", "black");
 
-    svg.select(".nodes")
+    model_group.append("g")
+      .classed("nodes", true)
       .selectAll(".node")
         .data(root.descendants())
-        .enter()
-          .append("g")
-            .classed("node", true)
-            .each(function (d) {
-              var node_group = d3.select(this);
-
-              node_group
-                .append("rect")
-                  .attr("fill", "white")
-                  .attr("stroke", "black");
-              var name = d.data.$node.attr("data-symbol-name");
-              node_group
-                .append("text")
-                  .text(name);
-
-              var bbox = node_group.select("text").node().getBBox();
-              var h = bbox.height;
-              var w = bbox.width + h;
-              var r = h / 2;
-              var x = bbox.x - r;
-              // var y = bbox.y - (24 - h) * 0.5;
-              var y = bbox.y;
-              node_group.select("rect")
-                .attr("x", x)
-                .attr("y", y)
-                .attr("width", w)
-                .attr("height", h)
-                .attr("rx", r)
-                .attr("ry", r);
-              node_group
-                .attr("transform", "translate(" + d.y + "," + (d.x - (y + r)) + ")");
-            });
+        .enter().append("g")
+          .classed("node", true)
+          .each(function (d) {
+            var node_group = d3.select(this);
+            var rect = node_group
+              .append("rect")
+                .attr("fill", "white")
+                .attr("stroke", "black");
+            var text = node_group
+              .append("text")
+                .text(d.data.$node.attr("data-symbol-name"));
+            var bbox = text.node().getBBox();
+            var h = bbox.height;
+            var w = bbox.width + h;
+            var r = h * 0.5;
+            var x = bbox.x - r;
+            var y = bbox.y;
+            rect
+              .attr("x", x)
+              .attr("y", y)
+              .attr("width", w)
+              .attr("height", h)
+              .attr("rx", r)
+              .attr("ry", r);
+            var tx = d.y - bbox.width * 0.5;
+            var ty = d.x - y - r;
+            node_group
+              .attr("transform", "translate(" + tx + "," + ty + ")");
+          });
   });
 }(this));
 ]]
