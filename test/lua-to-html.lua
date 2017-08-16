@@ -265,7 +265,7 @@ body {
 ]]
 
 local script = [[
-(function (root, $) {
+(function (root) {
   $(function () {
     $("[data-number]").on("click", function () {
       root.location.href = new URI().hash($(this).attr("id")).toString();
@@ -278,6 +278,7 @@ write_html(io.stdout, { "html";
   { "head";
     { "meta"; charset="utf-8"; };
     { "title"; "lua-to-html" };
+    { "link"; rel = "stylesheet"; href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" };
     { "style"; style };
   };
   { "body";
@@ -285,8 +286,9 @@ write_html(io.stdout, { "html";
       number_html;
       { "div"; class="code"; root_html };
     };
-    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js" };
-    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.4/URI.min.js" };
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.12/URI.min.js" };
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
     { "script"; script };
   };
 })
