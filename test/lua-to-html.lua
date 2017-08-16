@@ -340,7 +340,7 @@ local script = [[
             .attr("height", h)
             .attr("fill-opacity", "0");
 
-    svg.select(".viewport")
+    var model_group = svg.select(".viewport")
       .append("g")
         .classed("view", true)
         .attr("transform", function () {
@@ -350,11 +350,88 @@ local script = [[
           return transform.toString();
         })
         .append("g")
-          .classed("model", true)
-          .append("rect")
-            .attr("width", w * 0.5)
-            .attr("height", h * 0.5)
-            .attr("fill", "red");
+          .classed("model", true);
+
+    // model_group
+    //   .append("rect")
+    //     .attr("width", w * 0.5)
+    //     .attr("height", h * 0.5);
+    model_group
+      .append("g")
+        .classed("edges", true);
+    model_group
+      .append("g")
+        .classed("nodes", true);
+
+    var root = d3.hierarchy({ $node: $("#_1") }, function (node) {
+      var children = [];
+      node.$node.children("[data-symbol]").each(function () {
+        children.push({ $node: $(this) })
+      });
+      return children;
+    });
+
+    var rem = 16;
+    var tree = d3.tree();
+    tree.nodeSize([ 16 + 8, 8 * 16 + 32]);
+    tree(root);
+
+    svg.select(".edges")
+      .selectAll(".edge")
+        .data(root.descendants().slice(1))
+        .enter()
+          .append("path")
+            .classed("edge", true)
+            .attr("d", function (d) {
+              var sx = d.parent.y;
+              var sy = d.parent.x;
+              var ex = d.y;
+              var ey = d.x;
+              var hx = (sx + ex) * 0.5;
+              var path = d3.path();
+              path.moveTo(sx, sy);
+              path.bezierCurveTo(hx, sy, hx, ey, ex, ey)
+              return path.toString();
+            })
+            .attr("fill", "none")
+            .attr("stroke", "black");
+
+    svg.select(".nodes")
+      .selectAll(".node")
+        .data(root.descendants())
+        .enter()
+          .append("g")
+            .classed("node", true)
+            .each(function (d) {
+              var node_group = d3.select(this);
+              node_group
+                .attr("transform", "translate(" + d.y + "," + d.x + ")");
+              // node_group
+              //   .append("circle")
+              //     .attr("r", 4);
+              node_group
+                .append("rect")
+                  .attr("fill", "white")
+                  .attr("stroke", "red");
+              var name = d.data.$node.attr("data-symbol-name");
+              node_group
+                .append("text")
+                  .text(name);
+              var h = 24;
+              var w = name.length * 8 + h;
+              var r = h / 2;
+              var x = -r;
+              var y = -16;
+
+              node_group.select("rect")
+                .attr("x", x)
+                .attr("y", y)
+                .attr("width", w)
+                .attr("height", h)
+                .attr("rx", r)
+                .attr("ry", r);
+
+            });
   });
 }(this));
 ]]
