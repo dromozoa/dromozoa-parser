@@ -191,12 +191,12 @@ for i = 1, line_number do
 end
 local number_width = math.ceil(math.log(line_number, 10)) * 0.5
 
-local tree_html = { "div";
+local panel_html = { "div"; class="panel";
   { "div"; class = "tree-head";
-    { "span"; class = "icon fa fa-plus-square-o" };
+    { "span"; class = "icon fa fa-minus-square-o" };
     { "span"; "Tree" };
   };
-  { "div"; class = "tree-body"; style = "display: none" };
+  { "div"; class = "tree" };
 }
 
 local style = [[
@@ -239,16 +239,15 @@ body {
 }
 
 .tree {
+  height: 30rem;
+}
+
+.panel {
   position: fixed;
   top: 0;
   right: 0;
-  width: 30rem;
+  width: 40rem;
   background-color: rgba(241, 241, 241, 0.8); /* white */
-}
-
-.tree-body {
-  width: 30rem;
-  height: 30rem;
 }
 
 .icon {
@@ -302,24 +301,23 @@ local script = [[
     $("[data-terminal-symbol]").on("click", function (ev) {
       $("[data-symbol]").removeClass("color-selection");
       $(this).addClass("color-selection");
-      console.log($(".tree-body").width(), $(".tree-body").height());
     });
     $(".tree-head").on("click", function () {
       $(".tree-head > .icon")
         .toggleClass("fa-plus-square-o")
         .toggleClass("fa-minus-square-o");
-      $(".tree-body").toggle();
+      $(".tree").toggle();
     });
 
     var initial_zoom_x = 0;
     var initial_zoom_y = 0;
     var initial_zoom_scale = 1;
 
-    var $tree_body = $(".tree-body");
-    var w = $tree_body.width();
-    var h = $tree_body.height();
+    var $tree = $(".tree");
+    var w = $tree.width();
+    var h = $tree.height();
 
-    var svg = d3.select(".tree-body")
+    var svg = d3.select(".tree")
       .append("svg")
         .attr("width", w)
         .attr("height", h)
@@ -373,7 +371,7 @@ local script = [[
 
     var rem = 16;
     var tree = d3.tree();
-    tree.nodeSize([ 16 + 8, 8 * 16 + 32]);
+    tree.nodeSize([ 16 + 16, 8 * 16 + 32]);
     tree(root);
 
     svg.select(".edges")
@@ -406,23 +404,23 @@ local script = [[
               var node_group = d3.select(this);
               node_group
                 .attr("transform", "translate(" + d.y + "," + d.x + ")");
-              // node_group
-              //   .append("circle")
-              //     .attr("r", 4);
+
               node_group
                 .append("rect")
                   .attr("fill", "white")
-                  .attr("stroke", "red");
+                  .attr("stroke", "black");
               var name = d.data.$node.attr("data-symbol-name");
               node_group
                 .append("text")
                   .text(name);
-              var h = 24;
-              var w = name.length * 8 + h;
-              var r = h / 2;
-              var x = -r;
-              var y = -16;
 
+              var bbox = node_group.select("text").node().getBBox();
+              var h = bbox.height;
+              var w = bbox.width + h;
+              var r = h / 2;
+              var x = bbox.x - r;
+              // var y = bbox.y - (24 - h) * 0.5;
+              var y = bbox.y - (24 - h) * 0.5;
               node_group.select("rect")
                 .attr("x", x)
                 .attr("y", y)
@@ -447,7 +445,7 @@ write_html(io.stdout, { "html";
     { "div"; class="body";
       number_html;
       { "div"; class="code"; root_html };
-      { "div"; class="tree"; tree_html };
+      panel_html;
     };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.12/URI.min.js" };
