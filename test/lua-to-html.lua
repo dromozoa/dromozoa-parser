@@ -301,14 +301,32 @@ local script = [[
     var tree_height = $tree.height();
     var rem = tree_width / panel_width_rem;
 
-    var initial_zoom_x = 0;
-    var initial_zoom_y = 0;
-    var initial_zoom_scale = 1;
     var node_width = 160;
     var node_height = 32;
 
-    $("[data-terminal-symbol]").on("click", function (ev) {
-      console.log(this);
+    var initial_zoom_x = tree_width * 0.5;
+    var initial_zoom_y = tree_height * 0.5;
+    var initial_zoom_scale = 1;
+    var initial_transform = d3.zoomIdentity
+      .translate(initial_zoom_x, initial_zoom_y)
+      .scale(initial_zoom_scale);
+
+    var zoom = d3.zoom();
+    var zoom_x = 0;
+    var zoom_y = 0;
+    var zoom_scale = 1;
+
+    var viewport_group;
+    var view_group;
+
+    $("[data-terminal-symbol]").on("click", function () {
+      var d = $(this).data("node_group").datum();
+      var zx = tree_width * 0.5 - d.data.tx * zoom_scale;
+      var zy = tree_height * 0.5 - d.data.ty * zoom_scale;
+      var transform = d3.zoomIdentity
+        .translate(zx, zy)
+        .scale(zoom_scale);
+      viewport_group.call(zoom.transform, transform);
     });
 
     $(".tree-head").on("click", function () {
@@ -330,28 +348,32 @@ local script = [[
         .attr("width", tree_width)
         .attr("height", tree_height)
         .style("display", "block");
-    var view_group;
-    var viewport_group = svg.append("g")
+
+    viewport_group = svg.append("g")
       .classed("viewport", true)
-      .call(d3.zoom().on("zoom", function () {
-        var transform = d3.event.transform
-          .translate(initial_zoom_x, initial_zoom_y)
-          .scale(initial_zoom_scale);
-        view_group
-          .attr("transform", transform);
+      .call(zoom.on("zoom", function () {
+        console.log("viewport", zoom.x, zoom.y, zoom.k);
+        var transform = d3.event.transform;
+        zoom_x = transform.x;
+        zoom_y = transform.y;
+        zoom_scale = transform.k;
+        view_group.attr("transform", transform.toString());
       }));
+
     viewport_group.append("rect")
       .attr("width", tree_width)
       .attr("height", tree_height)
       .attr("fill-opacity", "0");
+
+    var transform = d3.zoomIdentity
+      .translate(initial_zoom_x, initial_zoom_y)
+      .scale(initial_zoom_scale);
+
     view_group =  viewport_group.append("g")
-      .classed("view", true)
-      .attr("transform", function () {
-        var transform = d3.zoomTransform(this)
-          .translate(initial_zoom_x, initial_zoom_y)
-          .scale(initial_zoom_scale);
-        return transform.toString();
-      })
+      .classed("view", true);
+      // .attr("transform", transform.toString());
+    viewport_group.call(zoom.transform, transform);
+
     var model_group = view_group.append("g")
       .classed("model", true);
 
@@ -374,14 +396,15 @@ local script = [[
         .enter().append("path")
           .classed("edge", true)
           .attr("d", function (d) {
-            var sx = d.parent.y;
-            var sy = d.parent.x;
+            var p = d.parent;
+            var sx = p.y;
+            var sy = p.x;
             var ex = d.y;
             var ey = d.x;
-            var hx = (sx + ex) * 0.5;
+            var mx = (sx + ex) * 0.5;
             var path = d3.path();
             path.moveTo(sx, sy);
-            path.bezierCurveTo(hx, sy, hx, ey, ex, ey)
+            path.bezierCurveTo(mx, sy, mx, ey, ex, ey)
             return path.toString();
           })
           .attr("fill", "none")
@@ -395,30 +418,35 @@ local script = [[
           .classed("node", true)
           .each(function (d) {
             var node_group = d3.select(this);
-            var rect = node_group
-              .append("rect")
-                .attr("fill", "white")
-                .attr("stroke", "black");
-            var text = node_group
-              .append("text")
-                .text(d.data.$node.attr("data-symbol-name"));
+            var $node = d.data.$node;
+            $node.data("node_group", node_group);
+            var group = node_group.append("g");
+            var rect = group.append("rect")
+              .attr("fill", "white")
+              .attr("stroke", "black");
+            var text = group.append("text")
+              .text($node.attr("data-symbol-name"));
             var bbox = text.node().getBBox();
-            var h = bbox.height;
-            var w = bbox.width + h;
-            var r = h * 0.5;
-            var x = bbox.x - r;
+            var x = bbox.x;
             var y = bbox.y;
+            var w = bbox.width;
+            var h = bbox.height;
+            var r = h * 0.5;
             rect
-              .attr("x", x)
+              .attr("x", x - r)
               .attr("y", y)
-              .attr("width", w)
+              .attr("width", w + h)
               .attr("height", h)
               .attr("rx", r)
-              .attr("ry", r);
-            var tx = d.y - bbox.width * 0.5;
+              .attr("rx", r);
+            group
+              .attr("transform", "translate(" + (- w * 0.5) + "," + (- y - r) + ")");
+            var tx = d.y - w * 0.5;
             var ty = d.x - y - r;
+            d.data.tx = d.y;
+            d.data.ty = d.x;
             node_group
-              .attr("transform", "translate(" + tx + "," + ty + ")");
+              .attr("transform", "translate(" + d.y + "," + d.x + ")");
           });
   });
 }(this));
