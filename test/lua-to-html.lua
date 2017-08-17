@@ -98,8 +98,6 @@ local max_terminal_symbol = parser.max_terminal_symbol
 local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
-local id = 0
-local nodes = {}
 local scope_stack = {}
 
 local stack1 = { root }
@@ -132,7 +130,6 @@ while true do
           }
         end
         parent_html[#parent_html + 1] = { "span";
-          id = "_" .. u.id;
           ["data-symbol"] = symbol;
           ["data-symbol-name"] = symbol_names[symbol];
           ["data-terminal-symbol"] = true;
@@ -146,21 +143,16 @@ while true do
       scope_stack[#scope_stack] = nil
     end
   else
-    id = id + 1
-    u.id = id
-    nodes[id] = u
-
     local symbol = u[0]
     if symbol > max_terminal_symbol then
       u.html = { "span",
-        id = "_" .. id;
         ["data-symbol"] = symbol;
         ["data-symbol-name"] = symbol_names[symbol];
       }
     end
 
     if u.scope then
-      local scope = { id = id }
+      local scope = {}
       u.scope = scope
       scope_stack[#scope_stack] = scope
     end
@@ -203,9 +195,7 @@ local number_width_rem = math.ceil(math.log(line_number, 10)) * 0.5
 local number_html = { "div"; class="number" }
 for i = 1, line_number do
   number_html[#number_html + 1] = { "span";
-    id = "L" .. i;
     class = "color-number";
-    ["data-number"] = i;
     i;
     "\n";
   }
@@ -462,7 +452,7 @@ local script = [[
     var model_group = view_group.append("g")
       .classed("model", true);
 
-    var tree_root = d3.hierarchy({ $node: $("#_1") }, function (node) {
+    var tree_root = d3.hierarchy({ $node: $("[data-symbol-name=chunk]") }, function (node) {
       var children = [];
       node.$node.children("[data-symbol]").each(function () {
         children.push({ $node: $(this) })
