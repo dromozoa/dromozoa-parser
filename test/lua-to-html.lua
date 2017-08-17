@@ -112,7 +112,40 @@ while true do
   if u == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
+    if u.scope then
+      scope_stack[#scope_stack] = nil
+    end
+  else
+    if u.scope then
+      local scope = {}
+      u.scope = scope
+      scope_stack[#scope_stack] = scope
+    end
+    local n = #u
+    for i = 1, n do
+      local v = u[i]
+      v.parent = u
+    end
+    for i = n, 1, -1 do
+      local v = u[i]
+      stack1[#stack1 + 1] = v
+    end
+    stack2[n2 + 1] = u
+  end
+end
 
+local stack1 = { root }
+local stack2 = {}
+while true do
+  local n1 = #stack1
+  local n2 = #stack2
+  local u = stack1[n1]
+  if not u then
+    break
+  end
+  if u == stack2[n2] then
+    stack1[n1] = nil
+    stack2[n2] = nil
     local parent = u.parent
     if parent then
       local parent_html = parent.html
@@ -138,10 +171,6 @@ while true do
         }
       end
     end
-
-    if u.scope then
-      scope_stack[#scope_stack] = nil
-    end
   else
     local symbol = u[0]
     if symbol > max_terminal_symbol then
@@ -150,18 +179,7 @@ while true do
         ["data-symbol-name"] = symbol_names[symbol];
       }
     end
-
-    if u.scope then
-      local scope = {}
-      u.scope = scope
-      scope_stack[#scope_stack] = scope
-    end
-
     local n = #u
-    for i = 1, n do
-      local v = u[i]
-      v.parent = u
-    end
     for i = n, 1, -1 do
       local v = u[i]
       stack1[#stack1 + 1] = v
