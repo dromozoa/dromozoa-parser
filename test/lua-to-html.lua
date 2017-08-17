@@ -94,6 +94,7 @@ local lexer = lua53_lexer()
 local parser = lua53_parser()
 
 local symbol_names = parser.symbol_names
+local symbol_table = parser.symbol_table
 local max_terminal_symbol = parser.max_terminal_symbol
 local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
@@ -115,20 +116,40 @@ while true do
     if u.scope then
       scope_stack[#scope_stack] = nil
     end
+
+    local symbol = u[0]
+    if symbol == symbol_table.stat then
+      local symbol_a = u[1][0]
+      if symbol_a == symbol_table["local"] then
+        local symbol_b = u[2][0]
+        if symbol_b == symbol_table["function"] then
+        end
+      end
+    end
   else
     if u.scope then
       local scope = {}
       u.scope = scope
       scope_stack[#scope_stack] = scope
     end
-    local n = #u
-    for i = 1, n do
-      local v = u[i]
-      v.parent = u
-    end
-    for i = n, 1, -1 do
-      local v = u[i]
-      stack1[#stack1 + 1] = v
+
+    local order = u.order
+    if order then
+      local n = #order
+      for i = 1, n do
+        u[order[i]].parent = u
+      end
+      for i = #order, 1, -1 do
+        stack1[#stack1 + 1] = u[order[i]]
+      end
+    else
+      local n = #u
+      for i = 1, n do
+        u[i].parent = u
+      end
+      for i = n, 1, -1 do
+        stack1[#stack1 + 1] = u[i]
+      end
     end
     stack2[n2 + 1] = u
   end

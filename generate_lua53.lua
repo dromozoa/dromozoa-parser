@@ -152,7 +152,7 @@ _"stats"
 
 _"stat"
   :_ ";"
-  :_ "varlist" "=" "explist"
+  :_ "varlist" "=" "explist" :attr("order", {3,2,1})
   :_ "functioncall"
   :_ "label"
   :_ "break"
@@ -164,13 +164,13 @@ _"stat"
   :_ "if_clause" "else_clause" "end"
   :_ "if_clause" "elseif_clauses" "end"
   :_ "if_clause" "elseif_clauses" "else_clause" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope"
-  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope"
-  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope"
+  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr("order", {1,4,5,6,3,2,7,8,9})
+  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr("order", {1,4,5,6,7,8,3,2,9,10,11})
+  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" :attr("order", {1,4,3,2,5,6,7})
   :_ "function" "funcname" "funcbody"
   :_ "local" "function" "Name" "funcbody"
   :_ "local" "namelist"
-  :_ "local" "namelist" "=" "explist"
+  :_ "local" "namelist" "=" "explist" :attr("order", {1,4,3,2})
 
 _"if_clause"
   :_ "if" "exp" "then" "block" :attr "scope"
