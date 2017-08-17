@@ -321,7 +321,7 @@ local script = [[
     var view_group;
     var model_group;
 
-    var color_fill = "#F1F1F1"; /* white */
+    var color_fill = "#FFFFFF"; /* white */
     var color_focused = "#F3E430"; /* yellow */
     var color_stroke = "#000";
 
