@@ -195,9 +195,14 @@ while true do
   else
     local symbol = u[0]
     if symbol > max_terminal_symbol then
+      local order = u.order
+      if order then
+        order = table.concat(order, ",")
+      end
       u.html = { "span",
         ["data-symbol"] = symbol;
         ["data-symbol-name"] = symbol_names[symbol];
+        ["data-order"] = order;
       }
     end
     local n = #u
@@ -492,11 +497,21 @@ local script = [[
       .classed("model", true);
 
     var tree_root = d3.hierarchy({ $node: $("[data-symbol-name=chunk]") }, function (node) {
+      var $node = node.$node;
+      var order = $node.attr("data-order");
       var children = [];
-      node.$node.children("[data-symbol]").each(function () {
+      $node.children("[data-symbol]").each(function () {
         children.push({ $node: $(this) })
       });
-      return children;
+      if (order) {
+        var ordered = [];
+        $.each(order.split(","), function (i, v) {
+          ordered[i] = children[v - 1];
+        });
+        return ordered;
+      } else {
+        return children;
+      }
     });
 
     var tree = d3.tree();
