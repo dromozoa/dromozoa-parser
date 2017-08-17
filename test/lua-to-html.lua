@@ -246,7 +246,7 @@ body {
   top: 0;
   right: 0;
   width: ]] .. panel_width_rem .. [[rem;
-  background-color: rgba(241, 241, 241, 0.75); /* white */
+  background-color: rgba(241, 241, 241, 0.5); /* white */
 }
 
 .tree {
@@ -254,7 +254,7 @@ body {
 }
 
 .tree-head {
-  background-color: rgba(198, 198, 198, 0.75); /* lighter_gray */
+  background-color: rgba(198, 198, 198, 0.5); /* lighter_gray */
 }
 
 .icon {
@@ -301,6 +301,7 @@ local script = [[
     var tree_height = $tree.height();
     var rem = tree_width / panel_width_rem;
 
+    var transition_duration = 500;
     var node_width = 160;
     var node_height = 32;
 
@@ -318,26 +319,49 @@ local script = [[
 
     var viewport_group;
     var view_group;
+    var model_group;
+
+    var color_fill = "#F1F1F1"; /* white */
+    var color_focused = "#F3E430"; /* yellow */
+    var color_stroke = "#000";
 
     $("[data-terminal-symbol]").on("click", function () {
-      var d = $(this).data("node_group").datum();
+      var node_group = $(this).data("node_group");
+      var d = node_group.datum();
       var zx = tree_width * 0.5 - d.data.tx * zoom_scale;
       var zy = tree_height * 0.5 - d.data.ty * zoom_scale;
       var transform = d3.zoomIdentity
         .translate(zx, zy)
         .scale(zoom_scale);
-      viewport_group.call(zoom.transform, transform);
+
+      d3.selectAll("[data-terminal-symbol]")
+        .transition().duration(transition_duration)
+        .style("background-color", "#ffffff");
+
+      d3.select(this)
+        .transition().duration(transition_duration)
+        .style("background-color", color_focused);
+
+      viewport_group
+        .transition().duration(transition_duration)
+        .call(zoom.transform, transform);
+      model_group.selectAll(".nodes rect")
+        .transition().duration(transition_duration)
+        .attr("fill", color_fill);
+      node_group.select("rect")
+        .transition().duration(transition_duration)
+        .attr("fill", color_focused);
     });
 
     $(".tree-head").on("click", function () {
       var $icon = $(".tree-head > .icon")
         .attr("class", "icon fa fa-spinner fa-spin");
       if ($tree.is(":visible")) {
-        $tree.hide("normal", function () {
+        $tree.hide(transition_duration, function () {
           $icon.attr("class", "icon fa fa-plus-square-o");
         });
       } else {
-        $tree.show("normal", function () {
+        $tree.show(transition_duration, function () {
           $icon.attr("class", "icon fa fa-minus-square-o");
         });
       }
@@ -352,7 +376,6 @@ local script = [[
     viewport_group = svg.append("g")
       .classed("viewport", true)
       .call(zoom.on("zoom", function () {
-        console.log("viewport", zoom.x, zoom.y, zoom.k);
         var transform = d3.event.transform;
         zoom_x = transform.x;
         zoom_y = transform.y;
@@ -365,16 +388,12 @@ local script = [[
       .attr("height", tree_height)
       .attr("fill-opacity", "0");
 
-    var transform = d3.zoomIdentity
-      .translate(initial_zoom_x, initial_zoom_y)
-      .scale(initial_zoom_scale);
-
-    view_group =  viewport_group.append("g")
+    view_group = viewport_group.append("g")
       .classed("view", true);
-      // .attr("transform", transform.toString());
-    viewport_group.call(zoom.transform, transform);
 
-    var model_group = view_group.append("g")
+    viewport_group.call(zoom.transform, initial_transform);
+
+    model_group = view_group.append("g")
       .classed("model", true);
 
     var root = d3.hierarchy({ $node: $("#_1") }, function (node) {
@@ -408,7 +427,7 @@ local script = [[
             return path.toString();
           })
           .attr("fill", "none")
-          .attr("stroke", "black");
+          .attr("stroke", color_stroke);
 
     model_group.append("g")
       .classed("nodes", true)
@@ -422,8 +441,8 @@ local script = [[
             $node.data("node_group", node_group);
             var group = node_group.append("g");
             var rect = group.append("rect")
-              .attr("fill", "white")
-              .attr("stroke", "black");
+              .attr("fill", color_fill)
+              .attr("stroke", color_stroke);
             var text = group.append("text")
               .text($node.attr("data-symbol-name"));
             var bbox = text.node().getBBox();
