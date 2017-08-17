@@ -200,6 +200,8 @@ local panel_html = { "div"; class="panel";
   { "div"; class = "tree" };
 }
 
+local transition_duration = 400
+
 -- https://github.com/tbastos/vim-lua
 -- https://github.com/reedes/vim-colors-pencil
 local style = [[
@@ -222,6 +224,9 @@ body {
   font-family: 'Noto Sans Mono CJK JP', monospace;
   white-space: pre;
   font-weight: 400;
+
+  background-color: #FFFFFF; /* actual_white */
+  color: #424242; /* light_black */
 }
 
 .body {
@@ -284,16 +289,76 @@ body {
   color: #C30771; /* dark_red */
 }
 
-.color-selection {
-  background-color: #B6D6FD;
+.code span {
+  transition: background-color ]] .. transition_duration .. [[ms;
+}
+
+.code span.color-active {
+  background-color: #F3E430; /* yellow */
+  transition: background-color ]] .. transition_duration .. [[ms;
+}
+
+.viewport > rect {
+  fill-opacity: 0;
+}
+
+.edge path {
+  fill: none;
+  stroke: #000000;
+}
+
+.node rect {
+  fill: #FFFFFF; /* actual_white */
+  stroke: #000000;
+  transition: fill ]] .. transition_duration .. [[ms;
+}
+
+.node rect.color-active {
+  fill: #F3E430; /* yellow */
+  transition: fill ]] .. transition_duration .. [[ms;
 }
 ]]
 
 local script = [[
 (function (root) {
+  var setTimeout = root.setTimeout;
   var $ = root.jQuery;
   var d3 = root.d3;
+
   var panel_width_rem = ]] .. panel_width_rem .. [[;
+  var transition_duration = ]] .. transition_duration .. [[;
+
+  var update_node_group = function (node_group) {
+    var group = node_group.select("g");
+    var rect = group.select("rect");
+    var text = group.select("text");
+    var bbox = text.node().getBBox();
+    var x = bbox.x;
+    var y = bbox.y;
+    var w = bbox.width;
+    var h = bbox.height;
+    var r = h * 0.5;
+    rect
+      .attr("x", x - r)
+      .attr("y", y)
+      .attr("width", w + h)
+      .attr("height", h)
+      .attr("rx", r)
+      .attr("rx", r);
+    group
+      .attr("transform", "translate(" + (- w * 0.5) + "," + (- y - r) + ")");
+  };
+
+  var update_node_groups = function (count) {
+    d3.selectAll("g.node").each(function (d) {
+      update_node_group(d3.select(this));
+    });
+    if (--count > 0) {
+      setTimeout(function () {
+        update_node_groups(count);
+      }, 200);
+    }
+  };
 
   $(function () {
     var $tree = $(".tree");
@@ -301,11 +366,10 @@ local script = [[
     var tree_height = $tree.height();
     var rem = tree_width / panel_width_rem;
 
-    var transition_duration = 500;
-    var node_width = 160;
-    var node_height = 32;
+    var node_width = 10 * rem;
+    var node_height = 2 * rem;
 
-    var initial_zoom_x = tree_width * 0.5;
+    var initial_zoom_x = node_width * 0.5;
     var initial_zoom_y = tree_height * 0.5;
     var initial_zoom_scale = 1;
     var initial_transform = d3.zoomIdentity
@@ -317,14 +381,6 @@ local script = [[
     var zoom_y = 0;
     var zoom_scale = 1;
 
-    var viewport_group;
-    var view_group;
-    var model_group;
-
-    var color_fill = "#FFFFFF"; /* white */
-    var color_focused = "#F3E430"; /* yellow */
-    var color_stroke = "#000";
-
     $("[data-terminal-symbol]").on("click", function () {
       var node_group = $(this).data("node_group");
       var d = node_group.datum();
@@ -333,35 +389,26 @@ local script = [[
       var transform = d3.zoomIdentity
         .translate(zx, zy)
         .scale(zoom_scale);
-
-      d3.selectAll("[data-terminal-symbol]")
-        .transition().duration(transition_duration)
-        .style("background-color", "#ffffff");
-
-      d3.select(this)
-        .transition().duration(transition_duration)
-        .style("background-color", color_focused);
-
-      viewport_group
+      d3.selectAll(".color-active")
+        .classed("color-active", false);
+      $(this)
+        .addClass("color-active");
+      node_group.select("rect")
+        .classed("color-active", true);
+      d3.select("g.viewport")
         .transition().duration(transition_duration)
         .call(zoom.transform, transform);
-      model_group.selectAll(".nodes rect")
-        .transition().duration(transition_duration)
-        .attr("fill", color_fill);
-      node_group.select("rect")
-        .transition().duration(transition_duration)
-        .attr("fill", color_focused);
     });
 
     $(".tree-head").on("click", function () {
       var $icon = $(".tree-head > .icon")
         .attr("class", "icon fa fa-spinner fa-spin");
       if ($tree.is(":visible")) {
-        $tree.hide(transition_duration, function () {
+        $tree.slideUp(transition_duration, function () {
           $icon.attr("class", "icon fa fa-plus-square-o");
         });
       } else {
-        $tree.show(transition_duration, function () {
+        $tree.slideDown(transition_duration, function () {
           $icon.attr("class", "icon fa fa-minus-square-o");
         });
       }
@@ -373,30 +420,29 @@ local script = [[
         .attr("height", tree_height)
         .style("display", "block");
 
-    viewport_group = svg.append("g")
+    var viewport_group = svg.append("g")
       .classed("viewport", true)
       .call(zoom.on("zoom", function () {
         var transform = d3.event.transform;
         zoom_x = transform.x;
         zoom_y = transform.y;
         zoom_scale = transform.k;
-        view_group.attr("transform", transform.toString());
+        d3.select("g.view").attr("transform", transform.toString());
       }));
 
     viewport_group.append("rect")
       .attr("width", tree_width)
-      .attr("height", tree_height)
-      .attr("fill-opacity", "0");
+      .attr("height", tree_height);
 
-    view_group = viewport_group.append("g")
+    var view_group = viewport_group.append("g")
       .classed("view", true);
 
     viewport_group.call(zoom.transform, initial_transform);
 
-    model_group = view_group.append("g")
+    var model_group = view_group.append("g")
       .classed("model", true);
 
-    var root = d3.hierarchy({ $node: $("#_1") }, function (node) {
+    var tree_root = d3.hierarchy({ $node: $("#_1") }, function (node) {
       var children = [];
       node.$node.children("[data-symbol]").each(function () {
         children.push({ $node: $(this) })
@@ -406,67 +452,65 @@ local script = [[
 
     var tree = d3.tree();
     tree.nodeSize([ node_height, node_width ]);
-    tree(root);
+    tree(tree_root);
 
     model_group.append("g")
       .classed("edges", true)
       .selectAll(".edge")
-        .data(root.descendants().slice(1))
-        .enter().append("path")
+        .data(tree_root.descendants().slice(1))
+        .enter().append("g")
           .classed("edge", true)
-          .attr("d", function (d) {
-            var p = d.parent;
-            var sx = p.y;
-            var sy = p.x;
-            var ex = d.y;
-            var ey = d.x;
-            var mx = (sx + ex) * 0.5;
-            var path = d3.path();
-            path.moveTo(sx, sy);
-            path.bezierCurveTo(mx, sy, mx, ey, ex, ey)
-            return path.toString();
-          })
-          .attr("fill", "none")
-          .attr("stroke", color_stroke);
+          .append("path")
+            .attr("d", function (d) {
+              var p = d.parent;
+              var sx = p.y;
+              var sy = p.x;
+              var ex = d.y;
+              var ey = d.x;
+              var mx = (sx + ex) * 0.5;
+              var path = d3.path();
+              path.moveTo(sx, sy);
+              path.bezierCurveTo(mx, sy, mx, ey, ex, ey)
+              return path.toString();
+            });
 
     model_group.append("g")
       .classed("nodes", true)
       .selectAll(".node")
-        .data(root.descendants())
+        .data(tree_root.descendants())
         .enter().append("g")
           .classed("node", true)
           .each(function (d) {
             var node_group = d3.select(this);
             var $node = d.data.$node;
             $node.data("node_group", node_group);
-            var group = node_group.append("g");
-            var rect = group.append("rect")
-              .attr("fill", color_fill)
-              .attr("stroke", color_stroke);
-            var text = group.append("text")
+            group = node_group.append("g");
+            group.append("rect");
+            group.append("text")
               .text($node.attr("data-symbol-name"));
-            var bbox = text.node().getBBox();
-            var x = bbox.x;
-            var y = bbox.y;
-            var w = bbox.width;
-            var h = bbox.height;
-            var r = h * 0.5;
-            rect
-              .attr("x", x - r)
-              .attr("y", y)
-              .attr("width", w + h)
-              .attr("height", h)
-              .attr("rx", r)
-              .attr("rx", r);
-            group
-              .attr("transform", "translate(" + (- w * 0.5) + "," + (- y - r) + ")");
-            var tx = d.y - w * 0.5;
-            var ty = d.x - y - r;
             d.data.tx = d.y;
             d.data.ty = d.x;
             node_group
-              .attr("transform", "translate(" + d.y + "," + d.x + ")");
+              .attr("transform", "translate(" + d.y + "," + d.x + ")")
+              .on("click", function (d) {
+                var scroll = $node.offset().top - 1.5 * rem;
+                if (scroll < 0) {
+                  scroll = 0;
+                }
+                d3.selectAll(".color-active")
+                  .classed("color-active", false);
+                d.data.$node
+                  .addClass("color-active");
+                d3.select(this).select("rect")
+                  .classed("color-active", true);
+                $("body").animate({
+                  scrollTop: scroll
+                }, transition_duration);
+              });
+            update_node_group(node_group);
           });
+
+    update_node_groups(10);
   });
 }(this));
 ]]
@@ -485,7 +529,6 @@ write_html(io.stdout, { "html";
       panel_html;
     };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
-    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.18.12/URI.min.js" };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
     { "script"; script };
   };
