@@ -22,6 +22,23 @@ local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
 local keys = dumper.keys
 
+local function scope_find(scope_stack, name)
+  for i = #scope_stack, 1, -1 do
+    local scope = scope_stack[i]
+    for j = #scope, 1, -1 do
+      local symbol = scope[j]
+      if symbol.name == name then
+        return scope, j
+      end
+    end
+  end
+end
+
+local function scope_push(scope_stack, symbol)
+  local scope = scope_stack[#scope_stack]
+  scope[#scope + 1] = symbol
+end
+
 local function write_html(out, node)
   local number_keys, string_keys = keys(node)
   local name = assert(node[1])
@@ -83,8 +100,7 @@ local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
 local nodes = {}
-local dfs_events = {}
-local dfs_nodes = {}
+local scope_stack = {}
 
 local stack1 = { root }
 local stack2 = {}
@@ -98,9 +114,6 @@ while true do
   if u == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
-    local m = #dfs_events + 1
-    dfs_events[m] = 2 -- finish
-    dfs_nodes[m] = u
 
     local parent = u.parent
     if parent then
@@ -128,13 +141,14 @@ while true do
         }
       end
     end
+
+    if u.scope then
+      scope_stack[#scope_stack] = nil
+    end
   else
     id = id + 1
     u.id = id
     nodes[id] = u
-    local m = #dfs_events + 1
-    dfs_events[m] = 1 -- discover
-    dfs_nodes[m] = u
 
     local symbol = u[0]
     if symbol > max_terminal_symbol then
@@ -143,6 +157,12 @@ while true do
         ["data-symbol"] = symbol;
         ["data-symbol-name"] = symbol_names[symbol];
       }
+    end
+
+    if u.scope then
+      local scope = { id = id }
+      u.scope = scope
+      scope_stack[#scope_stack] = scope
     end
 
     local n = #u
