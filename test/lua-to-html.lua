@@ -99,6 +99,7 @@ local max_terminal_symbol = parser.max_terminal_symbol
 local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
+local id = 0
 local scope
 
 local stack1 = { root }
@@ -130,8 +131,14 @@ while true do
       end
     end
   else
+    id = id + 1
+    u.id = id
+
     if u.scope then
-      scope = { parent = scope }
+      scope = {
+        id = id;
+        parent = scope;
+      }
       u.scope = scope
     end
 
@@ -156,6 +163,8 @@ while true do
     stack2[n2 + 1] = u
   end
 end
+
+local scope_html = { "div"; class = "scope" }
 
 local stack1 = { root }
 local stack2 = {}
@@ -186,6 +195,7 @@ while true do
           }
         end
         parent_html[#parent_html + 1] = { "span";
+          id = "_" .. u.id;
           ["data-symbol"] = symbol;
           ["data-symbol-name"] = symbol_names[symbol];
           ["data-terminal-symbol"] = true;
@@ -201,7 +211,19 @@ while true do
       if order then
         order = table.concat(order, ",")
       end
+      local scope = u.scope
+      if scope and scope[1] then
+        local scope_table_html = { "table" }
+        for i = 1, #scope do
+          local symbol = scope[i]
+          scope_table_html[#scope_table_html + 1] = { "tr";
+            { "td"; symbol.name };
+          }
+        end
+        scope_html[#scope_html + 1] = scope_table_html
+      end
       u.html = { "span",
+        id = "_" .. u.id;
         ["data-symbol"] = symbol;
         ["data-symbol-name"] = symbol_names[symbol];
         ["data-order"] = order;
@@ -249,11 +271,16 @@ end
 
 local panel_width_rem = 40
 local panel_html = { "div"; class="panel";
-  { "div"; class = "tree-head";
+  { "div"; class = "panel-head";
     { "span"; class = "icon fa fa-minus-square-o" };
     { "span"; "Tree" };
   };
   { "div"; class = "tree" };
+  { "div"; class = "panel-head";
+    { "span"; class = "icon fa fa-minus-square-o" };
+    { "span"; "Scope" };
+  };
+  scope_html;
 }
 
 local transition_duration = 400
@@ -314,7 +341,12 @@ body {
   height: 30rem;
 }
 
-.tree-head {
+.scope {
+  height: 30rem;
+  overflow: scroll;
+}
+
+.panel-head {
   background-color: rgba(198, 198, 198, 0.5); /* lighter_gray */
 }
 
@@ -456,15 +488,17 @@ local script = [[
         .call(zoom.transform, transform);
     });
 
-    $(".tree-head").on("click", function () {
-      var $icon = $(".tree-head > .icon")
+    $(".panel-head").on("click", function () {
+      var $this = $(this);
+      var $area = $this.next();
+      var $icon = $this.children(".icon")
         .attr("class", "icon fa fa-spinner fa-spin");
-      if ($tree.is(":visible")) {
-        $tree.slideUp(transition_duration, function () {
+      if ($area.is(":visible")) {
+        $area.slideUp(transition_duration, function () {
           $icon.attr("class", "icon fa fa-plus-square-o");
         });
       } else {
-        $tree.slideDown(transition_duration, function () {
+        $area.slideDown(transition_duration, function () {
           $icon.attr("class", "icon fa fa-minus-square-o");
         });
       }
