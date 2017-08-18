@@ -23,20 +23,19 @@ local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
 local keys = dumper.keys
 
-local function scope_find(scope_stack, name)
-  for i = #scope_stack, 1, -1 do
-    local scope = scope_stack[i]
+local function scope_find(scope, name)
+  repeat
     for j = #scope, 1, -1 do
       local symbol = scope[j]
       if symbol.name == name then
         return scope, j
       end
     end
-  end
+    scope = scope.parent
+  until scope == nil
 end
 
-local function scope_push(scope_stack, symbol)
-  local scope = scope_stack[#scope_stack]
+local function scope_push(scope, symbol)
   scope[#scope + 1] = symbol
 end
 
@@ -100,7 +99,7 @@ local max_terminal_symbol = parser.max_terminal_symbol
 local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
-local scope_stack = {}
+local scope
 
 local stack1 = { root }
 local stack2 = {}
@@ -116,28 +115,24 @@ while true do
     stack2[n2] = nil
 
     if u.scope then
-      scope_stack[#scope_stack] = nil
+      scope = scope.parent
     end
 
     local symbol = u[0]
     if symbol == symbol_table.Name then
       u.name = value(u)
     elseif symbol == symbol_table.local_name then
-      scope_push(scope_stack, u[1])
+      scope_push(scope, u[1])
     elseif symbol == symbol_table.local_namelist then
       local v = u[1]
       for i = 1, #v, 2 do
-        scope_push(scope_stack, v[i])
+        scope_push(scope, v[i])
       end
     end
   else
     if u.scope then
-      local n = #scope_stack
-      local scope = {
-        parent = scope_stack[n]
-      }
+      scope = { parent = scope }
       u.scope = scope
-      scope_stack[n + 1] = scope
     end
 
     local order = u.order
