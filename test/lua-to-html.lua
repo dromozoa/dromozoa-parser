@@ -17,6 +17,7 @@
 
 local dumper = require "dromozoa.parser.dumper"
 local escape_html = require "dromozoa.parser.escape_html"
+local value = require "dromozoa.parser.value"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
@@ -113,24 +114,30 @@ while true do
   if u == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
+
     if u.scope then
       scope_stack[#scope_stack] = nil
     end
 
     local symbol = u[0]
-    if symbol == symbol_table.stat then
-      local symbol_a = u[1][0]
-      if symbol_a == symbol_table["local"] then
-        local symbol_b = u[2][0]
-        if symbol_b == symbol_table["function"] then
-        end
+    if symbol == symbol_table.Name then
+      u.name = value(u)
+    elseif symbol == symbol_table.local_name then
+      scope_push(scope_stack, u[1])
+    elseif symbol == symbol_table.local_namelist then
+      local v = u[1]
+      for i = 1, #v, 2 do
+        scope_push(scope_stack, v[i])
       end
     end
   else
     if u.scope then
-      local scope = {}
+      local n = #scope_stack
+      local scope = {
+        parent = scope_stack[n]
+      }
       u.scope = scope
-      scope_stack[#scope_stack] = scope
+      scope_stack[n + 1] = scope
     end
 
     local order = u.order
