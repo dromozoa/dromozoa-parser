@@ -95,7 +95,7 @@ _:lexer()
   :_ "."
   :_ ".." "operator"
   :_ "..."
-  :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
+  :_ (RE[[[A-Za-z_]\w*]]) :as "Name" :attr_value "name"
   :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant")
   :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant")
   :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3) :attr("color", "color-constant")
@@ -192,7 +192,7 @@ _"retstat"
   :_ "return" "explist" ";"
 
 _"label"
-  :_ "::" "Name" "::"
+  :_ "::" "Name" "::" :attr(2, "name_type", "label")
 
 _"funcname"
   :_ "funcnames"

@@ -43,13 +43,22 @@ function class:collapse()
   return self
 end
 
-function class:attr(key, value)
-  if value == nil then
-    value = true
-  end
+function class:attr(...)
   local items = self.items
   local attribute_actions = items[#items].attribute_actions
-  attribute_actions[#attribute_actions + 1] = { 1, key, value }
+  if type(...) == "number" then
+    local i, key, value = ...
+    if value == nil then
+      value = true
+    end
+    attribute_actions[#attribute_actions + 1] = { 2, i, key, value }
+  else
+    local key, value = ...
+    if value == nil then
+      value = true
+    end
+    attribute_actions[#attribute_actions + 1] = { 1, key, value }
+  end
   return self
 end
 

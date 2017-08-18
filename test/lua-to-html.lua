@@ -120,8 +120,8 @@ while true do
     end
 
     local symbol = u[0]
-    if symbol == symbol_table.Name then
-      u.name = value(u)
+    if symbol == symbol_table.label then
+      scope_push(scope, u[2])
     elseif symbol == symbol_table.local_name then
       scope_push(scope, u[1])
     elseif symbol == symbol_table.local_namelist then
@@ -218,6 +218,7 @@ while true do
           local symbol = scope[i]
           scope_table_html[#scope_table_html + 1] = { "tr";
             { "td"; symbol.name };
+            { "td"; symbol.name_type or "var" };
           }
         end
         scope_html[#scope_html + 1] = scope_table_html

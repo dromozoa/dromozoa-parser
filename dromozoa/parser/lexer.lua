@@ -17,6 +17,7 @@
 
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
+local value = require "dromozoa.parser.value"
 
 local function range(ri, rj, i, j)
   if i > 0 then
@@ -258,13 +259,21 @@ function metatable:__call(s, file)
         rj = #rs
       elseif code == 17 then -- add integer
         rv = rv + action[2]
-      elseif code == 18 then -- attribute
+      elseif code == 18 then -- set attribute
         if attributes then
           local m = #attributes
           attributes[m + 1] = action[2]
           attributes[m + 2] = action[3]
         else
           attributes = { action[2], action[3] }
+        end
+      elseif code == 19 then -- set attribute with value
+        if attributes then
+          local m = #attributes
+          attributes[m + 1] = action[2]
+          attributes[m + 2] = value
+        else
+          attributes = { action[2], value }
         end
       end
     end
@@ -284,7 +293,12 @@ function metatable:__call(s, file)
       }
       if attributes then
         for i = 1, #attributes, 2 do
-          node[attributes[i]] = attributes[i + 1]
+          local v = attributes[i + 1]
+          if v == value then
+            node[attributes[i]] = value(node)
+          else
+            node[attributes[i]] = v
+          end
         end
       end
       terminal_nodes[#terminal_nodes + 1] = node

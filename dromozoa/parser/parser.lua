@@ -121,8 +121,10 @@ function metatable:__call(terminal_nodes, s, file)
               for i = 1, #attribute_actions do
                 local attribute_action = attribute_actions[i]
                 local code = attribute_action[1]
-                if code == 1 then -- attribute
+                if code == 1 then -- set attribute
                   node[attribute_action[2]] = attribute_action[3]
+                elseif code == 2 then -- set child attribute
+                  node[attribute_action[2]][attribute_action[3]] = attribute_action[4]
                 end
               end
             end
