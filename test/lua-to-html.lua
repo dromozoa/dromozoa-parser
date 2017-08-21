@@ -113,6 +113,7 @@ local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
 local scope
+local table
 
 local stack1 = { root }
 local stack2 = {}
@@ -159,21 +160,15 @@ while true do
     id = id + 1
     u.id = id
 
-    local scope_type = u.scope
-    if scope_type then
-      if scope_type == true then
-        scope_type = "block"
-      end
+    if u.scope then
       if scope then
         scope = {
-          scope_type = scope_type;
           id = id;
           depth = scope.depth + 1;
           parent = scope;
         }
       else
         scope = {
-          scope_type = scope_type;
           id = id;
           depth = 1;
         }
@@ -266,11 +261,6 @@ while true do
           }
         end
         scope_html[#scope_html + 1] = { "div";
-          { "div";
-            { "span";
-              scope.scope_type .. " scope";
-            }
-          };
           { "table";
             ["data-id"] = scope.id;
             ["data-depth"] = scope.depth;

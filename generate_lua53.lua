@@ -140,7 +140,7 @@ _ :left "or"
   :right "^"
 
 _"chunk"
-  :_ "block" :attr("scope", "chunk")
+  :_ "block" :attr "scope" :attr "table"
 
 _"block"
   :_ ()
@@ -283,8 +283,8 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" :attr("scope", "function")
-  :_ "(" "parlist" ")" "block" "end" :attr("scope", "function")
+  :_ "(" ")" "block" "end" :attr "scope" :attr "table"
+  :_ "(" "parlist" ")" "block" "end" :attr "scope" :attr "table"
 
 _"parlist"
   :_ "namelist"
