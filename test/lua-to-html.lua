@@ -23,7 +23,6 @@ local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
 local encode_string = dumper.encode_string
 local keys = dumper.keys
-
 local symbol_value = value
 
 local function symbol_type(symbol)
@@ -112,8 +111,8 @@ local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
+local state
 local scope
-local table
 
 local stack1 = { root }
 local stack2 = {}
@@ -127,6 +126,10 @@ while true do
   if u == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
+
+    if u.state then
+      state = state.parent
+    end
 
     if u.scope then
       scope = scope.parent
@@ -149,30 +152,40 @@ while true do
           scope_push(scope, v[i])
         end
       end
-    elseif symbol == symbol_table.IntegerConstant then
-      scope_push(scope, u)
-    elseif symbol == symbol_table.FloatConstant then
-      scope_push(scope, u)
-    elseif symbol == symbol_table.LiteralString then
-      scope_push(scope, u)
+    elseif symbol == symbol_table.var then
+      local v = u[1]
+      if v[0] == symbol_table.Name then
+        local symbol = scope_find(scope, "var", value(v))
+        if symbol then
+          local refs = symbol.refs
+          if refs then
+            refs[#refs + 1] = v
+          else
+            symbol.refs = { v }
+          end
+        end
+      end
     end
   else
     id = id + 1
     u.id = id
 
+    if u.state then
+      state = {
+        id = id;
+        parent = state;
+        constatnts = {};
+        locals = {};
+        upvalues = {};
+      }
+      u.state = state
+    end
+
     if u.scope then
-      if scope then
-        scope = {
-          id = id;
-          depth = scope.depth + 1;
-          parent = scope;
-        }
-      else
-        scope = {
-          id = id;
-          depth = 1;
-        }
-      end
+      scope = {
+        id = id;
+        parent = scope;
+      }
       u.scope = scope
     end
 
@@ -255,19 +268,46 @@ while true do
           if t == "string" then
             v = encode_string(v)
           end
+          local refs = symbol.refs
+          local refs_html = { "td" }
+          if refs then
+            for j = 1, #refs do
+              local ref = refs[j]
+              local n = #refs_html
+              if n == 1 then
+                refs_html[n + 1] = { "span";
+                  ["data-ref"] = ref.id;
+                  "#" .. ref.id;
+                }
+              else
+                refs_html[n + 1] = ","
+                refs_html[n + 2] = { "span";
+                  ["data-ref"] = ref.id;
+                  "#" .. ref.id;
+                }
+              end
+            end
+          end
+
           scope_tbody_html[#scope_tbody_html + 1] = { "tr";
             { "td"; t };
             { "td"; v };
+            { "td";
+              ["data-def"] = symbol.id;
+              "#" .. symbol.id;
+            };
+            refs_html;
           }
         end
         scope_html[#scope_html + 1] = { "div";
           { "table";
             ["data-id"] = scope.id;
-            ["data-depth"] = scope.depth;
             { "thead";
               { "tr";
                 { "th"; "Type" };
-                { "th"; "Value" };
+                { "th"; "Name" };
+                { "th"; "Def" };
+                { "th"; "Refs" };
               };
             };
             scope_tbody_html;
@@ -466,10 +506,6 @@ body {
 .scope td {
   border: solid 1px #000000;
 }
-
-.scope th:first-child {
-  width: 4rem;
-}
 ]]
 
 local script = [[
@@ -572,6 +608,40 @@ local script = [[
     $(".scope table").on("click", function () {
       var $this = $(this);
       var $node = $("#_" + $this.attr("data-id"));
+      var scroll = $node.offset().top - 1.5 * rem;
+      if (scroll < 0) {
+        scroll = 0;
+      }
+      d3.selectAll(".color-active")
+        .classed("color-active", false);
+      $node
+        .addClass("color-active");
+      $("body").animate({
+        scrollTop: scroll
+      }, transition_duration);
+    });
+
+    $(".scope [data-def]").on("click", function (ev) {
+      ev.stopPropagation();
+      var $this = $(this);
+      var $node = $("#_" + $this.attr("data-def"));
+      var scroll = $node.offset().top - 1.5 * rem;
+      if (scroll < 0) {
+        scroll = 0;
+      }
+      d3.selectAll(".color-active")
+        .classed("color-active", false);
+      $node
+        .addClass("color-active");
+      $("body").animate({
+        scrollTop: scroll
+      }, transition_duration);
+    })
+
+    $(".scope [data-ref]").on("click", function (ev) {
+      ev.stopPropagation();
+      var $this = $(this);
+      var $node = $("#_" + $this.attr("data-ref"));
       var scroll = $node.offset().top - 1.5 * rem;
       if (scroll < 0) {
         scroll = 0;

@@ -93,7 +93,7 @@ _:lexer()
   :_ ":"
   :_ ","
   :_ "."
-  :_ ".." "operator"
+  :_ ".." :attr("color", "color-operator")
   :_ "..."
   :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
   :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant") :attr("type", "string")
@@ -140,7 +140,7 @@ _ :left "or"
   :right "^"
 
 _"chunk"
-  :_ "block" :attr "scope" :attr "table"
+  :_ "block" :attr "state" :attr "scope"
 
 _"block"
   :_ ()
@@ -283,8 +283,8 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" :attr "scope" :attr "table"
-  :_ "(" "parlist" ")" "block" "end" :attr "scope" :attr "table"
+  :_ "(" ")" "block" "end" :attr "state" :attr "scope"
+  :_ "(" "parlist" ")" "block" "end" :attr "state" :attr "scope"
 
 _"parlist"
   :_ "namelist"
