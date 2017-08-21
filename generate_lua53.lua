@@ -95,29 +95,31 @@ _:lexer()
   :_ "."
   :_ ".." "operator"
   :_ "..."
-  :_ (RE[[[A-Za-z_]\w*]]) :as "Name" :attr_value "name"
-  :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant")
-  :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant")
-  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3) :attr("color", "color-constant")
-  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3) :attr("color", "color-constant")
+  :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
+  :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant") :attr("type", "string")
+  :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant") :attr("type", "string")
+  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3) :attr("color", "color-constant") :attr("type", "string")
+  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3) :attr("color", "color-constant") :attr("type", "string")
   :_ [["]] :skip() :call "dq_string" :mark()
   :_ [[']] :skip() :call "sq_string" :mark()
   :_ (RE[[\[=*\[\n]]) :sub(2, -3) :join("]", "]") :hold() :skip() :call "long_string" :mark()
   :_ (RE[[\[=*\[]]) :sub(2, -2) :join("]", "]") :hold() :skip() :call "long_string" :mark()
-  :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "Numeral" :attr("color", "color-constant")
-  :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "Numeral" :attr("color", "color-constant")
+  :_ (RE[[\d+]]) :as "IntegerConstant" :attr("color", "color-constant") :attr("type", "integer")
+  :_ (RE[[0[xX][0-9A-Fa-f]+]]) :as "IntegerConstant" :attr("color", "color-constant") :attr("type", "integer")
+  :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "FloatConstant" :attr("color", "color-constant") :attr("type", "float")
+  :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "FloatConstant" :attr("color", "color-constant") :attr("type", "float")
   :_ ("--[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :skip()
   :_ (RE[[--\[=+\[]]) :sub(4, -2) :join("]", "]") :hold() :skip() :call "long_comment"
   :_ ("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n") : skip()
 
 string_lexer(_:lexer "dq_string")
-  :_ [["]] :as "LiteralString" :concat() :ret() :attr("color", "color-constant")
+  :_ [["]] :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
 
 string_lexer(_:lexer "sq_string")
-  :_ [[']] :as "LiteralString" :concat() :ret() :attr("color", "color-constant")
+  :_ [[']] :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
 
 _:search_lexer "long_string"
-  :when() :as "LiteralString" :concat() :ret() :attr("color", "color-constant")
+  :when() :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
   :otherwise() :push()
 
 _:search_lexer "long_comment"
@@ -138,7 +140,7 @@ _ :left "or"
   :right "^"
 
 _"chunk"
-  :_ "block" :attr "scope"
+  :_ "block" :attr("scope", "chunk")
 
 _"block"
   :_ ()
@@ -192,7 +194,7 @@ _"retstat"
   :_ "return" "explist" ";"
 
 _"label"
-  :_ "::" "Name" "::" :attr(2, "name_type", "label")
+  :_ "::" "Name" "::" :attr(2, "type", "label")
 
 _"funcname"
   :_ "funcnames"
@@ -281,8 +283,8 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" :attr "scope"
-  :_ "(" "parlist" ")" "block" "end" :attr "scope"
+  :_ "(" ")" "block" "end" :attr("scope", "function")
+  :_ "(" "parlist" ")" "block" "end" :attr("scope", "function")
 
 _"parlist"
   :_ "namelist"
@@ -306,6 +308,10 @@ _"field"
 _"fieldsep"
   :_ ","
   :_ ";"
+
+_"Numeral"
+  :_ "IntegerConstant"
+  :_ "FloatConstant"
 
 _"local_name"
   :_ "Name"

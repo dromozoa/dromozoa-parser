@@ -21,14 +21,26 @@ local value = require "dromozoa.parser.value"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
+local encode_string = dumper.encode_string
 local keys = dumper.keys
 
-local function scope_find(scope, name)
+local symbol_value = value
+
+local function symbol_type(symbol)
+  local t = symbol.type
+  if t then
+    return t
+  else
+    return "var"
+  end
+end
+
+local function scope_find(scope, t, key)
   repeat
     for j = #scope, 1, -1 do
       local symbol = scope[j]
-      if symbol.name == name then
-        return scope, j
+      if symbol_type(symbol) == t and symbol_value(symbol) == key then
+        return symbol, scope, j
       end
     end
     scope = scope.parent
@@ -129,16 +141,43 @@ while true do
       for i = 1, #v, 2 do
         scope_push(scope, v[i])
       end
+    elseif symbol == symbol_table.parlist then
+      local v = u[1]
+      if v[0] == symbol_table.namelist then
+        for i = 1, #v, 2 do
+          scope_push(scope, v[i])
+        end
+      end
+    elseif symbol == symbol_table.IntegerConstant then
+      scope_push(scope, u)
+    elseif symbol == symbol_table.FloatConstant then
+      scope_push(scope, u)
+    elseif symbol == symbol_table.LiteralString then
+      scope_push(scope, u)
     end
   else
     id = id + 1
     u.id = id
 
-    if u.scope then
-      scope = {
-        id = id;
-        parent = scope;
-      }
+    local scope_type = u.scope
+    if scope_type then
+      if scope_type == true then
+        scope_type = "block"
+      end
+      if scope then
+        scope = {
+          scope_type = scope_type;
+          id = id;
+          depth = scope.depth + 1;
+          parent = scope;
+        }
+      else
+        scope = {
+          scope_type = scope_type;
+          id = id;
+          depth = 1;
+        }
+      end
       u.scope = scope
     end
 
@@ -213,15 +252,37 @@ while true do
       end
       local scope = u.scope
       if scope and scope[1] then
-        local scope_table_html = { "table" }
+        local scope_tbody_html = { "tbody" }
         for i = 1, #scope do
           local symbol = scope[i]
-          scope_table_html[#scope_table_html + 1] = { "tr";
-            { "td"; symbol.name };
-            { "td"; symbol.name_type or "var" };
+          local t = symbol_type(symbol)
+          local v = symbol_value(symbol)
+          if t == "string" then
+            v = encode_string(v)
+          end
+          scope_tbody_html[#scope_tbody_html + 1] = { "tr";
+            { "td"; t };
+            { "td"; v };
           }
         end
-        scope_html[#scope_html + 1] = scope_table_html
+        scope_html[#scope_html + 1] = { "div";
+          { "div";
+            { "span";
+              scope.scope_type .. " scope";
+            }
+          };
+          { "table";
+            ["data-id"] = scope.id;
+            ["data-depth"] = scope.depth;
+            { "thead";
+              { "tr";
+                { "th"; "Type" };
+                { "th"; "Value" };
+              };
+            };
+            scope_tbody_html;
+          };
+        }
       end
       u.html = { "span",
         id = "_" .. u.id;
@@ -406,6 +467,19 @@ body {
   fill: #F3E430; /* yellow */
   transition: fill ]] .. transition_duration .. [[ms;
 }
+
+.scope table {
+  border-collapse: collapse;
+}
+
+.scope th,
+.scope td {
+  border: solid 1px #000000;
+}
+
+.scope th:first-child {
+  width: 4rem;
+}
 ]]
 
 local script = [[
@@ -505,6 +579,22 @@ local script = [[
       }
     });
 
+    $(".scope table").on("click", function () {
+      var $this = $(this);
+      var $node = $("#_" + $this.attr("data-id"));
+      var scroll = $node.offset().top - 1.5 * rem;
+      if (scroll < 0) {
+        scroll = 0;
+      }
+      d3.selectAll(".color-active")
+        .classed("color-active", false);
+      $node
+        .addClass("color-active");
+      $("body").animate({
+        scrollTop: scroll
+      }, transition_duration);
+    });
+
     var svg = d3.select(".tree")
       .append("svg")
         .attr("width", tree_width)
@@ -600,7 +690,7 @@ local script = [[
                 }
                 d3.selectAll(".color-active")
                   .classed("color-active", false);
-                d.data.$node
+                $node
                   .addClass("color-active");
                 d3.select(this).select("rect")
                   .classed("color-active", true);

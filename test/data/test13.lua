@@ -15,34 +15,17 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local u = "foo"
+
 local function f(a, b, c)
-  local a = { a = { b = { c = a } } }
-  print(a, b and 1 or 2, c .. c, x.a.b.c)
-  return 42
+  do
+    local a = a .. a
+    print(a, b, c .. c, u .. u, 0.5)
+  end
+  return 42, a, 0.5
 end
 f("foo", true, [[
 abc
 def
 ghi
 ]])
-
---12345678901234567890123456789
-data = { 1, 2, 3, 4, "日本語" }
-repeat
-  local n = #data
-  print(data[n])
-  data[n] = nil
-until n == 1
-
-do
-  local a, b = 1, 2
-  local b = 3
-  print(a, b)
-end
-
-local i = 10
-for i = 1, i do
-  print(i)
-end
-
--- end

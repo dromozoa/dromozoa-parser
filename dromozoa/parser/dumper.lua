@@ -162,6 +162,7 @@ local function compact(self, out, value)
 end
 
 local class = {
+  encode_string = encode_string;
   keys = keys;
 }
 local metatable = {
