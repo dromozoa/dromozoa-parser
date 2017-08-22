@@ -163,7 +163,10 @@ local function add_state_html(state_html, state)
       end
 
       state_html[#state_html + 1] = { "div";
-        { "span"; "Constants" };
+        { "span";
+          ["data-ref"] = state.id;
+          "Constants";
+        };
         { "table";
           { "thead";
             { "tr";
@@ -183,7 +186,8 @@ local function add_scope_html(scope_html, scope)
   if scope and scope[1] then
     local scope_title_html = { "span" }
     if scope.parent then
-      scope_title_html[2] = "Scope "
+      scope_title_html["data-ref"] = scope.id
+      scope_title_html[2] = "Scope"
     else
       scope_title_html[2] = "Chunk Scope"
     end
@@ -328,8 +332,8 @@ while true do
       state = {
         id = id;
         parent = state;
-        constants = {};
         params = {};
+        constants = {};
         locals = {};
         upvalues = {};
       }
