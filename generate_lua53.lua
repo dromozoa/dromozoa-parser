@@ -168,7 +168,7 @@ _"stat"
   :_ "if_clause" "elseif_clauses" "else_clause" "end"
   :_ "for" "local_name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr("order", {1,4,5,6,3,2,7,8,9})
   :_ "for" "local_name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr("order", {1,4,5,6,7,8,3,2,9,10,11})
-  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" :attr("order", {1,4,3,2,5,6,7})
+  :_ "for" "local_namelist" "in" "explist" "do" "block" "end" :attr "scope" :attr("order", {1,4,3,2,5,6,7})
   :_ "function" "funcname" "funcbody"
   :_ "local" "function" "local_name" "funcbody"
   :_ "local" "local_namelist"

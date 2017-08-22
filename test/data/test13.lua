@@ -30,3 +30,13 @@ abc
 def
 ghi
 ]])
+
+for i = 1, 10 do
+  local i = i + 1
+  print(i)
+end
+
+for a, b in pairs({}) do
+  print(a, b)
+end
+
