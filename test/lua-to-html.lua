@@ -125,6 +125,111 @@ local function write_html(out, node)
   end
 end
 
+local function add_scope_html(scope_html, scope)
+  if scope and scope[1] then
+    local scope_tbody_html = { "tbody" }
+    for i = 1, #scope do
+      local name = scope[i]
+      local def = name.def
+      local def_html = { "td" }
+      if def then
+        def_html["data-def"] = def
+        def_html[#def_html + 1] = "#" .. def
+      end
+      local refs = name.refs
+      local refs_html = { "td" }
+      for j = 1, #refs do
+        local ref = refs[j]
+        local n = #refs_html
+        if n == 1 then
+          refs_html[n + 1] = { "span";
+            ["data-ref"] = ref;
+            "#" .. ref;
+          }
+        else
+          refs_html[n + 1] = ","
+          refs_html[n + 2] = { "span";
+            ["data-ref"] = ref;
+            "#" .. ref;
+          }
+        end
+      end
+      scope_tbody_html[#scope_tbody_html + 1] = { "tr";
+        { "td"; name.type };
+        { "td"; name.value };
+        def_html;
+        refs_html;
+      }
+    end
+    scope_html[#scope_html + 1] = { "div";
+      { "table";
+        ["data-id"] = scope.id;
+        { "thead";
+          { "tr";
+            { "th"; "Type" };
+            { "th"; "Name" };
+            { "th"; "Def" };
+            { "th"; "Refs" };
+          };
+        };
+        scope_tbody_html;
+      };
+    }
+  end
+end
+
+local function add_state_html(state_html, state)
+  if state then
+    local constants = state.constants
+    if constants[1] then
+      local constant_tbody_html = { "tbody" }
+      for i = 1, #constants do
+        local constant = constants[i]
+        local t = constant.type
+        local v = constant.value
+        if t == "string" then
+          v = encode_string(v)
+        end
+        local refs = constant.refs
+        local refs_html = { "td" }
+        for j = 1, #refs do
+          local ref = refs[j]
+          local n = #refs_html
+          if n == 1 then
+            refs_html[n + 1] = { "span";
+              ["data-ref"] = ref.id;
+              "#" .. ref.id;
+            }
+          else
+            refs_html[n + 1] = ","
+            refs_html[n + 2] = { "span";
+              ["data-ref"] = ref.id;
+              "#" .. ref.id;
+            }
+          end
+        end
+        constant_tbody_html[#constant_tbody_html + 1] = { "tr";
+          { "td"; t };
+          { "td"; v };
+          refs_html;
+        }
+      end
+      state_html[#state_html + 1] = { "div";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "Type" };
+              { "th"; "Value" };
+              { "th"; "Refs" };
+            };
+          };
+          constant_tbody_html;
+        }
+      }
+    end
+  end
+end
+
 local file = ...
 local source
 
@@ -249,59 +354,6 @@ while true do
   end
 end
 
-local function add_scope_html(scope_html, scope)
-  if scope and scope[1] then
-    local scope_tbody_html = { "tbody" }
-    for i = 1, #scope do
-      local name = scope[i]
-      local def = name.def
-      local def_html = { "td" }
-      if def then
-        def_html["data-def"] = def
-        def_html[#def_html + 1] = "#" .. def
-      end
-      local refs = name.refs
-      local refs_html = { "td" }
-      for j = 1, #refs do
-        local ref = refs[j]
-        local n = #refs_html
-        if n == 1 then
-          refs_html[n + 1] = { "span";
-            ["data-ref"] = ref;
-            "#" .. ref;
-          }
-        else
-          refs_html[n + 1] = ","
-          refs_html[n + 2] = { "span";
-            ["data-ref"] = ref;
-            "#" .. ref;
-          }
-        end
-      end
-      scope_tbody_html[#scope_tbody_html + 1] = { "tr";
-        { "td"; name.type };
-        { "td"; name.value };
-        def_html;
-        refs_html;
-      }
-    end
-    scope_html[#scope_html + 1] = { "div";
-      { "table";
-        ["data-id"] = scope.id;
-        { "thead";
-          { "tr";
-            { "th"; "Type" };
-            { "th"; "Name" };
-            { "th"; "Def" };
-            { "th"; "Refs" };
-          };
-        };
-        scope_tbody_html;
-      };
-    }
-  end
-end
-
 local scope_html = { "div"; class = "scope" }
 add_scope_html(scope_html, env)
 
@@ -352,57 +404,8 @@ while true do
       if order then
         order = table.concat(order, ",")
       end
+      add_state_html(state_html, u.state)
       add_scope_html(scope_html, u.scope)
-      local state = u.state
-      if state then
-        local constants = state.constants
-        if constants[1] then
-          local constant_tbody_html = { "tbody" }
-          for i = 1, #constants do
-            local constant = constants[i]
-            local t = constant.type
-            local v = constant.value
-            if t == "string" then
-              v = encode_string(v)
-            end
-            local refs = constant.refs
-            local refs_html = { "td" }
-            for j = 1, #refs do
-              local ref = refs[j]
-              local n = #refs_html
-              if n == 1 then
-                refs_html[n + 1] = { "span";
-                  ["data-ref"] = ref.id;
-                  "#" .. ref.id;
-                }
-              else
-                refs_html[n + 1] = ","
-                refs_html[n + 2] = { "span";
-                  ["data-ref"] = ref.id;
-                  "#" .. ref.id;
-                }
-              end
-            end
-            constant_tbody_html[#constant_tbody_html + 1] = { "tr";
-              { "td"; t };
-              { "td"; v };
-              refs_html;
-            }
-          end
-          state_html[#state_html + 1] = { "div";
-            { "table";
-              { "thead";
-                { "tr";
-                  { "th"; "Type" };
-                  { "th"; "Value" };
-                  { "th"; "Refs" };
-                };
-              };
-              constant_tbody_html;
-            }
-          }
-        end
-      end
       u.html = { "span",
         id = "_" .. u.id;
         ["data-symbol"] = symbol;
@@ -459,14 +462,14 @@ local panel_html = { "div"; class="panel";
   { "div"; class = "tree" };
   { "div"; class = "panel-head";
     { "span"; class = "icon fa fa-minus-square-o" };
-    { "span"; "Scope" };
-  };
-  scope_html;
-  { "div"; class = "panel-head";
-    { "span"; class = "icon fa fa-minus-square-o" };
     { "span"; "State" };
   };
   state_html;
+  { "div"; class = "panel-head";
+    { "span"; class = "icon fa fa-minus-square-o" };
+    { "span"; "Scope" };
+  };
+  scope_html;
 }
 
 local transition_duration = 400
@@ -592,15 +595,15 @@ body {
   transition: fill ]] .. transition_duration .. [[ms;
 }
 
-.scope table,
-.state table {
+.state table,
+.scope table {
   border-collapse: collapse;
 }
 
-.scope th,
-.scope td,
 .state th,
-.state td {
+.state td,
+.scope th,
+.scope td {
   border: solid 1px #000000;
 }
 ]]
@@ -719,7 +722,7 @@ local script = [[
       }, transition_duration);
     })
 
-    $(".scope [data-ref], .state [data-ref]").on("click", function (ev) {
+    $(".state [data-ref], .scope [data-ref]").on("click", function (ev) {
       ev.stopPropagation();
       var $this = $(this);
       var $node = $("#_" + $this.attr("data-ref"));
