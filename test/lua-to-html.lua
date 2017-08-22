@@ -34,20 +34,37 @@ local function symbol_type(symbol)
   end
 end
 
-local function scope_find(scope, t, key)
-  repeat
-    for i = #scope, 1, -1 do
-      local symbol = scope[i]
-      if symbol_type(symbol) == t and symbol_value(symbol) == key then
-        return symbol, scope, i
-      end
-    end
-    scope = scope.parent
-  until scope == nil
+local function def_name(scope, u, type, value)
+  scope[#scope + 1] = {
+    type = type;
+    value = value;
+    def = u.id;
+    refs = {};
+  }
 end
 
-local function scope_push(scope, symbol)
-  scope[#scope + 1] = symbol
+local function ref_name(scope, u, type, value)
+  while true do
+    for i = #scope, 1, -1 do
+      local name = scope[i]
+      if name.type == type and name.value == value then
+        local refs = name.refs
+        refs[#refs + 1] = u.id
+        return
+      end
+    end
+    local parent = scope.parent
+    if parent then
+      scope = parent
+    else
+      scope[#scope + 1] = {
+        type = type;
+        value = value;
+        refs = { u.id };
+      }
+      break
+    end
+  end
 end
 
 local function push_constant(state, u, type, value)
@@ -130,7 +147,8 @@ local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
 local state
-local scope
+local env = {}
+local scope = env
 
 local stack1 = { root }
 local stack2 = {}
@@ -155,33 +173,29 @@ while true do
 
     local symbol = u[0]
     if symbol == symbol_table.label then
-      scope_push(scope, u[2])
+      local v = u[2]
+      def_name(scope, v, "label", symbol_value(v))
     elseif symbol == symbol_table.local_name then
-      scope_push(scope, u[1])
+      local v = u[1]
+      def_name(scope, v, "var", symbol_value(v))
     elseif symbol == symbol_table.local_namelist then
       local v = u[1]
       for i = 1, #v, 2 do
-        scope_push(scope, v[i])
+        local w = v[i]
+        def_name(scope, w, "var", symbol_value(w))
       end
     elseif symbol == symbol_table.parlist then
       local v = u[1]
       if v[0] == symbol_table.namelist then
         for i = 1, #v, 2 do
-          scope_push(scope, v[i])
+          local w = v[i]
+          def_name(scope, w, "var", symbol_value(w))
         end
       end
     elseif symbol == symbol_table.var then
       local v = u[1]
       if v[0] == symbol_table.Name then
-        local symbol = scope_find(scope, "var", value(v))
-        if symbol then
-          local refs = symbol.refs
-          if refs then
-            refs[#refs + 1] = v
-          else
-            symbol.refs = { v }
-          end
-        end
+        ref_name(scope, v, "var", symbol_value(v))
       end
     elseif symbol == symbol_table.LiteralString then
       push_constant(state, u, "string", symbol_value(u));
@@ -235,7 +249,62 @@ while true do
   end
 end
 
+local function add_scope_html(scope_html, scope)
+  if scope and scope[1] then
+    local scope_tbody_html = { "tbody" }
+    for i = 1, #scope do
+      local name = scope[i]
+      local def = name.def
+      local def_html = { "td" }
+      if def then
+        def_html["data-def"] = def
+        def_html[#def_html + 1] = "#" .. def
+      end
+      local refs = name.refs
+      local refs_html = { "td" }
+      for j = 1, #refs do
+        local ref = refs[j]
+        local n = #refs_html
+        if n == 1 then
+          refs_html[n + 1] = { "span";
+            ["data-ref"] = ref;
+            "#" .. ref;
+          }
+        else
+          refs_html[n + 1] = ","
+          refs_html[n + 2] = { "span";
+            ["data-ref"] = ref;
+            "#" .. ref;
+          }
+        end
+      end
+      scope_tbody_html[#scope_tbody_html + 1] = { "tr";
+        { "td"; name.type };
+        { "td"; name.value };
+        def_html;
+        refs_html;
+      }
+    end
+    scope_html[#scope_html + 1] = { "div";
+      { "table";
+        ["data-id"] = scope.id;
+        { "thead";
+          { "tr";
+            { "th"; "Type" };
+            { "th"; "Name" };
+            { "th"; "Def" };
+            { "th"; "Refs" };
+          };
+        };
+        scope_tbody_html;
+      };
+    }
+  end
+end
+
 local scope_html = { "div"; class = "scope" }
+add_scope_html(scope_html, env)
+
 local state_html = { "div"; class = "state" }
 
 local stack1 = { root }
@@ -283,54 +352,7 @@ while true do
       if order then
         order = table.concat(order, ",")
       end
-      local scope = u.scope
-      if scope and scope[1] then
-        local scope_tbody_html = { "tbody" }
-        for i = 1, #scope do
-          local symbol = scope[i]
-          local refs = symbol.refs
-          local refs_html = { "td" }
-          for j = 1, #refs do
-            local ref = refs[j]
-            local n = #refs_html
-            if n == 1 then
-              refs_html[n + 1] = { "span";
-                ["data-ref"] = ref.id;
-                "#" .. ref.id;
-              }
-            else
-              refs_html[n + 1] = ","
-              refs_html[n + 2] = { "span";
-                ["data-ref"] = ref.id;
-                "#" .. ref.id;
-              }
-            end
-          end
-          scope_tbody_html[#scope_tbody_html + 1] = { "tr";
-            { "td"; symbol_type(symbol) };
-            { "td"; symbol_value(symbol) };
-            { "td";
-              ["data-def"] = symbol.id;
-              "#" .. symbol.id;
-            };
-            refs_html;
-          }
-        end
-        scope_html[#scope_html + 1] = { "div";
-          { "table";
-            ["data-id"] = scope.id;
-            { "thead";
-              { "tr";
-                { "th"; "Type" };
-                { "th"; "Name" };
-                { "th"; "Def" };
-                { "th"; "Refs" };
-              };
-            };
-            scope_tbody_html;
-          };
-        }
-      end
+      add_scope_html(scope_html, u.scope)
       local state = u.state
       if state then
         local constants = state.constants
@@ -680,22 +702,6 @@ local script = [[
       }
     });
 
-    $(".scope table").on("click", function () {
-      var $this = $(this);
-      var $node = $("#_" + $this.attr("data-id"));
-      var scroll = $node.offset().top - 1.5 * rem;
-      if (scroll < 0) {
-        scroll = 0;
-      }
-      d3.selectAll(".color-active")
-        .classed("color-active", false);
-      $node
-        .addClass("color-active");
-      $("body").animate({
-        scrollTop: scroll
-      }, transition_duration);
-    });
-
     $(".scope [data-def]").on("click", function (ev) {
       ev.stopPropagation();
       var $this = $(this);
@@ -713,7 +719,7 @@ local script = [[
       }, transition_duration);
     })
 
-    $(".scope [data-ref], .state [data-def]").on("click", function (ev) {
+    $(".scope [data-ref], .state [data-ref]").on("click", function (ev) {
       ev.stopPropagation();
       var $this = $(this);
       var $node = $("#_" + $this.attr("data-ref"));

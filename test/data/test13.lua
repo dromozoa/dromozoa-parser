@@ -22,7 +22,7 @@ local function f(a, b, c)
     local a = a .. a
     print(a, b, c .. c, u .. u, 1.0)
   end
-  a = 105
+  x = 105
   return 0x69, a, 1.
 end
 f("foo", true, [[
