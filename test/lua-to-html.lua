@@ -161,7 +161,9 @@ local function add_state_html(state_html, state)
           refs_html;
         }
       end
+
       state_html[#state_html + 1] = { "div";
+        { "span"; "Constants" };
         { "table";
           { "thead";
             { "tr";
@@ -179,13 +181,20 @@ end
 
 local function add_scope_html(scope_html, scope)
   if scope and scope[1] then
+    local scope_title_html = { "span" }
+    if scope.parent then
+      scope_title_html[2] = "Scope "
+    else
+      scope_title_html[2] = "Chunk Scope"
+    end
+
     local scope_tbody_html = { "tbody" }
     for i = 1, #scope do
       local name = scope[i]
       local def = name.def
       local def_html = { "td" }
       if def then
-        def_html["data-def"] = def
+        def_html["data-ref"] = def
         def_html[#def_html + 1] = "#" .. def
       end
       local refs = name.refs
@@ -213,7 +222,9 @@ local function add_scope_html(scope_html, scope)
         refs_html;
       }
     end
+
     scope_html[#scope_html + 1] = { "div";
+      scope_title_html;
       { "table";
         ["data-id"] = scope.id;
         { "thead";
@@ -706,24 +717,7 @@ local script = [[
       }
     });
 
-    $(".scope [data-def]").on("click", function (ev) {
-      ev.stopPropagation();
-      var $this = $(this);
-      var $node = $("#_" + $this.attr("data-def"));
-      var scroll = $node.offset().top - 1.5 * rem;
-      if (scroll < 0) {
-        scroll = 0;
-      }
-      d3.selectAll(".color-active")
-        .classed("color-active", false);
-      $node
-        .addClass("color-active");
-      $("body").animate({
-        scrollTop: scroll
-      }, transition_duration);
-    })
-
-    $(".state [data-ref], .scope [data-ref]").on("click", function (ev) {
+    $("[data-ref]").on("click", function (ev) {
       ev.stopPropagation();
       var $this = $(this);
       var $node = $("#_" + $this.attr("data-ref"));
