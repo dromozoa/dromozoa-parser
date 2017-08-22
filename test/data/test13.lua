@@ -20,9 +20,10 @@ local u = "foo"
 local function f(a, b, c)
   do
     local a = a .. a
-    print(a, b, c .. c, u .. u, 0.5)
+    print(a, b, c .. c, u .. u, 1.0)
   end
-  return 42, a, 0.5
+  a = 105
+  return 0x69, a, 1.
 end
 f("foo", true, [[
 abc

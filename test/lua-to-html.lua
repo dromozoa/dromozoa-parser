@@ -36,10 +36,10 @@ end
 
 local function scope_find(scope, t, key)
   repeat
-    for j = #scope, 1, -1 do
-      local symbol = scope[j]
+    for i = #scope, 1, -1 do
+      local symbol = scope[i]
       if symbol_type(symbol) == t and symbol_value(symbol) == key then
-        return symbol, scope, j
+        return symbol, scope, i
       end
     end
     scope = scope.parent
@@ -48,6 +48,24 @@ end
 
 local function scope_push(scope, symbol)
   scope[#scope + 1] = symbol
+end
+
+local function push_constant(state, u, type, value)
+  local constants = state.constants
+  local n = #constants
+  for i = n, 1, -1 do
+    local constant = constants[i]
+    if constant.type == type and constant.value == value then
+      local refs = constant.refs
+      refs[#refs + 1] = u
+      return
+    end
+  end
+  constants[n + 1] = {
+    type = type;
+    value = value;
+    refs = { u };
+  }
 end
 
 local function write_html(out, node)
@@ -165,6 +183,12 @@ while true do
           end
         end
       end
+    elseif symbol == symbol_table.LiteralString then
+      push_constant(state, u, "string", symbol_value(u));
+    elseif symbol == symbol_table.IntegerConstant then
+      push_constant(state, u, "integer", tonumber(symbol_value(u)))
+    elseif symbol == symbol_table.FloatConstant then
+      push_constant(state, u, "float", tonumber(symbol_value(u)))
     end
   else
     id = id + 1
@@ -174,7 +198,7 @@ while true do
       state = {
         id = id;
         parent = state;
-        constatnts = {};
+        constants = {};
         locals = {};
         upvalues = {};
       }
@@ -212,6 +236,7 @@ while true do
 end
 
 local scope_html = { "div"; class = "scope" }
+local state_html = { "div"; class = "state" }
 
 local stack1 = { root }
 local stack2 = {}
@@ -263,35 +288,27 @@ while true do
         local scope_tbody_html = { "tbody" }
         for i = 1, #scope do
           local symbol = scope[i]
-          local t = symbol_type(symbol)
-          local v = symbol_value(symbol)
-          if t == "string" then
-            v = encode_string(v)
-          end
           local refs = symbol.refs
           local refs_html = { "td" }
-          if refs then
-            for j = 1, #refs do
-              local ref = refs[j]
-              local n = #refs_html
-              if n == 1 then
-                refs_html[n + 1] = { "span";
-                  ["data-ref"] = ref.id;
-                  "#" .. ref.id;
-                }
-              else
-                refs_html[n + 1] = ","
-                refs_html[n + 2] = { "span";
-                  ["data-ref"] = ref.id;
-                  "#" .. ref.id;
-                }
-              end
+          for j = 1, #refs do
+            local ref = refs[j]
+            local n = #refs_html
+            if n == 1 then
+              refs_html[n + 1] = { "span";
+                ["data-ref"] = ref.id;
+                "#" .. ref.id;
+              }
+            else
+              refs_html[n + 1] = ","
+              refs_html[n + 2] = { "span";
+                ["data-ref"] = ref.id;
+                "#" .. ref.id;
+              }
             end
           end
-
           scope_tbody_html[#scope_tbody_html + 1] = { "tr";
-            { "td"; t };
-            { "td"; v };
+            { "td"; symbol_type(symbol) };
+            { "td"; symbol_value(symbol) };
             { "td";
               ["data-def"] = symbol.id;
               "#" .. symbol.id;
@@ -313,6 +330,56 @@ while true do
             scope_tbody_html;
           };
         }
+      end
+      local state = u.state
+      if state then
+        local constants = state.constants
+        if constants[1] then
+          local constant_tbody_html = { "tbody" }
+          for i = 1, #constants do
+            local constant = constants[i]
+            local t = constant.type
+            local v = constant.value
+            if t == "string" then
+              v = encode_string(v)
+            end
+            local refs = constant.refs
+            local refs_html = { "td" }
+            for j = 1, #refs do
+              local ref = refs[j]
+              local n = #refs_html
+              if n == 1 then
+                refs_html[n + 1] = { "span";
+                  ["data-ref"] = ref.id;
+                  "#" .. ref.id;
+                }
+              else
+                refs_html[n + 1] = ","
+                refs_html[n + 2] = { "span";
+                  ["data-ref"] = ref.id;
+                  "#" .. ref.id;
+                }
+              end
+            end
+            constant_tbody_html[#constant_tbody_html + 1] = { "tr";
+              { "td"; t };
+              { "td"; v };
+              refs_html;
+            }
+          end
+          state_html[#state_html + 1] = { "div";
+            { "table";
+              { "thead";
+                { "tr";
+                  { "th"; "Type" };
+                  { "th"; "Value" };
+                  { "th"; "Refs" };
+                };
+              };
+              constant_tbody_html;
+            }
+          }
+        end
       end
       u.html = { "span",
         id = "_" .. u.id;
@@ -373,6 +440,11 @@ local panel_html = { "div"; class="panel";
     { "span"; "Scope" };
   };
   scope_html;
+  { "div"; class = "panel-head";
+    { "span"; class = "icon fa fa-minus-square-o" };
+    { "span"; "State" };
+  };
+  state_html;
 }
 
 local transition_duration = 400
@@ -498,12 +570,15 @@ body {
   transition: fill ]] .. transition_duration .. [[ms;
 }
 
-.scope table {
+.scope table,
+.state table {
   border-collapse: collapse;
 }
 
 .scope th,
-.scope td {
+.scope td,
+.state th,
+.state td {
   border: solid 1px #000000;
 }
 ]]
@@ -638,7 +713,7 @@ local script = [[
       }, transition_duration);
     })
 
-    $(".scope [data-ref]").on("click", function (ev) {
+    $(".scope [data-ref], .state [data-def]").on("click", function (ev) {
       ev.stopPropagation();
       var $this = $(this);
       var $node = $("#_" + $this.attr("data-ref"));
