@@ -125,6 +125,58 @@ local function write_html(out, node)
   end
 end
 
+local function add_state_html(state_html, state)
+  if state then
+    local constants = state.constants
+    if constants[1] then
+      local constant_tbody_html = { "tbody" }
+      for i = 1, #constants do
+        local constant = constants[i]
+        local t = constant.type
+        local v = constant.value
+        if t == "string" then
+          v = encode_string(v)
+        end
+        local refs = constant.refs
+        local refs_html = { "td" }
+        for j = 1, #refs do
+          local ref = refs[j]
+          local n = #refs_html
+          if n == 1 then
+            refs_html[n + 1] = { "span";
+              ["data-ref"] = ref.id;
+              "#" .. ref.id;
+            }
+          else
+            refs_html[n + 1] = ","
+            refs_html[n + 2] = { "span";
+              ["data-ref"] = ref.id;
+              "#" .. ref.id;
+            }
+          end
+        end
+        constant_tbody_html[#constant_tbody_html + 1] = { "tr";
+          { "td"; t };
+          { "td"; v };
+          refs_html;
+        }
+      end
+      state_html[#state_html + 1] = { "div";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "Type" };
+              { "th"; "Value" };
+              { "th"; "Refs" };
+            };
+          };
+          constant_tbody_html;
+        }
+      }
+    end
+  end
+end
+
 local function add_scope_html(scope_html, scope)
   if scope and scope[1] then
     local scope_tbody_html = { "tbody" }
@@ -175,58 +227,6 @@ local function add_scope_html(scope_html, scope)
         scope_tbody_html;
       };
     }
-  end
-end
-
-local function add_state_html(state_html, state)
-  if state then
-    local constants = state.constants
-    if constants[1] then
-      local constant_tbody_html = { "tbody" }
-      for i = 1, #constants do
-        local constant = constants[i]
-        local t = constant.type
-        local v = constant.value
-        if t == "string" then
-          v = encode_string(v)
-        end
-        local refs = constant.refs
-        local refs_html = { "td" }
-        for j = 1, #refs do
-          local ref = refs[j]
-          local n = #refs_html
-          if n == 1 then
-            refs_html[n + 1] = { "span";
-              ["data-ref"] = ref.id;
-              "#" .. ref.id;
-            }
-          else
-            refs_html[n + 1] = ","
-            refs_html[n + 2] = { "span";
-              ["data-ref"] = ref.id;
-              "#" .. ref.id;
-            }
-          end
-        end
-        constant_tbody_html[#constant_tbody_html + 1] = { "tr";
-          { "td"; t };
-          { "td"; v };
-          refs_html;
-        }
-      end
-      state_html[#state_html + 1] = { "div";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; "Type" };
-              { "th"; "Value" };
-              { "th"; "Refs" };
-            };
-          };
-          constant_tbody_html;
-        }
-      }
-    end
   end
 end
 
@@ -318,6 +318,7 @@ while true do
         id = id;
         parent = state;
         constants = {};
+        params = {};
         locals = {};
         upvalues = {};
       }
