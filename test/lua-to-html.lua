@@ -25,15 +25,6 @@ local encode_string = dumper.encode_string
 local keys = dumper.keys
 local symbol_value = value
 
-local function symbol_type(symbol)
-  local t = symbol.type
-  if t then
-    return t
-  else
-    return "var"
-  end
-end
-
 local function def_name(scope, u, type, value)
   scope[#scope + 1] = {
     type = type;

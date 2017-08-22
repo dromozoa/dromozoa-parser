@@ -194,7 +194,7 @@ _"retstat"
   :_ "return" "explist" ";"
 
 _"label"
-  :_ "::" "Name" "::" :attr(2, "type", "label")
+  :_ "::" "Name" "::"
 
 _"funcname"
   :_ "funcnames"
