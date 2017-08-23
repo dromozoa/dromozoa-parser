@@ -44,7 +44,8 @@ local function ref_constant(state, u, type, value)
 end
 
 local function def_name(scope, u, type, value)
-  scope[#scope + 1] = {
+  local names = scope.names
+  names[#names + 1] = {
     type = type;
     value = value;
     def = u.id;
@@ -52,15 +53,13 @@ local function def_name(scope, u, type, value)
   }
 end
 
-local function ref_name(scope, u, type, value)
+local function ref_name(scope, u, value)
   while true do
-    for i = #scope, 1, -1 do
-      local name = scope[i]
-      local t = name.type
-      if t ~= "label" then
-        t = "var"
-      end
-      if t == type and name.value == value then
+    local names = scope.names
+    local n = #names
+    for i = n, 1, -1 do
+      local name = names[i]
+      if name.value == value then
         local refs = name.refs
         refs[#refs + 1] = u.id
         return
@@ -70,14 +69,23 @@ local function ref_name(scope, u, type, value)
     if parent then
       scope = parent
     else
-      scope[#scope + 1] = {
-        type = type;
+      names[#names + 1] = {
         value = value;
         refs = { u.id };
       }
-      break
+      return
     end
   end
+end
+
+local function def_label(scope, u, value)
+  local labels = scope.labels
+  labels[#labels + 1] = {
+    type = type;
+    value = value;
+    def = u.id;
+    refs = {};
+  }
 end
 
 local function write_html(out, node)
@@ -175,65 +183,86 @@ local function add_state_html(state_html, state)
 end
 
 local function add_scope_html(scope_html, scope)
-  if scope and scope[1] then
-    local scope_title_html = { "span" }
-    if scope.parent then
-      scope_title_html["data-ref"] = scope.id
-      scope_title_html[2] = "Scope"
-    else
-      scope_title_html[2] = "Chunk Scope"
-    end
-
-    local scope_tbody_html = { "tbody" }
-    for i = 1, #scope do
-      local name = scope[i]
-      local def = name.def
-      local def_html = { "td" }
-      if def then
-        def_html["data-ref"] = def
-        def_html[#def_html + 1] = "#" .. def
-      end
-      local refs = name.refs
-      local refs_html = { "td" }
-      for j = 1, #refs do
-        local ref = refs[j]
-        local n = #refs_html
-        if n == 1 then
-          refs_html[n + 1] = { "span";
-            ["data-ref"] = ref;
-            "#" .. ref;
-          }
-        else
-          refs_html[n + 1] = ","
-          refs_html[n + 2] = { "span";
-            ["data-ref"] = ref;
-            "#" .. ref;
-          }
+  if scope then
+    local names = scope.names
+    if names[1] then
+      local name_tbody_html = { "tbody" }
+      for i = 1, #names do
+        local name = names[i]
+        local def = name.def
+        local def_html = { "td"; ["data-ref"] = def }
+        if def then
+          def_html[#def_html + 1] = "#" .. def
         end
+        local refs = name.refs
+        local refs_html = { "td" }
+        for j = 1, #refs do
+          local ref = refs[j]
+          local n = #refs_html
+          if n == 1 then
+            refs_html[n + 1] = { "span";
+              ["data-ref"] = ref;
+              "#" .. ref;
+            }
+          else
+            refs_html[n + 1] = ","
+            refs_html[n + 2] = { "span";
+              ["data-ref"] = ref;
+              "#" .. ref;
+            }
+          end
+        end
+        name_tbody_html[#name_tbody_html + 1] = { "tr";
+          { "td"; name.type };
+          { "td"; name.value };
+          def_html;
+          refs_html;
+        }
       end
-      scope_tbody_html[#scope_tbody_html + 1] = { "tr";
-        { "td"; name.type };
-        { "td"; name.value };
-        def_html;
-        refs_html;
+
+      scope_html[#scope_html + 1] = { "div";
+        { "span"; ["data-ref"] = scope.id; "Names" };
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "Type" };
+              { "th"; "Name" };
+              { "th"; "Def" };
+              { "th"; "Refs" };
+            };
+          };
+          name_tbody_html;
+        };
       }
     end
 
-    scope_html[#scope_html + 1] = { "div";
-      scope_title_html;
-      { "table";
-        ["data-id"] = scope.id;
-        { "thead";
-          { "tr";
-            { "th"; "Type" };
-            { "th"; "Name" };
-            { "th"; "Def" };
-            { "th"; "Refs" };
+    local labels = scope.labels
+    if labels[1] then
+      local label_tbody_html = { "tbody" }
+      for i = 1, #labels do
+        local label = labels[i]
+        local def = label.def
+        label_tbody_html[#label_tbody_html + 1] = { "tr";
+          { "td"; label.value };
+          { "td"; ["data-ref"] = def; "#" .. def };
+          { "td" };
+        }
+      end
+
+      scope_html[#scope_html + 1] = { "div";
+        { "span"; ["data-ref"] = scope.id; "Labels" };
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "Name" };
+              { "th"; "Def" };
+              { "th"; "Refs" };
+            };
           };
+          label_tbody_html;
         };
-        scope_tbody_html;
-      };
-    }
+      }
+    end
   end
 end
 
@@ -259,7 +288,10 @@ local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
 local state
-local env = {}
+local env = {
+  names = {};
+  labels = {};
+}
 local scope = env
 
 local stack1 = { root }
@@ -286,7 +318,7 @@ while true do
     local symbol = u[0]
     if symbol == symbol_table.label then
       local v = u[2]
-      def_name(scope, v, "label", symbol_value(v))
+      def_label(scope, v, symbol_value(v))
     elseif symbol == symbol_table.local_name then
       local v = u[1]
       def_name(scope, v, "var", symbol_value(v))
@@ -313,7 +345,7 @@ while true do
     elseif symbol == symbol_table.var then
       local v = u[1]
       if v[0] == symbol_table.Name then
-        ref_name(scope, v, "var", symbol_value(v))
+        ref_name(scope, v, symbol_value(v))
       end
     elseif symbol == symbol_table.LiteralString then
       ref_constant(state, u, "string", symbol_value(u));
@@ -341,6 +373,8 @@ while true do
       scope = {
         id = id;
         parent = scope;
+        names = {};
+        labels = {};
       }
       u.scope = scope
     end
@@ -543,7 +577,7 @@ body {
   height: 30rem;
 }
 
-.scope {
+.state, .scope {
   height: 30rem;
   overflow: scroll;
 }
