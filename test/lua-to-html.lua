@@ -25,6 +25,33 @@ local encode_string = dumper.encode_string
 local keys = dumper.keys
 local symbol_value = value
 
+local function ref_param(state, u, type, value)
+  local params = state.params
+  params[#params + 1] = {
+    type = value;
+    value = value;
+    def = u.id;
+  }
+end
+
+local function ref_constant(state, u, type, value)
+  local constants = state.constants
+  local n = #constants
+  for i = n, 1, -1 do
+    local constant = constants[i]
+    if constant.type == type and constant.value == value then
+      local refs = constant.refs
+      refs[#refs + 1] = u
+      return
+    end
+  end
+  constants[n + 1] = {
+    type = type;
+    value = value;
+    refs = { u };
+  }
+end
+
 local function def_name(scope, u, type, value)
   scope[#scope + 1] = {
     type = type;
@@ -56,24 +83,6 @@ local function ref_name(scope, u, type, value)
       break
     end
   end
-end
-
-local function push_constant(state, u, type, value)
-  local constants = state.constants
-  local n = #constants
-  for i = n, 1, -1 do
-    local constant = constants[i]
-    if constant.type == type and constant.value == value then
-      local refs = constant.refs
-      refs[#refs + 1] = u
-      return
-    end
-  end
-  constants[n + 1] = {
-    type = type;
-    value = value;
-    refs = { u };
-  }
 end
 
 local function write_html(out, node)
@@ -118,6 +127,34 @@ end
 
 local function add_state_html(state_html, state)
   if state then
+    local params = state.params
+    if params[1] then
+      local param_tbody_html = { "tbody" }
+      for i = 1, #params do
+        local param = params[i]
+        local def = param.def
+        param_tbody_html[#param_tbody_html + 1] = { "tr";
+          { "td"; param.type };
+          { "td"; param.value };
+          { "td"; ["data-ref"] = def; "#" .. def };
+        }
+      end
+
+      state_html[#state_html + 1] = { "div";
+        { "span"; ["data-ref"] = state.id; "Params" };
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "Type" };
+              { "th"; "Value" };
+              { "th"; "Def" };
+            };
+          };
+          param_tbody_html;
+        };
+      }
+    end
+
     local constants = state.constants
     if constants[1] then
       local constant_tbody_html = { "tbody" }
@@ -154,10 +191,7 @@ local function add_state_html(state_html, state)
       end
 
       state_html[#state_html + 1] = { "div";
-        { "span";
-          ["data-ref"] = state.id;
-          "Constants";
-        };
+        { "span"; ["data-ref"] = state.id; "Constants" };
         { "table";
           { "thead";
             { "tr";
@@ -167,7 +201,7 @@ local function add_state_html(state_html, state)
             };
           };
           constant_tbody_html;
-        }
+        };
       }
     end
   end
@@ -300,7 +334,9 @@ while true do
       if v[0] == symbol_table.namelist then
         for i = 1, #v, 2 do
           local w = v[i]
-          def_name(scope, w, "var", symbol_value(w))
+          local value = symbol_value(w)
+          ref_param(state, w, "var", value)
+          def_name(scope, w, "var", value)
         end
       end
     elseif symbol == symbol_table.var then
@@ -309,11 +345,11 @@ while true do
         ref_name(scope, v, "var", symbol_value(v))
       end
     elseif symbol == symbol_table.LiteralString then
-      push_constant(state, u, "string", symbol_value(u));
+      ref_constant(state, u, "string", symbol_value(u));
     elseif symbol == symbol_table.IntegerConstant then
-      push_constant(state, u, "integer", tonumber(symbol_value(u)))
+      ref_constant(state, u, "integer", tonumber(symbol_value(u)))
     elseif symbol == symbol_table.FloatConstant then
-      push_constant(state, u, "float", tonumber(symbol_value(u)))
+      ref_constant(state, u, "float", tonumber(symbol_value(u)))
     end
   else
     id = id + 1
