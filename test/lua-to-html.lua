@@ -25,15 +25,6 @@ local encode_string = dumper.encode_string
 local keys = dumper.keys
 local symbol_value = value
 
-local function ref_param(state, u, type, value)
-  local params = state.params
-  params[#params + 1] = {
-    type = value;
-    value = value;
-    def = u.id;
-  }
-end
-
 local function ref_constant(state, u, type, value)
   local constants = state.constants
   local n = #constants
@@ -65,7 +56,11 @@ local function ref_name(scope, u, type, value)
   while true do
     for i = #scope, 1, -1 do
       local name = scope[i]
-      if name.type == type and name.value == value then
+      local t = name.type
+      if t ~= "label" then
+        t = "var"
+      end
+      if t == type and name.value == value then
         local refs = name.refs
         refs[#refs + 1] = u.id
         return
@@ -127,34 +122,6 @@ end
 
 local function add_state_html(state_html, state)
   if state then
-    local params = state.params
-    if params[1] then
-      local param_tbody_html = { "tbody" }
-      for i = 1, #params do
-        local param = params[i]
-        local def = param.def
-        param_tbody_html[#param_tbody_html + 1] = { "tr";
-          { "td"; param.type };
-          { "td"; param.value };
-          { "td"; ["data-ref"] = def; "#" .. def };
-        }
-      end
-
-      state_html[#state_html + 1] = { "div";
-        { "span"; ["data-ref"] = state.id; "Params" };
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; "Type" };
-              { "th"; "Value" };
-              { "th"; "Def" };
-            };
-          };
-          param_tbody_html;
-        };
-      }
-    end
-
     local constants = state.constants
     if constants[1] then
       local constant_tbody_html = { "tbody" }
@@ -334,10 +301,14 @@ while true do
       if v[0] == symbol_table.namelist then
         for i = 1, #v, 2 do
           local w = v[i]
-          local value = symbol_value(w)
-          ref_param(state, w, "var", value)
-          def_name(scope, w, "var", value)
+          def_name(scope, w, "param", symbol_value(w))
         end
+        local w = u[3]
+        if w then
+          def_name(scope, w, "...", symbol_value(w))
+        end
+      else
+        def_name(scope, v, "...", symbol_value(v))
       end
     elseif symbol == symbol_table.var then
       local v = u[1]
@@ -359,7 +330,6 @@ while true do
       state = {
         id = id;
         parent = state;
-        params = {};
         constants = {};
         locals = {};
         upvalues = {};
