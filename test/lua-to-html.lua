@@ -25,6 +25,12 @@ local encode_string = dumper.encode_string
 local keys = dumper.keys
 local symbol_value = value
 
+local function new_register(state)
+  local register = state.register
+  state.register = register + 1
+  return register
+end
+
 local function ref_constant(state, u, type, value)
   local constants = state.constants
   local n = #constants
@@ -43,13 +49,14 @@ local function ref_constant(state, u, type, value)
   }
 end
 
-local function def_name(scope, u, type, value)
+local function def_name(scope, u, type, value, register)
   local names = scope.names
   names[#names + 1] = {
     type = type;
     value = value;
     def = u.id;
     refs = {};
+    register = register;
   }
 end
 
@@ -159,6 +166,7 @@ local function add_state_html(state_html, state)
           end
         end
         constant_tbody_html[#constant_tbody_html + 1] = { "tr";
+          { "td"; i };
           { "td"; t };
           { "td"; v };
           refs_html;
@@ -170,6 +178,7 @@ local function add_state_html(state_html, state)
         { "table";
           { "thead";
             { "tr";
+              { "th"; "#" };
               { "th"; "Type" };
               { "th"; "Value" };
               { "th"; "Refs" };
@@ -213,6 +222,7 @@ local function add_scope_html(scope_html, scope)
           end
         end
         name_tbody_html[#name_tbody_html + 1] = { "tr";
+          { "td"; name.register };
           { "td"; name.type };
           { "td"; name.value };
           def_html;
@@ -225,6 +235,7 @@ local function add_scope_html(scope_html, scope)
         { "table";
           { "thead";
             { "tr";
+              { "th"; "#" };
               { "th"; "Type" };
               { "th"; "Name" };
               { "th"; "Def" };
@@ -321,19 +332,22 @@ while true do
       def_label(scope, v, symbol_value(v))
     elseif symbol == symbol_table.local_name then
       local v = u[1]
-      def_name(scope, v, "var", symbol_value(v))
+      local r = new_register(state)
+      def_name(scope, v, "var", symbol_value(v), r)
     elseif symbol == symbol_table.local_namelist then
       local v = u[1]
       for i = 1, #v, 2 do
         local w = v[i]
-        def_name(scope, w, "var", symbol_value(w))
+        local r = new_register(state)
+        def_name(scope, w, "var", symbol_value(w), r)
       end
     elseif symbol == symbol_table.parlist then
       local v = u[1]
       if v[0] == symbol_table.namelist then
         for i = 1, #v, 2 do
           local w = v[i]
-          def_name(scope, w, "param", symbol_value(w))
+          local r = new_register(state)
+          def_name(scope, w, "param", symbol_value(w), r)
         end
         local w = u[3]
         if w then
@@ -362,6 +376,7 @@ while true do
       state = {
         id = id;
         parent = state;
+        register = 0;
         constants = {};
         locals = {};
         upvalues = {};
