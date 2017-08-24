@@ -39,24 +39,26 @@ local function ref_constant(state, u, type, value)
     if constant.type == type and constant.value == value then
       local refs = constant.refs
       refs[#refs + 1] = u
-      return
+      return -i
     end
   end
-  constants[n + 1] = {
+  n = n + 1
+  constants[n] = {
     type = type;
     value = value;
     refs = { u };
   }
+  return -n
 end
 
-local function def_name(scope, u, type, value, register)
+local function def_name(scope, u, type, value, r)
   local names = scope.names
   names[#names + 1] = {
     type = type;
     value = value;
     def = u.id;
     refs = {};
-    register = register;
+    r = r;
   }
 end
 
@@ -69,7 +71,7 @@ local function ref_name(scope, u, value)
       if name.value == value then
         local refs = name.refs
         refs[#refs + 1] = u.id
-        return
+        return name.r
       end
     end
     local parent = scope.parent
@@ -222,7 +224,7 @@ local function add_scope_html(scope_html, scope)
           end
         end
         name_tbody_html[#name_tbody_html + 1] = { "tr";
-          { "td"; name.register };
+          { "td"; name.r };
           { "td"; name.type };
           { "td"; name.value };
           def_html;
@@ -326,47 +328,112 @@ while true do
       scope = scope.parent
     end
 
-    local symbol = u[0]
-    if symbol == symbol_table.label then
-      local v = u[2]
-      def_label(scope, v, symbol_value(v))
-    elseif symbol == symbol_table.local_name then
-      local v = u[1]
-      local r = new_register(state)
-      def_name(scope, v, "var", symbol_value(v), r)
-    elseif symbol == symbol_table.local_namelist then
-      local v = u[1]
-      for i = 1, #v, 2 do
-        local w = v[i]
-        local r = new_register(state)
-        def_name(scope, w, "var", symbol_value(w), r)
-      end
-    elseif symbol == symbol_table.parlist then
-      local v = u[1]
-      if v[0] == symbol_table.namelist then
-        for i = 1, #v, 2 do
-          local w = v[i]
-          local r = new_register(state)
-          def_name(scope, w, "param", symbol_value(w), r)
+    local v1, v2, v3, v4 = u[1], u[2], u[3], u[4]
+    local s = u[0]
+    local s1 = v1 and v1[0]
+    local s2 = v2 and v2[0]
+    local s3 = v3 and v3[0]
+    local s4 = v4 and v4[0]
+
+    if s == symbol_table.stat then
+      if s1 == symbol_table.varlist then
+        for i = 1, #v1, 2 do
+          local var = v1[i]
+          local exp = v3[i]
+          if exp then
+            var.code = { "MOVE", exp.r }
+          else
+            var.code = { "LOADNIL" }
+          end
         end
-        local w = u[3]
-        if w then
-          def_name(scope, w, "...", symbol_value(w))
+      end
+    elseif s == symbol_table.exp then
+      if s1 == symbol_table["nil"] then
+        u.r = new_register(state)
+        u.code = { "LOADNIL" }
+      elseif s1 == symbol_table["false"] then
+        u.r = new_register(state)
+        u.code = { "LOADBOOL", 0 }
+      elseif s1 == symbol_table["true"] then
+        u.r = new_register(state)
+        u.code = { "LOADBOOL", 1 }
+      elseif u.loadk then
+        u.r = new_register(state)
+        u.code = { "LOADK", v1.r }
+      elseif s1 == symbol_table.prefixexp then
+        u.r = new_register(state)
+        u.code = { "MOVE", v1.r }
+      elseif u.binop then
+        u.r = new_register(state)
+        u.code = { symbol_names[s2], v1.r, v3.r }
+      elseif u.unop then
+        u.r = new_register(state)
+        u.code = { symbol_names[s1], v2.r }
+      end
+    elseif s == symbol_table.prefixexp then
+      if s1 == symbol_table.var then
+        u.r = new_register(state)
+        u.code = { "MOVE", v1.r }
+      else
+        u.r = new_register(state)
+        u.code = { "MOVE", v2.r }
+      end
+    elseif s == symbol_table.args then
+      if s2 == symbol_table.explist then
+        local code = { "PUSH" }
+        for i = 1, #v2, 2 do
+          local exp = v2[i]
+          code[#code + 1] = exp.r
+        end
+        u.code = code
+      end
+    elseif s == symbol_table.label then
+      def_label(scope, v2, symbol_value(v2))
+    elseif s == symbol_table.local_name then
+      local r = new_register(state)
+      def_name(scope, v1, "var", symbol_value(v1), r)
+    elseif s == symbol_table.local_namelist then
+      for i = 1, #v1, 2 do
+        local name = v1[i]
+        local r = new_register(state)
+        def_name(scope, name, "var", symbol_value(name), r)
+      end
+    elseif s == symbol_table.parlist then
+      if s1 == symbol_table.namelist then
+        for i = 1, #v1, 2 do
+          local name = v1[i]
+          local r = new_register(state)
+          def_name(scope, name, "param", symbol_value(name), r)
+        end
+        if v3 then
+          def_name(scope, v3, "...", symbol_value(v3))
         end
       else
-        def_name(scope, v, "...", symbol_value(v))
+        def_name(scope, v1, "...", symbol_value(v1))
       end
-    elseif symbol == symbol_table.var then
-      local v = u[1]
-      if v[0] == symbol_table.Name then
-        ref_name(scope, v, symbol_value(v))
+    elseif s == symbol_table.var then
+      if s1 == symbol_table.Name then
+        local r = ref_name(scope, v1, symbol_value(v1))
+        if u.def then
+          -- [TODO] impl set global
+          u.r = r
+        else
+          if r then
+            u.r = new_register(state)
+            u.code = { "MOVE", r }
+          else
+            local r = ref_constant(state, v1, "string", symbol_value(v1))
+            u.r = new_register(state)
+            u.code = { "GETGLOBAL", r }
+          end
+        end
       end
-    elseif symbol == symbol_table.LiteralString then
-      ref_constant(state, u, "string", symbol_value(u));
-    elseif symbol == symbol_table.IntegerConstant then
-      ref_constant(state, u, "integer", tonumber(symbol_value(u)))
-    elseif symbol == symbol_table.FloatConstant then
-      ref_constant(state, u, "float", tonumber(symbol_value(u)))
+    elseif s == symbol_table.LiteralString then
+      u.r = ref_constant(state, u, "string", symbol_value(u));
+    elseif s == symbol_table.IntegerConstant then
+      u.r = ref_constant(state, u, "integer", tonumber(symbol_value(u)))
+    elseif s == symbol_table.FloatConstant then
+      u.r = ref_constant(state, u, "float", tonumber(symbol_value(u)))
     end
   else
     id = id + 1
@@ -454,6 +521,7 @@ while true do
           ["data-symbol"] = symbol;
           ["data-symbol-name"] = symbol_names[symbol];
           ["data-terminal-symbol"] = true;
+          ["data-r"] = u.r;
           class = u.color;
           source:sub(i, j);
         }
@@ -466,6 +534,10 @@ while true do
       if order then
         order = table.concat(order, ",")
       end
+      local code = u.code
+      local op = code and code[1]
+      local a = code and code[2]
+      local b = code and code[3]
       add_state_html(state_html, u.state)
       add_scope_html(scope_html, u.scope)
       u.html = { "span",
@@ -473,6 +545,10 @@ while true do
         ["data-symbol"] = symbol;
         ["data-symbol-name"] = symbol_names[symbol];
         ["data-order"] = order;
+        ["data-op"] = op;
+        ["data-r"] = u.r;
+        ["data-a"] = a;
+        ["data-b"] = b;
       }
     end
     local n = #u
@@ -532,6 +608,11 @@ local panel_html = { "div"; class="panel";
     { "span"; "Scope" };
   };
   scope_html;
+  { "div"; class = "panel-head";
+    { "span"; class = "icon fa fa-minus-square-o" };
+    { "span"; "Code" };
+  };
+  { "div"; class = "code" };
 }
 
 local transition_duration = 400
@@ -574,7 +655,7 @@ body {
   text-align: right;
 }
 
-.code {
+.source {
   position: absolute;
   top: 0;
   left: ]] .. number_width_rem + 1.5 .. [[rem;
@@ -589,11 +670,11 @@ body {
 }
 
 .tree {
-  height: 30rem;
+  height: 20rem;
 }
 
-.state, .scope {
-  height: 30rem;
+.state, .scope, .code {
+  height: 20rem;
   overflow: scroll;
 }
 
@@ -628,11 +709,11 @@ body {
   color: #C30771; /* dark_red */
 }
 
-.code span {
+.source span {
   transition: background-color ]] .. transition_duration .. [[ms;
 }
 
-.code span.color-active {
+.source span.color-active {
   background-color: #F3E430; /* yellow */
   transition: background-color ]] .. transition_duration .. [[ms;
 }
@@ -658,14 +739,17 @@ body {
 }
 
 .state table,
-.scope table {
+.scope table,
+.code table {
   border-collapse: collapse;
 }
 
 .state th,
 .state td,
 .scope th,
-.scope td {
+.scope td,
+.code th,
+.code td {
   border: solid 1px #000000;
 }
 ]]
@@ -886,6 +970,11 @@ local script = [[
                 $("body").animate({
                   scrollTop: scroll
                 }, transition_duration);
+                var op = $node.attr("data-op") || "";
+                var r = $node.attr("data-r") || "";
+                var a = $node.attr("data-a") || "";
+                var b = $node.attr("data-b") || "";
+                $(".code").text(op + " " + r + " " + a + " " + b);
               });
             update_node_group(node_group);
           });
@@ -905,7 +994,7 @@ write_html(io.stdout, { "html";
   { "body";
     { "div"; class="body";
       number_html;
-      { "div"; class="code"; root_html };
+      { "div"; class="source"; root_html };
       panel_html;
     };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
