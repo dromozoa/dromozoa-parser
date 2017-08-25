@@ -97,6 +97,13 @@ local function def_label(scope, u, value)
   }
 end
 
+local function copy_codes(result, source)
+  for i = 1, #source do
+    result[#result + 1] = source[i]
+  end
+  return result
+end
+
 local function write_html(out, node)
   local number_keys, string_keys = keys(node)
   local name = assert(node[1])
@@ -279,6 +286,30 @@ local function add_scope_html(scope_html, scope)
   end
 end
 
+local function add_code_html(code_html, u)
+  local codes = u.codes
+  if codes and codes[1] then
+    local code_text_html = { "div" };
+    for i = 1, #codes do
+      local code = codes[i]
+      local code_line_html = { "div"; code[1] }
+      for j = 2, #code do
+        local operand = code[j]
+        if operand then
+          code_line_html[#code_line_html + 1] = (" %.17g"):format(operand)
+        else
+          code_line_html[#code_line_html + 1] = " ?"
+        end
+      end
+      code_text_html[#code_text_html + 1] = code_line_html
+    end
+    code_html[#code_html + 1] = { "div";
+      ["data-id"] = "_" .. u.id;
+      code_text_html;
+    }
+  end
+end
+
 local file = ...
 local source
 
@@ -334,58 +365,81 @@ while true do
     local s2 = v2 and v2[0]
     local s3 = v3 and v3[0]
     local s4 = v4 and v4[0]
+    local codes = u.codes
 
-    if s == symbol_table.stat then
+    if s == symbol_table.chunk then
+      copy_codes(codes, v1.codes)
+    elseif s == symbol_table.block then
+      copy_codes(codes, v1.codes)
+    elseif s == symbol_table.stats then
+      for i = 1, #u do
+        copy_codes(codes, u[i].codes)
+      end
+    elseif s == symbol_table.stat then
       if s1 == symbol_table.varlist then
+        copy_codes(codes, v3.codes)
         for i = 1, #v1, 2 do
           local var = v1[i]
           local exp = v3[i]
           if exp then
-            var.code = { "MOVE", exp.r }
+            codes[#codes + 1] = { "MOVE", var.r, exp.r }
           else
-            var.code = { "LOADNIL" }
+            codes[#codes + 1] = { "LOADNIL", var.r }
           end
         end
+      elseif s1 == symbol_table.functioncall then
+        copy_codes(codes, v1.codes)
+      end
+    elseif s == symbol_table.explist then
+      for i = 1, #u, 2 do
+        copy_codes(codes, u[i].codes)
       end
     elseif s == symbol_table.exp then
-      if s1 == symbol_table["nil"] then
-        u.r = new_register(state)
-        u.code = { "LOADNIL" }
-      elseif s1 == symbol_table["false"] then
-        u.r = new_register(state)
-        u.code = { "LOADBOOL", 0 }
-      elseif s1 == symbol_table["true"] then
-        u.r = new_register(state)
-        u.code = { "LOADBOOL", 1 }
-      elseif u.loadk then
-        u.r = new_register(state)
-        u.code = { "LOADK", v1.r }
+      if u.loadk then
+        local r = new_register(state)
+        u.r = r
+        codes[#codes + 1] = { "LOADK", r, v1.r }
       elseif s1 == symbol_table.prefixexp then
-        u.r = new_register(state)
-        u.code = { "MOVE", v1.r }
+        u.r = v1.r
+        u.codes = v1.codes
       elseif u.binop then
-        u.r = new_register(state)
-        u.code = { symbol_names[s2], v1.r, v3.r }
-      elseif u.unop then
-        u.r = new_register(state)
-        u.code = { symbol_names[s1], v2.r }
+        local r = new_register(state)
+        u.r = r
+        copy_codes(codes, v1.codes)
+        copy_codes(codes, v3.codes)
+        codes[#codes + 1] = { symbol_names[s2], r, v1.r, v3.r }
       end
     elseif s == symbol_table.prefixexp then
       if s1 == symbol_table.var then
-        u.r = new_register(state)
-        u.code = { "MOVE", v1.r }
+        u.r = v1.r
+        u.codes = v1.codes
       else
         u.r = new_register(state)
         u.code = { "MOVE", v2.r }
       end
+    elseif s == symbol_table.functioncall then
+      if s2 == symbol_table.args then
+        local r = v2.r
+        copy_codes(codes, v1.codes)
+        codes[#codes + 1] = { "MOVE", r, v1.r }
+        copy_codes(codes, v2.codes)
+        codes[#codes + 1] = { "CALL", r, v2.n + 1 }
+      end
     elseif s == symbol_table.args then
-      if s2 == symbol_table.explist then
-        local code = { "PUSH" }
-        for i = 1, #v2, 2 do
-          local exp = v2[i]
-          code[#code + 1] = exp.r
+      u.r = new_register(state)
+      if s1 == symbol_table["("] then
+        if s2 == symbol_table.explist then
+          copy_codes(codes, v2.codes)
+          local n = #v2
+          for i = 1, n, 2 do
+            local exp = v2[i]
+            local r = new_register(state)
+            codes[#codes + 1] = { "MOVE", r, exp.r }
+          end
+          u.n = (n + 1) / 2
+        else
+          u.n = 0
         end
-        u.code = code
       end
     elseif s == symbol_table.label then
       def_label(scope, v2, symbol_value(v2))
@@ -419,12 +473,14 @@ while true do
           u.r = r
         else
           if r then
-            u.r = new_register(state)
-            u.code = { "MOVE", r }
+            local out = new_register(state)
+            u.r = out
+            codes[#codes + 1] = { "MOVE", out, r }
           else
             local r = ref_constant(state, v1, "string", symbol_value(v1))
-            u.r = new_register(state)
-            u.code = { "GETGLOBAL", r }
+            local out = new_register(state)
+            u.r = out
+            codes[#codes + 1] = { "GETGLOBAL", out, r }
           end
         end
       end
@@ -461,6 +517,10 @@ while true do
       u.scope = scope
     end
 
+    if u[0] > max_terminal_symbol then
+      u.codes = {}
+    end
+
     local order = u.order
     if order then
       local n = #order
@@ -487,6 +547,8 @@ local scope_html = { "div"; class = "scope" }
 add_scope_html(scope_html, env)
 
 local state_html = { "div"; class = "state" }
+
+local code_html = { "div"; class = "code" }
 
 local stack1 = { root }
 local stack2 = {}
@@ -530,25 +592,18 @@ while true do
   else
     local symbol = u[0]
     if symbol > max_terminal_symbol then
+      add_state_html(state_html, u.state)
+      add_scope_html(scope_html, u.scope)
+      add_code_html(code_html, u)
       local order = u.order
       if order then
         order = table.concat(order, ",")
       end
-      local code = u.code
-      local op = code and code[1]
-      local a = code and code[2]
-      local b = code and code[3]
-      add_state_html(state_html, u.state)
-      add_scope_html(scope_html, u.scope)
       u.html = { "span",
         id = "_" .. u.id;
         ["data-symbol"] = symbol;
         ["data-symbol-name"] = symbol_names[symbol];
         ["data-order"] = order;
-        ["data-op"] = op;
-        ["data-r"] = u.r;
-        ["data-a"] = a;
-        ["data-b"] = b;
       }
     end
     local n = #u
@@ -612,7 +667,7 @@ local panel_html = { "div"; class="panel";
     { "span"; class = "icon fa fa-minus-square-o" };
     { "span"; "Code" };
   };
-  { "div"; class = "code" };
+  code_html;
 }
 
 local transition_duration = 400
@@ -739,18 +794,19 @@ body {
 }
 
 .state table,
-.scope table,
-.code table {
+.scope table {
   border-collapse: collapse;
 }
 
 .state th,
 .state td,
 .scope th,
-.scope td,
-.code th,
-.code td {
+.scope td {
   border: solid 1px #000000;
+}
+
+.code [data-id] {
+  display: none;
 }
 ]]
 
@@ -970,11 +1026,8 @@ local script = [[
                 $("body").animate({
                   scrollTop: scroll
                 }, transition_duration);
-                var op = $node.attr("data-op") || "";
-                var r = $node.attr("data-r") || "";
-                var a = $node.attr("data-a") || "";
-                var b = $node.attr("data-b") || "";
-                $(".code").text(op + " " + r + " " + a + " " + b);
+                $(".code [data-id]").hide();
+                $(".code [data-id=" + $node.attr("id") + "]").show();
               });
             update_node_group(node_group);
           });

@@ -20,3 +20,4 @@ a, b = 1
 a, b = a * 2, 2
 a, b = b, a * 2
 print(a, b)
+print()
