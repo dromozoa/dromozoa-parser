@@ -310,7 +310,7 @@ local function add_code_html(code_html, u)
   end
 end
 
-local file = ...
+local file, out_file = ...
 local source
 
 if file then
@@ -477,10 +477,12 @@ while true do
             u.r = out
             codes[#codes + 1] = { "MOVE", out, r }
           else
-            local r = ref_constant(state, v1, "string", symbol_value(v1))
-            local out = new_register(state)
-            u.r = out
-            codes[#codes + 1] = { "GETGLOBAL", out, r }
+            local r1 = ref_constant(state, v1, "string", symbol_value(v1))
+            local r2 = new_register(state)
+            local r3 = new_register(state)
+            u.r = r3
+            codes[#codes + 1] = { "LOADK", r2, r1 }
+            codes[#codes + 1] = { "GETGLOBAL", r3, r2 }
           end
         end
       end
@@ -689,7 +691,6 @@ local style = [[
 }
 
 body {
-  height: 100%;
   margin: 0;
   font-family: 'Noto Sans Mono CJK JP', monospace;
   white-space: pre;
@@ -721,7 +722,7 @@ body {
   top: 0;
   right: 0;
   width: ]] .. panel_width_rem .. [[rem;
-  height: 100%;
+  height: 100vh;
   overflow: scroll;
 }
 
@@ -1060,3 +1061,34 @@ write_html(io.stdout, { "html";
   };
 })
 io.write("\n")
+
+if out_file then
+  local out = assert(io.open(out_file, "w"))
+
+  out:write([[
+local lua_state = require "test.lua_state"
+local L = lua_state()
+]])
+
+  local constants = root.state.constants
+  for i = 1, #constants do
+    local constant = constants[i]
+    if constant.type == "string" then
+      out:write("L.K[", i, "]=", encode_string(constant.value), "\n")
+    else
+      out:write("L.K[", i, "]=", constant.value, "\n")
+    end
+  end
+
+  local codes = root.codes
+  for i = 1, #codes do
+    local code = codes[i]
+    out:write("L[", encode_string(code[1]), "](L")
+    for i = 2, #code do
+      out:write(",", code[i])
+    end
+    out:write(")\n")
+  end
+
+  out:close()
+end
