@@ -543,12 +543,11 @@ while true do
   end
 end
 
-local scope_html = { "div"; class = "scope" }
+local scope_html = { "div"; class = "panel-pane scope" }
+local state_html = { "div"; class = "panel-pane state" }
+local code_html = { "div"; class = "panel-pane code" }
+
 add_scope_html(scope_html, env)
-
-local state_html = { "div"; class = "state" }
-
-local code_html = { "div"; class = "code" }
 
 local stack1 = { root }
 local stack2 = {}
@@ -652,7 +651,7 @@ local panel_html = { "div"; class="panel";
     { "span"; class = "icon fa fa-minus-square-o" };
     { "span"; "Tree" };
   };
-  { "div"; class = "tree" };
+  { "div"; class = "panel-pane tree" };
   { "div"; class = "panel-head";
     { "span"; class = "icon fa fa-minus-square-o" };
     { "span"; "State" };
@@ -690,6 +689,7 @@ local style = [[
 }
 
 body {
+  height: 100%;
   margin: 0;
   font-family: 'Noto Sans Mono CJK JP', monospace;
   white-space: pre;
@@ -721,15 +721,7 @@ body {
   top: 0;
   right: 0;
   width: ]] .. panel_width_rem .. [[rem;
-  background-color: rgba(241, 241, 241, 0.5); /* white */
-}
-
-.tree {
-  height: 20rem;
-}
-
-.state, .scope, .code {
-  height: 20rem;
+  height: 100%;
   overflow: scroll;
 }
 
@@ -737,9 +729,21 @@ body {
   background-color: rgba(198, 198, 198, 0.5); /* lighter_gray */
 }
 
+.panel-pane {
+  background-color: rgba(241, 241, 241, 0.5); /* white */
+}
+
 .icon {
   width: 1.5rem;
   text-align: center;
+}
+
+.tree {
+  height: 20rem;
+}
+
+.code {
+  min-height: 1.5rem;
 }
 
 .color-number {
@@ -1026,8 +1030,8 @@ local script = [[
                 $("body").animate({
                   scrollTop: scroll
                 }, transition_duration);
-                $(".code [data-id]").hide();
-                $(".code [data-id=" + $node.attr("id") + "]").show();
+                $(".code [data-id]").hide(transition_duration);
+                $(".code [data-id=" + $node.attr("id") + "]").show(transition_duration);
               });
             update_node_group(node_group);
           });
