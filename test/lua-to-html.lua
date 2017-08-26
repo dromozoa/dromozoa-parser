@@ -519,6 +519,20 @@ while true do
         copy_codes(codes, v1.codes)
         copy_codes(codes, v3.codes)
         codes[#codes + 1] = { "MUL", r, v1.r, v3.r }
+      elseif s2 == symbol_table["=="] then
+        local r = new_register(state)
+        local l = new_label(state)
+        local m = new_label(state)
+        u.r = r
+        copy_codes(codes, v1.codes)
+        copy_codes(codes, v3.codes)
+        codes[#codes + 1] = { "EQ", 0, v1.r, v3.r }
+        codes[#codes + 1] = { "JMP", m }
+        codes[#codes + 1] = { "LOADBOOL", r, 1 }
+        codes[#codes + 1] = { "JMP", l }
+        codes[#codes + 1] = { "LABEL", m }
+        codes[#codes + 1] = { "LOADBOOL", r, 0 }
+        codes[#codes + 1] = { "LABEL", l }
       elseif s2 == symbol_table["<="] then
         local r = new_register(state)
         local l = new_label(state)
@@ -1199,6 +1213,15 @@ local L = lua_state()
         out:write("if not L:get(", code[2], ") then goto L", jump[2], " end\n")
       else
         out:write("if L:get(", code[2], ") then goto L", jump[2], " end\n")
+      end
+    elseif op == "EQ" then
+      i = i + 1
+      local jump = codes[i]
+      assert(jump[1] == "JMP")
+      if code[2] == 0 then
+        out:write("if not (L:get(", code[3], ") == L:get(", code[4], ")) then goto L", jump[2], " end\n")
+      else
+        out:write("if L:get(", code[3], ") == L:get(", code[4], ") then goto L", jump[2], " end\n")
       end
     elseif op == "LE" then
       i = i + 1

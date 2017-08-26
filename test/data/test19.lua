@@ -20,7 +20,7 @@ local b = 10
 local c = 20
 while a <= c do
   print(a)
-  if b <= a then
+  if a == b then
     break
   end
   a = a + 1
