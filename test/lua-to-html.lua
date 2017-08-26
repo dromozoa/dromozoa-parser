@@ -389,6 +389,26 @@ while true do
         end
       elseif s1 == symbol_table.functioncall then
         copy_codes(codes, v1.codes)
+      elseif s1 == symbol_table["local"] then
+        if s2 == symbol_table.namelist then
+          if v4 then
+            copy_codes(codes, v4.codes)
+            for i = 1, #v2, 2 do
+              local name = v2[i]
+              local exp = v4[i]
+              if exp then
+                codes[#codes + 1] = { "MOVE", name.r, exp.r }
+              else
+                codes[#codes + 1] = { "LOADNIL", name.r }
+              end
+            end
+          else
+            for i = 1, #v2, 2 do
+              local name = v2[i]
+              codes[#codes + 1] = { "LOADNIL", name.r }
+            end
+          end
+        end
       end
     elseif s == symbol_table.explist then
       for i = 1, #u, 2 do
@@ -479,9 +499,9 @@ while true do
       for i = 1, #u, 2 do
         local name = u[i]
         local r = new_register(state)
+        name.r = r
         def_name(scope, name, "var", symbol_value(name), r)
       end
-
     elseif s == symbol_table.LiteralString then
       u.r = ref_constant(state, u, "string", symbol_value(u));
     elseif s == symbol_table.IntegerConstant then
