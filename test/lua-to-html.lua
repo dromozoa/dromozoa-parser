@@ -446,19 +446,8 @@ while true do
     elseif s == symbol_table.local_name then
       local r = new_register(state)
       def_name(scope, v1, "var", symbol_value(v1), r)
-    elseif s == symbol_table.local_namelist then
-      for i = 1, #v1, 2 do
-        local name = v1[i]
-        local r = new_register(state)
-        def_name(scope, name, "var", symbol_value(name), r)
-      end
     elseif s == symbol_table.parlist then
       if s1 == symbol_table.namelist then
-        for i = 1, #v1, 2 do
-          local name = v1[i]
-          local r = new_register(state)
-          def_name(scope, name, "param", symbol_value(name), r)
-        end
         if v3 then
           def_name(scope, v3, "...", symbol_value(v3))
         end
@@ -486,6 +475,13 @@ while true do
           end
         end
       end
+    elseif s == symbol_table.namelist then
+      for i = 1, #u, 2 do
+        local name = u[i]
+        local r = new_register(state)
+        def_name(scope, name, "var", symbol_value(name), r)
+      end
+
     elseif s == symbol_table.LiteralString then
       u.r = ref_constant(state, u, "string", symbol_value(u));
     elseif s == symbol_table.IntegerConstant then
