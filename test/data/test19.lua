@@ -17,7 +17,11 @@
 
 local a = 1
 local b = 10
-while a <= b do
+local c = 20
+while a <= c do
   print(a)
+  if b <= a then
+    break
+  end
   a = a + 1
 end

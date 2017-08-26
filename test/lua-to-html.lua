@@ -343,6 +343,7 @@ local env = {
   labels = {};
 }
 local scope = env
+local loop
 
 local stack1 = { root }
 local stack2 = {}
@@ -363,6 +364,10 @@ while true do
 
     if u.scope then
       scope = scope.parent
+    end
+
+    if u.loop then
+      loop = loop.parent
     end
 
     local v1, v2, v3, v4 = u[1], u[2], u[3], u[4]
@@ -395,8 +400,10 @@ while true do
         end
       elseif s1 == symbol_table.functioncall then
         copy_codes(codes, v1.codes)
+      elseif s1 == symbol_table["break"] then
+        codes[#codes + 1] = { "JMP", loop.label }
       elseif s1 == symbol_table["while"] then
-        local l = new_label(state)
+        local l = u.loop.label
         local m = new_label(state)
         codes[#codes + 1] = { "LABEL", m }
         copy_codes(codes, v2.codes)
@@ -602,6 +609,15 @@ while true do
         labels = {};
       }
       u.scope = scope
+    end
+
+    if u.loop then
+      loop = {
+        id = id;
+        parent = loop;
+        label = new_label(state)
+      }
+      u.loop = loop
     end
 
     if u[0] > max_terminal_symbol then
