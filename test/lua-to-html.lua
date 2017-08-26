@@ -415,7 +415,19 @@ while true do
         copy_codes(codes, u[i].codes)
       end
     elseif s == symbol_table.exp then
-      if u.loadk then
+      if s1 == symbol_table["nil"] then
+        local r = new_register(state)
+        u.r = r
+        codes[#codes + 1] = { "LOADNIL", r }
+      elseif s1 == symbol_table["false"] then
+        local r = new_register(state)
+        u.r = r
+        codes[#codes + 1] = { "LOADBOOL", r, 0 }
+      elseif s1 == symbol_table["true"] then
+        local r = new_register(state)
+        u.r = r
+        codes[#codes + 1] = { "LOADBOOL", r, 1 }
+      elseif u.loadk then
         local r = new_register(state)
         u.r = r
         codes[#codes + 1] = { "LOADK", r, v1.r }

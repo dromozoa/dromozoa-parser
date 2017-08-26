@@ -162,10 +162,7 @@ _"stat"
   :_ "do" "block" "end" :attr "scope"
   :_ "while" "exp" "do" "block" "end" :attr "scope"
   :_ "repeat" "block" "until" "exp" :attr "scope"
-  :_ "if_clause" "end"
-  :_ "if_clause" "else_clause" "end"
-  :_ "if_clause" "elseif_clauses" "end"
-  :_ "if_clause" "elseif_clauses" "else_clause" "end"
+  :_ "if_clauses" "end"
   :_ "for" "local_name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr("order", {1,4,5,6,3,2,7,8,9})
   :_ "for" "local_name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr("order", {1,4,5,6,7,8,3,2,9,10,11})
   :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" :attr("order", {1,4,3,2,5,6,7})
@@ -174,12 +171,18 @@ _"stat"
   :_ "local" "namelist"
   :_ "local" "namelist" "=" "explist" :attr("order", {1,4,3,2})
 
-_"if_clause"
-  :_ "if" "exp" "then" "block" :attr "scope"
+_"if_clauses"
+  :_"if_clause"
+  :_"if_clause" "else_clause"
+  :_"if_clause" "elseif_clauses"
 
 _"elseif_clauses"
   :_ "elseif_clause"
-  :_ "elseif_clauses" "elseif_clause" {[1]={2}}
+  :_ "elseif_clause" "else_clause"
+  :_ "elseif_clause" "elseif_clauses"
+
+_"if_clause"
+  :_ "if" "exp" "then" "block" :attr "scope"
 
 _"elseif_clause"
   :_ "elseif" "exp" "then" "block" :attr "scope"
