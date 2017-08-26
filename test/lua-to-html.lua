@@ -410,6 +410,36 @@ while true do
           end
         end
       end
+    elseif s == symbol_table.label then
+      def_label(scope, v2, symbol_value(v2))
+    elseif s == symbol_table.var then
+      if s1 == symbol_table.Name then
+        local r = ref_name(scope, v1, symbol_value(v1))
+        if u.def then
+          -- [TODO] impl set global
+          u.r = r
+        else
+          if r then
+            local out = new_register(state)
+            u.r = out
+            codes[#codes + 1] = { "MOVE", out, r }
+          else
+            local r1 = ref_constant(state, v1, "string", symbol_value(v1))
+            local r2 = new_register(state)
+            local r3 = new_register(state)
+            u.r = r3
+            codes[#codes + 1] = { "LOADK", r2, r1 }
+            codes[#codes + 1] = { "GETGLOBAL", r3, r2 }
+          end
+        end
+      end
+    elseif s == symbol_table.namelist then
+      for i = 1, #u, 2 do
+        local name = u[i]
+        local r = new_register(state)
+        name.r = r
+        def_name(scope, name, "var", symbol_value(name), r)
+      end
     elseif s == symbol_table.explist then
       for i = 1, #u, 2 do
         copy_codes(codes, u[i].codes)
@@ -473,11 +503,6 @@ while true do
           u.n = 0
         end
       end
-    elseif s == symbol_table.label then
-      def_label(scope, v2, symbol_value(v2))
-    elseif s == symbol_table.local_name then
-      local r = new_register(state)
-      def_name(scope, v1, "var", symbol_value(v1), r)
     elseif s == symbol_table.parlist then
       if s1 == symbol_table.namelist then
         if v3 then
@@ -486,34 +511,9 @@ while true do
       else
         def_name(scope, v1, "...", symbol_value(v1))
       end
-    elseif s == symbol_table.var then
-      if s1 == symbol_table.Name then
-        local r = ref_name(scope, v1, symbol_value(v1))
-        if u.def then
-          -- [TODO] impl set global
-          u.r = r
-        else
-          if r then
-            local out = new_register(state)
-            u.r = out
-            codes[#codes + 1] = { "MOVE", out, r }
-          else
-            local r1 = ref_constant(state, v1, "string", symbol_value(v1))
-            local r2 = new_register(state)
-            local r3 = new_register(state)
-            u.r = r3
-            codes[#codes + 1] = { "LOADK", r2, r1 }
-            codes[#codes + 1] = { "GETGLOBAL", r3, r2 }
-          end
-        end
-      end
-    elseif s == symbol_table.namelist then
-      for i = 1, #u, 2 do
-        local name = u[i]
-        local r = new_register(state)
-        name.r = r
-        def_name(scope, name, "var", symbol_value(name), r)
-      end
+    elseif s == symbol_table.local_name then
+      local r = new_register(state)
+      def_name(scope, v1, "var", symbol_value(v1), r)
     elseif s == symbol_table.LiteralString then
       u.r = ref_constant(state, u, "string", symbol_value(u));
     elseif s == symbol_table.IntegerConstant then
