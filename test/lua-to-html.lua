@@ -395,6 +395,16 @@ while true do
         end
       elseif s1 == symbol_table.functioncall then
         copy_codes(codes, v1.codes)
+      elseif s1 == symbol_table["while"] then
+        local l = new_label(state)
+        local m = new_label(state)
+        codes[#codes + 1] = { "LABEL", m }
+        copy_codes(codes, v2.codes)
+        codes[#codes + 1] = { "TEST", v2.r, 0 }
+        codes[#codes + 1] = { "JMP", l }
+        copy_codes(codes, v4.codes)
+        codes[#codes + 1] = { "JMP", m }
+        codes[#codes + 1] = { "LABEL", l }
       elseif s1 == symbol_table.if_clauses then
         copy_codes(codes, v1.codes)
       elseif s1 == symbol_table["local"] then
@@ -490,12 +500,32 @@ while true do
       elseif s1 == symbol_table.prefixexp then
         u.r = v1.r
         u.codes = v1.codes
-      elseif u.binop then
+      elseif s2 == symbol_table["+"] then
         local r = new_register(state)
         u.r = r
         copy_codes(codes, v1.codes)
         copy_codes(codes, v3.codes)
-        codes[#codes + 1] = { symbol_names[s2], r, v1.r, v3.r }
+        codes[#codes + 1] = { "ADD", r, v1.r, v3.r }
+      elseif s2 == symbol_table["*"] then
+        local r = new_register(state)
+        u.r = r
+        copy_codes(codes, v1.codes)
+        copy_codes(codes, v3.codes)
+        codes[#codes + 1] = { "MUL", r, v1.r, v3.r }
+      elseif s2 == symbol_table["<="] then
+        local r = new_register(state)
+        local l = new_label(state)
+        local m = new_label(state)
+        u.r = r
+        copy_codes(codes, v1.codes)
+        copy_codes(codes, v3.codes)
+        codes[#codes + 1] = { "LE", 0, v1.r, v3.r }
+        codes[#codes + 1] = { "JMP", m }
+        codes[#codes + 1] = { "LOADBOOL", r, 1 }
+        codes[#codes + 1] = { "JMP", l }
+        codes[#codes + 1] = { "LABEL", m }
+        codes[#codes + 1] = { "LOADBOOL", r, 0 }
+        codes[#codes + 1] = { "LABEL", l }
       end
     elseif s == symbol_table.prefixexp then
       if s1 == symbol_table.var then
@@ -1142,18 +1172,27 @@ local L = lua_state()
     local code = codes[i]
     local op = code[1]
     if op == "JMP" then
-      out:write("goto L", code[2], " -- ???? \n")
+      out:write("goto L", code[2], "\n")
     elseif op == "LABEL" then
       out:write("::L", code[2], "::\n")
     elseif op == "TEST" then
       i = i + 1
       local jump = codes[i]
       assert(jump[1] == "JMP")
-      out:write("if ")
       if code[3] == 0 then
-        out:write("not L:get(")
+        out:write("if not L:get(", code[2], ") then goto L", jump[2], " end\n")
+      else
+        out:write("if L:get(", code[2], ") then goto L", jump[2], " end\n")
       end
-      out:write(code[2], ") then goto L", jump[2], " end\n")
+    elseif op == "LE" then
+      i = i + 1
+      local jump = codes[i]
+      assert(jump[1] == "JMP")
+      if code[2] == 0 then
+        out:write("if not (L:get(", code[3], ") <= L:get(", code[4], ")) then goto L", jump[2], " end\n")
+      else
+        out:write("if L:get(", code[3], ") <= L:get(", code[4], ") then goto L", jump[2], " end\n")
+      end
     else
       out:write("L[", encode_string(code[1]), "](L")
       for i = 2, #code do

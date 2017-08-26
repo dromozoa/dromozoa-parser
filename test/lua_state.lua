@@ -45,7 +45,11 @@ function class:LOADNIL(a)
   self.R[a] = nil
 end
 
-class["*"] = function (self, a, b, c)
+function class:ADD(a, b, c)
+  self.R[a] = self:get(b) + self:get(c)
+end
+
+function class:MUL(a, b, c)
   self.R[a] = self:get(b) * self:get(c)
 end
 
