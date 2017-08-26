@@ -29,6 +29,10 @@ function class:get(r)
   end
 end
 
+function class:LOADBOOL(a, b)
+  self.R[a] = b ~= 0
+end
+
 function class:LOADK(a, b)
   self.R[a] = self.K[-b]
 end

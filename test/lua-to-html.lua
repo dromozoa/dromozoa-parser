@@ -31,6 +31,12 @@ local function new_register(state)
   return register
 end
 
+local function new_label(state)
+  local label = state.label
+  state.label = label + 1
+  return label
+end
+
 local function ref_constant(state, u, type, value)
   local constants = state.constants
   local n = #constants
@@ -389,6 +395,8 @@ while true do
         end
       elseif s1 == symbol_table.functioncall then
         copy_codes(codes, v1.codes)
+      elseif s1 == symbol_table.if_clauses then
+        copy_codes(codes, v1.codes)
       elseif s1 == symbol_table["local"] then
         if s2 == symbol_table.namelist then
           if v4 then
@@ -410,6 +418,24 @@ while true do
           end
         end
       end
+    elseif s == symbol_table.if_clauses or s == symbol_table.elseif_clauses then
+      copy_codes(codes, v1.codes)
+      if v2 then
+        copy_codes(codes, v2.codes)
+      end
+      codes[#codes + 1] = { "LABEL", v1.l }
+    elseif s == symbol_table.if_clause or s == symbol_table.elseif_clause then
+      local l = new_label(state)
+      local m = new_label(state)
+      u.l = l
+      copy_codes(codes, v2.codes)
+      codes[#codes + 1] = { "TEST", v2.r, 0 }
+      codes[#codes + 1] = { "JMP", m }
+      copy_codes(codes, v4.codes)
+      codes[#codes + 1] = { "JMP", l }
+      codes[#codes + 1] = { "LABEL", m }
+    elseif s == symbol_table.else_clause then
+      copy_codes(codes, v2.codes)
     elseif s == symbol_table.label then
       def_label(scope, v2, symbol_value(v2))
     elseif s == symbol_table.var then
@@ -530,6 +556,7 @@ while true do
         id = id;
         parent = state;
         register = 0;
+        label = 0;
         constants = {};
         locals = {};
         upvalues = {};
@@ -1109,14 +1136,32 @@ local L = lua_state()
   end
 
   local codes = root.codes
-  for i = 1, #codes do
+  local i = 1
+  local n = #codes
+  while i <= n do
     local code = codes[i]
-    out:write("L[", encode_string(code[1]), "](L")
-    for i = 2, #code do
-      out:write(",", code[i])
+    local op = code[1]
+    if op == "JMP" then
+      out:write("goto L", code[2], " -- ???? \n")
+    elseif op == "LABEL" then
+      out:write("::L", code[2], "::\n")
+    elseif op == "TEST" then
+      i = i + 1
+      local jump = codes[i]
+      assert(jump[1] == "JMP")
+      out:write("if ")
+      if code[3] == 0 then
+        out:write("not L:get(")
+      end
+      out:write(code[2], ") then goto L", jump[2], " end\n")
+    else
+      out:write("L[", encode_string(code[1]), "](L")
+      for i = 2, #code do
+        out:write(",", code[i])
+      end
+      out:write(")\n")
     end
-    out:write(")\n")
+    i = i + 1
   end
-
   out:close()
 end
