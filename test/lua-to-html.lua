@@ -66,10 +66,22 @@ local function def_name(scope, u, type, value, r)
     refs = {};
     r = r;
   }
+  local locals = scope.state.locals
+  locals[#locals + 1] = {
+    value = value;
+    r = r;
+  }
 end
 
 local function ref_name(scope, u, value)
+  local stack = { scope.state }
   while true do
+    local state = scope.state
+    local n = #stack
+    if stack[n] ~= state then
+      stack[n + 1] = state
+    end
+
     local names = scope.names
     local n = #names
     for i = n, 1, -1 do
@@ -77,7 +89,55 @@ local function ref_name(scope, u, value)
       if name.value == value then
         local refs = name.refs
         refs[#refs + 1] = u.id
-        return name.r
+        local m = #stack - 1
+        if m == 0 then
+          return name.r, true
+        else
+          local state = stack[m]
+          local r = name.r
+          local upvalues = state.upvalues
+          local u
+          local l = #upvalues
+          for j = 1, l do
+            local upvalue = upvalues[j]
+            if upvalue.r == r and upvalue.in_stack then
+              u = j
+              break
+            end
+          end
+          if not u then
+            u = l + 1
+            upvalues[u] = {
+              r = r;
+              in_stack = true;
+              name = name.value;
+            }
+          end
+          r = u
+          for j = m - 1, 1, -1 do
+            local state = stack[j]
+            local upvalues = state.upvalues
+            local u
+            local l = #upvalues
+            for j = 1, l do
+              local upvalue = upvalues[j]
+              if upvalue.r == r and not upvalue.in_stack then
+                u = j
+                break
+              end
+            end
+            if not u then
+              u = l + 1
+              upvalues[u] = {
+                r = r;
+                in_stack = false;
+                name = name.value;
+              }
+            end
+            r = u
+          end
+          return r, false
+        end
       end
     end
     local parent = scope.parent
@@ -200,6 +260,60 @@ local function add_state_html(state_html, state)
             };
           };
           constant_tbody_html;
+        };
+      }
+    end
+
+    local locals = state.locals
+    if locals[1] then
+      local local_tbody_html = { "tbody" }
+      for i = 1, #locals do
+        local local_ = locals[i]
+        local_tbody_html[#local_tbody_html + 1] = { "tr";
+          { "td"; local_.r };
+          { "td"; local_.value };
+        }
+      end
+
+      state_html[#state_html + 1] = { "div";
+        { "span"; ["data-ref"] = state.id; "Locals" };
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "#" };
+              { "th"; "Name" };
+            };
+          };
+          local_tbody_html;
+        };
+      }
+    end
+
+    local upvalues = state.upvalues
+    if upvalues[1] then
+      local upvalue_tbody_html = { "tbody" }
+      for i = 1, #upvalues do
+        local upvalue = upvalues[i]
+        upvalue_tbody_html[#upvalue_tbody_html + 1] = { "tr";
+          { "td"; i };
+          { "td"; upvalue.name };
+          { "td"; upvalue.r };
+          { "td"; upvalue.in_stack };
+        }
+      end
+
+      state_html[#state_html + 1] = { "div";
+        { "span"; ["data-ref"] = state.id; "Upvalues" };
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "#" };
+              { "th"; "Name" };
+              { "th"; "ID" };
+              { "th"; "in stack" };
+            };
+          };
+          upvalue_tbody_html;
         };
       }
     end
@@ -457,15 +571,22 @@ while true do
       def_label(scope, v2, symbol_value(v2))
     elseif s == symbol_table.var then
       if s1 == symbol_table.Name then
-        local r = ref_name(scope, v1, symbol_value(v1))
+        local r, in_stack = ref_name(scope, v1, symbol_value(v1))
         if u.def then
           -- [TODO] impl set global
+          -- [TODO] impl set upvalue
           u.r = r
         else
           if r then
-            local out = new_register(state)
-            u.r = out
-            codes[#codes + 1] = { "MOVE", out, r }
+            if in_stack then
+              local out = new_register(state)
+              u.r = out
+              codes[#codes + 1] = { "MOVE", out, r }
+            else
+              local out = new_register(state)
+              u.r = out
+              codes[#codes + 1] = { "GETUPVAL", out, r }
+            end
           else
             local r1 = ref_constant(state, v1, "string", symbol_value(v1))
             local r2 = new_register(state)
@@ -480,6 +601,7 @@ while true do
       for i = 1, #u, 2 do
         local name = u[i]
         local r = new_register(state)
+        local value = symbol_value(name)
         name.r = r
         def_name(scope, name, "var", symbol_value(name), r)
       end
@@ -590,6 +712,7 @@ while true do
       end
     elseif s == symbol_table.local_name then
       local r = new_register(state)
+      u.r = r
       def_name(scope, v1, "var", symbol_value(v1), r)
     elseif s == symbol_table.LiteralString then
       u.r = ref_constant(state, u, "string", symbol_value(u));
@@ -619,6 +742,7 @@ while true do
       scope = {
         id = id;
         parent = scope;
+        state = state;
         names = {};
         labels = {};
       }
@@ -660,8 +784,8 @@ while true do
   end
 end
 
-local scope_html = { "div"; class = "panel-pane scope" }
 local state_html = { "div"; class = "panel-pane state" }
+local scope_html = { "div"; class = "panel-pane scope" }
 local code_html = { "div"; class = "panel-pane code" }
 
 add_scope_html(scope_html, env)
