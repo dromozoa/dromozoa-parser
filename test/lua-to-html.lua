@@ -458,6 +458,7 @@ local env = {
 }
 local scope = env
 local loop
+local protos = {}
 
 local stack1 = { root }
 local stack2 = {}
@@ -493,7 +494,18 @@ while true do
     local codes = u.codes
 
     if s == symbol_table.chunk then
-      copy_codes(codes, v1.codes)
+      local id = #protos + 1
+      local state = u.state
+      protos[id] = {
+        nparams = 0;
+        constants = state.constants;
+        locals = state.locals;
+        upvalues = state.upvalues;
+        codes = v1.codes;
+      }
+      local r = 1
+      u.r = 1
+      codes[#codes + 1] = { "CLOSURE", r, id }
     elseif s == symbol_table.block then
       copy_codes(codes, v1.codes)
     elseif s == symbol_table.stats then
@@ -626,6 +638,9 @@ while true do
         local r = new_register(state)
         u.r = r
         codes[#codes + 1] = { "LOADK", r, v1.r }
+      elseif s1 == symbol_table.functiondef then
+        u.r = v1.r
+        u.codes = v1.codes
       elseif s1 == symbol_table.prefixexp then
         u.r = v1.r
         u.codes = v1.codes
@@ -675,8 +690,9 @@ while true do
         u.r = v1.r
         u.codes = v1.codes
       else
-        u.r = new_register(state)
-        u.code = { "MOVE", v2.r }
+        local r = new_register(state)
+        u.r = r
+        codes[#codes + 1]  = { "MOVE", r, v2.r }
       end
     elseif s == symbol_table.functioncall then
       if s2 == symbol_table.args then
@@ -702,12 +718,40 @@ while true do
           u.n = 0
         end
       end
+    elseif s == symbol_table.functiondef then
+      u.r = v2.r
+      u.codes = v2.codes
+    elseif s == symbol_table.funcbody then
+      local id = #protos + 1
+      local state = u.state
+      if s2 == symbol_table.parlist then
+        protos[id] = {
+          nparams = state.nparams;
+          constants = state.constants;
+          locals = state.locals;
+          upvalues = state.upvalues;
+          codes = v4.codes;
+        }
+      else
+        protos[id] = {
+          nparams = 0;
+          constants = state.constants;
+          locals = state.locals;
+          upvalues = state.upvalues;
+          codes = v3.codes;
+        }
+      end
+      local r = new_register(state.parent)
+      u.r = r
+      codes[#codes + 1] = { "CLOSURE", r, id }
     elseif s == symbol_table.parlist then
       if s1 == symbol_table.namelist then
+        state.nparams = (#v1 + 1) / 2
         if v3 then
           def_name(scope, v3, "...", symbol_value(v3))
         end
       else
+        state.nparams = 0
         def_name(scope, v1, "...", symbol_value(v1))
       end
     elseif s == symbol_table.local_name then
@@ -1309,61 +1353,82 @@ local lua_state = require "test.lua_state"
 local L = lua_state()
 ]])
 
-  local constants = root.state.constants
-  for i = 1, #constants do
-    local constant = constants[i]
-    if constant.type == "string" then
-      out:write("L.K[", i, "]=", encode_string(constant.value), "\n")
-    else
-      out:write("L.K[", i, "]=", constant.value, "\n")
+  for i = 1, #protos do
+    local proto = protos[i]
+    out:write("local proto = { K = {}, U = {} }\n")
+    local constants = proto.constants
+    for j = 1, #constants do
+      local constant = constants[j]
+      if constant.type == "string" then
+        out:write("proto.K[", j, "] = ", encode_string(constant.value), "\n")
+      else
+        out:write("proto.K[", j, "] = ", constant.value, "\n")
+      end
     end
+    local upvalues = proto.upvalues
+    for j = 1, #upvalues do
+      local upvalue = upvalues[j]
+      out:write("proto.U[", j, "] = { ", upvalue.r, ", ", tostring(upvalue.in_stack), " }\n")
+    end
+    out:write("proto.codes = function (...)\n")
+    out:write("L:args(", proto.nparams, ", ...)\n")
+    local codes = proto.codes
+
+    do
+      local i = 1
+      local n = #codes
+      while i <= n do
+        local code = codes[i]
+        local op = code[1]
+        if op == "JMP" then
+          out:write("goto L", code[2], "\n")
+        elseif op == "LABEL" then
+          out:write("::L", code[2], "::\n")
+        elseif op == "TEST" then
+          i = i + 1
+          local jump = codes[i]
+          assert(jump[1] == "JMP")
+          if code[3] == 0 then
+            out:write("if not L:get(", code[2], ") then goto L", jump[2], " end\n")
+          else
+            out:write("if L:get(", code[2], ") then goto L", jump[2], " end\n")
+          end
+        elseif op == "EQ" then
+          i = i + 1
+          local jump = codes[i]
+          assert(jump[1] == "JMP")
+          if code[2] == 0 then
+            out:write("if not (L:get(", code[3], ") == L:get(", code[4], ")) then goto L", jump[2], " end\n")
+          else
+            out:write("if L:get(", code[3], ") == L:get(", code[4], ") then goto L", jump[2], " end\n")
+          end
+        elseif op == "LE" then
+          i = i + 1
+          local jump = codes[i]
+          assert(jump[1] == "JMP")
+          if code[2] == 0 then
+            out:write("if not (L:get(", code[3], ") <= L:get(", code[4], ")) then goto L", jump[2], " end\n")
+          else
+            out:write("if L:get(", code[3], ") <= L:get(", code[4], ") then goto L", jump[2], " end\n")
+          end
+        else
+          out:write("L:", code[1], "(")
+          for i = 2, #code do
+            if i > 2 then
+              out:write(", ")
+            end
+            out:write(code[i])
+          end
+          out:write(")\n")
+        end
+        i = i + 1
+      end
+    end
+
+    out:write("end\n")
+    out:write("L.protos[", i, "] = proto\n")
   end
 
-  local codes = root.codes
-  local i = 1
-  local n = #codes
-  while i <= n do
-    local code = codes[i]
-    local op = code[1]
-    if op == "JMP" then
-      out:write("goto L", code[2], "\n")
-    elseif op == "LABEL" then
-      out:write("::L", code[2], "::\n")
-    elseif op == "TEST" then
-      i = i + 1
-      local jump = codes[i]
-      assert(jump[1] == "JMP")
-      if code[3] == 0 then
-        out:write("if not L:get(", code[2], ") then goto L", jump[2], " end\n")
-      else
-        out:write("if L:get(", code[2], ") then goto L", jump[2], " end\n")
-      end
-    elseif op == "EQ" then
-      i = i + 1
-      local jump = codes[i]
-      assert(jump[1] == "JMP")
-      if code[2] == 0 then
-        out:write("if not (L:get(", code[3], ") == L:get(", code[4], ")) then goto L", jump[2], " end\n")
-      else
-        out:write("if L:get(", code[3], ") == L:get(", code[4], ") then goto L", jump[2], " end\n")
-      end
-    elseif op == "LE" then
-      i = i + 1
-      local jump = codes[i]
-      assert(jump[1] == "JMP")
-      if code[2] == 0 then
-        out:write("if not (L:get(", code[3], ") <= L:get(", code[4], ")) then goto L", jump[2], " end\n")
-      else
-        out:write("if L:get(", code[3], ") <= L:get(", code[4], ") then goto L", jump[2], " end\n")
-      end
-    else
-      out:write("L[", encode_string(code[1]), "](L")
-      for i = 2, #code do
-        out:write(",", code[i])
-      end
-      out:write(")\n")
-    end
-    i = i + 1
-  end
-  out:close()
+  out:write("L:CLOSURE(", root.r, ", ", #protos, ")\n")
+  out:write("L:CALL(", root.r, ", 1)\n")
 end

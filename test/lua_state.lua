@@ -57,13 +57,68 @@ function class:GETGLOBAL(a, b)
   self.R[a] = self.ENV[self:get(b)]
 end
 
+function class:GETUPVAL(a, b)
+  local R = self.R
+  local U = self.U
+  while true do
+    local u = U[b]
+    local id, in_stack = u[1], u[2]
+    if in_stack then
+      self.R[a] = R.R[id]
+      break
+    else
+      U = R.U
+      R = R.R
+      b = id
+    end
+  end
+end
+
 function class:CALL(a, b)
   local f = self:get(a)
-  if b == 1 then
-    f()
+  if type(f) == "function" then
+    if b == 1 then
+      f()
+    else
+      f(table.unpack(self.R, a + 1, a + b - 1))
+    end
   else
-    f(table.unpack(self.R, a + 1, a + b - 1))
+    assert(type(f) == "table")
+    local K = self.K
+    local R = self.R
+    local U = self.U
+    local proto = f.proto
+    self.K = proto.K
+    self.R = {
+      R = R;
+      U = U;
+    }
+    self.U = proto.U
+    local f = proto.codes
+    if b == 1 then
+      f()
+    else
+      f(table.unpack(R, a + 1, a + b - 1))
+    end
+    self.K = K
+    self.R = R
+    self.U = U
   end
+end
+
+function class:args(n, ...)
+  local R = self.R
+  for i = 1, n do
+    R[i - 1] = select(i, ...)
+  end
+end
+
+function class:CLOSURE(a, b)
+  self.R[a] = {
+    proto = self.protos[b];
+    R = self.R;
+    U = self.U;
+  }
 end
 
 return setmetatable(class, {
@@ -71,9 +126,11 @@ return setmetatable(class, {
     return setmetatable({
       K = {};
       R = {};
+      U = {};
       ENV = {
         print = print;
       };
+      protos = {};
     }, metatable)
   end;
 })
