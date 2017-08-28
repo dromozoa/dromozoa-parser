@@ -74,6 +74,23 @@ function class:GETUPVAL(a, b)
   end
 end
 
+function class:SETUPVAL(a, b)
+  local R = self.R
+  local U = self.U
+  while true do
+    local u = U[a]
+    local id, in_stack = u[1], u[2]
+    if in_stack then
+      R.R[id] = self:get(b)
+      break
+    else
+      U = R.U
+      R = R.R
+      a = id
+    end
+  end
+end
+
 function class:CALL(a, b)
   local f = self:get(a)
   if type(f) == "function" then
@@ -119,6 +136,18 @@ function class:CLOSURE(a, b)
     R = self.R;
     U = self.U;
   }
+end
+
+function class:NEWTABLE(a)
+  self.R[a] = {}
+end
+
+function class:SETTABLE(a, b, c)
+  self:get(a)[self:get(b)] = self:get(c)
+end
+
+function class:GETTABLE(a, b, c)
+  self.R[a] = self:get(b)[self:get(c)]
 end
 
 return setmetatable(class, {

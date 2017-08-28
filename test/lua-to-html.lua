@@ -487,12 +487,13 @@ while true do
       loop = loop.parent
     end
 
-    local v1, v2, v3, v4 = u[1], u[2], u[3], u[4]
+    local v1, v2, v3, v4, v5 = u[1], u[2], u[3], u[4], u[5]
     local s = u[0]
     local s1 = v1 and v1[0]
     local s2 = v2 and v2[0]
     local s3 = v3 and v3[0]
     local s4 = v4 and v4[0]
+    local s5 = v5 and v5[0]
     local codes = u.codes
 
     if s == symbol_table.chunk then
@@ -520,10 +521,20 @@ while true do
         for i = 1, #v1, 2 do
           local var = v1[i]
           local exp = v3[i]
-          if exp then
-            codes[#codes + 1] = { "MOVE", var.r, exp.r }
+          if var.in_stack then
+            if exp then
+              codes[#codes + 1] = { "MOVE", var.r, exp.r }
+            else
+              codes[#codes + 1] = { "LOADNIL", var.r }
+            end
           else
-            codes[#codes + 1] = { "LOADNIL", var.r }
+            if exp then
+              codes[#codes + 1] = { "SETUPVAL", var.r, exp.r }
+            else
+              local r = new_register(state)
+              codes[#codes + 1] = { "LOADNIL", r }
+              codes[#codes + 1] = { "SETUPVAL", var.r, r }
+            end
           end
         end
       elseif s1 == symbol_table.functioncall then
@@ -590,6 +601,7 @@ while true do
           -- [TODO] impl set global
           -- [TODO] impl set upvalue
           u.r = r
+          u.in_stack = in_stack
         else
           if r then
             if in_stack then
@@ -609,6 +621,24 @@ while true do
             codes[#codes + 1] = { "LOADK", r2, r1 }
             codes[#codes + 1] = { "GETGLOBAL", r3, r2 }
           end
+        end
+      elseif s1 == symbol_table.prefixexp then
+        copy_codes(codes, v1.codes)
+        local r
+        if s3 == symbol_table.exp then
+          r = v3.r
+          copy_codes(codes, v3.codes)
+        else
+          local k = ref_constant(state, v3, "string", symbol_value(v3))
+          r = new_register(state)
+          codes[#codes + 1] = { "LOADK", r, k }
+        end
+        if u.def then
+          -- [TODO] impl set table
+        else
+          local out = new_register(state)
+          u.r = out
+          codes[#codes + 1] = { "GETTABLE", out, v1.r, r }
         end
       end
     elseif s == symbol_table.namelist then
@@ -644,6 +674,12 @@ while true do
         u.r = v1.r
         u.codes = v1.codes
       elseif s1 == symbol_table.prefixexp then
+        u.r = v1.r
+        u.codes = v1.codes
+      elseif s1 == symbol_table.functioncall then
+        u.r = v1.r
+        u.codes = v1.codes
+      elseif s1 == symbol_table.tableconstructor then
         u.r = v1.r
         u.codes = v1.codes
       elseif s2 == symbol_table["+"] then
@@ -699,6 +735,7 @@ while true do
     elseif s == symbol_table.functioncall then
       if s2 == symbol_table.args then
         local r = v2.r
+        u.r = r
         copy_codes(codes, v1.codes)
         codes[#codes + 1] = { "MOVE", r, v1.r }
         copy_codes(codes, v2.codes)
@@ -756,6 +793,40 @@ while true do
         state.nparams = 0
         def_name(scope, v1, "...", symbol_value(v1))
       end
+    elseif s == symbol_table.tableconstructor then
+      if s2 == symbol_table.fieldlist then
+        local r = v2.r
+        u.r = r
+        codes[#codes + 1] = { "NEWTABLE", r }
+        for i = 1, #v2, 2 do
+          copy_codes(codes, v2[i].codes)
+        end
+      else
+        local r = new_register(state)
+        u.r = r
+        codes[#codes + 1] = { "NEWTABLE", r }
+      end
+    elseif s == symbol_table.field then
+      local p = u.parent
+      if s2 == symbol_table.exp then
+        copy_codes(codes, v2.codes)
+        copy_codes(codes, v5.codes)
+        codes[#codes + 1] = { "SETTABLE", p.r, v2.r, v5.r }
+      elseif s1 == symbol_table.Name then
+        local k = ref_constant(state, v1, "string", symbol_value(v1))
+        local r = new_register(state)
+        codes[#codes + 1] = { "LOADK", r, k }
+        copy_codes(codes, v3.codes)
+        codes[#codes + 1] = { "SETTABLE", p.r, r, v3.r }
+      else
+        local n = p.n + 1
+        p.n = n
+        local k = ref_constant(state, v1, "integer", n)
+        local r = new_register(state)
+        codes[#codes + 1] = { "LOADK", r, k }
+        copy_codes(codes, v1.codes)
+        codes[#codes + 1] = { "SETTABLE", p.r, r, v1.r }
+      end
     elseif s == symbol_table.local_name then
       local r = new_register(state)
       u.r = r
@@ -806,6 +877,11 @@ while true do
 
     if u[0] > max_terminal_symbol then
       u.codes = {}
+    end
+
+    if u[0] == symbol_table.fieldlist then
+      u.r = new_register(state)
+      u.n = 0
     end
 
     local order = u.order
