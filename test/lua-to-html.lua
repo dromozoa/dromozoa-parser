@@ -510,7 +510,12 @@ while true do
       u.r = r
       codes[#codes + 1] = { "CLOSURE", r, id }
     elseif s == symbol_table.block then
-      copy_codes(codes, v1.codes)
+      if v1 then
+        copy_codes(codes, v1.codes)
+      end
+      if v2 then
+        copy_codes(codes, v2.codes)
+      end
     elseif s == symbol_table.stats then
       for i = 1, #u do
         copy_codes(codes, u[i].codes)
@@ -592,6 +597,23 @@ while true do
       codes[#codes + 1] = { "LABEL", m }
     elseif s == symbol_table.else_clause then
       copy_codes(codes, v2.codes)
+    elseif s == symbol_table.retstat then
+      if s2 == symbol_table.explist then
+        copy_codes(codes, v2.codes)
+        local a
+        local n = #v2
+        for i = 1, n, 2 do
+          local exp = v2[i]
+          local r = new_register(state)
+          if not a then
+            a = r
+          end
+          codes[#codes + 1] = { "MOVE", r, exp.r }
+        end
+        codes[#codes + 1] = { "RETURN", a, (n + 1) / 2 }
+      else
+        codes[#codes + 1] = { "RETURN", 0, 0 }
+      end
     elseif s == symbol_table.label then
       def_label(scope, v2, symbol_value(v2))
     elseif s == symbol_table.var then
@@ -1489,6 +1511,8 @@ local L = lua_state()
           else
             out:write("if L:get(", code[3], ") <= L:get(", code[4], ") then goto L", jump[2], " end\n")
           end
+        elseif op == "RETURN" then
+          out:write("return L:RETURN(", code[2], ", ", code[3], ")\n")
         else
           out:write("L:", code[1], "(")
           for i = 2, #code do

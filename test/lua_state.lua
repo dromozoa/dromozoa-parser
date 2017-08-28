@@ -117,10 +117,23 @@ function class:CALL(a, b)
     else
       f(table.unpack(R, a + 1, a + b - 1))
     end
+    local ret = self.ret
+    if ret then
+      R[a] = ret[1]
+    end
+    self.ret = nil
     self.K = K
     self.R = R
     self.U = U
   end
+end
+
+function class:RETURN(a, b)
+  local ret = {}
+  for i = 1, b do
+    ret[i] = self:get(a + b - 1)
+  end
+  self.ret = ret
 end
 
 function class:args(n, ...)
