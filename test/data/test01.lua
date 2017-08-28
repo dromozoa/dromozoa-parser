@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local function f(a, b, c, ...)
-  local a = { a = { b = { c = a } } }
+  local x = { a = { b = { c = a } } }
   print(a, b and 1 or 2, c .. c, x.a.b.c)
   return 42
 end
