@@ -15,9 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
---[=[
-comment
-comment
-comment
-comment
-]=]
+local a = 1
+local b = 10
+local c = 20
+while a <= c do
+  print(a)
+  if a == b then
+    break
+  end
+  a = a + 1
+end

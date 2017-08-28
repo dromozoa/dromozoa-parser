@@ -48,7 +48,7 @@ return function (self, out, tree)
         out:write('      <tr><td balign="left">', (escape_html(v):gsub("\n", "<br/>")), '</td></tr>\n')
       end
       out:write('    </table>\n  >];\n')
-      local m = u.n
+      local m = #u
       for i = 1, m do
         id = id + 1
         id_table[u[i]] = id

@@ -15,9 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
---[=[
-comment
-comment
-comment
-comment
-]=]
+local a = 1
+local b, c, d = 2, 3, 4
+local a, b = 5, 6

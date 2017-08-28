@@ -15,9 +15,18 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
---[=[
-comment
-comment
-comment
-comment
-]=]
+local a = true
+local b = false
+if a then
+  print("1")
+elseif b then
+  print("2")
+elseif x then
+  print("3")
+else
+  if y then
+    print("4")
+  else
+    print("5")
+  end
+end

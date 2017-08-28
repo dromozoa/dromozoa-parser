@@ -28,6 +28,7 @@ return function (self, out)
     heads = self.heads;
     sizes = self.sizes;
     reduce_to_semantic_action = self.reduce_to_semantic_action;
+    reduce_to_attribute_actions = self.reduce_to_attribute_actions;
   }
   out:write("local parser = require \"dromozoa.parser.parser\"\n")
   local root = dumper():dump(out, data)

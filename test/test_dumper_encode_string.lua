@@ -15,9 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
---[=[
-comment
-comment
-comment
-comment
-]=]
+local encode_string = require "dromozoa.parser.dumper.encode_string"
+
+local source = "foo\a\b\f\n\r\t\v\\\"\'\000\127\255bar日本語"
+
+-- print(("%q"):format(source))
+print(encode_string(source))
+
+local loadstring = loadstring or load
+local chunk = assert(loadstring("return " .. encode_string(source)))
+assert(chunk() == source)

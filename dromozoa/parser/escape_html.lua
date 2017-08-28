@@ -25,8 +25,8 @@ char_table[string.char(0x3e)] = "&gt;"
 char_table[string.char(0x22)] = "&quot;"
 char_table[string.char(0x27)] = "&apos;"
 
-local escape_pattern = "[%z\1-\8\11\12\14-\31%]\127&<>\"']"
+local pattern = "[%z\1-\8\11\12\14-\31%]\127&<>\"']"
 
 return function (s)
-  return (s:gsub(escape_pattern, char_table))
+  return (s:gsub(pattern, char_table))
 end

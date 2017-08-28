@@ -15,9 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
---[=[
-comment
-comment
-comment
-comment
-]=]
+local f1 = function (...)
+  local f2 = function ()
+    local f3 = function ()
+      print(...)
+    end
+    f3()
+  end
+  f2()
+end
+f1(42)

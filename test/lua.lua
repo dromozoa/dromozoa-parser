@@ -64,7 +64,7 @@ while true do
     local m = #dfs_events + 1
     dfs_events[m] = 1 -- discover
     dfs_nodes[m] = u
-    local n = u.n
+    local n = #u
     for i = 1, n do
       local v = u[i]
       v.parent = u
@@ -77,46 +77,70 @@ while true do
   end
 end
 
-local global_symbols = {}
-local symbols = global_symbols
+--[[
+
+env
+scope
+symbol_table
+
+name { id }
+
+
+
+]]
+
+local scope_stack = {}
+
+local chunk_scope = {
+  nodes = {};
+  table = {};
+  n = 0;
+}
+local scope = chunk_scope
+
 for i = 1, #dfs_events do
   local event = dfs_events[i]
   local u = dfs_nodes[i]
   local symbol = u[0]
   if event == 1 then -- discover
-    local create_symbols
-    local n = u.n
-    for j = 1, n do
-      local v = u[j]
-      if v[0] == symbol_table.block then
-        create_symbols = true
+    local push_scope
+    for j = 1, #u do
+      if u[j][0] == symbol_table.block then
+        push_scope = true
         break
       end
     end
-    if create_symbols then
-      local new_symbols = setmetatable({}, { __index = symbols })
-      u.symbols = new_symbols
-      symbols = new_symbols
+    if push_scope then
+      local scope = {
+        nodes = {};
+        table = {};
+        n = 0;
+      }
+      u.scope = scope
+      scope_stack[#scope_stack + 1] = scope
     end
-  else -- finish
-    local symbol = u[0]
+    local scope = scope_stack[#scope_stack]
     if symbol == symbol_table.stat then
-      local symbol = u[1][0]
-      if symbol == symbol_table["for"] then
-        if u[2][0] == symbol_table.Name then
-          symbols[value(u[2])] = true
-        else
-          assert(u[2][0] == symbol_table.namelist)
-          for j = 1, u[2].n do
-            symbols[value(u[2][j])] = true
+      if u[2] and u[2][0] == symbol_table.namelist then
+        for j = 1, #u[2] do
+          local name = value(u[2][j])
+          local n = scope.n + 1
+          scope.nodes[n] = u[2][j].id
+          local t = scope.table[name]
+          if t then
+            t[#t + 1] = u[2][j].id
+          else
+            scope.table[name] = { u[2][j].id }
           end
+          scope.n = n
         end
       end
     end
-
-    if u.symbols then
-      print(dumper.encode(symbols, { stable = true }))
-      symbols = getmetatable(symbols).__index
+  else -- finish
+    if u.scope then
+      local n = #scope_stack
+      print(dumper.encode(scope_stack[n], { stable = true }))
+      scope_stack[n] = nil
     end
   end
 end

@@ -135,6 +135,23 @@ function class:add(x)
   return self
 end
 
+function class:attr(key, value)
+  if value == nil then
+    value = true
+  end
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 18, key, value }
+  return self
+end
+
+function class:attr_value(key)
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 19, key }
+  return self
+end
+
 function metatable:__call(repl)
   local items = self.items
   local actions = items[#items].actions

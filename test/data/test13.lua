@@ -15,9 +15,28 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
---[=[
-comment
-comment
-comment
-comment
-]=]
+local u = "foo"
+
+local function f(a, b, c)
+  do
+    local a = a .. a
+    print(a, b, c .. c, u .. u, 1.0)
+  end
+  x = 105
+  return 0x69, a, 1.
+end
+f("foo", true, [[
+abc
+def
+ghi
+]])
+
+for i = 1, 10 do
+  local i = i + 1
+  print(i)
+end
+
+for a, b in pairs({}) do
+  print(a, b)
+end
+

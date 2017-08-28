@@ -40,52 +40,52 @@ end
 
 _:lexer()
   :_ (RE[[\s+]]) :skip()
-  :_ "and"
-  :_ "break"
-  :_ "do"
-  :_ "else"
-  :_ "elseif"
-  :_ "end"
-  :_ "false"
-  :_ "for"
-  :_ "function"
-  :_ "goto"
-  :_ "if"
-  :_ "in"
-  :_ "local"
-  :_ "nil"
-  :_ "not"
-  :_ "or"
-  :_ "repeat"
-  :_ "return"
-  :_ "then"
-  :_ "true"
-  :_ "until"
-  :_ "while"
-  :_ "+"
-  :_ "-"
-  :_ "*"
-  :_ "/"
-  :_ "%"
-  :_ "^"
-  :_ "#"
-  :_ "&"
-  :_ "~"
-  :_ "|"
-  :_ "<<"
-  :_ ">>"
-  :_ "//"
-  :_ "=="
-  :_ "~="
-  :_ "<="
-  :_ ">="
-  :_ "<"
-  :_ ">"
-  :_ "="
+  :_ "and" :attr("color", "color-operator")
+  :_ "break" :attr("color", "color-statement")
+  :_ "do" :attr("color", "color-statement")
+  :_ "else" :attr("color", "color-statement")
+  :_ "elseif" :attr("color", "color-statement")
+  :_ "end" :attr("color", "color-statement")
+  :_ "false" :attr("color", "color-constant")
+  :_ "for" :attr("color", "color-statement")
+  :_ "function" :attr("color", "color-structure")
+  :_ "goto" :attr("color", "color-statement")
+  :_ "if" :attr("color", "color-statement")
+  :_ "in" :attr("color", "color-statement")
+  :_ "local" :attr("color", "color-statement")
+  :_ "nil" :attr("color", "color-constant")
+  :_ "not" :attr("color", "color-operator")
+  :_ "or" :attr("color", "color-operator")
+  :_ "repeat" :attr("color", "color-statement")
+  :_ "return" :attr("color", "color-statement")
+  :_ "then" :attr("color", "color-statement")
+  :_ "true" :attr("color", "color-constant")
+  :_ "until" :attr("color", "color-statement")
+  :_ "while" :attr("color", "color-statement")
+  :_ "+" :attr("color", "color-operator")
+  :_ "-" :attr("color", "color-operator")
+  :_ "*" :attr("color", "color-operator")
+  :_ "/" :attr("color", "color-operator")
+  :_ "%" :attr("color", "color-operator")
+  :_ "^" :attr("color", "color-operator")
+  :_ "#" :attr("color", "color-operator")
+  :_ "&" :attr("color", "color-operator")
+  :_ "~" :attr("color", "color-operator")
+  :_ "|" :attr("color", "color-operator")
+  :_ "<<" :attr("color", "color-operator")
+  :_ ">>" :attr("color", "color-operator")
+  :_ "//" :attr("color", "color-operator")
+  :_ "==" :attr("color", "color-operator")
+  :_ "~=" :attr("color", "color-operator")
+  :_ "<=" :attr("color", "color-operator")
+  :_ ">=" :attr("color", "color-operator")
+  :_ "<" :attr("color", "color-operator")
+  :_ ">" :attr("color", "color-operator")
+  :_ "=" :attr("color", "color-operator")
   :_ "("
   :_ ")"
-  :_ "{"
-  :_ "}"
+  :_ "{" :attr("color", "color-structure")
+  :_ "}" :attr("color", "color-structure")
   :_ "["
   :_ "]"
   :_ "::"
@@ -93,31 +93,33 @@ _:lexer()
   :_ ":"
   :_ ","
   :_ "."
-  :_ ".."
+  :_ ".." :attr("color", "color-operator")
   :_ "..."
   :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
-  :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2)
-  :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2)
-  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3)
-  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3)
+  :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant") :attr("type", "string")
+  :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant") :attr("type", "string")
+  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3) :attr("color", "color-constant") :attr("type", "string")
+  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3) :attr("color", "color-constant") :attr("type", "string")
   :_ [["]] :skip() :call "dq_string" :mark()
   :_ [[']] :skip() :call "sq_string" :mark()
   :_ (RE[[\[=*\[\n]]) :sub(2, -3) :join("]", "]") :hold() :skip() :call "long_string" :mark()
   :_ (RE[[\[=*\[]]) :sub(2, -2) :join("]", "]") :hold() :skip() :call "long_string" :mark()
-  :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "Numeral"
-  :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "Numeral"
+  :_ (RE[[\d+]]) :as "IntegerConstant" :attr("color", "color-constant") :attr("type", "integer")
+  :_ (RE[[0[xX][0-9A-Fa-f]+]]) :as "IntegerConstant" :attr("color", "color-constant") :attr("type", "integer")
+  :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "FloatConstant" :attr("color", "color-constant") :attr("type", "float")
+  :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "FloatConstant" :attr("color", "color-constant") :attr("type", "float")
   :_ ("--[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :skip()
   :_ (RE[[--\[=+\[]]) :sub(4, -2) :join("]", "]") :hold() :skip() :call "long_comment"
   :_ ("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n") : skip()
 
 string_lexer(_:lexer "dq_string")
-  :_ [["]] :as "LiteralString" :concat() :ret()
+  :_ [["]] :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
 
 string_lexer(_:lexer "sq_string")
-  :_ [[']] :as "LiteralString" :concat() :ret()
+  :_ [[']] :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
 
 _:search_lexer "long_string"
-  :when() :as "LiteralString" :concat() :ret()
+  :when() :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
   :otherwise() :push()
 
 _:search_lexer "long_comment"
@@ -138,101 +140,102 @@ _ :left "or"
   :right "^"
 
 _"chunk"
-  :_ "block"
+  :_ "block" :attr "state" :attr "scope"
 
 _"block"
   :_ ()
   :_ "retstat"
-  :_ "statlist"
-  :_ "statlist" "retstat"
+  :_ "stats"
+  :_ "stats" "retstat"
 
-_"statlist"
+_"stats"
   :_ "stat"
-  :_ "statlist" "stat" {[1]={2}}
+  :_ "stats" "stat" {[1]={2}}
 
 _"stat"
   :_ ";"
-  :_ "varlist" "=" "explist"
+  :_ "varlist" "=" "explist" :attr("order", {3,2,1})
   :_ "functioncall"
   :_ "label"
   :_ "break"
   :_ "goto" "Name"
-  :_ "do" "block" "end"
-  :_ "while" "exp" "do" "block" "end"
-  :_ "repeat" "block" "until" "exp"
-  :_ "if_clause" "end" {1}
-  :_ "if_clause" "else_clause" "end" {1,2}
-  :_ "if_clause" "elseif_clause_list" "end" {1,2}
-  :_ "if_clause" "elseif_clause_list" "else_clause" "end" {1,2,3}
-  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end"
-  :_ "for" "namelist" "in" "explist" "do" "block" "end"
+  :_ "do" "block" "end" :attr "scope"
+  :_ "while" "exp" "do" "block" "end" :attr "scope" :attr "loop"
+  :_ "repeat" "block" "until" "exp" :attr "scope" :attr "loop"
+  :_ "if_clauses" "end"
+  :_ "for" "local_name" "=" "exp" "," "exp" "do" "block" "end" :attr("order", {1,4,5,6,3,2,7,8,9}) :attr "scope" :attr "loop"
+  :_ "for" "local_name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr("order", {1,4,5,6,7,8,3,2,9,10,11}) :attr "scope" :attr "loop"
+  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr("order", {1,4,3,2,5,6,7}) :attr "scope" :attr "loop"
   :_ "function" "funcname" "funcbody"
-  :_ "local" "function" "Name" "funcbody"
+  :_ "local" "function" "local_name" "funcbody"
   :_ "local" "namelist"
-  :_ "local" "namelist" "=" "explist"
+  :_ "local" "namelist" "=" "explist" :attr("order", {1,4,3,2})
+
+_"if_clauses"
+  :_"if_clause"
+  :_"if_clause" "else_clause"
+  :_"if_clause" "elseif_clauses"
+
+_"elseif_clauses"
+  :_ "elseif_clause"
+  :_ "elseif_clause" "else_clause"
+  :_ "elseif_clause" "elseif_clauses"
 
 _"if_clause"
-  :_ "if" "exp" "then" "block" {2,4}
-
-_"elseif_clause_list"
-  :_ "elseif_clause"
-  :_ "elseif_clause_list" "elseif_clause" {[1]={2}}
+  :_ "if" "exp" "then" "block" :attr "scope"
 
 _"elseif_clause"
-  :_ "elseif" "exp" "then" "block" {2,4}
+  :_ "elseif" "exp" "then" "block" :attr "scope"
 
 _"else_clause"
-  :_ "else" "block" {2}
+  :_ "else" "block" :attr "scope"
 
 _"retstat"
-  :_ "return" {}
-  :_ "return" ";" {}
-  :_ "return" "explist" {2}
-  :_ "return" "explist" ";" {2}
+  :_ "return"
+  :_ "return" ";"
+  :_ "return" "explist"
+  :_ "return" "explist" ";"
 
 _"label"
   :_ "::" "Name" "::"
 
 _"funcname"
-  :_ "Name" "{. Name}" "[: Name]"
+  :_ "funcnames"
+  :_ "funcnames" ":" "Name"
 
-_"{. Name}"
-  :_ ()
-  :_ "{. Name}" "." "Name"
-
-_"[: Name]"
-  :_ ()
-  :_ ":" "Name"
+_"funcnames"
+  :_ "Name"
+  :_ "funcnames" "." "Name" {[1]={2,3}}
 
 _"varlist"
-  :_ "var"
-  :_ "varlist" "," "var" {[1]={3}}
+  :_ "var" :attr(1, "def")
+  :_ "varlist" "," "var" :attr(3, "def") {[1]={2,3}}
 
 _"var"
   :_ "Name"
-  :_ "var | ( exp )" "[" "exp" "]"
-  :_ "var | ( exp )" "." "Name"
+  :_ "prefixexp" "[" "exp" "]"
+  :_ "prefixexp" "." "Name"
   :_ "functioncall" "[" "exp" "]"
   :_ "functioncall" "." "Name"
 
 _"namelist"
   :_ "Name"
-  :_ "namelist" "," "Name" {[1]={3}}
+  :_ "namelist" "," "Name" {[1]={2,3}}
 
 _"explist"
   :_ "exp"
-  :_ "explist" "," "exp" {[1]={3}}
+  :_ "explist" "," "exp" {[1]={2,3}}
 
 _"exp"
   :_ "nil"
   :_ "false"
   :_ "true"
-  :_ "Numeral"
-  :_ "LiteralString"
+  :_ "IntegerConstant" :attr "loadk"
+  :_ "FloatConstant" :attr "loadk"
+  :_ "LiteralString" :attr "loadk"
   :_ "..."
   :_ "functiondef"
-  :_ "var | ( exp )"
+  :_ "prefixexp"
   :_ "functioncall"
   :_ "tableconstructor"
   -- binop
@@ -258,25 +261,25 @@ _"exp"
   :_ "exp" "and" "exp"
   :_ "exp" "or" "exp"
   -- unop
-  :_ "-" "exp" :prec "UNM"
-  :_ "not" "exp"
-  :_ "#" "exp"
-  :_ "~" "exp" :prec "BNOT"
+  :_ "-" "exp" :prec "UNM" :attr "unop"
+  :_ "not" "exp" :attr "unop"
+  :_ "#" "exp" :attr "unop"
+  :_ "~" "exp" :prec "BNOT" :attr "unop"
 
 -- prefixexp without functioncall
-_"var | ( exp )"
-  :_ "var" {[1]={}}
-  :_ "(" "exp" ")" {[2]={}}
+_"prefixexp"
+  :_ "var"
+  :_ "(" "exp" ")"
 
 _"functioncall"
-  :_ "var | ( exp )" "args"
-  :_ "var | ( exp )" ":" "Name" "args"
+  :_ "prefixexp" "args"
+  :_ "prefixexp" ":" "Name" "args"
   :_ "functioncall" "args"
   :_ "functioncall" ":" "Name" "args"
 
 _"args"
-  :_ "(" ")" {}
-  :_ "(" "explist" ")" {2}
+  :_ "(" ")"
+  :_ "(" "explist" ")"
   :_ "tableconstructor"
   :_ "LiteralString"
 
@@ -284,31 +287,34 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" {3}
-  :_ "(" "parlist" ")" "block" "end" {2,4}
+  :_ "(" ")" "block" "end" :attr "state" :attr "scope"
+  :_ "(" "parlist" ")" "block" "end" :attr "state" :attr "scope"
 
 _"parlist"
   :_ "namelist"
-  :_ "namelist" "," "..." {1,3}
+  :_ "namelist" "," "..."
   :_ "..."
 
 _"tableconstructor"
-  :_ "{" "}" {}
-  :_ "{" "fieldlist" "}" {2}
-  :_ "{" "fieldlist" "fieldsep" "}" {2}
+  :_ "{" "}"
+  :_ "{" "fieldlist" "}"
+  :_ "{" "fieldlist" "fieldsep" "}"
 
 _"fieldlist"
   :_ "field"
-  :_ "fieldlist" "fieldsep" "field" {[1]={3}}
+  :_ "fieldlist" "fieldsep" "field" {[1]={2,3}}
 
 _"field"
-  :_ "[" "exp" "]" "=" "exp" {2,5}
-  :_ "Name" "=" "exp" {1,3}
+  :_ "[" "exp" "]" "=" "exp"
+  :_ "Name" "=" "exp"
   :_ "exp"
 
 _"fieldsep"
   :_ ","
   :_ ";"
+
+_"local_name"
+  :_ "Name"
 
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
