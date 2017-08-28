@@ -451,7 +451,9 @@ local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
-local state
+local state = {
+  register = 0;
+}
 local env = {
   names = {};
   labels = {};
@@ -495,16 +497,16 @@ while true do
 
     if s == symbol_table.chunk then
       local id = #protos + 1
-      local state = u.state
+      local proto_state = u.state
       protos[id] = {
         nparams = 0;
-        constants = state.constants;
-        locals = state.locals;
-        upvalues = state.upvalues;
+        constants = proto_state.constants;
+        locals = proto_state.locals;
+        upvalues = proto_state.upvalues;
         codes = v1.codes;
       }
-      local r = 1
-      u.r = 1
+      local r = new_register(state)
+      u.r = r
       codes[#codes + 1] = { "CLOSURE", r, id }
     elseif s == symbol_table.block then
       copy_codes(codes, v1.codes)
@@ -723,25 +725,25 @@ while true do
       u.codes = v2.codes
     elseif s == symbol_table.funcbody then
       local id = #protos + 1
-      local state = u.state
+      local proto_state = u.state
       if s2 == symbol_table.parlist then
         protos[id] = {
-          nparams = state.nparams;
-          constants = state.constants;
-          locals = state.locals;
-          upvalues = state.upvalues;
+          nparams = proto_state.nparams;
+          constants = proto_state.constants;
+          locals = proto_state.locals;
+          upvalues = proto_state.upvalues;
           codes = v4.codes;
         }
       else
         protos[id] = {
           nparams = 0;
-          constants = state.constants;
-          locals = state.locals;
-          upvalues = state.upvalues;
+          constants = proto_state.constants;
+          locals = proto_state.locals;
+          upvalues = proto_state.upvalues;
           codes = v3.codes;
         }
       end
-      local r = new_register(state.parent)
+      local r = new_register(state)
       u.r = r
       codes[#codes + 1] = { "CLOSURE", r, id }
     elseif s == symbol_table.parlist then
