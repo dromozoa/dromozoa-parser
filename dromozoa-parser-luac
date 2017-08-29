@@ -112,7 +112,7 @@ for i = 1, #terminal_nodes do
   elseif s == symbol_table["function"] or s == symbol_table["{"] or s == symbol_table["}"] then
     highlight = { "type", "structure" }
   elseif s == symbol_table["end"] then
-    if u.parent[0] == symbol_table["funcbody"] then
+    if u.funcbody_end then
       highlight = { "type", "structure" }
     else
       highlight = { "statement" }

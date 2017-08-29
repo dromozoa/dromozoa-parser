@@ -287,8 +287,8 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" :attr "state" :attr "scope"
-  :_ "(" "parlist" ")" "block" "end" :attr "state" :attr "scope"
+  :_ "(" ")" "block" "end" :attr "state" :attr "scope" :attr(4, "funcbody_end")
+  :_ "(" "parlist" ")" "block" "end" :attr "state" :attr "scope" :attr(5, "funcbody_end")
 
 _"parlist"
   :_ "namelist"
