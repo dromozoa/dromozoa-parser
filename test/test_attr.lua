@@ -20,19 +20,22 @@ local builder = require "dromozoa.parser.builder"
 local _ = builder()
 
 _:lexer()
-  :_ "i"
-  :_ "e"
-  :_ "a"
+  :_ "A"
 
-_"S"
-  :_ "i" "S" "e" "S"
-  :_ "i" "S"
-  :_ "a"
+_"list"
+  :_ "A" :attr "list"
+  :_ "list" "A" {[1]={2}} :attr(2, "attr")
 
 local lexer, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
-grammar:write_set_of_items(io.stdout, set_of_items)
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
--- P.282 Figure 4.51
-grammar:write_table("test.html", parser)
-grammar:write_conflicts(io.stdout, conflicts, false)
+
+local terminal_nodes = assert(lexer("AAAA"))
+local root = assert(parser(terminal_nodes, source))
+parser:write_graphviz("test.dot", root)
+
+assert(root.list)
+assert(not root[1].attr)
+assert(root[2].attr)
+assert(root[3].attr)
+assert(root[4].attr)

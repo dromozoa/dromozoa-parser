@@ -124,7 +124,7 @@ function metatable:__call(terminal_nodes, s, file)
                 if code == 1 then -- set attribute
                   node[attribute_action[2]] = attribute_action[3]
                 elseif code == 2 then -- set child attribute
-                  node[attribute_action[2]][attribute_action[3]] = attribute_action[4]
+                  reduced_nodes[attribute_action[2]][attribute_action[3]] = attribute_action[4]
                 end
               end
             end
