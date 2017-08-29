@@ -18,6 +18,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local write_html = require "dromozoa.parser.write_html"
+local symbol_value = require "dromozoa.parser.value"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
@@ -86,7 +87,7 @@ while true do
   end
 end
 
-local source_html = { "div" }
+local source_html = { "div"; class = "source" }
 for i = 1, #terminal_nodes do
   local u = terminal_nodes[i]
   local s = u[0]
@@ -95,21 +96,51 @@ for i = 1, #terminal_nodes do
   local i = u.i
   local j = u.j
 
+  local highlight = {}
+  if s == symbol_table.LiteralString then
+    highlight = { "constant", "string" }
+  elseif s == symbol_table.IntegerConstant then
+    highlight = { "constant", "number", "integer" }
+  elseif s == symbol_table.FloatConstant then
+    highlight = { "constant", "number", "float" }
+  elseif s == symbol_table["false"] or s == symbol_table["true"] then
+    highlight = { "constant", "boolean" }
+  elseif s == symbol_table["nil"] then
+    highlight = { "constant" }
+  elseif s == symbol_table["and"] or s == symbol_table["not"] or s == symbol_table["or"] or s == symbol_table[".."] then
+    highlight = { "statement", "operator" }
+  elseif s == symbol_table["function"] or s == symbol_table["{"] or s == symbol_table["}"] then
+    highlight = { "type", "structure" }
+  elseif s == symbol_table["end"] then
+    if u.parent[0] == symbol_table["funcbody"] then
+      highlight = { "type", "structure" }
+    else
+      highlight = { "statement" }
+    end
+  elseif s ~= symbol_table.Name then
+    local value = symbol_value(u)
+    if value:match("^[a-z]") then
+      highlight = { "statement" }
+    elseif value:match("^[+%-*/%%^#&~|<>=]") then
+      highlight = { "statement", "operator" }
+    end
+  end
+
+  local class = {}
+  for i = 1, #highlight do
+    class[#class + 1] = "highlight-" .. highlight[i]
+  end
+
   if p < i then
     source_html[#source_html + 1] = { "span";
+      class = "highlight-comment";
       source:sub(p, i - 1)
     }
   end
-  if s == 1 then
+  if s ~= 1 then
     source_html[#source_html + 1] = { "span";
-      "[EOF]"
-    }
-  else
-    source_html[#source_html + 1] = { "span";
+      class = class[1] and table.concat(class, " ");
       ["data-id"] = u.id;
-      ["data-left"] = u.left;
-      ["data-right"] = u.right;
-      ["data-path"] = u.path;
       source:sub(i, j)
     }
   end
@@ -119,9 +150,14 @@ local out = assert(io.open(html_file, "w"))
 write_html(out, { "html";
   { "head";
     { "meta"; charset = "UTF-8" };
+    { "title"; source_file };
+    { "link"; rel = "stylesheet"; href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" };
+    { "link"; rel = "stylesheet"; href = "dromozoa-parser-luac.css" };
   };
   { "body";
-    source_html;
+    { "div"; class = "body";
+      source_html;
+    };
   };
 })
 out:write("\n")

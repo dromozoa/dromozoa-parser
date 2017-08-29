@@ -1,0 +1,101 @@
+@font-face {
+  font-family: 'Noto Sans Mono CJK JP';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Regular.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Noto Sans Mono CJK JP';
+  font-style: normal;
+  font-weight: 700;
+  src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Bold.otf') format('opentype');
+}
+
+body {
+  margin: 0;
+}
+
+.source {
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
+  background-color: rgba(241, 241, 241, 0.5); /* white */
+}
+
+/*
+ * https://github.com/tbastos/vim-lua
+ * https://github.com/reedes/vim-colors-pencil
+ */
+
+.highlight-comment {
+  color: #B2B2B2; /* light_gray */
+}
+
+.highlight-constant {
+  color: #20A5BA; /* dark_cyan */
+}
+
+.highlight-statement {
+  color: #10A778; /* dark_green */
+}
+
+.highlight-statement {
+  color: #10A778; /* dark_green */
+}
+
+.highlight-structure {
+  color: #C30771; /* dark_red */
+}
+
+
+/*
+comment
+constant
+  string
+  number
+  boolean
+identifier
+  function
+statement
+  conditional
+  repeat
+  label
+  operator
+  keyword
+  exception
+type
+  structure
+
+constant
+  string
+  character
+  number
+    float
+  boolean
+identifier
+  function
+statement
+  conditional
+  repeat
+  label
+  operator
+  keyword
+  exception
+type
+  storage class
+  structure
+  typedef
+sepecial
+  special char
+  tag
+  delimiter
+  sepcial comment
+
+number
+string
+operator
+statement
+structure
+*/
+

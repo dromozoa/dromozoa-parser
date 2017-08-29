@@ -40,52 +40,52 @@ end
 
 _:lexer()
   :_ (RE[[\s+]]) :skip()
-  :_ "and" :attr("color", "color-operator")
-  :_ "break" :attr("color", "color-statement")
-  :_ "do" :attr("color", "color-statement")
-  :_ "else" :attr("color", "color-statement")
-  :_ "elseif" :attr("color", "color-statement")
-  :_ "end" :attr("color", "color-statement")
-  :_ "false" :attr("color", "color-constant")
-  :_ "for" :attr("color", "color-statement")
-  :_ "function" :attr("color", "color-structure")
-  :_ "goto" :attr("color", "color-statement")
-  :_ "if" :attr("color", "color-statement")
-  :_ "in" :attr("color", "color-statement")
-  :_ "local" :attr("color", "color-statement")
-  :_ "nil" :attr("color", "color-constant")
-  :_ "not" :attr("color", "color-operator")
-  :_ "or" :attr("color", "color-operator")
-  :_ "repeat" :attr("color", "color-statement")
-  :_ "return" :attr("color", "color-statement")
-  :_ "then" :attr("color", "color-statement")
-  :_ "true" :attr("color", "color-constant")
-  :_ "until" :attr("color", "color-statement")
-  :_ "while" :attr("color", "color-statement")
-  :_ "+" :attr("color", "color-operator")
-  :_ "-" :attr("color", "color-operator")
-  :_ "*" :attr("color", "color-operator")
-  :_ "/" :attr("color", "color-operator")
-  :_ "%" :attr("color", "color-operator")
-  :_ "^" :attr("color", "color-operator")
-  :_ "#" :attr("color", "color-operator")
-  :_ "&" :attr("color", "color-operator")
-  :_ "~" :attr("color", "color-operator")
-  :_ "|" :attr("color", "color-operator")
-  :_ "<<" :attr("color", "color-operator")
-  :_ ">>" :attr("color", "color-operator")
-  :_ "//" :attr("color", "color-operator")
-  :_ "==" :attr("color", "color-operator")
-  :_ "~=" :attr("color", "color-operator")
-  :_ "<=" :attr("color", "color-operator")
-  :_ ">=" :attr("color", "color-operator")
-  :_ "<" :attr("color", "color-operator")
-  :_ ">" :attr("color", "color-operator")
-  :_ "=" :attr("color", "color-operator")
+  :_ "and"
+  :_ "break"
+  :_ "do"
+  :_ "else"
+  :_ "elseif"
+  :_ "end"
+  :_ "false"
+  :_ "for"
+  :_ "function"
+  :_ "goto"
+  :_ "if"
+  :_ "in"
+  :_ "local"
+  :_ "nil"
+  :_ "not"
+  :_ "or"
+  :_ "repeat"
+  :_ "return"
+  :_ "then"
+  :_ "true"
+  :_ "until"
+  :_ "while"
+  :_ "+"
+  :_ "-"
+  :_ "*"
+  :_ "/"
+  :_ "%"
+  :_ "^"
+  :_ "#"
+  :_ "&"
+  :_ "~"
+  :_ "|"
+  :_ "<<"
+  :_ ">>"
+  :_ "//"
+  :_ "=="
+  :_ "~="
+  :_ "<="
+  :_ ">="
+  :_ "<"
+  :_ ">"
+  :_ "="
   :_ "("
   :_ ")"
-  :_ "{" :attr("color", "color-structure")
-  :_ "}" :attr("color", "color-structure")
+  :_ "{"
+  :_ "}"
   :_ "["
   :_ "]"
   :_ "::"
@@ -93,33 +93,33 @@ _:lexer()
   :_ ":"
   :_ ","
   :_ "."
-  :_ ".." :attr("color", "color-operator")
+  :_ ".."
   :_ "..."
   :_ (RE[[[A-Za-z_]\w*]]) :as "Name"
-  :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant") :attr("type", "string")
-  :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2) :attr("color", "color-constant") :attr("type", "string")
-  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3) :attr("color", "color-constant") :attr("type", "string")
-  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3) :attr("color", "color-constant") :attr("type", "string")
+  :_ (RE[["[^\\"]*"]]) :as "LiteralString" :sub(2, -2) :attr("type", "string")
+  :_ (RE[['[^\\']*']]) :as "LiteralString" :sub(2, -2) :attr("type", "string")
+  :_ ("[[\n" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(4, -3) :attr("type", "string")
+  :_ ("[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :as "LiteralString" :sub(3, -3) :attr("type", "string")
   :_ [["]] :skip() :call "dq_string" :mark()
   :_ [[']] :skip() :call "sq_string" :mark()
   :_ (RE[[\[=*\[\n]]) :sub(2, -3) :join("]", "]") :hold() :skip() :call "long_string" :mark()
   :_ (RE[[\[=*\[]]) :sub(2, -2) :join("]", "]") :hold() :skip() :call "long_string" :mark()
-  :_ (RE[[\d+]]) :as "IntegerConstant" :attr("color", "color-constant") :attr("type", "integer")
-  :_ (RE[[0[xX][0-9A-Fa-f]+]]) :as "IntegerConstant" :attr("color", "color-constant") :attr("type", "integer")
-  :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "FloatConstant" :attr("color", "color-constant") :attr("type", "float")
-  :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "FloatConstant" :attr("color", "color-constant") :attr("type", "float")
+  :_ (RE[[\d+]]) :as "IntegerConstant" :attr("type", "integer")
+  :_ (RE[[0[xX][0-9A-Fa-f]+]]) :as "IntegerConstant" :attr("type", "integer")
+  :_ (RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]) :as "FloatConstant" :attr("type", "float")
+  :_ (RE[[0[xX]([0-9A-Fa-f]+(\.[0-9A-Fa-f]*)?|\.[0-9A-Fa-f]+)([pP][+-]?\d+)?]]) :as "FloatConstant" :attr("type", "float")
   :_ ("--[[" * (RE[[.*]] - RE[[.*\]\].*]]) * "]]") :skip()
   :_ (RE[[--\[=+\[]]) :sub(4, -2) :join("]", "]") :hold() :skip() :call "long_comment"
   :_ ("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n") : skip()
 
 string_lexer(_:lexer "dq_string")
-  :_ [["]] :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
+  :_ [["]] :as "LiteralString" :concat() :ret() :attr("type", "string")
 
 string_lexer(_:lexer "sq_string")
-  :_ [[']] :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
+  :_ [[']] :as "LiteralString" :concat() :ret() :attr("type", "string")
 
 _:search_lexer "long_string"
-  :when() :as "LiteralString" :concat() :ret() :attr("color", "color-constant") :attr("type", "string")
+  :when() :as "LiteralString" :concat() :ret() :attr("type", "string")
   :otherwise() :push()
 
 _:search_lexer "long_comment"
