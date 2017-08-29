@@ -1,0 +1,128 @@
+#! /usr/bin/env lua
+
+-- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+--
+-- This file is part of dromozoa-parser.
+--
+-- dromozoa-parser is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- dromozoa-parser is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
+
+local write_html = require "dromozoa.parser.write_html"
+local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
+local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+
+local source_file, html_file = ...
+local source
+
+if source_file then
+  local handle = assert(io.open(source_file))
+  source = handle:read("*a")
+  handle:close()
+else
+  source = io.read("*a")
+end
+
+local lexer = lua53_lexer()
+local parser = lua53_parser()
+
+local symbol_names = parser.symbol_names
+local symbol_table = parser.symbol_table
+local max_terminal_symbol = parser.max_terminal_symbol
+local terminal_nodes = assert(lexer(source, file))
+local root = assert(parser(terminal_nodes, source, file))
+
+local id = 0
+local order = 0
+local nodes = {}
+
+local stack1 = { root }
+local stack2 = {}
+while true do
+  local n1 = #stack1
+  local u = stack1[n1]
+  if not u then
+    break
+  end
+  local n2 = #stack2
+  if u == stack2[n2] then
+    stack1[n1] = nil
+    stack2[n2] = nil
+
+    nodes[#nodes + 1] = u
+    order = order + 1
+    u.right = order
+  else
+    id = id + 1
+    u.id = id
+    order = order + 1
+    u.left = order
+
+    local parent = u.parent
+    if parent then
+      u.depth = parent.depth + 1
+      u.path = parent.path .. " " .. id
+    else
+      u.depth = 1
+      u.path = id
+    end
+
+    local n = #u
+    for i = n, 1, -1 do
+      local v = u[i]
+      v.parent = u
+      stack1[#stack1 + 1] = v
+    end
+    stack2[n2 + 1] = u
+  end
+end
+
+local source_html = { "div" }
+for i = 1, #terminal_nodes do
+  local u = terminal_nodes[i]
+  local s = u[0]
+
+  local p = u.p
+  local i = u.i
+  local j = u.j
+
+  if p < i then
+    source_html[#source_html + 1] = { "span";
+      source:sub(p, i - 1)
+    }
+  end
+  if s == 1 then
+    source_html[#source_html + 1] = { "span";
+      "[EOF]"
+    }
+  else
+    source_html[#source_html + 1] = { "span";
+      ["data-id"] = u.id;
+      ["data-left"] = u.left;
+      ["data-right"] = u.right;
+      ["data-path"] = u.path;
+      source:sub(i, j)
+    }
+  end
+end
+
+local out = assert(io.open(html_file, "w"))
+write_html(out, { "html";
+  { "head";
+    { "meta"; charset = "UTF-8" };
+  };
+  { "body";
+    source_html;
+  };
+})
+out:write("\n")
+out:close()

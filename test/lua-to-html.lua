@@ -20,6 +20,7 @@ local escape_html = require "dromozoa.parser.escape_html"
 local value = require "dromozoa.parser.value"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+local write_html = require "dromozoa.parser.write_html"
 
 local encode_string = dumper.encode_string
 local keys = dumper.keys
@@ -168,46 +169,6 @@ local function copy_codes(result, source)
     result[#result + 1] = source[i]
   end
   return result
-end
-
-local function write_html(out, node)
-  local number_keys, string_keys = keys(node)
-  local name = assert(node[1])
-  out:write("<", name)
-  for i = 1, #string_keys do
-    local key = string_keys[i]
-    out:write(" ", escape_html(key), "=\"", escape_html(tostring(node[key])), "\"")
-  end
-  local n = #number_keys
-  if name == "script" or name == "style" then
-    out:write(">")
-    local value = table.concat(node, "", 2, number_keys[n])
-    if value:find("[<&]") then
-      assert(not value:find("%]%]>"))
-      if name == "script" then
-        out:write("//<![CDATA[\n", value, "//]]>")
-      else
-        out:write("/*<![CDATA[*/\n", value, "/*]]>*/")
-      end
-    else
-      out:write(value)
-    end
-    out:write("</", name, ">")
-  else
-    out:write(">")
-    for i = 1, #number_keys do
-      local key = number_keys[i]
-      if key ~= 1 then
-        local value = node[key]
-        if type(value) == "table" then
-          write_html(out, value)
-        else
-          out:write(escape_html(tostring(value)))
-        end
-      end
-    end
-    out:write("</", name, ">")
-  end
 end
 
 local function add_state_html(state_html, state)
