@@ -17,8 +17,6 @@
 
 -- http://dirk.jivas.de/papers/buchheim02improving.pdf
 
-local distance = 1
-
 local function left_sibling(v)
   local number = v.number
   if number and number > 1 then
@@ -62,7 +60,7 @@ local function ancestor(vil, v, default_ancestor)
   end
 end
 
-local function apportion(v, default_ancestor)
+local function apportion(v, default_ancestor, distance)
   local w = left_sibling(v)
   if w then
     local vir = v
@@ -126,7 +124,7 @@ local function execute_shifts(v)
   end
 end
 
-local function first_walk(v)
+local function first_walk(v, distance)
   local n = #v
   if n == 0 then
     local w = left_sibling(v)
@@ -139,8 +137,8 @@ local function first_walk(v)
     local default_ancestor = v[1]
     for i = 1, n do
       local w = v[i]
-      first_walk(w)
-      default_ancestor = apportion(w, default_ancestor)
+      first_walk(w, distance)
+      default_ancestor = apportion(w, default_ancestor, distance)
     end
     execute_shifts(v)
     local midpoint = (v[1].prelim + v[n].prelim) * 0.5
@@ -155,17 +153,30 @@ local function first_walk(v)
   end
 end
 
-local function second_walk(v, m)
+local function second_walk(v, m, dy, kx, ky)
   local s = v.source
-  s.x = v.prelim + m
-  s.y = v.level
+  s[kx] = v.prelim + m
+  s[ky] = v.level * dy
   local m = m + v.mod
   for i = 1, #v do
-    second_walk(v[i], m)
+    second_walk(v[i], m, dy, kx, ky)
   end
 end
 
-return function (root)
+return function (root, dx, dy, kx, ky)
+  if dx == nil then
+    dx = 1
+  end
+  if dy == nil then
+    dy = 1
+  end
+  if kx == nil then
+    kx = "x"
+  end
+  if ky == nil then
+    ky = "y"
+  end
+
   local r = {
     source = root;
     level = 0;
@@ -198,6 +209,6 @@ return function (root)
       stack[#stack + 1] = v
     end
   end
-  first_walk(r)
-  second_walk(r, -r.prelim)
+  first_walk(r, dx)
+  second_walk(r, -r.prelim, dy, kx, ky)
 end

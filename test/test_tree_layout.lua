@@ -48,14 +48,14 @@ end
 local svg_nodes = { "g"; class = "nodes" }
 local svg_edges = { "g"; class = "edges" }
 
-tree_layout(nodes[1])
+tree_layout(nodes[1], 64, 64)
 
 local width = 640
 local height = 640
 for i = 1, #nodes do
   local u = nodes[i]
-  u.x = u.x * 64 + width * 0.5
-  u.y = u.y * 64 + 50
+  u.x = u.x + width * 0.5
+  u.y = u.y + 50
   svg_nodes[#svg_nodes + 1] = { "g";
     transform = "translate(" .. (u.x - 16)..","..(u.y + 6) .. ")";
     { "g";
