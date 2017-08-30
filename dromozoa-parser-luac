@@ -43,7 +43,6 @@ local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
-local order = 0
 local nodes = {}
 
 local stack1 = { root }
@@ -58,23 +57,25 @@ while true do
   if u == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
-
     nodes[#nodes + 1] = u
-    order = order + 1
-    u.right = order
   else
     id = id + 1
     u.id = id
-    order = order + 1
-    u.left = order
 
     local parent = u.parent
     if parent then
+      local parent_path = parent.path
+      local path = {}
+      for i = 1, #parent_path do
+        path[i] = parent_path[i]
+      end
+      path[#path + 1] = id
+
       u.depth = parent.depth + 1
-      u.path = parent.path .. " " .. id
+      u.path = path
     else
       u.depth = 1
-      u.path = id
+      u.path = { id }
     end
 
     local n = #u
@@ -111,6 +112,21 @@ for i = 1, #terminal_nodes do
   local i = u.i
   local j = u.j
 
+  local id = u.id
+
+  if id then
+    id = "S" .. id
+  end
+
+  local class = {}
+
+  local path = u.path
+  if path then
+    for i = 1, #path do
+      class[#class + 1] = "S" .. path[i]
+    end
+  end
+
   local highlight = {}
   if s == symbol_table.LiteralString then
     highlight = { "constant", "string" }
@@ -141,7 +157,6 @@ for i = 1, #terminal_nodes do
     end
   end
 
-  local class = {}
   for i = 1, #highlight do
     class[#class + 1] = "highlight-" .. highlight[i]
   end
@@ -152,10 +167,11 @@ for i = 1, #terminal_nodes do
       source:sub(p, i - 1)
     }
   end
+
   if s ~= 1 then
     source_html[#source_html + 1] = { "span";
+      id = id;
       class = class[1] and table.concat(class, " ");
-      ["data-id"] = u.id;
       source:sub(i, j)
     }
   end
@@ -179,6 +195,7 @@ write_html(out, { "html";
   { "body";
     number_html;
     source_html;
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
   };
 })
 out:write("\n")
