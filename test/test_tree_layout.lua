@@ -20,7 +20,9 @@ local write_html = require "dromozoa.parser.write_html"
 
 local nodes = {}
 for i = 1, 23 do
-  nodes[i] = { id = tostring(i) }
+  local a = string.char(0x40 + i)
+  local b = string.char(0x60 + i)
+  nodes[i] = { id = tostring(i), name = a .. b .. b .. a }
 end
 
 local links = {
@@ -52,11 +54,21 @@ local width = 640
 local height = 640
 for i = 1, #nodes do
   local u = nodes[i]
-  u.x = u.x * 50 + width * 0.5
-  u.y = u.y * 50 + 50
+  u.x = u.x * 64 + width * 0.5
+  u.y = u.y * 64 + 50
   svg_nodes[#svg_nodes + 1] = { "g";
-    transform = "translate(" .. u.x..","..u.y .. ")";
-    { "text"; u.id };
+    transform = "translate(" .. (u.x - 16)..","..(u.y + 6) .. ")";
+    { "g";
+      { "rect";
+        x = -12;
+        y = -18;
+        width = 32 + 24;
+        height = 24;
+        rx = 12;
+        ry = 12;
+      };
+      { "text"; u.name };
+    };
   }
 end
 for i = 1, #nodes do
@@ -76,9 +88,26 @@ for i = 1, #nodes do
 end
 
 local style = [[
+@font-face {
+  font-family: 'Noto Sans Mono CJK JP';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Regular.otf') format('opentype');
+}
+
+body {
+  font-family: 'Noto Sans Mono CJK JP';
+  margin: 0;
+}
+
+.nodes rect {
+  fill: white;
+  stroke: black;
+}
+
 .edges path {
   fill: none;
-  stroke: #000;
+  stroke: black;
 }
 ]]
 
@@ -88,10 +117,12 @@ write_html(io.stdout, { "html";
     { "style"; style };
   };
   { "body";
-    { "svg"; width = width; height = height;
-      { "g";
-        svg_nodes;
-        svg_edges;
+    { "div";
+      { "svg"; width = width; height = height;
+        { "g";
+          svg_edges;
+          svg_nodes;
+        };
       };
     };
   };
