@@ -26,10 +26,6 @@ local function left_sibling(v)
   end
 end
 
-local function left_most_sibling(v)
-  return v.parent[1]
-end
-
 local function next_left(v)
   if #v > 0 then
     return v[1]
@@ -72,7 +68,7 @@ local function apportion(v, default_ancestor)
     local vir = v
     local vor = v
     local vil = w
-    local vol = left_most_sibling(vir)
+    local vol = vir.parent[1] -- left most sibling
     local sir = vir.mod
     local sor = vor.mod
     local sil = vil.mod
