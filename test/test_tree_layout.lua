@@ -70,7 +70,7 @@ for i = 1, #nodes do
     local mx = (ux + vx) * 0.5
     local my = (uy + vy) * 0.5
     svg_edges[#svg_edges + 1] = { "g";
-      { "path"; d = "M" .. ux..",".. uy .. "C" .. mx..","..my .. "," .. mx..","..my .. "," .. vx..","..vy };
+      { "path"; d = "M" .. ux..",".. uy .. "C" .. ux..","..my .. "," .. vx..","..my .. "," .. vx..","..vy };
     }
   end
 end
