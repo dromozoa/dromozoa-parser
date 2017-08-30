@@ -51,6 +51,18 @@ local function move_subtree(wl, wr, shift)
   wr.mod = wr.mod + shift
 end
 
+local function execute_shifts(v)
+  local shift = 0
+  local change = 0
+  for i = #v, 1, -1 do
+    local w = v[i]
+    w.prelim = w.prelim + shift
+    w.mod = w.mod + shift
+    change = change + w.change
+    shift = shift + w.shift + change
+  end
+end
+
 local function ancestor(vil, v, default_ancestor)
   local ancestor = vil.ancestor
   if ancestor.parent == v.parent then
@@ -110,18 +122,6 @@ local function apportion(v, default_ancestor, distance)
     end
   end
   return default_ancestor
-end
-
-local function execute_shifts(v)
-  local shift = 0
-  local change = 0
-  for i = #v, 1, -1 do
-    local w = v[i]
-    w.prelim = w.prelim + shift
-    w.mod = w.mod + shift
-    change = change + w.change
-    shift = shift + w.shift + change
-  end
 end
 
 local function first_walk(v, distance)
