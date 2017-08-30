@@ -16,10 +16,11 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local tree_layout = require "dromozoa.parser.tree_layout"
+local write_html = require "dromozoa.parser.write_html"
 
 local nodes = {}
 for i = 1, 23 do
-  nodes[i] = { name = tostring(i) }
+  nodes[i] = { id = tostring(i) }
 end
 
 local links = {
@@ -42,4 +43,57 @@ for id, link in pairs(links) do
   node[2] = nodes[link[2]]
 end
 
+local svg_nodes = { "g"; class = "nodes" }
+local svg_edges = { "g"; class = "edges" }
+
 tree_layout(nodes[1])
+
+local width = 640
+local height = 640
+for i = 1, #nodes do
+  local u = nodes[i]
+  u.x = u.x * 50 + width * 0.5
+  u.y = u.y * 50 + 50
+  svg_nodes[#svg_nodes + 1] = { "g";
+    transform = "translate(" .. u.x..","..u.y .. ")";
+    { "text"; u.id };
+  }
+end
+for i = 1, #nodes do
+  local u = nodes[i]
+  local ux = u.x
+  local uy = u.y
+  for j = 1, #u do
+    local v = u[j]
+    local vx = v.x
+    local vy = v.y
+    local mx = (ux + vx) * 0.5
+    local my = (uy + vy) * 0.5
+    svg_edges[#svg_edges + 1] = { "g";
+      { "path"; d = "M" .. ux..",".. uy .. "C" .. mx..","..my .. "," .. mx..","..my .. "," .. vx..","..vy };
+    }
+  end
+end
+
+local style = [[
+.edges path {
+  fill: none;
+  stroke: #000;
+}
+]]
+
+write_html(io.stdout, { "html";
+  { "head";
+    { "meta"; charset = "UTF-8" };
+    { "style"; style };
+  };
+  { "body";
+    { "svg"; width = width; height = height;
+      { "g";
+        svg_nodes;
+        svg_edges;
+      };
+    };
+  };
+})
+io.write("\n")

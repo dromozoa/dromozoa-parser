@@ -159,7 +159,6 @@ local function second_walk(v, m)
   local s = v.source
   s.x = v.prelim + m
   s.y = v.level
-  print(s.name, s.x, s.y)
   local m = m + v.mod
   for i = 1, #v do
     second_walk(v[i], m)
