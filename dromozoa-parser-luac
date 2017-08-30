@@ -87,6 +87,21 @@ while true do
   end
 end
 
+local line_number = source:find("\n$") and 0 or 1
+for _ in source:gmatch("\n") do
+  line_number = line_number + 1
+end
+
+local number_html = { "div"; class = "number" }
+for i = 1, line_number do
+  number_html[#number_html + 1] = { "span";
+    id = "L" .. i;
+    i .. "\n";
+  }
+end
+
+local source_left = math.ceil(math.log(line_number, 10)) * 0.5 + 1
+
 local source_html = { "div"; class = "source" }
 for i = 1, #terminal_nodes do
   local u = terminal_nodes[i]
@@ -119,9 +134,9 @@ for i = 1, #terminal_nodes do
     end
   elseif s ~= symbol_table.Name then
     local value = symbol_value(u)
-    if value:match("^[a-z]") then
+    if value:find("^[a-z]") then
       highlight = { "statement" }
-    elseif value:match("^[+%-*/%%^#&~|<>=]") then
+    elseif value:find("^[+%-*/%%^#&~|<>=]") then
       highlight = { "statement", "operator" }
     end
   end
@@ -146,6 +161,12 @@ for i = 1, #terminal_nodes do
   end
 end
 
+local style = [[
+.source {
+  left: ]] .. source_left .. [[rem;
+}
+]]
+
 local out = assert(io.open(html_file, "w"))
 write_html(out, { "html";
   { "head";
@@ -153,11 +174,11 @@ write_html(out, { "html";
     { "title"; source_file };
     { "link"; rel = "stylesheet"; href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" };
     { "link"; rel = "stylesheet"; href = "dromozoa-parser-luac.css" };
+    { "style"; style };
   };
   { "body";
-    { "div"; class = "body";
-      source_html;
-    };
+    number_html;
+    source_html;
   };
 })
 out:write("\n")

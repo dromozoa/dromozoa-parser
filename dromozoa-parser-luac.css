@@ -12,21 +12,35 @@
   src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Bold.otf') format('opentype');
 }
 
-body {
-  margin: 0;
-}
-
-.source {
-  font-family: 'Noto Sans Mono CJK JP', monospace;
-  white-space: pre;
-  font-weight: 400;
-  background-color: rgba(241, 241, 241, 0.5); /* white */
-}
-
 /*
  * https://github.com/tbastos/vim-lua
  * https://github.com/reedes/vim-colors-pencil
  */
+
+body {
+  margin: 0;
+  background-color: #F1F1F1; /* white */
+}
+
+.number {
+  position: absolute;
+  padding: 0 0.5rem;
+
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
+
+  color: #C6C6C6; /* ligher_gray */
+  text-align: right;
+}
+
+.source {
+  position: absolute;
+
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
+}
 
 .highlight-comment {
   color: #B2B2B2; /* light_gray */
