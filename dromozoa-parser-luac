@@ -22,6 +22,16 @@ local symbol_value = require "dromozoa.parser.value"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
+local function copy_sequence(source, result)
+  if result == nil then
+    result = {}
+  end
+  for i = 1, #source do
+    result[i] = source[i]
+  end
+  return result
+end
+
 local source_file, html_file = ...
 local source
 
@@ -41,6 +51,8 @@ local symbol_table = parser.symbol_table
 local max_terminal_symbol = parser.max_terminal_symbol
 local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
+
+root.path = {}
 
 local id = 0
 local nodes = {}
@@ -62,29 +74,71 @@ while true do
     id = id + 1
     u.id = id
 
-    local parent = u.parent
-    if parent then
-      local parent_path = parent.path
-      local path = {}
-      for i = 1, #parent_path do
-        path[i] = parent_path[i]
-      end
-      path[#path + 1] = id
-
-      u.depth = parent.depth + 1
-      u.path = path
-    else
-      u.depth = 1
-      u.path = { id }
-    end
+    local path = copy_sequence(u.path)
+    path[#path + 1] = id
 
     local n = #u
     for i = n, 1, -1 do
       local v = u[i]
       v.parent = u
+      v.path = path
       stack1[#stack1 + 1] = v
     end
     stack2[n2 + 1] = u
+  end
+end
+
+local next_path
+for i = #terminal_nodes, 1, -1 do
+  local u = terminal_nodes[i]
+
+  u.next_path = next_path
+  local path = u.path
+  if path then
+    next_path = path
+  end
+end
+
+local prev_path
+for i = 1, #terminal_nodes do
+  local u = terminal_nodes[i]
+  local s = u[0]
+
+  u.prev_path = prev_path
+  local path = u.path
+  if path then
+    prev_path = path
+  end
+
+  if s == symbol_table["false"] or s == symbol_table["true"] then
+    u.highlight = { "constant", "boolean" }
+  elseif s == symbol_table["nil"] then
+    u.highlight = { "constant" }
+  elseif s == symbol_table["and"] or s == symbol_table["not"] or s == symbol_table["or"] or s == symbol_table[".."] then
+    u.highlight = { "statement", "operator" }
+  elseif s == symbol_table["function"] or s == symbol_table["{"] or s == symbol_table["}"] then
+    u.highlight = { "type", "structure" }
+  elseif s == symbol_table["end"] then
+    if u.funcbody_end then
+      u.highlight = { "type", "structure" }
+    else
+      u.highlight = { "statement" }
+    end
+  elseif s == symbol_table.Name then
+    u,highlight = { "identifier" }
+  elseif s == symbol_table.LiteralString then
+    u.highlight = { "constant", "string" }
+  elseif s == symbol_table.IntegerConstant then
+    u.highlight = { "constant", "number", "integer" }
+  elseif s == symbol_table.FloatConstant then
+    u.highlight = { "constant", "number", "float" }
+  else
+    local value = symbol_value(u)
+    if value:find("^[a-z]") then
+      u.highlight = { "statement" }
+    elseif value:find("^[+%-*/%%^#&~|<>=]") then
+      u.highlight = { "statement", "operator" }
+    end
   end
 end
 
@@ -107,68 +161,44 @@ local source_html = { "div"; class = "source" }
 for i = 1, #terminal_nodes do
   local u = terminal_nodes[i]
   local s = u[0]
-
   local p = u.p
   local i = u.i
   local j = u.j
 
-  local id = u.id
-
-  if id then
-    id = "S" .. id
-  end
-
-  local class = {}
-
-  local path = u.path
-  if path then
-    for i = 1, #path do
-      class[#class + 1] = "S" .. path[i]
-    end
-  end
-
-  local highlight = {}
-  if s == symbol_table.LiteralString then
-    highlight = { "constant", "string" }
-  elseif s == symbol_table.IntegerConstant then
-    highlight = { "constant", "number", "integer" }
-  elseif s == symbol_table.FloatConstant then
-    highlight = { "constant", "number", "float" }
-  elseif s == symbol_table["false"] or s == symbol_table["true"] then
-    highlight = { "constant", "boolean" }
-  elseif s == symbol_table["nil"] then
-    highlight = { "constant" }
-  elseif s == symbol_table["and"] or s == symbol_table["not"] or s == symbol_table["or"] or s == symbol_table[".."] then
-    highlight = { "statement", "operator" }
-  elseif s == symbol_table["function"] or s == symbol_table["{"] or s == symbol_table["}"] then
-    highlight = { "type", "structure" }
-  elseif s == symbol_table["end"] then
-    if u.funcbody_end then
-      highlight = { "type", "structure" }
-    else
-      highlight = { "statement" }
-    end
-  elseif s ~= symbol_table.Name then
-    local value = symbol_value(u)
-    if value:find("^[a-z]") then
-      highlight = { "statement" }
-    elseif value:find("^[+%-*/%%^#&~|<>=]") then
-      highlight = { "statement", "operator" }
-    end
-  end
-
-  for i = 1, #highlight do
-    class[#class + 1] = "highlight-" .. highlight[i]
-  end
-
   if p < i then
+    local class = {}
+    local path = u.path or u.prev_path
+    if path then
+      for i = 1, #path do
+        class[#class + 1] = "S" .. path[i]
+      end
+    end
+    class[#class + 1] = "highlight-comment"
     source_html[#source_html + 1] = { "span";
-      class = "highlight-comment";
+      class = table.concat(class, " ");
       source:sub(p, i - 1)
     }
   end
 
   if s ~= 1 then
+    local class = {}
+    local path = u.path or u.next_path
+    if path then
+      for i = 1, #path do
+        class[#class + 1] = "S" .. path[i]
+      end
+    end
+    local id = u.id
+    if id then
+      id = "S" .. id
+      class[#class + 1] = id
+    end
+    local highlight = u.highlight
+    if highlight then
+      for i = 1, #highlight do
+        class[#class + 1] = "highlight-" .. highlight[i]
+      end
+    end
     source_html[#source_html + 1] = { "span";
       id = id;
       class = class[1] and table.concat(class, " ");
@@ -196,6 +226,7 @@ write_html(out, { "html";
     number_html;
     source_html;
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
+    { "script"; src = "dromozoa-parser-luac.js" };
   };
 })
 out:write("\n")
