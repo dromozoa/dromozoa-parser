@@ -19,6 +19,7 @@
 
 local write_html = require "dromozoa.parser.write_html"
 local symbol_value = require "dromozoa.parser.value"
+local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
@@ -207,11 +208,87 @@ for i = 1, #terminal_nodes do
   end
 end
 
-local style = [[
-.source {
-  left: ]] .. source_left .. [[rem;
+local tree_width = 640
+local tree_height = 640
+local node_width = 160
+local node_height = 32
+
+local edges_html = { "g"; class = "edges" }
+local nodes_html = { "g"; class = "nodes" }
+
+tree_layout(root, node_height, node_width, "y", "x")
+
+for i = 1, #nodes do
+  local u = nodes[i]
+  local s = u[0]
+  local ux = u.x
+  local uy = u.y
+  local name = symbol_names[s]
+
+  local h = 24
+  local w = #name * 8 + h
+  local r = h * 0.5
+
+  nodes_html[#nodes_html + 1] = { "g";
+    class = "node";
+    transform = ("translate(%.17g,%.17g)"):format(ux, uy);
+    { "rect";
+      x = -w * 0.5;
+      y = -r;
+      width = w;
+      height = h;
+      rx = r;
+      ry = r;
+    };
+    { "text"; name };
+  }
+  for i = 1, #u do
+    local v = u[i]
+    local vx = v.x
+    local vy = v.y
+    local mx = (ux + vx) * 0.5
+    edges_html[#edges_html + 1] = { "path";
+      d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
+    }
+  end
+end
+
+local tree_html = { "div"; class = "tree";
+  { "svg"; width = tree_width; height = tree_height;
+    { "g"; class = "viewport";
+      { "rect"; width = tree_width; height = tree_height };
+      { "g"; class = "view";
+        { "g"; class = "model";
+          edges_html;
+          nodes_html;
+        };
+      };
+    };
+  };
 }
-]]
+
+local style = ([[
+.source {
+  left: %.17grem;
+}
+]]):format(source_left)
+
+local script = ([[
+/*jslint this,white*/
+"use strict";
+(function (root) {
+  root.dromozoa = {
+    parser: {
+      setting: {
+        tree_width: %.17g,
+        tree_height: %.17g,
+        node_width: %.17g,
+        node_height: %.17g
+      }
+    }
+  };
+}(this.self));
+]]):format(tree_width, tree_height, node_width, node_height)
 
 local out = assert(io.open(html_file, "w"))
 write_html(out, { "html";
@@ -219,13 +296,16 @@ write_html(out, { "html";
     { "meta"; charset = "UTF-8" };
     { "title"; source_file };
     { "link"; rel = "stylesheet"; href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" };
-    { "link"; rel = "stylesheet"; href = "dromozoa-parser-luac.css" };
     { "style"; style };
+    { "link"; rel = "stylesheet"; href = "dromozoa-parser-luac.css" };
   };
   { "body";
     number_html;
     source_html;
+    tree_html;
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
+    { "script"; script };
     { "script"; src = "dromozoa-parser-luac.js" };
   };
 })
