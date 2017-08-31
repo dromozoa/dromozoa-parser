@@ -126,7 +126,7 @@ for i = 1, #terminal_nodes do
       u.highlight = { "statement" }
     end
   elseif s == symbol_table.Name then
-    u,highlight = { "identifier" }
+    u.highlight = { "identifier" }
   elseif s == symbol_table.LiteralString then
     u.highlight = { "constant", "string" }
   elseif s == symbol_table.IntegerConstant then
@@ -176,7 +176,7 @@ for i = 1, #terminal_nodes do
     end
     class[#class + 1] = "highlight-comment"
     source_html[#source_html + 1] = { "span";
-      class = table.concat(class, " ");
+      class = class;
       source:sub(p, i - 1)
     }
   end
@@ -202,7 +202,7 @@ for i = 1, #terminal_nodes do
     end
     source_html[#source_html + 1] = { "span";
       id = id;
-      class = class[1] and table.concat(class, " ");
+      class = class;
       source:sub(i, j)
     }
   end
@@ -225,12 +225,22 @@ for i = 1, #nodes do
   local uy = u.y
   local name = symbol_names[s]
 
+  for i = 1, #u do
+    local v = u[i]
+    local vx = v.x
+    local vy = v.y
+    local mx = (ux + vx) * 0.5
+    edges_html[#edges_html + 1] = { "g"; class = "edge";
+      { "path";
+        d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
+      };
+    }
+  end
+
   local h = 24
   local w = #name * 8 + h
   local r = h * 0.5
-
-  nodes_html[#nodes_html + 1] = { "g";
-    class = "node";
+  nodes_html[#nodes_html + 1] = { "g"; class = "node";
     transform = ("translate(%.17g,%.17g)"):format(ux, uy);
     { "rect";
       x = -w * 0.5;
@@ -242,15 +252,6 @@ for i = 1, #nodes do
     };
     { "text"; name };
   }
-  for i = 1, #u do
-    local v = u[i]
-    local vx = v.x
-    local vy = v.y
-    local mx = (ux + vx) * 0.5
-    edges_html[#edges_html + 1] = { "path";
-      d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
-    }
-  end
 end
 
 local tree_html = { "div"; class = "tree";

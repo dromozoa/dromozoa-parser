@@ -24,7 +24,16 @@ local function write_html(out, node)
   out:write("<", name)
   for i = 1, #string_keys do
     local key = string_keys[i]
-    out:write(" ", escape_html(key), "=\"", escape_html(tostring(node[key])), "\"")
+    local value = node[key]
+    local t = type(value)
+    if t == "number" then
+      value = ("%.17g"):format(value)
+    elseif t == "boolean" then
+      value = tostring(value)
+    elseif t == "table" then
+      value = table.concat(value, " ")
+    end
+    out:write(" ", escape_html(key), "=\"", escape_html(value), "\"")
   end
   out:write(">")
   if name == "script" or name == "style" then

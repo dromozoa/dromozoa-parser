@@ -7,7 +7,7 @@
   var setting = root.dromozoa.parser.setting;
 
   $(function () {
-    var svg = d3.select(".tree svg");
+    var svg = d3.select(".tree > svg");
 
     var zoom = d3.zoom();
     var zoom_x;
