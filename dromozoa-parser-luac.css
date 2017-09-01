@@ -44,6 +44,15 @@ body {
   color: #212121; /* black */
 }
 
+.source span {
+  transition: background-color 400ms;
+}
+
+.source span.active {
+  background-color: #F3E430; /* yellow */
+  transition: background-color 400ms;
+}
+
 .source .highlight-comment {
   color: #B2B2B2; /* light_gray */
 }
@@ -65,7 +74,7 @@ body {
 }
 
 .tree {
-  position: absolute;
+  position: fixed;
   right: 0;
 
   font-family: 'Noto Sans Mono CJK JP', monospace;
@@ -77,20 +86,27 @@ body {
 }
 
 .tree svg .viewport > rect {
-  fill-opacity: 0;
+  fill-opacity: 0.1;
 }
 
-.tree svg .edge > path {
+.tree svg .edges path {
   fill: none;
   stroke: #212121; /* black */
 }
 
-.tree svg .node > rect {
+.tree svg .nodes g rect {
   fill: #FFFFFF; /* actual_white */
   stroke: #212121; /* black */
+  transition: fill 400ms;
 }
 
-.tree svg .node > text {
+.tree svg .nodes g.active > rect {
+  fill: #F3E430; /* yellow */
+  transition: fill 400ms;
+}
+
+.tree svg .nodes text {
+  fill: #212121; /* black */
   dominant-baseline: central;
   text-anchor: middle;
 }

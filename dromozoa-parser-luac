@@ -193,6 +193,7 @@ for i = 1, #terminal_nodes do
     if id then
       id = "S" .. id
       class[#class + 1] = id
+      class[#class + 1] = "S"
     end
     local highlight = u.highlight
     if highlight then
@@ -213,11 +214,10 @@ local tree_height = 640
 local node_width = 160
 local node_height = 32
 
-local edges_html = { "g"; class = "edges" }
-local nodes_html = { "g"; class = "nodes" }
-
 tree_layout(root, node_height, node_width, "y", "x")
 
+local edges_html = { "g"; class = "edges" }
+local nodes_html = { "g"; class = "nodes" }
 for i = 1, #nodes do
   local u = nodes[i]
   local s = u[0]
@@ -230,17 +230,18 @@ for i = 1, #nodes do
     local vx = v.x
     local vy = v.y
     local mx = (ux + vx) * 0.5
-    edges_html[#edges_html + 1] = { "g"; class = "edge";
-      { "path";
-        d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
-      };
-    }
+    edges_html[#edges_html + 1] = { "path";
+      d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
+    };
   end
 
+  local id = u.id
   local h = 24
   local w = #name * 8 + h
   local r = h * 0.5
-  nodes_html[#nodes_html + 1] = { "g"; class = "node";
+  nodes_html[#nodes_html + 1] = { "g";
+    id = "T" .. id;
+    class = "T";
     transform = ("translate(%.17g,%.17g)"):format(ux, uy);
     { "rect";
       x = -w * 0.5;
