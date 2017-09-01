@@ -216,7 +216,8 @@ local node_height = 32
 
 tree_layout(root, node_height, node_width, "y", "x")
 
-local used_symbols = {}
+local defs = {}
+local defs_html = { "defs" }
 local edges_html = { "g"; class = "edges" }
 local nodes_html = { "g"; class = "nodes" }
 
@@ -226,7 +227,26 @@ for i = 1, #nodes do
   local ux = u.x
   local uy = u.y
 
-  used_symbols[s] = true
+  if not defs[s] then
+    local name = symbol_names[s]
+    local h = 24
+    local w = #name * 8 + h
+    local r = h * 0.5
+    defs[s] = true
+    defs_html[#defs_html + 1] = { "g";
+      id = "D" .. s;
+      { "rect";
+        x = -w * 0.5;
+        y = -r;
+        width = w;
+        height = h;
+        rx = r;
+        ry = r;
+      };
+      { "text"; name };
+    }
+  end
+
   nodes_html[#nodes_html + 1] = { "use";
     id = "T" .. u.id;
     class = "T";
@@ -242,30 +262,6 @@ for i = 1, #nodes do
     edges_html[#edges_html + 1] = { "path";
       d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
     };
-  end
-end
-
-local defs_html = { "defs" }
-
-for i = 2, #symbol_names do
-  if used_symbols[i] then
-    local name = symbol_names[i]
-    local h = 24
-    local w = #name * 8 + h
-    local r = h * 0.5
-
-    defs_html[#defs_html + 1] = { "g";
-      id = "D" .. i;
-      { "rect";
-        x = -w * 0.5;
-        y = -r;
-        width = w;
-        height = h;
-        rx = r;
-        ry = r;
-      };
-      { "text"; name };
-    }
   end
 end
 
