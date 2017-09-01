@@ -12,40 +12,34 @@
   $(function () {
     var svg = d3.select(".tree svg");
     var zoom = d3.zoom();
-    var zoom_x;
-    var zoom_y;
-    var zoom_k;
+    var zoom_scale;
 
     svg.select(".viewport")
       .call(zoom.on("zoom", function () {
         var transform = d3.event.transform;
-        zoom_x = transform.x;
-        zoom_y = transform.y;
-        zoom_k = transform.k;
+        zoom_scale = transform.k;
         svg.select(".view").attr("transform", transform);
       }))
       .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, setting.tree_height * 0.5));
 
     $(".S").on("click", function () {
       var $T = $(this);
-      var id = $T.attr("id").substr(1);
-      var $S = $("#T" + id);
+      var $S = $("#T" + $T.attr("id").substr(1));
       var t = $S.attr("transform").match(/^translate\((.*?),(.*?)\)$/);
-      var zx = setting.tree_width * 0.5 - parseFloat(t[1]) * zoom_k;
-      var zy = setting.tree_height * 0.5 - parseFloat(t[2]) * zoom_k;
+      var zx = setting.tree_width * 0.5 - parseFloat(t[1]) * zoom_scale;
+      var zy = setting.tree_height * 0.5 - parseFloat(t[2]) * zoom_scale;
 
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
       svg.select(".viewport")
         .transition().duration(400)
-        .call(zoom.transform, d3.zoomIdentity.translate(zx, zy).scale(zoom_k));
+        .call(zoom.transform, d3.zoomIdentity.translate(zx, zy).scale(zoom_scale));
     });
 
     $(".T").on("click", function () {
       var $T = $(this);
-      var id = $T.attr("id").substr(1);
-      var $S = $(".S" + id);
+      var $S = $(".S" + $T.attr("id").substr(1));
 
       $(".active").removeClass("active");
       $S.addClass("active");
