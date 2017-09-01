@@ -23,7 +23,7 @@ local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
-local function copy_sequence(source, result)
+local function copy_path(source, result)
   if result == nil then
     result = {}
   end
@@ -90,7 +90,7 @@ while true do
     id = id + 1
     u.id = id
 
-    local path = copy_sequence(u.path)
+    local path = copy_path(u.path)
     path[#path + 1] = id
 
     local n = #u
