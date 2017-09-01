@@ -33,6 +33,21 @@ local function copy_sequence(source, result)
   return result
 end
 
+local function common_path(path1, path2, result)
+  if result == nil then
+    result = {}
+  end
+  for i = 1, #path1 do
+    local v = path1[i]
+    if v == path2[i] then
+      result[i] = v
+    else
+      break
+    end
+  end
+  return result
+end
+
 local source_file, html_file = ...
 local source
 
@@ -89,7 +104,7 @@ while true do
   end
 end
 
-local next_path
+local next_path = {}
 for i = #terminal_nodes, 1, -1 do
   local u = terminal_nodes[i]
 
@@ -100,7 +115,7 @@ for i = #terminal_nodes, 1, -1 do
   end
 end
 
-local prev_path
+local prev_path = {}
 for i = 1, #terminal_nodes do
   local u = terminal_nodes[i]
   local s = u[0]
@@ -109,6 +124,8 @@ for i = 1, #terminal_nodes do
   local path = u.path
   if path then
     prev_path = path
+  else
+    u.path = common_path(prev_path, u.next_path)
   end
 
   if s == symbol_table["false"] or s == symbol_table["true"] then
@@ -165,14 +182,13 @@ for i = 1, #terminal_nodes do
   local p = u.p
   local i = u.i
   local j = u.j
+  local path = u.path
 
   if p < i then
     local class = {}
-    local path = u.path or u.prev_path
-    if path then
-      for i = 1, #path do
-        class[#class + 1] = "S" .. path[i]
-      end
+    local path = common_path(path, u.prev_path)
+    for i = 1, #path do
+      class[#class + 1] = "S" .. path[i]
     end
     class[#class + 1] = "highlight-comment"
     source_html[#source_html + 1] = { "span";
@@ -183,11 +199,8 @@ for i = 1, #terminal_nodes do
 
   if s ~= 1 then
     local class = {}
-    local path = u.path or u.next_path
-    if path then
-      for i = 1, #path do
-        class[#class + 1] = "S" .. path[i]
-      end
+    for i = 1, #path do
+      class[#class + 1] = "S" .. path[i]
     end
     local id = u.id
     if id then
