@@ -216,14 +216,23 @@ local node_height = 32
 
 tree_layout(root, node_height, node_width, "y", "x")
 
+local used_symbols = {}
 local edges_html = { "g"; class = "edges" }
 local nodes_html = { "g"; class = "nodes" }
+
 for i = 1, #nodes do
   local u = nodes[i]
   local s = u[0]
   local ux = u.x
   local uy = u.y
-  local name = symbol_names[s]
+
+  used_symbols[s] = true
+  nodes_html[#nodes_html + 1] = { "use";
+    id = "T" .. u.id;
+    class = "T";
+    transform = ("translate(%.17g,%.17g)"):format(ux, uy);
+    ["xlink:href"] = "#D" .. s;
+  }
 
   for i = 1, #u do
     local v = u[i]
@@ -234,29 +243,35 @@ for i = 1, #nodes do
       d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
     };
   end
+end
 
-  local id = u.id
-  local h = 24
-  local w = #name * 8 + h
-  local r = h * 0.5
-  nodes_html[#nodes_html + 1] = { "g";
-    id = "T" .. id;
-    class = "T";
-    transform = ("translate(%.17g,%.17g)"):format(ux, uy);
-    { "rect";
-      x = -w * 0.5;
-      y = -r;
-      width = w;
-      height = h;
-      rx = r;
-      ry = r;
-    };
-    { "text"; name };
-  }
+local defs_html = { "defs" }
+
+for i = 2, #symbol_names do
+  if used_symbols[i] then
+    local name = symbol_names[i]
+    local h = 24
+    local w = #name * 8 + h
+    local r = h * 0.5
+
+    defs_html[#defs_html + 1] = { "g";
+      id = "D" .. i;
+      { "rect";
+        x = -w * 0.5;
+        y = -r;
+        width = w;
+        height = h;
+        rx = r;
+        ry = r;
+      };
+      { "text"; name };
+    }
+  end
 end
 
 local tree_html = { "div"; class = "tree";
   { "svg"; width = tree_width; height = tree_height;
+    defs_html;
     { "g"; class = "viewport";
       { "rect"; width = tree_width; height = tree_height };
       { "g"; class = "view";

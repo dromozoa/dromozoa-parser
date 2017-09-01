@@ -85,6 +85,13 @@ body {
   display: block;
 }
 
+.tree svg text {
+  fill: #212121; /* black */
+  stroke: none;
+  dominant-baseline: central;
+  text-anchor: middle;
+}
+
 .tree svg .viewport > rect {
   fill-opacity: 0.1;
 }
@@ -94,19 +101,13 @@ body {
   stroke: #212121; /* black */
 }
 
-.tree svg .nodes g rect {
+.tree svg .nodes use {
   fill: #FFFFFF; /* actual_white */
   stroke: #212121; /* black */
   transition: fill 400ms;
 }
 
-.tree svg .nodes g.active > rect {
+.tree svg .nodes use.active {
   fill: #F3E430; /* yellow */
   transition: fill 400ms;
-}
-
-.tree svg .nodes text {
-  fill: #212121; /* black */
-  dominant-baseline: central;
-  text-anchor: middle;
 }
