@@ -163,13 +163,22 @@ _"stat"
   :_ "while" "exp" "do" "block" "end"
   :_ "repeat" "block" "until" "exp"
   :_ "if_clauses" "end"
-  :_ "for" "local_name" "=" "exp" "," "exp" "do" "block" "end" {1,4,5,6,3,2,7,8,9}
-  :_ "for" "local_name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" {1,4,5,6,7,8,3,2,9,10,11}
+  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" {1,4,5,6,3,2,7,8,9}
+  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" {1,4,5,6,7,8,3,2,9,10,11}
   :_ "for" "namelist" "in" "explist" "do" "block" "end" {1,4,3,2,5,6,7}
   :_ "function" "funcname" "funcbody"
-  :_ "local" "function" "local_name" "funcbody"
+  :_ "local" "function" "Name" "funcbody"
   :_ "local" "namelist"
   :_ "local" "namelist" "=" "explist" {1,4,3,2}
+
+_"retstat"
+  :_ "return"
+  :_ "return" ";"
+  :_ "return" "explist"
+  :_ "return" "explist" ";"
+
+_"label"
+  :_ "::" "Name" "::"
 
 _"if_clauses"
   :_"if_clause"
@@ -190,26 +199,18 @@ _"elseif_clause"
 _"else_clause"
   :_ "else" "block"
 
-_"retstat"
-  :_ "return"
-  :_ "return" ";"
-  :_ "return" "explist"
-  :_ "return" "explist" ";"
-
-_"label"
-  :_ "::" "Name" "::"
-
+-- [TODO] rename this
 _"funcname"
   :_ "funcnames"
   :_ "funcnames" ":" "Name"
 
 _"funcnames"
   :_ "Name"
-  :_ "funcnames" "." "Name" {[1]={2,3}}
+  :_ "funcnames" "." "Name"
 
 _"varlist"
-  :_ "var" :attr(1, "def")
-  :_ "varlist" "," "var" :attr(3, "def") {[1]={2,3}}
+  :_ "var"
+  :_ "varlist" "," "var" {[1]={2,3}}
 
 _"var"
   :_ "Name"
@@ -230,6 +231,7 @@ _"exp"
   :_ "nil"
   :_ "false"
   :_ "true"
+  -- Numeral
   :_ "IntegerConstant"
   :_ "FloatConstant"
   :_ "LiteralString"
@@ -296,25 +298,22 @@ _"parlist"
   :_ "..."
 
 _"tableconstructor"
-  :_ "{" "}"
-  :_ "{" "fieldlist" "}"
-  :_ "{" "fieldlist" "fieldsep" "}"
+  :_ "{" "}" {}
+  :_ "{" "fieldlist" "}" {2}
+  :_ "{" "fieldlist" "fieldsep" "}" {2}
 
 _"fieldlist"
   :_ "field"
   :_ "fieldlist" "fieldsep" "field" {[1]={3}}
 
 _"field"
-  :_ "[" "exp" "]" "=" "exp"
-  :_ "Name" "=" "exp"
+  :_ "[" "exp" "]" "=" "exp" {4,2}
+  :_ "Name" "=" "exp" {3,1}
   :_ "exp"
 
 _"fieldsep"
   :_ ","
   :_ ";"
-
-_"local_name"
-  :_ "Name"
 
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
