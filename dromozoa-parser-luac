@@ -17,11 +17,32 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local data_dumper = require "dromozoa.commons.dumper"
 local write_html = require "dromozoa.parser.write_html"
 local symbol_value = require "dromozoa.parser.value"
 local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+
+local function ref_constant(proto, id, type, value)
+  local constants = proto.constants
+  local n = #constants
+  for i = n, 1, -1 do
+    local constant = constants[i]
+    if constant.type == type and constant.value == value then
+      local refs = constant.refs
+      refs[#refs + 1] = id
+      return i
+    end
+  end
+  n = n + 1
+  constants[n] = {
+    type = type;
+    value = value;
+    refs = { id };
+  }
+  return n
+end
 
 local function copy_path(source, result)
   if result == nil then
@@ -73,6 +94,15 @@ root.path = {}
 local id = 0
 local nodes = {}
 
+local protos = {}
+local proto
+
+local env = {
+  names = {};
+  labels = {};
+}
+local scope = env
+
 local stack1 = { root }
 local stack2 = {}
 while true do
@@ -86,12 +116,54 @@ while true do
     stack1[n1] = nil
     stack2[n2] = nil
     nodes[#nodes + 1] = u
+
+    local u1, u2, u3, u4 = u[1], u[2], u[3], u[4], u[5]
+    local s = u[0]
+    local s1 = u1 and u1[0]
+    local s2 = u2 and u2[0]
+    local s3 = u3 and u3[0]
+    local s4 = u4 and u4[0]
+
+    if s == symbol_table.IntegerConstant then
+      u.out = ref_constant(proto, u.id, "integer", tonumber(symbol_value(u)))
+    elseif s == symbol_table.FloatConstant then
+      u.out = ref_constant(proto, u.id, "float", tonumber(symbol_value(u)))
+    elseif s == symbol_table.StringLiteral then
+      u.out = ref_constant(proto, u.id, "string", symbol_value(u))
+    end
+
+    if u.proto then
+      proto = proto.parent
+    end
+    if u.scope then
+      scope = scope.parent
+    end
   else
     id = id + 1
     u.id = id
 
     local path = copy_path(u.path)
     path[#path + 1] = id
+
+    if u.proto then
+      proto = {
+        parent = proto;
+        constants = {};
+        locals = {};
+        upvalues = {};
+      }
+      protos[#protos + 1] = proto
+      u.proto = proto
+    end
+    if u.scope then
+      scope = {
+        node_id = id;
+        parent = scope;
+        names = {};
+        labels = {};
+      }
+      u.scope = scope
+    end
 
     local n = #u
     for i = n, 1, -1 do
@@ -102,6 +174,10 @@ while true do
     end
     stack2[n2 + 1] = u
   end
+end
+
+for i = 1, #protos do
+  print(data_dumper.encode(protos[i].constants, { pretty = true, stable = true }))
 end
 
 local next_path = {}
@@ -223,7 +299,7 @@ for i = 1, #terminal_nodes do
 end
 
 local tree_width = 640
-local tree_height = 640
+local tree_height = 480
 local node_width = 160
 local node_height = 32
 
@@ -245,6 +321,7 @@ for i = 1, #nodes do
     local h = 24
     local w = #name * 8 + h
     local r = h * 0.5
+    local class = {}
     defs[s] = true
     defs_html[#defs_html + 1] = { "g";
       id = "D" .. s;

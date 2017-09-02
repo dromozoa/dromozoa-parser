@@ -31,9 +31,15 @@ local function write_html(out, node)
     elseif t == "boolean" then
       value = tostring(value)
     elseif t == "table" then
-      value = table.concat(value, " ")
+      if value[1] then
+        value = table.concat(value, " ")
+      else
+        value = nil
+      end
     end
-    out:write(" ", escape_html(key), "=\"", escape_html(value), "\"")
+    if value then
+      out:write(" ", escape_html(key), "=\"", escape_html(value), "\"")
+    end
   end
   out:write(">")
   if name == "script" or name == "style" then

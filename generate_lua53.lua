@@ -140,7 +140,7 @@ _ :left "or"
   :right "^"
 
 _"chunk"
-  :_ "block"
+  :_ "block" :attr "proto" :attr "scope"
 
 _"block"
   :_ ()
@@ -159,13 +159,13 @@ _"stat"
   :_ "label"
   :_ "break"
   :_ "goto" "Name"
-  :_ "do" "block" "end"
-  :_ "while" "exp" "do" "block" "end"
+  :_ "do" "block" "end" :attr "scope"
+  :_ "while" "exp" "do" "block" "end" :attr "scope"
   :_ "repeat" "block" "until" "exp"
   :_ "if_clauses" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" {1,4,5,6,3,2,7,8,9}
-  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" {1,4,5,6,7,8,3,2,9,10,11}
-  :_ "for" "namelist" "in" "explist" "do" "block" "end" {1,4,3,2,5,6,7}
+  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" {1,4,5,6,3,2,7,8,9}
+  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" {1,4,5,6,7,8,3,2,9,10,11}
+  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" {1,4,3,2,5,6,7}
   :_ "function" "funcname" "funcbody"
   :_ "local" "function" "Name" "funcbody"
   :_ "local" "namelist"
@@ -191,13 +191,13 @@ _"elseif_clauses"
   :_ "elseif_clause" "elseif_clauses"
 
 _"if_clause"
-  :_ "if" "exp" "then" "block"
+  :_ "if" "exp" "then" "block" :attr "scope"
 
 _"elseif_clause"
-  :_ "elseif" "exp" "then" "block"
+  :_ "elseif" "exp" "then" "block" :attr "scope"
 
 _"else_clause"
-  :_ "else" "block"
+  :_ "else" "block" :attr "scope"
 
 -- [TODO] rename this
 _"funcname"
@@ -289,8 +289,8 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" :attr(4, "funcbody_end") {3}
-  :_ "(" "parlist" ")" "block" "end" :attr(5, "funcbody_end") {4,2}
+  :_ "(" ")" "block" "end" :attr "proto" :attr "scope" :attr(4, "funcbody_end") {3}
+  :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {4,2}
 
 _"parlist"
   :_ "namelist"
