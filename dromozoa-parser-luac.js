@@ -22,6 +22,12 @@
       }))
       .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, setting.tree_height * 0.5));
 
+//    $(".tree").draggable({
+//      handle: $(".tree .head")
+//    });
+//
+//    $(".tree").resizable();
+
     $(".S").on("click", function () {
       var $T = $(this);
       var $S = $("#T" + $T.attr("id").substr(1));
