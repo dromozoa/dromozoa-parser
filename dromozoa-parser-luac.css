@@ -22,6 +22,10 @@ body {
   background-color: #F1F1F1; /* white */
 }
 
+/*
+ * number and source
+ */
+
 .number {
   position: absolute;
   padding: 0 0.5rem;
@@ -73,6 +77,10 @@ body {
   color: #C30771; /* dark_red */
 }
 
+/*
+ * tree
+ */
+
 .tree {
   position: fixed;
   right: 0;
@@ -110,4 +118,15 @@ body {
 .tree svg .nodes use.active {
   fill: #F3E430; /* yellow */
   transition: fill 400ms;
+}
+
+/*
+ * menu
+ */
+
+.menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+
 }
