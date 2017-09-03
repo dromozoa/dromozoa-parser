@@ -22,11 +22,11 @@
       }))
       .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, setting.tree_height * 0.5));
 
-//    $(".tree").draggable({
-//      handle: $(".tree .head")
-//    });
-//
-//    $(".tree").resizable();
+    $(".tree").draggable({
+      handle: $(".tree .head")
+    });
+
+    // $(".tree").resizable();
 
     $(".S").on("click", function () {
       var $T = $(this);
@@ -50,7 +50,7 @@
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
-      $("body").animate({ scrollTop: $S.offset().top });
+      $("html, body").animate({ scrollTop: $S.offset().top }, 400);
     });
   });
 }(this.self));
