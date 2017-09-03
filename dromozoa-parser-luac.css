@@ -19,7 +19,13 @@
 
 body {
   margin: 0;
+
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
+
   background-color: #F1F1F1; /* white */
+  color: #212121; /* black */
 }
 
 /*
@@ -30,10 +36,6 @@ body {
   position: absolute;
   padding: 0 0.5rem;
 
-  font-family: 'Noto Sans Mono CJK JP', monospace;
-  white-space: pre;
-  font-weight: 400;
-
   color: #C6C6C6; /* ligher_gray */
   text-align: right;
 }
@@ -41,11 +43,6 @@ body {
 .source {
   position: absolute;
 
-  font-family: 'Noto Sans Mono CJK JP', monospace;
-  white-space: pre;
-  font-weight: 400;
-
-  color: #212121; /* black */
 }
 
 .source span {
@@ -84,9 +81,6 @@ body {
 .tree {
   position: fixed;
   right: 0;
-
-  font-family: 'Noto Sans Mono CJK JP', monospace;
-  font-weight: 400;
 }
 
 .tree svg {
