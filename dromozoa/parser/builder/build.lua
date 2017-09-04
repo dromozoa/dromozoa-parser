@@ -157,13 +157,21 @@ return function (self, start_name)
         if code == 2 then
           local index = semantic_action[2]
           if type(index) == "string" then
-            semantic_action[2] = -symbol_table[index]
+            local symbol = symbol_table[index]
+            if not symbol then
+              error(("symbol %q not defined at production %d semantic action"):format(index, i))
+            end
+            semantic_action[2] = -symbol
           end
           local indices = semantic_action[3]
           for i = 1, #indices do
             local index = indices[i]
             if type(index) == "string" then
-              indices[i] = -symbol_table[index]
+              local symbol = symbol_table[index]
+              if not symbol then
+                error(("symbol %q not defined at production %d semantic action"):format(index, i))
+              end
+              indices[i] = -symbol
             end
           end
         elseif code == 3 then
@@ -171,7 +179,11 @@ return function (self, start_name)
           for i = 1, #indices do
             local index = indices[i]
             if type(index) == "string" then
-              indices[i] = -symbol_table[index]
+              local symbol = symbol_table[index]
+              if not symbol then
+                error(("symbol %q not defined at production %d semantic action"):format(index, i))
+              end
+              indices[i] = -symbol
             end
           end
         end

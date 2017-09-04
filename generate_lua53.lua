@@ -241,10 +241,10 @@ _"exp"
   :_ "functioncall"
   :_ "tableconstructor"
   -- binop
-  :_ "exp" "+" "exp"
-  :_ "exp" "-" "exp"
-  :_ "exp" "*" "exp"
-  :_ "exp" "/" "exp"
+  :_ "exp" "+" "exp" {2,1,3} :attr("binop", "ADD")
+  :_ "exp" "-" "exp" {2,1,3} :attr("binop", "SUB")
+  :_ "exp" "*" "exp" {2,1,3} :attr("binop", "MUL")
+  :_ "exp" "/" "exp" {2,1,3} :attr("binop", "DIV")
   :_ "exp" "//" "exp"
   :_ "exp" "^" "exp"
   :_ "exp" "%" "exp"

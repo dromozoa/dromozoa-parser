@@ -123,7 +123,7 @@ while true do
     stack2[n2] = nil
     nodes[#nodes + 1] = u
 
-    local u1, u2, u3, u4 = u[1], u[2], u[3], u[4], u[5]
+    local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
     local s = u[0]
     local s1 = u1 and u1[0]
     local s2 = u2 and u2[0]
@@ -137,33 +137,25 @@ while true do
         end
       end
     elseif s == symbol_table.exp then
+      local a = u.a
+      local binop = u.binop
       if s1 == symbol_table["nil"] then
-        local a = new_register(proto, "T")
-        u.a = a
         codes[#codes + 1] = { "LOADNIL", a }
       elseif s1 == symbol_table["false"] then
-        local a = new_register(proto, "T")
-        u.a = a
         codes[#codes + 1] = { "LOADBOOL", a, 0 }
       elseif s1 == symbol_table["true"] then
-        local a = new_register(proto, "T")
-        u.a = a
         codes[#codes + 1] = { "LOADBOOL", a, 1 }
       elseif s1 == symbol_table.IntegerConstant then
-        local a = new_register(proto, "T")
         local b = ref_constant(proto, u1.id, "integer", tonumber(symbol_value(u1)))
-        u.a = a
         codes[#codes + 1] = { "LOADK", a, b }
       elseif s1 == symbol_table.FloatConstant then
-        local a = new_register(proto, "T")
         local b = ref_constant(proto, u1.id, "float", tonumber(symbol_value(u1)))
-        u.a = a
         codes[#codes + 1] = { "LOADK", a, b }
       elseif s1 == symbol_table.LiteralString then
-        local a = new_register(proto, "T")
         local b = ref_constant(proto, u1.id, "string", symbol_value(u1))
-        u.a = a
         codes[#codes + 1] = { "LOADK", a, b }
+      elseif binop then
+        codes[#codes + 1] = { binop, a, u2.a, u3.a }
       end
     end
 
@@ -204,8 +196,42 @@ while true do
     end
 
     local s = u[0]
+    local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+    local s = u[0]
+    local s1 = u1 and u1[0]
+    local s2 = u2 and u2[0]
+    local s3 = u3 and u3[0]
+    local s4 = u4 and u4[0]
     if s > max_terminal_symbol then
       u.codes = {}
+    end
+    local codes = u.codes
+
+    if s == symbol_table.stat then
+      if s1 == symbol_table["local"] then
+        if s3 == symbol_table.namelist then
+          for i = 1, #u3 do
+            local exp = u2[i]
+            local name = u3[i]
+            local a = new_register(proto, "R")
+            if exp then
+              exp.a = a
+            end
+            name.a = name
+          end
+        end
+      end
+    elseif s == symbol_table.exp then
+      local a = u.a
+      if not a then
+        a = new_register(proto, "T")
+        u.a = a
+      end
+      local binop = u.binop
+      if binop then
+        u2.a = a
+        u3.a = new_register(proto, "T")
+      end
     end
 
     local n = #u
