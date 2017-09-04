@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local a = 0
+local x = nil
 a = 1 + 2 * 3 - 4
 local a = a * 5
 print(a)

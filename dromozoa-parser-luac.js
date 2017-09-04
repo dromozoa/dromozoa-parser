@@ -73,7 +73,10 @@
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
-      $C.addClass("active");
+
+      $(".C:visible").toggle(speed);
+      $C.toggle(speed);
+
       $("html, body").animate({ scrollTop: $S.offset().top }, speed);
     });
   });

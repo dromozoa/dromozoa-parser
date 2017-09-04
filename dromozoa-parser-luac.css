@@ -88,7 +88,7 @@ body {
 
 .tree,
 .code {
-  display: none;
+  /* display: none; */
   position: fixed;
 }
 
@@ -140,6 +140,7 @@ body {
 
 .code {
   left: 40rem;
+  width: 16rem;
 }
 
 .code .body {
@@ -150,10 +151,6 @@ body {
 
 .code .body div {
   display: none;
-}
-
-.code .body div.active {
-  display: block;
 }
 
 /*

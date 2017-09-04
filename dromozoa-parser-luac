@@ -29,14 +29,14 @@ local function new_register(proto, type)
   return type .. register
 end
 
-local function ref_constant(proto, id, type, value)
+local function ref_constant(proto, node_id, type, value)
   local constants = proto.constants
   local n = #constants
   for i = n, 1, -1 do
     local constant = constants[i]
     if constant.type == type and constant.value == value then
       local refs = constant.refs
-      refs[#refs + 1] = id
+      refs[#refs + 1] = node_id
       return "K" .. i
     end
   end
@@ -44,25 +44,23 @@ local function ref_constant(proto, id, type, value)
   constants[n] = {
     type = type;
     value = value;
-    refs = { id };
+    refs = { node_id };
   }
   return "K" .. n
 end
 
-local function declare_name(scope, id, value, r)
-  local names = scope.names
-  names[#names + 1] = {
-    value = value;
-    decl = id;
+local function declare_name(scope, node_id, value, r)
+  local locals = scope.proto.locals
+  local n = #locals + 1
+  locals[n] = {
+    decl = node_id;
     refs = {};
     r = r;
   }
-  local locals = scope.proto.locals
-  locals[#locals + 1] = {
+  local names = scope.names
+  names[#names + 1] = {
+    ["local"] = n;
     value = value;
-    decl = id;
-    refs = {};
-    r = r;
   }
 end
 
@@ -201,7 +199,6 @@ while true do
         upvalues = {};
         T = 0;
         R = 0;
-        S = 0;
       }
       protos[#protos + 1] = proto
       u.proto = proto
