@@ -11,33 +11,9 @@
   $.noop(console);
 
   $(function () {
-    var svg = d3.select(".tree svg");
+    var svg = d3.select(".tree .body svg");
     var zoom = d3.zoom();
     var zoom_scale;
-
-    svg.select(".viewport")
-      .call(zoom.on("zoom", function () {
-        var transform = d3.event.transform;
-        zoom_scale = transform.k;
-        svg.select(".view").attr("transform", transform);
-      }))
-      .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, setting.tree_height * 0.5));
-
-    $(".tree").draggable({
-      handle: $(".tree .head")
-    });
-
-    $(".tree").resizable({
-      resize: function (ev) {
-        console.log("resize", ev);
-        var width = $(".tree").width();
-        var height = $(".tree").height();
-        svg
-          .attr("width", width).attr("height", height);
-        svg.select(".viewport > rect")
-          .attr("width", width).attr("height", height);
-      }
-    });
 
     $(".menu .head").on("click", function () {
       $(".menu .body").toggle(speed);
@@ -47,12 +23,34 @@
       $($(this).data("toggle")).toggle(speed);
     });
 
+    $(".tree").draggable({
+      handle: $(".tree .head")
+    }).resizable({
+      resize: function () {
+        var $this = $(this);
+        var w = $this.width();
+        var h = $this.height() - $(".tree .head").height();
+        svg
+          .attr("width", w).attr("height", h);
+        svg.select(".viewport > rect")
+          .attr("width", w).attr("height", h);
+      }
+    });
+
+    svg.select(".viewport")
+      .call(zoom.on("zoom", function () {
+        var transform = d3.event.transform;
+        zoom_scale = transform.k;
+        svg.select(".view").attr("transform", transform);
+      }))
+      .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, svg.attr("height") * 0.5));
+
     $(".S").on("click", function () {
       var $S = $(this);
       var $T = $("#T" + $S.attr("id").substr(1));
       var t = $T.attr("transform").match(/^translate\((.*?),(.*?)\)$/);
-      var zx = setting.tree_width * 0.5 - parseFloat(t[1]) * zoom_scale;
-      var zy = setting.tree_height * 0.5 - parseFloat(t[2]) * zoom_scale;
+      var zx = svg.attr("width") * 0.5 - parseFloat(t[1]) * zoom_scale;
+      var zy = svg.attr("height") * 0.5 - parseFloat(t[2]) * zoom_scale;
 
       $(".active").removeClass("active");
       $T.addClass("active");

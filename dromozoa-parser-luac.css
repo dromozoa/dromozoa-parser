@@ -87,10 +87,8 @@ body {
  */
 
 .tree {
+  display: none;
   position: fixed;
-  top: 0;
-  right: 0;
-  padding: 0.125rem;
 }
 
 .tree .head {
@@ -98,34 +96,34 @@ body {
   background-color: rgba(0, 0, 0, 0.1682);
 }
 
-.tree svg {
+.tree .body svg {
   display: block;
 }
 
-.tree svg text {
+.tree .body svg text {
   fill: #212121; /* black */
   stroke: none;
   dominant-baseline: central;
   text-anchor: middle;
 }
 
-.tree svg .viewport > rect {
+.tree .body svg .viewport > rect {
   fill: #000000;
   fill-opacity: 0.0748;
 }
 
-.tree svg .edges path {
+.tree .body svg .edges path {
   fill: none;
   stroke: #212121; /* black */
 }
 
-.tree svg .nodes use {
+.tree .body svg .nodes use {
   fill: #FFFFFF; /* actual_white */
   stroke: #212121; /* black */
   transition: fill 400ms;
 }
 
-.tree svg .nodes use.active {
+.tree .body svg .nodes use.active {
   fill: #F3E430; /* yellow */
   transition: fill 400ms;
 }

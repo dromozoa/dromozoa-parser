@@ -391,15 +391,13 @@ local script = ([[
   root.dromozoa = {
     parser: {
       setting: {
-        tree_width: %.17g,
-        tree_height: %.17g,
         node_width: %.17g,
         node_height: %.17g
       }
     }
   };
 }(this.self));
-]]):format(tree_width, tree_height, node_width, node_height)
+]]):format(node_width, node_height)
 
 local out = assert(io.open(html_file, "w"))
 out:write("<!DOCTYPE html>")
