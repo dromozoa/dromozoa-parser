@@ -23,6 +23,22 @@
       }))
       .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, setting.tree_height * 0.5));
 
+    $(".tree").draggable({
+      handle: $(".tree .head")
+    });
+
+    $(".tree").resizable({
+      resize: function (ev) {
+        console.log("resize", ev);
+        var width = $(".tree").width();
+        var height = $(".tree").height();
+        svg
+          .attr("width", width).attr("height", height);
+        svg.select(".viewport > rect")
+          .attr("width", width).attr("height", height);
+      }
+    });
+
     $(".menu .head").on("click", function () {
       $(".menu .body").toggle(speed);
     });
@@ -31,22 +47,16 @@
       $($(this).data("toggle")).toggle(speed);
     });
 
-    $(".tree").draggable({
-      handle: $(".tree .head")
-    });
-
-    // $(".tree").resizable();
-
     $(".S").on("click", function () {
-      var $T = $(this);
-      var $S = $("#T" + $T.attr("id").substr(1));
-      var t = $S.attr("transform").match(/^translate\((.*?),(.*?)\)$/);
+      var $S = $(this);
+      var $T = $("#T" + $S.attr("id").substr(1));
+      var t = $T.attr("transform").match(/^translate\((.*?),(.*?)\)$/);
       var zx = setting.tree_width * 0.5 - parseFloat(t[1]) * zoom_scale;
       var zy = setting.tree_height * 0.5 - parseFloat(t[2]) * zoom_scale;
 
       $(".active").removeClass("active");
-      $S.addClass("active");
       $T.addClass("active");
+      $S.addClass("active");
       svg.select(".viewport")
         .transition().duration(speed)
         .call(zoom.transform, d3.zoomIdentity.translate(zx, zy).scale(zoom_scale));

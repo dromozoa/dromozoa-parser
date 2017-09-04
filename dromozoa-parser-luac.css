@@ -45,7 +45,6 @@ body {
 .number {
   position: absolute;
   padding: 0 0.5rem;
-
   color: #C6C6C6; /* ligher_gray */
   text-align: right;
 }
@@ -89,7 +88,9 @@ body {
 
 .tree {
   position: fixed;
+  top: 0;
   right: 0;
+  padding: 0.125rem;
 }
 
 .tree .head {
@@ -145,6 +146,6 @@ body {
 
 .menu .body {
   display: none;
-  background-color: rgba(0, 0, 0, 0.0748);
   padding: 0 0.5rem;
+  background-color: rgba(0, 0, 0, 0.0748);
 }
