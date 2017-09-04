@@ -15,6 +15,16 @@
 /*
  * https://github.com/tbastos/vim-lua
  * https://github.com/reedes/vim-colors-pencil
+ *
+ * a = (y - x) / y
+ *
+ * x = 198 // ligher_gray
+ * y = 214 // white
+ * a = 0.1682
+ *
+ * x = 178 // light_gray
+ * y = 214 // white
+ * a = 0.0748
  */
 
 body {
@@ -42,7 +52,6 @@ body {
 
 .source {
   position: absolute;
-
 }
 
 .source span {
@@ -83,6 +92,11 @@ body {
   right: 0;
 }
 
+.tree .head {
+  padding: 0 0.5rem;
+  background-color: rgba(0, 0, 0, 0.1682);
+}
+
 .tree svg {
   display: block;
 }
@@ -95,7 +109,8 @@ body {
 }
 
 .tree svg .viewport > rect {
-  fill-opacity: 0.1;
+  fill: #000000;
+  fill-opacity: 0.0748;
 }
 
 .tree svg .edges path {
@@ -118,9 +133,18 @@ body {
  * menu
  */
 
-.menu {
+#menu {
   position: fixed;
   top: 0;
-  right: 0;
+  right: 0.5rem;
+}
 
+#menu-head {
+  text-align: right;
+}
+
+#menu-body {
+  display: none;
+  background-color: rgba(0, 0, 0, 0.0748);
+  padding: 0 0.5rem;
 }

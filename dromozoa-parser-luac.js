@@ -6,6 +6,7 @@
   var $ = root.jQuery;
   var d3 = root.d3;
   var setting = root.dromozoa.parser.setting;
+  var speed = 400;
 
   $.noop(console);
 
@@ -21,6 +22,15 @@
         svg.select(".view").attr("transform", transform);
       }))
       .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, setting.tree_height * 0.5));
+
+    $("#menu-head").on("click", function () {
+      $("#menu-body").toggle(speed);
+    });
+
+    $("#menu-tree").on("click", function () {
+      console.log("click");
+      $(".tree").toggle(speed);
+    });
 
     $(".tree").draggable({
       handle: $(".tree .head")
@@ -39,7 +49,7 @@
       $S.addClass("active");
       $T.addClass("active");
       svg.select(".viewport")
-        .transition().duration(400)
+        .transition().duration(speed)
         .call(zoom.transform, d3.zoomIdentity.translate(zx, zy).scale(zoom_scale));
     });
 
@@ -50,7 +60,7 @@
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
-      $("html, body").animate({ scrollTop: $S.offset().top }, 400);
+      $("html, body").animate({ scrollTop: $S.offset().top }, speed);
     });
   });
 }(this.self));

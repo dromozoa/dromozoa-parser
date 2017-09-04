@@ -359,7 +359,7 @@ local tree_html = { "div"; class = "tree";
   { "div"; class = "head";
     { "span"; "Tree" };
   };
-  { "svg"; width = tree_width; height = tree_height;
+  { "svg"; class = "body"; width = tree_width; height = tree_height;
     defs_html;
     { "g"; class = "viewport";
       { "rect"; width = tree_width; height = tree_height };
@@ -373,15 +373,14 @@ local tree_html = { "div"; class = "tree";
   };
 }
 
-local menu_html = { "div"; class = "menu";
-  "Menu";
-}
-
 local style = ([[
 .source {
   left: %.17grem;
 }
-]]):format(source_left)
+.tree {
+  width: %.17grem;
+}
+]]):format(source_left, tree_width / 16)
 
 local script = ([[
 /*jslint this,white*/
@@ -416,7 +415,14 @@ write_html(out, { "html"; lang = "ja";
     number_html;
     source_html;
     tree_html;
-    menu_html;
+    { "div"; id = "menu";
+      { "div"; id = "menu-head";
+        { "span"; class = "fa fa-bars" };
+      };
+      { "div"; id = "menu-body";
+        { "div"; id = "menu-tree"; "Tree" };
+      };
+    };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
