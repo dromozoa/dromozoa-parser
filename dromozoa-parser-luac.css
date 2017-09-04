@@ -133,17 +133,17 @@ body {
  * menu
  */
 
-#menu {
+.menu {
   position: fixed;
   top: 0;
   right: 0.5rem;
 }
 
-#menu-head {
+.menu .head {
   text-align: right;
 }
 
-#menu-body {
+.menu .body {
   display: none;
   background-color: rgba(0, 0, 0, 0.0748);
   padding: 0 0.5rem;

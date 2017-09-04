@@ -23,13 +23,12 @@
       }))
       .call(zoom.transform, d3.zoomIdentity.translate(setting.node_width * 0.5, setting.tree_height * 0.5));
 
-    $("#menu-head").on("click", function () {
-      $("#menu-body").toggle(speed);
+    $(".menu .head").on("click", function () {
+      $(".menu .body").toggle(speed);
     });
 
-    $("#menu-tree").on("click", function () {
-      console.log("click");
-      $(".tree").toggle(speed);
+    $(".menu .body .toggle").on("click", function () {
+      $($(this).data("toggle")).toggle(speed);
     });
 
     $(".tree").draggable({
