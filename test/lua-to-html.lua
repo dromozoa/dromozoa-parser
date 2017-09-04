@@ -17,14 +17,13 @@
 
 local dumper = require "dromozoa.parser.dumper"
 local escape_html = require "dromozoa.parser.escape_html"
-local value = require "dromozoa.parser.symbol_value"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+local symbol_value = require "dromozoa.parser.symbol_value"
 local write_html = require "dromozoa.parser.write_html"
 
 local encode_string = dumper.encode_string
 local keys = dumper.keys
-local symbol_value = value
 
 local function new_register(state)
   local register = state.register
