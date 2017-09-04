@@ -17,7 +17,7 @@
 
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
-local value = require "dromozoa.parser.value"
+local value = require "dromozoa.parser.symbol_value"
 
 local function range(ri, rj, i, j)
   if i > 0 then

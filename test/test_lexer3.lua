@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local builder = require "dromozoa.parser.builder"
-local value = require "dromozoa.parser.value"
+local value = require "dromozoa.parser.symbol_value"
 
 local RE = builder.regexp
 

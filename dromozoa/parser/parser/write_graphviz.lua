@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local escape_html = require "dromozoa.parser.escape_html"
-local value = require "dromozoa.parser.value"
+local value = require "dromozoa.parser.symbol_value"
 
 return function (self, out, tree)
   local symbol_names = self.symbol_names

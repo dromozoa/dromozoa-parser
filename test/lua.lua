@@ -18,7 +18,7 @@
 local dumper = require "dromozoa.commons.dumper"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
-local value = require "dromozoa.parser.value"
+local value = require "dromozoa.parser.symbol_value"
 
 local file = ...
 local handle = assert(io.open(file))

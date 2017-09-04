@@ -17,7 +17,7 @@
 
 local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
-local value = require "dromozoa.parser.value"
+local value = require "dromozoa.parser.symbol_value"
 
 local P = builder.pattern
 local R = builder.range
