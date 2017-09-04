@@ -17,7 +17,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local data_dumper = require "dromozoa.commons.dumper"
 local write_html = require "dromozoa.parser.write_html"
 local symbol_value = require "dromozoa.parser.symbol_value"
 local tree_layout = require "dromozoa.parser.tree_layout"
@@ -48,6 +47,23 @@ local function ref_constant(proto, id, type, value)
     refs = { id };
   }
   return "K" .. n
+end
+
+local function declare_name(scope, id, value, r)
+  local names = scope.names
+  names[#names + 1] = {
+    value = value;
+    decl = id;
+    refs = {};
+    r = r;
+  }
+  local locals = scope.proto.locals
+  locals[#locals + 1] = {
+    value = value;
+    decl = id;
+    refs = {};
+    r = r;
+  }
 end
 
 local function copy_path(source, result)
@@ -157,6 +173,11 @@ while true do
       elseif binop then
         codes[#codes + 1] = { binop, a, u2.a, u3.a }
       end
+    elseif s == symbol_table.namelist then
+      for i = 1, #u do
+        local v = u[i]
+        declare_name(scope, v.id, symbol_value(v), v.a)
+      end
     end
 
     if u.proto then
@@ -187,8 +208,8 @@ while true do
     end
     if u.scope then
       scope = {
-        node_id = id;
         parent = scope;
+        proto = proto;
         names = {};
         labels = {};
       }
@@ -243,10 +264,6 @@ while true do
     end
     stack2[n2 + 1] = u
   end
-end
-
-for i = 1, #protos do
-  print(data_dumper.encode(protos[i].constants, { pretty = true, stable = true }))
 end
 
 local next_path = {}
