@@ -37,6 +37,10 @@
       }
     });
 
+    $(".code").draggable({
+      handle: $(".code .head")
+    });
+
     svg.select(".viewport")
       .call(zoom.on("zoom", function () {
         var transform = d3.event.transform;

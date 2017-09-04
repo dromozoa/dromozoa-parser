@@ -24,6 +24,12 @@ local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
+local function new_register(proto, type)
+  local register = proto[type] + 1
+  proto[type] = register
+  return register
+end
+
 local function ref_constant(proto, id, type, value)
   local constants = proto.constants
   local n = #constants
@@ -123,13 +129,14 @@ while true do
     local s2 = u2 and u2[0]
     local s3 = u3 and u3[0]
     local s4 = u4 and u4[0]
+    local codes = u.codes
 
-    if s == symbol_table.IntegerConstant then
-      u.out = ref_constant(proto, u.id, "integer", tonumber(symbol_value(u)))
-    elseif s == symbol_table.FloatConstant then
-      u.out = ref_constant(proto, u.id, "float", tonumber(symbol_value(u)))
-    elseif s == symbol_table.StringLiteral then
-      u.out = ref_constant(proto, u.id, "string", symbol_value(u))
+    if s == symbol_table.exp then
+      if s1 == symbol_table.IntegerConstant then
+        local a = new_register(proto, "T")
+        local b = ref_constant(proto, u1.id, "integer", tonumber(symbol_value(u1)))
+        codes[#codes + 1] = { "LOADK", a, b }
+      end
     end
 
     if u.proto then
@@ -151,6 +158,9 @@ while true do
         constants = {};
         locals = {};
         upvalues = {};
+        T = 0;
+        R = 0;
+        S = 0;
       }
       protos[#protos + 1] = proto
       u.proto = proto
@@ -163,6 +173,12 @@ while true do
         labels = {};
       }
       u.scope = scope
+    end
+
+    local s = u[0]
+
+    if s > max_terminal_symbol then
+      u.codes = {}
     end
 
     local n = #u
@@ -375,6 +391,30 @@ local tree_html = { "div"; class = "tree";
   };
 }
 
+local codes_html = { "div" }
+
+for i = 1, #nodes do
+  local u = nodes[i]
+  local codes = u.codes
+  if codes and codes[1] then
+    local codes_text_html = { "div" }
+    for j = 1, #codes do
+      local code = codes[j]
+      codes_text_html[#codes_text_html + 1] = table.concat(code, " ") .. "\n"
+    end
+    codes_html[#codes_html + 1] = codes_text_html
+  end
+end
+
+local code_html = { "div"; class = "code";
+  { "div"; class = "head";
+    { "span"; "Code" };
+  };
+  { "div"; class = "body";
+    codes_html;
+  };
+}
+
 local style = ([[
 .source {
   left: %.17grem;
@@ -415,15 +455,14 @@ write_html(out, { "html"; lang = "ja";
     number_html;
     source_html;
     tree_html;
+    code_html;
     { "div"; class = "menu";
       { "div"; class = "head";
         { "span"; class = "fa fa-bars" };
       };
       { "div"; class = "body";
-        { "div"; class = "toggle";
-          ["data-toggle"] = ".tree";
-          "Tree";
-        };
+        { "div"; class = "toggle"; ["data-toggle"] = ".tree"; "Tree"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".code"; "Code"; };
       };
     };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };

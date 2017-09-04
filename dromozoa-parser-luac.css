@@ -83,18 +83,24 @@ body {
 }
 
 /*
- * tree
+ * tree and code
  */
 
-.tree {
+.tree,
+.code{
   display: none;
   position: fixed;
 }
 
-.tree .head {
+.tree .head,
+.code .head {
   padding: 0 0.5rem;
   background-color: rgba(0, 0, 0, 0.1682);
 }
+
+/*
+ * tree
+ */
 
 .tree .body svg {
   display: block;
@@ -126,6 +132,15 @@ body {
 .tree .body svg .nodes use.active {
   fill: #F3E430; /* yellow */
   transition: fill 400ms;
+}
+
+/*
+ * code
+ */
+
+.code .body {
+  background-color: rgba(0, 0, 0, 0.0748);
+  padding: 0 0.5rem;
 }
 
 /*
