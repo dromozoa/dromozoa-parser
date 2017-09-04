@@ -66,11 +66,14 @@
 
     $(".T").on("click", function () {
       var $T = $(this);
-      var $S = $(".S" + $T.attr("id").substr(1));
+      var id = $T.attr("id").substr(1);
+      var $S = $(".S" + id);
+      var $C = $("#C" + id);
 
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
+      $C.addClass("active");
       $("html, body").animate({ scrollTop: $S.offset().top }, speed);
     });
   });

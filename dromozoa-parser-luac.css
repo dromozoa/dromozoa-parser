@@ -87,7 +87,7 @@ body {
  */
 
 .tree,
-.code{
+.code {
   display: none;
   position: fixed;
 }
@@ -138,9 +138,22 @@ body {
  * code
  */
 
+.code {
+  left: 40rem;
+}
+
 .code .body {
   background-color: rgba(0, 0, 0, 0.0748);
   padding: 0 0.5rem;
+  min-height: 1.5rem;
+}
+
+.code .body div {
+  display: none;
+}
+
+.code .body div.active {
+  display: block;
 }
 
 /*

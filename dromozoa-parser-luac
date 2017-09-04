@@ -27,7 +27,7 @@ local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 local function new_register(proto, type)
   local register = proto[type] + 1
   proto[type] = register
-  return register
+  return type .. register
 end
 
 local function ref_constant(proto, id, type, value)
@@ -38,7 +38,7 @@ local function ref_constant(proto, id, type, value)
     if constant.type == type and constant.value == value then
       local refs = constant.refs
       refs[#refs + 1] = id
-      return i
+      return "K" .. i
     end
   end
   n = n + 1
@@ -47,7 +47,7 @@ local function ref_constant(proto, id, type, value)
     value = value;
     refs = { id };
   }
-  return n
+  return "K" .. n
 end
 
 local function copy_path(source, result)
@@ -132,9 +132,32 @@ while true do
     local codes = u.codes
 
     if s == symbol_table.exp then
-      if s1 == symbol_table.IntegerConstant then
+      if s1 == symbol_table["nil"] then
+        local a = new_register(proto, "T")
+        u.a = a
+        codes[#codes + 1] = { "LOADNIL", a }
+      elseif s1 == symbol_table["false"] then
+        local a = new_register(proto, "T")
+        u.a = a
+        codes[#codes + 1] = { "LOADBOOL", a, 0 }
+      elseif s1 == symbol_table["true"] then
+        local a = new_register(proto, "T")
+        u.a = a
+        codes[#codes + 1] = { "LOADBOOL", a, 1 }
+      elseif s1 == symbol_table.IntegerConstant then
         local a = new_register(proto, "T")
         local b = ref_constant(proto, u1.id, "integer", tonumber(symbol_value(u1)))
+        u.a = a
+        codes[#codes + 1] = { "LOADK", a, b }
+      elseif s1 == symbol_table.FloatConstant then
+        local a = new_register(proto, "T")
+        local b = ref_constant(proto, u1.id, "float", tonumber(symbol_value(u1)))
+        u.a = a
+        codes[#codes + 1] = { "LOADK", a, b }
+      elseif s1 == symbol_table.LiteralString then
+        local a = new_register(proto, "T")
+        local b = ref_constant(proto, u1.id, "string", symbol_value(u1))
+        u.a = a
         codes[#codes + 1] = { "LOADK", a, b }
       end
     end
@@ -371,49 +394,20 @@ for i = 1, #nodes do
   end
 end
 
-local tree_html = { "div"; class = "tree";
-  { "div"; class = "head";
-    { "span"; "Tree" };
-  };
-  { "div"; class = "body";
-    { "svg"; class = "body"; width = tree_width; height = tree_height;
-      defs_html;
-      { "g"; class = "viewport";
-        { "rect"; width = tree_width; height = tree_height };
-        { "g"; class = "view";
-          { "g"; class = "model";
-            edges_html;
-            nodes_html;
-          };
-        };
-      };
-    };
-  };
-}
-
-local codes_html = { "div" }
+local code_html = { "div", class = "body" }
 
 for i = 1, #nodes do
   local u = nodes[i]
   local codes = u.codes
   if codes and codes[1] then
-    local codes_text_html = { "div" }
+    local code_text_html = { "div"; id = "C" .. u.id; class = "C" }
     for j = 1, #codes do
       local code = codes[j]
-      codes_text_html[#codes_text_html + 1] = table.concat(code, " ") .. "\n"
+      code_text_html[#code_text_html + 1] = table.concat(code, " ") .. "\n"
     end
-    codes_html[#codes_html + 1] = codes_text_html
+    code_html[#code_html + 1] = code_text_html
   end
 end
-
-local code_html = { "div"; class = "code";
-  { "div"; class = "head";
-    { "span"; "Code" };
-  };
-  { "div"; class = "body";
-    codes_html;
-  };
-}
 
 local style = ([[
 .source {
@@ -454,8 +448,34 @@ write_html(out, { "html"; lang = "ja";
   { "body";
     number_html;
     source_html;
-    tree_html;
-    code_html;
+
+    { "div"; class = "tree";
+      { "div"; class = "head";
+        { "span"; "Tree" };
+      };
+      { "div"; class = "body";
+        { "svg"; class = "body"; width = tree_width; height = tree_height;
+          defs_html;
+          { "g"; class = "viewport";
+            { "rect"; width = tree_width; height = tree_height };
+            { "g"; class = "view";
+              { "g"; class = "model";
+                edges_html;
+                nodes_html;
+              };
+            };
+          };
+        };
+      };
+    };
+
+    { "div"; class = "code";
+      { "div"; class = "head";
+        { "span"; "Code" };
+      };
+      code_html;
+    };
+
     { "div"; class = "menu";
       { "div"; class = "head";
         { "span"; class = "fa fa-bars" };
@@ -465,6 +485,7 @@ write_html(out, { "html"; lang = "ja";
         { "div"; class = "toggle"; ["data-toggle"] = ".code"; "Code"; };
       };
     };
+
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" };
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
