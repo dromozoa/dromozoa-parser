@@ -135,7 +135,7 @@ body {
 .menu {
   position: fixed;
   top: 0;
-  right: 0.5rem;
+  right: 1rem;
 }
 
 .menu .head {
