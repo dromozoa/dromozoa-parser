@@ -39,7 +39,7 @@ body {
 }
 
 /*
- * number and source
+ * number, source
  */
 
 .number {
@@ -83,17 +83,19 @@ body {
 }
 
 /*
- * tree and code
+ * tree, code, proto
  */
 
 .tree,
-.code {
+.code,
+.proto {
   /* display: none; */
   position: fixed;
 }
 
 .tree .head,
-.code .head {
+.code .head,
+.proto .head {
   padding: 0 0.5rem;
   background-color: rgba(0, 0, 0, 0.1682);
 }
@@ -151,6 +153,21 @@ body {
 
 .code .body div {
   display: none;
+}
+
+/*
+ * proto
+ */
+
+.proto {
+  left: 56rem;
+  width: 16rem;
+}
+
+.proto .body {
+  background-color: rgba(0, 0, 0, 0.0748);
+  padding: 0 0.5rem;
+  min-height: 1.5rem;
 }
 
 /*

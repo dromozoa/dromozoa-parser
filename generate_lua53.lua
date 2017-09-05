@@ -154,7 +154,7 @@ _"stats"
 
 _"stat"
   :_ ";"
-  :_ "varlist" "=" "explist" {3,2,1}
+  :_ "varlist" "=" "explist" {2,3,1}
   :_ "functioncall"
   :_ "label"
   :_ "break"

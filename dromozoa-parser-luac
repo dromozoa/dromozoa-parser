@@ -50,18 +50,40 @@ local function ref_constant(proto, node_id, type, value)
 end
 
 local function declare_name(scope, node_id, value, r)
-  local locals = scope.proto.locals
-  local n = #locals + 1
-  locals[n] = {
+  local vars = scope.proto.vars
+  local n = #vars + 1
+  vars[n] = {
     decl = node_id;
     refs = {};
     r = r;
+    value = value;
   }
   local names = scope.names
   names[#names + 1] = {
     ["local"] = n;
     value = value;
   }
+end
+
+local function ref_name(scope, node_id, value)
+  local vars = scope.proto.vars
+  local names = scope.names
+  for i = #names, 1, -1 do
+    local name = names[i]
+    if name.value == value then
+      local var = vars[name["local"]]
+      local refs = var.refs
+      refs[#refs + 1] = node_id
+      return var.r
+    end
+  end
+end
+
+local function copy_codes(result, source)
+  for i = 1, #source do
+    result[#result + 1] = source[i]
+  end
+  return result
 end
 
 local function copy_path(source, result)
@@ -146,8 +168,16 @@ while true do
     local codes = u.codes
 
     if s == symbol_table.stat then
-      if s1 == symbol_table["local"] then
-        if s2 == symbol_table.namelist then
+      if s1 == symbol_table["="] then
+        for i = 1, #u3 do
+          local exp = u2[i]
+          local var = u3[i]
+          copy_codes(codes, exp.codes)
+          codes[#codes + 1] = { "MOVE", var.a, exp.a }
+        end
+      elseif s1 == symbol_table["local"] then
+        for i = 1, #u2 do
+          copy_codes(codes, u2[i].codes)
         end
       end
     elseif s == symbol_table.exp then
@@ -169,8 +199,12 @@ while true do
         local b = ref_constant(proto, u1.id, "string", symbol_value(u1))
         codes[#codes + 1] = { "LOADK", a, b }
       elseif binop then
+        copy_codes(codes, u2.codes)
+        copy_codes(codes, u3.codes)
         codes[#codes + 1] = { binop, a, u2.a, u3.a }
       end
+    elseif s == symbol_table.var then
+      u.a = ref_name(scope, u1.id, symbol_value(u1))
     elseif s == symbol_table.namelist then
       for i = 1, #u do
         local v = u[i]
@@ -195,7 +229,7 @@ while true do
       proto = {
         parent = proto;
         constants = {};
-        locals = {};
+        vars = {};
         upvalues = {};
         T = 0;
         R = 0;
@@ -235,7 +269,7 @@ while true do
             if exp then
               exp.a = a
             end
-            name.a = name
+            name.a = a
           end
         end
       end
@@ -438,7 +472,7 @@ for i = 1, #nodes do
   end
 end
 
-local code_html = { "div", class = "body" }
+local code_html = { "div"; class = "body" }
 
 for i = 1, #nodes do
   local u = nodes[i]
@@ -452,6 +486,30 @@ for i = 1, #nodes do
     code_html[#code_html + 1] = code_text_html
   end
 end
+
+local proto_html = { "div"; class = "body" }
+
+for i = 1, #protos do
+  local proto = protos[i]
+  local constants = proto.constants
+  local vars = proto.vars
+  local proto_text_html = { "div"; id = "P" .. i, class = "P" }
+
+  for j = 1, #constants do
+    local constant = constants[j]
+    proto_text_html[#proto_text_html + 1] = "K" .. j .. " " .. constant.value .. " (" .. constant.type .. ")\n"
+  end
+
+  for j = 1, #vars do
+    local var = vars[j]
+    proto_text_html[#proto_text_html + 1] = var.r .. " " .. var.value .. "\n"
+  end
+
+  proto_text_html[#proto_text_html + 1] = "max(T) " .. proto.T .. "\n"
+  proto_text_html[#proto_text_html + 1] = "max(R) " .. proto.R .. "\n"
+  proto_html[#proto_html + 1] = proto_text_html
+end
+
 
 local style = ([[
 .source {
@@ -518,6 +576,13 @@ write_html(out, { "html"; lang = "ja";
         { "span"; "Code" };
       };
       code_html;
+    };
+
+    { "div"; class = "proto";
+      { "div"; class = "head";
+        { "span"; "Proto" };
+      };
+      proto_html;
     };
 
     { "div"; class = "menu";
