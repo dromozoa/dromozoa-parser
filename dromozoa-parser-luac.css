@@ -150,16 +150,17 @@ body {
   border: solid 1px #212121;
 }
 
-.name {
+.names {
   left: 40rem;
 }
 
-.label {
+.labels {
+  display: none;
   top: 30rem;
   left: 40rem;
 }
 
-.constant {
+.constants {
   left: 60rem;
 }
 

@@ -616,7 +616,7 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "panel panel-table name";
+    { "div"; class = "panel panel-table names";
       { "div"; class = "head";
         { "span"; "Names" };
       };
@@ -635,7 +635,7 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "panel panel-table label";
+    { "div"; class = "panel panel-table labels";
       { "div"; class = "head";
         { "span"; "Labels" };
       };
@@ -654,7 +654,7 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "panel panel-table constant";
+    { "div"; class = "panel panel-table constants";
       { "div"; class = "head";
         { "span"; "Constants" };
       };
@@ -679,9 +679,9 @@ write_html(out, { "html"; lang = "ja";
       };
       { "div"; class = "body";
         { "div"; class = "toggle"; ["data-toggle"] = ".tree"; "Tree"; };
-        { "div"; class = "toggle"; ["data-toggle"] = ".name"; "Names"; };
-        { "div"; class = "toggle"; ["data-toggle"] = ".label"; "Labels"; };
-        { "div"; class = "toggle"; ["data-toggle"] = ".constant"; "Constants"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".names"; "Names"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".labels"; "Labels"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".constants"; "Constants"; };
       };
     };
 
