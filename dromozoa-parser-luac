@@ -105,11 +105,14 @@ local function decl_label(u)
       return nil, "label already defined"
     end
   end
-  labels[#labels + 1] = {
+  local label = {
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
   }
+  labels[#labels + 1] = label
+  local labels = scope.proto.labels
+  labels[#labels + 1] = label
   return true
 end
 
@@ -256,7 +259,6 @@ for i = 1, #discover_nodes do
 
   if s == symbol_table.chunk then
     u.protos = {}
-    u.scopes = {}
   end
 
   if u.proto then
@@ -264,6 +266,7 @@ for i = 1, #discover_nodes do
     local proto = {
       constants = {};
       names = {};
+      labels = {};
       upvalues = {};
     }
     protos[#protos + 1] = proto
@@ -271,15 +274,12 @@ for i = 1, #discover_nodes do
   end
 
   if u.scope then
-    local scopes = find(u, "scopes")
-    local scope = {
+    u.scope = {
       proto = find(u, "proto");
       parent = find(u.parent, "scope");
       names = {};
       labels = {};
     }
-    scopes[#scopes + 1] = scope
-    u.scope = scope
   end
 
   if s > max_terminal_symbol then
@@ -531,26 +531,9 @@ for i = 1, #discover_nodes do
   end
 end
 
-local labels_html = { "tbody" }
-
-local scopes = root.scopes
-for i = 1, #scopes do
-  local scope = scopes[i]
-  local labels = scope.labels
-  for j = 1, #labels do
-    local label = labels[j]
-    labels_html[#labels_html + 1] = { "tr";
-      { "td"; i };
-      { "td"; j };
-      { "td"; label.value };
-      make_refs_html({ "td" }, label.defs);
-      make_refs_html({ "td" }, label.refs);
-    }
-  end
-end
-
 local constants_html = { "tbody" }
 local names_html = { "tbody" }
+local labels_html = { "tbody" }
 
 local protos = root.protos
 for i = 1, #protos do
@@ -580,6 +563,17 @@ for i = 1, #protos do
       { "td"; name.value };
       make_refs_html({ "td" }, name.defs);
       make_refs_html({ "td" }, name.refs);
+    }
+  end
+  local labels = proto.labels
+  for j = 1, #labels do
+    local label = labels[j]
+    labels_html[#labels_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; label.value };
+      make_refs_html({ "td" }, label.defs);
+      make_refs_html({ "td" }, label.refs);
     }
   end
 end
