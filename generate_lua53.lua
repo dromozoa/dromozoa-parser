@@ -220,8 +220,8 @@ _"var"
   :_ "functioncall" "." "Name"
 
 _"namelist"
-  :_ "Name"
-  :_ "namelist" "," "Name" {[1]={3}}
+  :_ "Name" :attr(1, "decl")
+  :_ "namelist" "," "Name" :attr(3, "decl") {[1]={3}}
 
 _"explist"
   :_ "exp"
@@ -293,8 +293,8 @@ _"funcbody"
   :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {2,4}
 
 _"parlist"
-  :_ "namelist" :attr(1, "decl", "param")
-  :_ "namelist" "," "..." :attr(1, "decl", "param") {1,3}
+  :_ "namelist"
+  :_ "namelist" "," "..." {1,3}
   :_ "..." {"namelist",1}
 
 _"tableconstructor"

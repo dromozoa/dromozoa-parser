@@ -35,11 +35,10 @@ local function find(u, key)
   end
 end
 
-local function decl_name(type, u)
+local function decl_name(u)
   local scope = find(u, "scope")
   local names = scope.names
   names[#names + 1] = {
-    type = type;
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
@@ -285,22 +284,9 @@ for i = 1, #discover_nodes do
         u1.ref = "ref"
       end
     end
-  elseif s == symbol_table.namelist then
-    local decl = u.decl
-    if not decl then
-      decl = true
-    end
-    for i = 1, #u do
-      u[i].decl = decl
-    end
   elseif s == symbol_table.Name then
-    local decl = u.decl
-    if decl then
-      if decl == true then
-        decl_name("local", u)
-      else
-        decl_name(decl, u)
-      end
+    if u.decl then
+      decl_name(u)
     else
       local ref = u.ref
       local result
@@ -529,7 +515,6 @@ for i = 1, #scopes do
     name_html[#name_html + 1] = { "tr";
       { "td"; i };
       { "td"; j };
-      { "td"; name.type };
       { "td"; name.value };
       make_refs_html({ "td" }, name.defs);
       make_refs_html({ "td" }, name.refs);
@@ -640,7 +625,6 @@ write_html(out, { "html"; lang = "ja";
           { "thead";
             { "tr";
               { "th"; colspan = 2; "#" };
-              { "th"; "type" };
               { "th"; "name" };
               { "th"; "def" };
               { "th"; "ref" };
