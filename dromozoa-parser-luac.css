@@ -161,7 +161,11 @@ body {
 }
 
 .constants {
-  left: 60rem;
+  left: 70rem;
+}
+
+.vars {
+  left: 55rem;
 }
 
 /*

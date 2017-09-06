@@ -37,12 +37,31 @@ end
 
 local function decl_name(u)
   local scope = find(u, "scope")
-  local names = scope.names
-  names[#names + 1] = {
+  local name = {
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
   }
+  local names = scope.names
+  names[#names + 1] = name
+  local vars = scope.proto.vars
+  vars[#vars + 1] = name
+end
+
+local function ref_upvalue(value, proto, decl_proto, index)
+  while true do
+    local parent = proto.parent
+    local upvalues = proto.upvalues
+    if parent == decl_proto then
+      break
+    else
+      -- 親のローカル
+      
+
+
+    end
+    proto = parent
+  end
 end
 
 local function ref_name(u, key)
@@ -50,6 +69,7 @@ local function ref_name(u, key)
     key = "refs"
   end
   local value = symbol_value(u)
+  local proto = find(u, "proto")
   local scope = find(u, "scope")
   while scope do
     local names = scope.names
@@ -58,7 +78,13 @@ local function ref_name(u, key)
       if name.value == value then
         local refs = name[key]
         refs[#refs + 1] = u.id
-        return true
+        local decl_proto = scope.proto
+        if decl_proto == proto then
+          return true
+        else
+          ref_upvalue(value, proto, decl_proto, i)
+          return true
+        end
       end
     end
     scope = scope.parent
@@ -237,6 +263,8 @@ for i = 1, #discover_nodes do
     local protos = find(u, "protos")
     local proto = {
       constants = {};
+      vars = {};
+      upvalues = {};
     }
     protos[#protos + 1] = proto
     u.proto = proto
@@ -503,8 +531,8 @@ for i = 1, #discover_nodes do
   end
 end
 
-local name_html = { "tbody" }
-local label_html = { "tbody" }
+local names_html = { "tbody" }
+local labels_html = { "tbody" }
 
 local scopes = root.scopes
 for i = 1, #scopes do
@@ -512,7 +540,7 @@ for i = 1, #scopes do
   local names = scope.names
   for j = 1, #names do
     local name = names[j]
-    name_html[#name_html + 1] = { "tr";
+    names_html[#names_html + 1] = { "tr";
       { "td"; i };
       { "td"; j };
       { "td"; name.value };
@@ -523,7 +551,7 @@ for i = 1, #scopes do
   local labels = scope.labels
   for j = 1, #labels do
     local label = labels[j]
-    label_html[#label_html + 1] = { "tr";
+    labels_html[#labels_html + 1] = { "tr";
       { "td"; i };
       { "td"; j };
       { "td"; label.value };
@@ -533,7 +561,8 @@ for i = 1, #scopes do
   end
 end
 
-local constant_html = { "tbody" }
+local constants_html = { "tbody" }
+local vars_html = { "tbody" }
 
 local protos = root.protos
 for i = 1, #protos do
@@ -546,12 +575,23 @@ for i = 1, #protos do
     if type == "string" then
       value = dumper.encode_string(value)
     end
-    constant_html[#constant_html + 1] = { "tr";
+    constants_html[#constants_html + 1] = { "tr";
       { "td"; i };
       { "td"; j };
       { "td"; type };
       { "td"; value };
       make_refs_html({ "td" }, constant.refs)
+    }
+  end
+  local vars = proto.vars
+  for j = 1, #vars do
+    local var = vars[j]
+    vars_html[#vars_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; var.value };
+      make_refs_html({ "td" }, var.defs);
+      make_refs_html({ "td" }, var.refs);
     }
   end
 end
@@ -630,7 +670,7 @@ write_html(out, { "html"; lang = "ja";
               { "th"; "ref" };
             };
           };
-          name_html;
+          names_html;
         };
       };
     };
@@ -649,7 +689,7 @@ write_html(out, { "html"; lang = "ja";
               { "th"; "ref" };
             };
           };
-          label_html;
+          labels_html;
         };
       };
     };
@@ -668,7 +708,26 @@ write_html(out, { "html"; lang = "ja";
               { "th"; "ref" };
             };
           };
-          constant_html;
+          constants_html;
+        };
+      };
+    };
+
+    { "div"; class = "panel panel-table vars";
+      { "div"; class = "head";
+        { "span"; "Locals" };
+      };
+      { "div"; class = "body";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; colspan = 2; "#" };
+              { "th"; "name" };
+              { "th"; "value" };
+              { "th"; "ref" };
+            };
+          };
+          vars_html;
         };
       };
     };
