@@ -83,19 +83,21 @@ body {
 }
 
 /*
- * tree, code, proto
+ * tree, name, label, constant
  */
 
 .tree,
-.code,
-.proto {
+.name,
+.label,
+.constant {
   /* display: none; */
   position: fixed;
 }
 
 .tree .head,
-.code .head,
-.proto .head {
+.name .head,
+.label .head,
+.constant .head {
   padding: 0 0.5rem;
   background-color: rgba(0, 0, 0, 0.1682);
 }
@@ -137,38 +139,44 @@ body {
 }
 
 /*
- * code
+ * name, constant
  */
 
-.code {
+.name .body,
+.label .body,
+.constant .body {
+  background-color: rgba(0, 0, 0, 0.0748);
+}
+
+.name .body table,
+.label .body table,
+.constant .body table {
+  border-collapse: collapse;
+}
+
+.name .body table th,
+.name .body table td,
+.label .body table th,
+.label .body table td,
+.constant .body table th,
+.constant .body table td {
+  border: solid 1px #212121;
+}
+
+.name {
   left: 40rem;
-  width: 16rem;
 }
 
-.code .body {
-  background-color: rgba(0, 0, 0, 0.0748);
-  padding: 0 0.5rem;
-  min-height: 1.5rem;
-}
-
-.code .body div {
+.label {
   display: none;
+  top: 30rem;
+  left: 40rem;
 }
 
-/*
- * proto
- */
-
-.proto {
-  left: 56rem;
-  width: 16rem;
+.constant {
+  left: 60rem;
 }
 
-.proto .body {
-  background-color: rgba(0, 0, 0, 0.0748);
-  padding: 0 0.5rem;
-  min-height: 1.5rem;
-}
 
 /*
  * menu

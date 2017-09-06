@@ -15,6 +15,19 @@
     var zoom = d3.zoom();
     var zoom_scale;
 
+    var move_s = function ($S) {
+      $("html, body").animate({ scrollTop: $S.offset().top }, speed);
+    };
+
+    var move_t = function ($T) {
+      var t = $T.attr("transform").match(/^translate\((.*?),(.*?)\)$/);
+      var zx = svg.attr("width") * 0.5 - parseFloat(t[1]) * zoom_scale;
+      var zy = svg.attr("height") * 0.5 - parseFloat(t[2]) * zoom_scale;
+      svg.select(".viewport")
+        .transition().duration(speed)
+        .call(zoom.transform, d3.zoomIdentity.translate(zx, zy).scale(zoom_scale));
+    };
+
     $(".menu .head").on("click", function () {
       $(".menu .body").toggle(speed);
     });
@@ -37,8 +50,16 @@
       }
     });
 
-    $(".code").draggable({
-      handle: $(".code .head")
+    $(".name").draggable({
+      handle: $(".name .head")
+    });
+
+    $(".label").draggable({
+      handle: $(".label .head")
+    });
+
+    $(".constant").draggable({
+      handle: $(".constant .head")
     });
 
     svg.select(".viewport")
@@ -52,32 +73,33 @@
     $(".S").on("click", function () {
       var $S = $(this);
       var $T = $("#T" + $S.attr("id").substr(1));
-      var t = $T.attr("transform").match(/^translate\((.*?),(.*?)\)$/);
-      var zx = svg.attr("width") * 0.5 - parseFloat(t[1]) * zoom_scale;
-      var zy = svg.attr("height") * 0.5 - parseFloat(t[2]) * zoom_scale;
 
       $(".active").removeClass("active");
       $T.addClass("active");
       $S.addClass("active");
-      svg.select(".viewport")
-        .transition().duration(speed)
-        .call(zoom.transform, d3.zoomIdentity.translate(zx, zy).scale(zoom_scale));
+      move_t($T);
     });
 
     $(".T").on("click", function () {
       var $T = $(this);
       var id = $T.attr("id").substr(1);
       var $S = $(".S" + id);
-      var $C = $("#C" + id);
 
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
+      move_s($S);
+    });
 
-      $(".C:visible").toggle(speed);
-      $C.toggle(speed);
-
-      $("html, body").animate({ scrollTop: $S.offset().top }, speed);
+    $("[data-ref]").on("click", function () {
+      var id = $(this).data("ref")
+      var $S = $(".S" + id);
+      var $T = $("#T" + id);
+      $(".active").removeClass("active");
+      $S.addClass("active");
+      $T.addClass("active");
+      move_s($S);
+      move_t($T);
     });
   });
 }(this.self));

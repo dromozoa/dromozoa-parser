@@ -163,12 +163,12 @@ _"stat"
   :_ "while" "exp" "do" "block" "end" :attr "scope"
   :_ "repeat" "block" "until" "exp"
   :_ "if_clauses" "end"
-  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" {1,4,5,6,3,2,7,8,9}
-  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" {1,4,5,6,7,8,3,2,9,10,11}
-  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" {1,4,3,2,5,6,7}
+  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr(2, "decl") {1,4,6,"exp",2,8}
+  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr(2, "decl") {1,4,6,8,2,10}
+  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" {1,3,2,6}
   :_ "function" "funcname" "funcbody"
-  :_ "local" "function" "Name" "funcbody"
-  :_ "local" "namelist" {1,"explist",2}
+  :_ "local" "function" "Name" "funcbody" :attr(3, "decl")
+  :_ "local" "namelist"  {1,"explist",2}
   :_ "local" "namelist" "=" "explist" {1,4,2}
 
 _"retstat"
@@ -178,7 +178,7 @@ _"retstat"
   :_ "return" "explist" ";"
 
 _"label"
-  :_ "::" "Name" "::"
+  :_ "::" "Name" "::" {2}
 
 _"if_clauses"
   :_"if_clause"
@@ -209,8 +209,8 @@ _"funcnames"
   :_ "funcnames" "." "Name"
 
 _"varlist"
-  :_ "var"
-  :_ "varlist" "," "var" {[1]={2,3}}
+  :_ "var" :attr(1, "def")
+  :_ "varlist" "," "var" :attr(3, "def") {[1]={3}}
 
 _"var"
   :_ "Name"
@@ -289,13 +289,13 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" :attr "proto" :attr "scope" :attr(4, "funcbody_end") {3}
-  :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {4,2}
+  :_ "(" ")" "block" "end" :attr "proto" :attr "scope" :attr(4, "funcbody_end") {"parlist",3}
+  :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {2,4}
 
 _"parlist"
-  :_ "namelist"
-  :_ "namelist" "," "..."
-  :_ "..."
+  :_ "namelist" :attr(1, "decl", "param")
+  :_ "namelist" "," "..." :attr(1, "decl", "param") {1,3}
+  :_ "..." {"namelist",1}
 
 _"tableconstructor"
   :_ "{" "}" {}
@@ -307,8 +307,8 @@ _"fieldlist"
   :_ "fieldlist" "fieldsep" "field" {[1]={3}}
 
 _"field"
-  :_ "[" "exp" "]" "=" "exp" {4,2}
-  :_ "Name" "=" "exp" {3,1}
+  :_ "[" "exp" "]" "=" "exp"
+  :_ "Name" "=" "exp"
   :_ "exp"
 
 _"fieldsep"

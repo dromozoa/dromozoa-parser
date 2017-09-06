@@ -17,66 +17,114 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local dumper = require "dromozoa.parser.dumper"
+local error_message = require "dromozoa.parser.error_message"
 local write_html = require "dromozoa.parser.write_html"
 local symbol_value = require "dromozoa.parser.symbol_value"
 local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
-local function new_register(proto, type)
-  local register = proto[type] + 1
-  proto[type] = register
-  return type .. register
+local function find(u, key)
+  while u do
+    local value = u[key]
+    if value then
+      return value
+    end
+    u = u.parent
+  end
 end
 
-local function ref_constant(proto, node_id, type, value)
+local function decl_name(type, u)
+  local scope = find(u, "scope")
+  local names = scope.names
+  names[#names + 1] = {
+    type = type;
+    value = symbol_value(u);
+    defs = { u.id };
+    refs = {};
+  }
+end
+
+local function ref_name(u, key)
+  if not key then
+    key = "refs"
+  end
+  local value = symbol_value(u)
+  local scope = find(u, "scope")
+  while scope do
+    local names = scope.names
+    for i = #names, 1, -1 do
+      local name = names[i]
+      if name.value == value then
+        local refs = name[key]
+        refs[#refs + 1] = u.id
+        return true
+      end
+    end
+    scope = scope.parent
+  end
+end
+
+local function def_name(u)
+  return ref_name(u, "defs")
+end
+
+local function decl_label(u)
+  local value = symbol_value(u)
+  local scope = find(u, "scope")
+  local labels = scope.labels
+  for i = 1, #labels do
+    local label = labels[i]
+    if label.value == value then
+      return nil, "label already defined"
+    end
+  end
+  labels[#labels + 1] = {
+    value = symbol_value(u);
+    defs = { u.id };
+    refs = {};
+  }
+  return true
+end
+
+local function ref_label(u)
+  local value = symbol_value(u)
+  local proto = find(u, "proto")
+  local scope = find(u, "scope")
+  while scope and scope.proto == proto do
+    local labels = scope.labels
+    for i = #labels, 1, -1 do
+      local label = labels[i]
+      if label.value == value then
+        local refs = label.refs
+        refs[#refs + 1] = u.id
+        return true
+      end
+    end
+    scope = scope.parent
+  end
+  return nil, "no visible label"
+end
+
+local function ref_constant(type, u, value)
+  local proto = find(u, "proto")
   local constants = proto.constants
   local n = #constants
-  for i = n, 1, -1 do
+  for i = 1, n do
     local constant = constants[i]
     if constant.type == type and constant.value == value then
       local refs = constant.refs
-      refs[#refs + 1] = node_id
-      return "K" .. i
+      refs[#refs + 1] = u.id
+      return n
     end
   end
   n = n + 1
   constants[n] = {
     type = type;
     value = value;
-    refs = { node_id };
+    refs = { u.id };
   }
-  return "K" .. n
-end
-
-local function declare_name(scope, node_id, value, r)
-  local vars = scope.proto.vars
-  local n = #vars + 1
-  vars[n] = {
-    decl = node_id;
-    refs = {};
-    r = r;
-    value = value;
-  }
-  local names = scope.names
-  names[#names + 1] = {
-    ["local"] = n;
-    value = value;
-  }
-end
-
-local function ref_name(scope, node_id, value)
-  local vars = scope.proto.vars
-  local names = scope.names
-  for i = #names, 1, -1 do
-    local name = names[i]
-    if name.value == value then
-      local var = vars[name["local"]]
-      local refs = var.refs
-      refs[#refs + 1] = node_id
-      return var.r
-    end
-  end
 end
 
 local function copy_codes(result, source)
@@ -111,6 +159,17 @@ local function common_path(path1, path2, result)
   return result
 end
 
+local function make_refs_html(html, refs)
+  for i = 1, #refs do
+    local ref = refs[i]
+    if i > 1 then
+      html[#html + 1] = ","
+    end
+    html[#html + 1] = { "span"; ["data-ref"] = ref; "#" .. ref }
+  end
+  return html
+end
+
 local source_file, html_file = ...
 local source
 
@@ -133,17 +192,9 @@ local root = assert(parser(terminal_nodes, source, file))
 
 root.path = {}
 
-local id = 0
-local nodes = {}
-
-local protos = {}
-local proto
-
-local env = {
-  names = {};
-  labels = {};
-}
-local scope = env
+local discover_nodes = {}
+local finish_nodes = {}
+local messages = {}
 
 local stack1 = { root }
 local stack2 = {}
@@ -157,143 +208,137 @@ while true do
   if u == stack2[n2] then
     stack1[n1] = nil
     stack2[n2] = nil
-    nodes[#nodes + 1] = u
-
-    local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
-    local s = u[0]
-    local s1 = u1 and u1[0]
-    local s2 = u2 and u2[0]
-    local s3 = u3 and u3[0]
-    local s4 = u4 and u4[0]
-    local codes = u.codes
-
-    if s == symbol_table.stat then
-      if s1 == symbol_table["="] then
-        for i = 1, #u3 do
-          local exp = u2[i]
-          local var = u3[i]
-          copy_codes(codes, exp.codes)
-          codes[#codes + 1] = { "MOVE", var.a, exp.a }
-        end
-      elseif s1 == symbol_table["local"] then
-        for i = 1, #u2 do
-          copy_codes(codes, u2[i].codes)
-        end
-      end
-    elseif s == symbol_table.exp then
-      local a = u.a
-      local binop = u.binop
-      if s1 == symbol_table["nil"] then
-        codes[#codes + 1] = { "LOADNIL", a }
-      elseif s1 == symbol_table["false"] then
-        codes[#codes + 1] = { "LOADBOOL", a, 0 }
-      elseif s1 == symbol_table["true"] then
-        codes[#codes + 1] = { "LOADBOOL", a, 1 }
-      elseif s1 == symbol_table.IntegerConstant then
-        local b = ref_constant(proto, u1.id, "integer", tonumber(symbol_value(u1)))
-        codes[#codes + 1] = { "LOADK", a, b }
-      elseif s1 == symbol_table.FloatConstant then
-        local b = ref_constant(proto, u1.id, "float", tonumber(symbol_value(u1)))
-        codes[#codes + 1] = { "LOADK", a, b }
-      elseif s1 == symbol_table.LiteralString then
-        local b = ref_constant(proto, u1.id, "string", symbol_value(u1))
-        codes[#codes + 1] = { "LOADK", a, b }
-      elseif binop then
-        copy_codes(codes, u2.codes)
-        copy_codes(codes, u3.codes)
-        codes[#codes + 1] = { binop, a, u2.a, u3.a }
-      end
-    elseif s == symbol_table.var then
-      u.a = ref_name(scope, u1.id, symbol_value(u1))
-    elseif s == symbol_table.namelist then
-      for i = 1, #u do
-        local v = u[i]
-        declare_name(scope, v.id, symbol_value(v), v.a)
-      end
-    end
-
-    if u.proto then
-      proto = proto.parent
-    end
-    if u.scope then
-      scope = scope.parent
-    end
+    finish_nodes[#finish_nodes + 1] = u
   else
-    id = id + 1
+    local id = #discover_nodes + 1
     u.id = id
-
+    discover_nodes[id] = u
     local path = copy_path(u.path)
     path[#path + 1] = id
-
-    if u.proto then
-      proto = {
-        parent = proto;
-        constants = {};
-        vars = {};
-        upvalues = {};
-        T = 0;
-        R = 0;
-      }
-      protos[#protos + 1] = proto
-      u.proto = proto
-    end
-    if u.scope then
-      scope = {
-        parent = scope;
-        proto = proto;
-        names = {};
-        labels = {};
-      }
-      u.scope = scope
-    end
-
-    local s = u[0]
-    local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
-    local s = u[0]
-    local s1 = u1 and u1[0]
-    local s2 = u2 and u2[0]
-    local s3 = u3 and u3[0]
-    local s4 = u4 and u4[0]
-    if s > max_terminal_symbol then
-      u.codes = {}
-    end
-    local codes = u.codes
-
-    if s == symbol_table.stat then
-      if s1 == symbol_table["local"] then
-        if s3 == symbol_table.namelist then
-          for i = 1, #u3 do
-            local exp = u2[i]
-            local name = u3[i]
-            local a = new_register(proto, "R")
-            if exp then
-              exp.a = a
-            end
-            name.a = a
-          end
-        end
-      end
-    elseif s == symbol_table.exp then
-      local a = u.a
-      if not a then
-        a = new_register(proto, "T")
-        u.a = a
-      end
-      local binop = u.binop
-      if binop then
-        u2.a = a
-        u3.a = new_register(proto, "T")
-      end
-    end
-
-    local n = #u
-    for i = n, 1, -1 do
+    for i = #u, 1, -1 do
       local v = u[i]
       v.parent = u
       v.path = path
       stack1[#stack1 + 1] = v
     end
     stack2[n2 + 1] = u
+  end
+end
+
+for i = 1, #discover_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+
+  if s == symbol_table.chunk then
+    u.protos = {}
+    u.scopes = {}
+  end
+
+  if u.proto then
+    local protos = find(u, "protos")
+    local proto = {
+      constants = {};
+    }
+    protos[#protos + 1] = proto
+    u.proto = proto
+  end
+
+  if u.scope then
+    local scopes = find(u, "scopes")
+    local scope = {
+      proto = find(u, "proto");
+      parent = find(u.parent, "scope");
+      names = {};
+      labels = {};
+    }
+    scopes[#scopes + 1] = scope
+    u.scope = scope
+  end
+
+  if s > max_terminal_symbol then
+    u.codes = {}
+  end
+end
+
+for i = 1, #discover_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+  local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
+  local s = u[0]
+  local s1 = u1 and u1[0]
+  local s2 = u2 and u2[0]
+  local s3 = u3 and u3[0]
+  local s4 = u4 and u4[0]
+  local s5 = u5 and u5[0]
+
+  if s == symbol_table.label then
+    local result, message = decl_label(u1)
+    if not result then
+      error(error_message(message, source, u1.i, source_file))
+    end
+  elseif s == symbol_table.var then
+    if s1 == symbol_table.Name then
+      local result
+      if u.def then
+        u1.ref = "def"
+      else
+        u1.ref = "ref"
+      end
+    end
+  elseif s == symbol_table.namelist then
+    local decl = u.decl
+    if not decl then
+      decl = true
+    end
+    for i = 1, #u do
+      u[i].decl = decl
+    end
+  elseif s == symbol_table.Name then
+    local decl = u.decl
+    if decl then
+      if decl == true then
+        decl_name("local", u)
+      else
+        decl_name(decl, u)
+      end
+    else
+      local ref = u.ref
+      local result
+      if ref == "def" then
+        result = def_name(u)
+      elseif ref == "ref" then
+        result = ref_name(u)
+      end
+      if not result then
+        ref_constant("string", u, symbol_value(u))
+      end
+    end
+  elseif s == symbol_table.IntegerConstant then
+    ref_constant("integer", u, tonumber(symbol_value(u)))
+  elseif s == symbol_table.FloatConstant then
+    ref_constant("float", u, tonumber(symbol_value(u)))
+  elseif s == symbol_table.LiteralString then
+    ref_constant("string", u, symbol_value(u))
+  end
+end
+
+for i = 1, #discover_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+  local s = u[0]
+  local s1 = u1 and u1[0]
+  local s2 = u2 and u2[0]
+  local s3 = u3 and u3[0]
+  local s4 = u4 and u4[0]
+
+  if s == symbol_table.stat then
+    if s1 == symbol_table["goto"] then
+      local result, message = ref_label(u2)
+      if not result then
+        error(error_message(message, source, u2.i, source_file))
+      end
+    end
   end
 end
 
@@ -427,8 +472,8 @@ local defs_html = { "defs" }
 local edges_html = { "g"; class = "edges" }
 local nodes_html = { "g"; class = "nodes" }
 
-for i = 1, #nodes do
-  local u = nodes[i]
+for i = 1, #discover_nodes do
+  local u = discover_nodes[i]
   local s = u[0]
   local ux = u.x
   local uy = u.y
@@ -472,44 +517,59 @@ for i = 1, #nodes do
   end
 end
 
-local code_html = { "div"; class = "body" }
+local name_html = { "tbody" }
+local label_html = { "tbody" }
 
-for i = 1, #nodes do
-  local u = nodes[i]
-  local codes = u.codes
-  if codes and codes[1] then
-    local code_text_html = { "div"; id = "C" .. u.id; class = "C" }
-    for j = 1, #codes do
-      local code = codes[j]
-      code_text_html[#code_text_html + 1] = table.concat(code, " ") .. "\n"
-    end
-    code_html[#code_html + 1] = code_text_html
+local scopes = root.scopes
+for i = 1, #scopes do
+  local scope = scopes[i]
+  local names = scope.names
+  for j = 1, #names do
+    local name = names[j]
+    name_html[#name_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; name.type };
+      { "td"; name.value };
+      make_refs_html({ "td" }, name.defs);
+      make_refs_html({ "td" }, name.refs);
+    }
+  end
+  local labels = scope.labels
+  for j = 1, #labels do
+    local label = labels[j]
+    label_html[#label_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; label.value };
+      make_refs_html({ "td" }, label.defs);
+      make_refs_html({ "td" }, label.refs);
+    }
   end
 end
 
-local proto_html = { "div"; class = "body" }
+local constant_html = { "tbody" }
 
+local protos = root.protos
 for i = 1, #protos do
   local proto = protos[i]
   local constants = proto.constants
-  local vars = proto.vars
-  local proto_text_html = { "div"; id = "P" .. i, class = "P" }
-
   for j = 1, #constants do
     local constant = constants[j]
-    proto_text_html[#proto_text_html + 1] = "K" .. j .. " " .. constant.value .. " (" .. constant.type .. ")\n"
+    local type = constant.type
+    local value = constant.value
+    if type == "string" then
+      value = dumper.encode_string(value)
+    end
+    constant_html[#constant_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; type };
+      { "td"; value };
+      make_refs_html({ "td" }, constant.refs)
+    }
   end
-
-  for j = 1, #vars do
-    local var = vars[j]
-    proto_text_html[#proto_text_html + 1] = var.r .. " " .. var.value .. "\n"
-  end
-
-  proto_text_html[#proto_text_html + 1] = "max(T) " .. proto.T .. "\n"
-  proto_text_html[#proto_text_html + 1] = "max(R) " .. proto.R .. "\n"
-  proto_html[#proto_html + 1] = proto_text_html
 end
-
 
 local style = ([[
 .source {
@@ -571,18 +631,65 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "code";
+    { "div"; class = "name";
       { "div"; class = "head";
-        { "span"; "Code" };
+        { "span"; "Names" };
       };
-      code_html;
+      { "div"; class = "body";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "scope" };
+              { "th"; "#" };
+              { "th"; "type" };
+              { "th"; "name" };
+              { "th"; "defs" };
+              { "th"; "refs" };
+            };
+          };
+          name_html;
+        };
+      };
     };
 
-    { "div"; class = "proto";
+    { "div"; class = "label";
       { "div"; class = "head";
-        { "span"; "Proto" };
+        { "span"; "Labels" };
       };
-      proto_html;
+      { "div"; class = "body";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "scope" };
+              { "th"; "#" };
+              { "th"; "label" };
+              { "th"; "defs" };
+              { "th"; "refs" };
+            };
+          };
+          label_html;
+        };
+      };
+    };
+
+    { "div"; class = "constant";
+      { "div"; class = "head";
+        { "span"; "Constants" };
+      };
+      { "div"; class = "body";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "proto" };
+              { "th"; "#" };
+              { "th"; "type" };
+              { "th"; "value" };
+              { "th"; "refs" };
+            };
+          };
+          constant_html;
+        };
+      };
     };
 
     { "div"; class = "menu";
@@ -591,7 +698,9 @@ write_html(out, { "html"; lang = "ja";
       };
       { "div"; class = "body";
         { "div"; class = "toggle"; ["data-toggle"] = ".tree"; "Tree"; };
-        { "div"; class = "toggle"; ["data-toggle"] = ".code"; "Code"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".name"; "Names"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".label"; "Labels"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".constant"; "Constants"; };
       };
     };
 

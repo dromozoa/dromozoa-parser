@@ -15,22 +15,24 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function f()
-  -- goto x
+local function f(count)
+  print("f", count)
+  if count > 0 then
+    f(count - 1)
+  end
 end
 
-do
-  local x = 0
-  print("1")
-  goto x
-  print("2")
-  ::x::
-  print("3")
-  -- ::x::
-  -- print("4")
-  -- goto y
+f(2)
+
+local i = 10
+for i = 1, i do
+  print(i)
+end
+for i = i, 1, -1 do
+  print(i)
 end
 
-print("4")
-::x::
-print("5")
+local t = pairs({1,2,3,4})
+for k, v, t in t do
+  print(k, v)
+end
