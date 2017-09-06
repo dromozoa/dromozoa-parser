@@ -31,6 +31,12 @@ do
   -- goto y
 end
 
-print("4")
+do
+  print("4")
+  goto x
+  print("5")
+end
+
+print("6")
 ::x::
-print("5")
+print("7")

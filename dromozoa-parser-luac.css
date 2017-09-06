@@ -155,17 +155,12 @@ body {
 }
 
 .labels {
-  display: none;
   top: 30rem;
   left: 40rem;
 }
 
 .constants {
   left: 70rem;
-}
-
-.vars {
-  left: 55rem;
 }
 
 /*

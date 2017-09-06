@@ -44,8 +44,8 @@ local function decl_name(u)
   }
   local names = scope.names
   names[#names + 1] = name
-  local vars = scope.proto.vars
-  vars[#vars + 1] = name
+  local names = scope.proto.names
+  names[#names + 1] = name
 end
 
 local function ref_upvalue(value, proto, decl_proto, index)
@@ -82,7 +82,7 @@ local function ref_name(u, key)
         if decl_proto == proto then
           return true
         else
-          ref_upvalue(value, proto, decl_proto, i)
+          -- ref_upvalue(value, proto, decl_proto, i)
           return true
         end
       end
@@ -263,7 +263,7 @@ for i = 1, #discover_nodes do
     local protos = find(u, "protos")
     local proto = {
       constants = {};
-      vars = {};
+      names = {};
       upvalues = {};
     }
     protos[#protos + 1] = proto
@@ -531,23 +531,11 @@ for i = 1, #discover_nodes do
   end
 end
 
-local names_html = { "tbody" }
 local labels_html = { "tbody" }
 
 local scopes = root.scopes
 for i = 1, #scopes do
   local scope = scopes[i]
-  local names = scope.names
-  for j = 1, #names do
-    local name = names[j]
-    names_html[#names_html + 1] = { "tr";
-      { "td"; i };
-      { "td"; j };
-      { "td"; name.value };
-      make_refs_html({ "td" }, name.defs);
-      make_refs_html({ "td" }, name.refs);
-    }
-  end
   local labels = scope.labels
   for j = 1, #labels do
     local label = labels[j]
@@ -562,7 +550,7 @@ for i = 1, #scopes do
 end
 
 local constants_html = { "tbody" }
-local vars_html = { "tbody" }
+local names_html = { "tbody" }
 
 local protos = root.protos
 for i = 1, #protos do
@@ -583,15 +571,15 @@ for i = 1, #protos do
       make_refs_html({ "td" }, constant.refs)
     }
   end
-  local vars = proto.vars
-  for j = 1, #vars do
-    local var = vars[j]
-    vars_html[#vars_html + 1] = { "tr";
+  local names = proto.names
+  for j = 1, #names do
+    local name = names[j]
+    names_html[#names_html + 1] = { "tr";
       { "td"; i };
       { "td"; j };
-      { "td"; var.value };
-      make_refs_html({ "td" }, var.defs);
-      make_refs_html({ "td" }, var.refs);
+      { "td"; name.value };
+      make_refs_html({ "td" }, name.defs);
+      make_refs_html({ "td" }, name.refs);
     }
   end
 end
@@ -656,25 +644,6 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "panel panel-table names";
-      { "div"; class = "head";
-        { "span"; "Names" };
-      };
-      { "div"; class = "body";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; colspan = 2; "#" };
-              { "th"; "name" };
-              { "th"; "def" };
-              { "th"; "ref" };
-            };
-          };
-          names_html;
-        };
-      };
-    };
-
     { "div"; class = "panel panel-table labels";
       { "div"; class = "head";
         { "span"; "Labels" };
@@ -713,9 +682,9 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "panel panel-table vars";
+    { "div"; class = "panel panel-table names";
       { "div"; class = "head";
-        { "span"; "Locals" };
+        { "span"; "Names" };
       };
       { "div"; class = "body";
         { "table";
@@ -727,7 +696,7 @@ write_html(out, { "html"; lang = "ja";
               { "th"; "ref" };
             };
           };
-          vars_html;
+          names_html;
         };
       };
     };
