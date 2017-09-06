@@ -83,21 +83,15 @@ body {
 }
 
 /*
- * tree, name, label, constant
+ * panel
  */
 
-.tree,
-.name,
-.label,
-.constant {
+.panel {
   /* display: none; */
   position: fixed;
 }
 
-.tree .head,
-.name .head,
-.label .head,
-.constant .head {
+.panel .head {
   padding: 0 0.5rem;
   background-color: rgba(0, 0, 0, 0.1682);
 }
@@ -139,27 +133,20 @@ body {
 }
 
 /*
- * name, constant
+ * panel-table
  */
 
-.name .body,
-.label .body,
-.constant .body {
+.panel-table .body {
   background-color: rgba(0, 0, 0, 0.0748);
 }
 
-.name .body table,
-.label .body table,
-.constant .body table {
+.panel-table .body table {
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
-.name .body table th,
-.name .body table td,
-.label .body table th,
-.label .body table td,
-.constant .body table th,
-.constant .body table td {
+.panel-table .body table th,
+.panel-table .body table td {
   border: solid 1px #212121;
 }
 
@@ -168,7 +155,6 @@ body {
 }
 
 .label {
-  display: none;
   top: 30rem;
   left: 40rem;
 }
@@ -176,7 +162,6 @@ body {
 .constant {
   left: 60rem;
 }
-
 
 /*
  * menu

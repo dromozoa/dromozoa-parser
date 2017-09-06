@@ -36,9 +36,12 @@
       $($(this).data("toggle")).toggle(speed);
     });
 
-    $(".tree").draggable({
-      handle: $(".tree .head")
-    }).resizable({
+    $(".panel").each(function () {
+      var $this = $(this);
+      $this.draggable({ handle: $this.find(".head") });
+    });
+
+    $(".tree").resizable({
       resize: function () {
         var $this = $(this);
         var w = $this.width();
@@ -48,18 +51,6 @@
         svg.select(".viewport > rect")
           .attr("width", w).attr("height", h);
       }
-    });
-
-    $(".name").draggable({
-      handle: $(".name .head")
-    });
-
-    $(".label").draggable({
-      handle: $(".label .head")
-    });
-
-    $(".constant").draggable({
-      handle: $(".constant .head")
     });
 
     svg.select(".viewport")
@@ -92,7 +83,7 @@
     });
 
     $("[data-ref]").on("click", function () {
-      var id = $(this).data("ref")
+      var id = $(this).data("ref");
       var $S = $(".S" + id);
       var $T = $("#T" + id);
       $(".active").removeClass("active");
