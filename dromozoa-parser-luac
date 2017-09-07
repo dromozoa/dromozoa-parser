@@ -376,7 +376,12 @@ for i = 1, #discover_nodes do
   local s4 = u4 and u4[0]
   local s5 = u5 and u5[0]
 
-  if s == symbol_table.label then
+  if s == symbol_table.parlist then
+    if s2 == symbol_table["..."] then
+      local proto = find(u, "proto")
+      proto.vararg = true
+    end
+  elseif s == symbol_table.label then
     local result, message = decl_label(u1)
     if not result then
       error(error_message(message, source, u1.i, source_file))
@@ -390,21 +395,19 @@ for i = 1, #discover_nodes do
         u1.ref = "ref"
       end
     end
+  elseif s == symbol_table.exp then
+    if s1 == symbol_table["..."] then
+      local proto = find(u, "proto")
+      if not proto.vararg then
+        error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
+      end
+    end
   elseif s == symbol_table.IntegerConstant then
     ref_constant("integer", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.FloatConstant then
     ref_constant("float", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.LiteralString then
     ref_constant("string", u, symbol_value(u))
-  elseif s == symbol_table["..."] then
-    local proto = find(u, "proto")
-    if u.decl then
-      proto.vararg = true
-    else
-      if not proto.vararg then
-        error(error_message("cannot use '...' outside a vararg function", source, u.i, source_file))
-      end
-    end
   elseif s == symbol_table.Name then
     if u.decl then
       decl_name(u)
