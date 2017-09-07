@@ -48,19 +48,60 @@ local function decl_name(u)
   names[#names + 1] = name
 end
 
-local function ref_upvalue(value, proto, decl_proto, index)
+local function find_upvalue(upvalues, name)
+  for i = 1, #upvalues do
+    local upvalue = upvalues[i]
+    if upvalue.name == name then
+      return upvalue, i
+    end
+  end
+end
+
+local function ref_upvalue(name, proto, decl_proto, index)
   while true do
-    local parent = proto.parent
-    local upvalues = proto.upvalues
-    if parent == decl_proto then
+    local parent_proto = proto.parent
+    if parent_proto == decl_proto then
+      local upvalues = proto.upvalues
+      local upvalue = find_upvalue(upvalues, name)
+      if not upvalue then
+        upvalue = { name = name }
+        upvalues[#upvalues + 1] = upvalue
+      end
+      if upvalue.index then
+        return
+      end
+      local names = parent_proto.names
+      local index
+      for i = 1, #names do
+        if names[i] == name then
+          index = i
+          break
+        end
+      end
+      assert(index)
+      upvalue.index = index
+      upvalue.in_stack = true
       break
     else
-      -- 親のローカル
-      
-
-
+      local upvalues = proto.upvalues
+      local upvalue = find_upvalue(upvalues, name)
+      if not upvalue then
+        upvalue = { name = name }
+        upvalues[#upvalues + 1] = upvalue
+      end
+      if upvalue.index then
+        return
+      end
+      local parent_upvalues = parent_proto.upvalues
+      local _, parent_index = find_upvalue(parent_upvalues, name)
+      if not parent_upvalue then
+        parent_index = #parent_upvalues + 1
+        parent_upvalues[parent_index] = { name = name }
+      end
+      upvalue.index = parent_index
+      upvalue.in_stack = false
     end
-    proto = parent
+    proto = parent_proto
   end
 end
 
@@ -82,7 +123,7 @@ local function ref_name(u, key)
         if decl_proto == proto then
           return true
         else
-          -- ref_upvalue(value, proto, decl_proto, i)
+          ref_upvalue(name, proto, decl_proto, i)
           return true
         end
       end
@@ -264,6 +305,7 @@ for i = 1, #discover_nodes do
   if u.proto then
     local protos = find(u, "protos")
     local proto = {
+      parent = find(u.parent, "proto");
       constants = {};
       names = {};
       labels = {};
@@ -534,6 +576,7 @@ end
 local constants_html = { "tbody" }
 local names_html = { "tbody" }
 local labels_html = { "tbody" }
+local upvalues_html = { "tbody" }
 
 local protos = root.protos
 for i = 1, #protos do
@@ -574,6 +617,17 @@ for i = 1, #protos do
       { "td"; label.value };
       make_refs_html({ "td" }, label.defs);
       make_refs_html({ "td" }, label.refs);
+    }
+  end
+  local upvalues = proto.upvalues
+  for j = 1, #upvalues do
+    local upvalue = upvalues[j]
+    upvalues_html[#upvalues_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; upvalue.name.value };
+      { "td"; upvalue.index };
+      { "td"; upvalue.in_stack };
     }
   end
 end
@@ -638,6 +692,25 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
+    { "div"; class = "panel panel-table constants";
+      { "div"; class = "head";
+        { "span"; "Constants" };
+      };
+      { "div"; class = "body";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; colspan = 2; "#" };
+              { "th"; "type" };
+              { "th"; "value" };
+              { "th"; "ref" };
+            };
+          };
+          constants_html;
+        };
+      };
+    };
+
     { "div"; class = "panel panel-table labels";
       { "div"; class = "head";
         { "span"; "Labels" };
@@ -657,21 +730,21 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "panel panel-table constants";
+    { "div"; class = "panel panel-table upvalues";
       { "div"; class = "head";
-        { "span"; "Constants" };
+        { "span"; "Upvalues" };
       };
       { "div"; class = "body";
         { "table";
           { "thead";
             { "tr";
               { "th"; colspan = 2; "#" };
-              { "th"; "type" };
-              { "th"; "value" };
-              { "th"; "ref" };
+              { "th"; "name" };
+              { "th"; "idx" };
+              { "th"; "in_stack" };
             };
           };
-          constants_html;
+          upvalues_html;
         };
       };
     };

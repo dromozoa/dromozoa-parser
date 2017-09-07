@@ -150,6 +150,10 @@ body {
   border: solid 1px #212121;
 }
 
+.constants {
+  left: 70rem;
+}
+
 .names {
   left: 40rem;
 }
@@ -159,7 +163,8 @@ body {
   left: 40rem;
 }
 
-.constants {
+.upvalues {
+  top: 30rem;
   left: 70rem;
 }
 
