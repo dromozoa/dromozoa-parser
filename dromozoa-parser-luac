@@ -402,7 +402,7 @@ for i = 1, #discover_nodes do
         end
         if not result then
           ref_constant("string", u, symbol_value(u))
-          ref_env(u) -- get or set
+          ref_env(u)
           u.env = true
         end
       else

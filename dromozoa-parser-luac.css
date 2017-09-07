@@ -91,8 +91,9 @@ body {
  */
 
 .panel {
-  /* display: none; */
+  display: none;
   position: fixed;
+  left: 40rem;
 }
 
 .panel .head {
@@ -154,24 +155,6 @@ body {
   border: solid 1px #212121;
 }
 
-.constants {
-  left: 70rem;
-}
-
-.names {
-  left: 40rem;
-}
-
-.labels {
-  top: 30rem;
-  left: 40rem;
-}
-
-.upvalues {
-  top: 30rem;
-  left: 70rem;
-}
-
 /*
  * menu
  */
@@ -187,7 +170,6 @@ body {
 }
 
 .menu .body {
-  display: none;
   padding: 0 0.5rem;
   background-color: rgba(0, 0, 0, 0.0748);
 }
