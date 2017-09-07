@@ -82,6 +82,10 @@ body {
   color: #C30771; /* dark_red */
 }
 
+.source .highlight-env {
+  font-weight: 700;
+}
+
 /*
  * panel
  */

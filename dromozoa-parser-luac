@@ -46,6 +46,7 @@ local function decl_name(u)
   names[#names + 1] = name
   local names = scope.proto.names
   names[#names + 1] = name
+  return true
 end
 
 local function find_upvalue(upvalues, name)
@@ -71,20 +72,17 @@ local function ref_upvalue(name, proto, decl_proto, index)
     local parent_proto = proto.parent
     if parent_proto == decl_proto then
       local parent_names = parent_proto.names
-      local parent_index
       for i = 1, #parent_names do
         if parent_names[i] == name then
-          parent_index = i
-          break
+          upvalue.in_stack = true
+          upvalue.index = i
+          return
         end
       end
-      upvalue.in_stack = true
-      upvalue.index = parent_index
-      return
     else
       local parent_upvalues = parent_proto.upvalues
       local _, parent_index = find_upvalue(parent_upvalues, name)
-      if not parent_upvalue then
+      if not parent_index then
         parent_index = #parent_upvalues + 1
         parent_upvalues[parent_index] = { name = name }
       end
@@ -95,11 +93,13 @@ local function ref_upvalue(name, proto, decl_proto, index)
   end
 end
 
-local function ref_name(u, key)
-  if not key then
+local function ref_name(u, key, value)
+  if key == nil then
     key = "refs"
   end
-  local value = symbol_value(u)
+  if value == nil then
+    value = symbol_value(u)
+  end
   local proto = find(u, "proto")
   local scope = find(u, "scope")
   while scope do
@@ -124,6 +124,10 @@ end
 
 local function def_name(u)
   return ref_name(u, "defs")
+end
+
+local function ref_env(u)
+  return ref_name(u, "refs", "_ENV")
 end
 
 local function decl_label(u)
@@ -175,7 +179,7 @@ local function ref_constant(type, u, value)
     if constant.type == type and constant.value == value then
       local refs = constant.refs
       refs[#refs + 1] = u.id
-      return n
+      return true
     end
   end
   n = n + 1
@@ -184,6 +188,7 @@ local function ref_constant(type, u, value)
     value = value;
     refs = { u.id };
   }
+  return true
 end
 
 local function copy_codes(result, source)
@@ -321,38 +326,36 @@ for i = 1, #discover_nodes do
       };
     }
 
-    local scope = {
+    u.protos = { proto }
+    u.proto = proto
+    u.scope = {
       proto = proto;
       parent = external_scope;
       names = {};
       labels = {};
     }
+  else
+    if u.proto then
+      local protos = find(u, "protos")
+      local proto = {
+        parent = find(u.parent, "proto");
+        constants = {};
+        names = {};
+        labels = {};
+        upvalues = {};
+      }
+      protos[#protos + 1] = proto
+      u.proto = proto
+    end
 
-    u.protos = { proto }
-    u.proto = proto
-    u.scope = scope
-  end
-
-  if u.proto then
-    local protos = find(u, "protos")
-    local proto = {
-      parent = find(u.parent, "proto");
-      constants = {};
-      names = {};
-      labels = {};
-      upvalues = {};
-    }
-    protos[#protos + 1] = proto
-    u.proto = proto
-  end
-
-  if u.scope then
-    u.scope = {
-      proto = find(u, "proto");
-      parent = find(u.parent, "scope");
-      names = {};
-      labels = {};
-    }
+    if u.scope then
+      u.scope = {
+        proto = find(u, "proto");
+        parent = find(u.parent, "scope");
+        names = {};
+        labels = {};
+      }
+    end
   end
 
   if s > max_terminal_symbol then
@@ -390,13 +393,19 @@ for i = 1, #discover_nodes do
       decl_name(u)
     else
       local ref = u.ref
-      local result
-      if ref == "def" then
-        result = def_name(u)
-      elseif ref == "ref" then
-        result = ref_name(u)
-      end
-      if not result then
+      if ref then
+        local result
+        if ref == "def" then
+          result = def_name(u)
+        else
+          result = ref_name(u)
+        end
+        if not result then
+          ref_constant("string", u, symbol_value(u))
+          ref_env(u) -- get or set
+          u.env = true
+        end
+      else
         ref_constant("string", u, symbol_value(u))
       end
     end
@@ -453,36 +462,45 @@ for i = 1, #terminal_nodes do
     u.path = common_path(prev_path, u.next_path)
   end
 
+  local highlight
   if s == symbol_table["false"] or s == symbol_table["true"] then
-    u.highlight = { "constant", "boolean" }
+    highlight = { "constant", "boolean" }
   elseif s == symbol_table["nil"] then
-    u.highlight = { "constant" }
+    highlight = { "constant" }
   elseif s == symbol_table["and"] or s == symbol_table["not"] or s == symbol_table["or"] or s == symbol_table[".."] then
-    u.highlight = { "statement", "operator" }
+    highlight = { "statement", "operator" }
   elseif s == symbol_table["function"] or s == symbol_table["{"] or s == symbol_table["}"] then
-    u.highlight = { "type", "structure" }
+    highlight = { "type", "structure" }
   elseif s == symbol_table["end"] then
     if u.funcbody_end then
-      u.highlight = { "type", "structure" }
+      highlight = { "type", "structure" }
     else
-      u.highlight = { "statement" }
+      highlight = { "statement" }
     end
   elseif s == symbol_table.Name then
-    u.highlight = { "identifier" }
+    highlight = { "identifier" }
   elseif s == symbol_table.LiteralString then
-    u.highlight = { "constant", "string" }
+    highlight = { "constant", "string" }
   elseif s == symbol_table.IntegerConstant then
-    u.highlight = { "constant", "number", "integer" }
+    highlight = { "constant", "number", "integer" }
   elseif s == symbol_table.FloatConstant then
-    u.highlight = { "constant", "number", "float" }
+    highlight = { "constant", "number", "float" }
   else
     local value = symbol_value(u)
     if value:find("^[a-z]") then
-      u.highlight = { "statement" }
+      highlight = { "statement" }
     elseif value:find("^[+%-*/%%^#&~|<>=]") then
-      u.highlight = { "statement", "operator" }
+      highlight = { "statement", "operator" }
     end
   end
+  if u.env then
+    if highlight then
+      highlight[#highlight + 1] = "env"
+    else
+      highlight = { "env" }
+    end
+  end
+  u.highlight = highlight
 end
 
 local line_number = source:find("\n$") and 0 or 1
@@ -745,6 +763,25 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
+    { "div"; class = "panel panel-table names";
+      { "div"; class = "head";
+        { "span"; "Names" };
+      };
+      { "div"; class = "body";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; colspan = 2; "#" };
+              { "th"; "name" };
+              { "th"; "value" };
+              { "th"; "ref" };
+            };
+          };
+          names_html;
+        };
+      };
+    };
+
     { "div"; class = "panel panel-table labels";
       { "div"; class = "head";
         { "span"; "Labels" };
@@ -785,25 +822,6 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
-    { "div"; class = "panel panel-table names";
-      { "div"; class = "head";
-        { "span"; "Names" };
-      };
-      { "div"; class = "body";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; colspan = 2; "#" };
-              { "th"; "name" };
-              { "th"; "value" };
-              { "th"; "ref" };
-            };
-          };
-          names_html;
-        };
-      };
-    };
-
     { "div"; class = "menu";
       { "div"; class = "head";
         { "span"; class = "fa fa-bars" };
@@ -813,6 +831,7 @@ write_html(out, { "html"; lang = "ja";
         { "div"; class = "toggle"; ["data-toggle"] = ".names"; "Names"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".labels"; "Labels"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".constants"; "Constants"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".upvalues"; "Upvalues"; };
       };
     };
 
