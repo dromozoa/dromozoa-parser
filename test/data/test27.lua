@@ -20,6 +20,7 @@ local f1 = function (a, ...)
   local f2 = function ()
     -- print(...)
   end
+  f2()
 end
 
-f(1, 2, 3)
+f1(1, 2, 3)
