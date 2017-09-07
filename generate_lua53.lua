@@ -140,7 +140,7 @@ _ :left "or"
   :right "^"
 
 _"chunk"
-  :_ "block" :attr "proto" :attr "scope"
+  :_ "block"
 
 _"block"
   :_ ()

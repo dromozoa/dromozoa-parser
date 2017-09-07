@@ -253,7 +253,6 @@ root.path = {}
 
 local discover_nodes = {}
 local finish_nodes = {}
-local messages = {}
 
 local stack1 = { root }
 local stack2 = {}
@@ -289,7 +288,49 @@ for i = 1, #discover_nodes do
   local s = u[0]
 
   if s == symbol_table.chunk then
-    u.protos = {}
+    local env_name = {
+      value = "_ENV";
+      defs = {};
+      refs = {};
+    }
+
+    local external_proto = {
+      constants = {};
+      names = { env_name };
+      labels = {};
+      upvalues = {};
+    }
+
+    local external_scope = {
+      proto = external_proto;
+      names = { env_name };
+      labels = {};
+    }
+
+    local proto = {
+      parent = external_proto;
+      constants = {};
+      names = {};
+      labels = {};
+      upvalues = {
+        {
+          name = env_name;
+          in_stack = true;
+          index = 1;
+        }
+      };
+    }
+
+    local scope = {
+      proto = proto;
+      parent = external_scope;
+      names = {};
+      labels = {};
+    }
+
+    u.protos = { proto }
+    u.proto = proto
+    u.scope = scope
   end
 
   if u.proto then
@@ -612,10 +653,13 @@ for i = 1, #protos do
   local upvalues = proto.upvalues
   for j = 1, #upvalues do
     local upvalue = upvalues[j]
+    local name = upvalue.name
     upvalues_html[#upvalues_html + 1] = { "tr";
       { "td"; i };
       { "td"; j };
-      { "td"; upvalue.name.value };
+      { "td"; name.value };
+      make_refs_html({ "td" }, name.defs);
+      make_refs_html({ "td" }, name.refs);
       { "td"; upvalue.index };
       { "td"; upvalue.in_stack };
     }
@@ -730,6 +774,8 @@ write_html(out, { "html"; lang = "ja";
             { "tr";
               { "th"; colspan = 2; "#" };
               { "th"; "name" };
+              { "th"; "def" };
+              { "th"; "ref" };
               { "th"; "idx" };
               { "th"; "in_stack" };
             };
