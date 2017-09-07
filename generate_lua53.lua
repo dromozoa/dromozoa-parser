@@ -294,8 +294,8 @@ _"funcbody"
 
 _"parlist"
   :_ "namelist"
-  :_ "namelist" "," "..." {1,3}
-  :_ "..." {"namelist",1}
+  :_ "namelist" "," "..." :attr(3, "decl") {1,3}
+  :_ "..." :attr(1, "decl") {"namelist",1}
 
 _"tableconstructor"
   :_ "{" "}" {}

@@ -137,7 +137,7 @@ local function decl_label(u)
   for i = 1, #labels do
     local label = labels[i]
     if label.value == value then
-      return nil, "label already defined"
+      return nil, "label '" .. value ..  "' already defined"
     end
   end
   local label = {
@@ -167,7 +167,7 @@ local function ref_label(u)
     end
     scope = scope.parent
   end
-  return nil, "no visible label"
+  return nil, "no visible label '" .. value .. "'"
 end
 
 local function ref_constant(type, u, value)
@@ -324,6 +324,7 @@ for i = 1, #discover_nodes do
           index = 1;
         }
       };
+      vararg = true;
     }
 
     u.protos = { proto }
@@ -343,6 +344,7 @@ for i = 1, #discover_nodes do
         names = {};
         labels = {};
         upvalues = {};
+        vararg = false;
       }
       protos[#protos + 1] = proto
       u.proto = proto
@@ -388,6 +390,21 @@ for i = 1, #discover_nodes do
         u1.ref = "ref"
       end
     end
+  elseif s == symbol_table.IntegerConstant then
+    ref_constant("integer", u, tonumber(symbol_value(u)))
+  elseif s == symbol_table.FloatConstant then
+    ref_constant("float", u, tonumber(symbol_value(u)))
+  elseif s == symbol_table.LiteralString then
+    ref_constant("string", u, symbol_value(u))
+  elseif s == symbol_table["..."] then
+    local proto = find(u, "proto")
+    if u.decl then
+      proto.vararg = true
+    else
+      if not proto.vararg then
+        error(error_message("cannot use '...' outside a vararg function", source, u.i, source_file))
+      end
+    end
   elseif s == symbol_table.Name then
     if u.decl then
       decl_name(u)
@@ -409,12 +426,6 @@ for i = 1, #discover_nodes do
         ref_constant("string", u, symbol_value(u))
       end
     end
-  elseif s == symbol_table.IntegerConstant then
-    ref_constant("integer", u, tonumber(symbol_value(u)))
-  elseif s == symbol_table.FloatConstant then
-    ref_constant("float", u, tonumber(symbol_value(u)))
-  elseif s == symbol_table.LiteralString then
-    ref_constant("string", u, symbol_value(u))
   end
 end
 
