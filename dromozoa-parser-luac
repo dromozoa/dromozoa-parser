@@ -59,47 +59,37 @@ end
 
 local function ref_upvalue(name, proto, decl_proto, index)
   while true do
+    local upvalues = proto.upvalues
+    local upvalue = find_upvalue(upvalues, name)
+    if not upvalue then
+      upvalue = { name = name }
+      upvalues[#upvalues + 1] = upvalue
+    end
+    if upvalue.index then
+      return
+    end
     local parent_proto = proto.parent
     if parent_proto == decl_proto then
-      local upvalues = proto.upvalues
-      local upvalue = find_upvalue(upvalues, name)
-      if not upvalue then
-        upvalue = { name = name }
-        upvalues[#upvalues + 1] = upvalue
-      end
-      if upvalue.index then
-        return
-      end
-      local names = parent_proto.names
-      local index
-      for i = 1, #names do
-        if names[i] == name then
-          index = i
+      local parent_names = parent_proto.names
+      local parent_index
+      for i = 1, #parent_names do
+        if parent_names[i] == name then
+          parent_index = i
           break
         end
       end
-      assert(index)
-      upvalue.index = index
       upvalue.in_stack = true
-      break
+      upvalue.index = parent_index
+      return
     else
-      local upvalues = proto.upvalues
-      local upvalue = find_upvalue(upvalues, name)
-      if not upvalue then
-        upvalue = { name = name }
-        upvalues[#upvalues + 1] = upvalue
-      end
-      if upvalue.index then
-        return
-      end
       local parent_upvalues = parent_proto.upvalues
       local _, parent_index = find_upvalue(parent_upvalues, name)
       if not parent_upvalue then
         parent_index = #parent_upvalues + 1
         parent_upvalues[parent_index] = { name = name }
       end
-      upvalue.index = parent_index
       upvalue.in_stack = false
+      upvalue.index = parent_index
     end
     proto = parent_proto
   end
