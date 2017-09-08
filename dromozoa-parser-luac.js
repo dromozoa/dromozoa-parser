@@ -92,6 +92,7 @@
       $S.addClass("active");
       $T.addClass("active");
       move_s($S);
+      move_t($T);
     });
   });
 }(this.self));

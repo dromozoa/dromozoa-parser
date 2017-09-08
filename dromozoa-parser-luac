@@ -223,7 +223,8 @@ local function common_path(path1, path2, result)
   return result
 end
 
-local function make_refs_html(html, refs)
+local function make_ref_html(refs)
+  local html = { "td" }
   for i = 1, #refs do
     local ref = refs[i]
     if i > 1 then
@@ -688,7 +689,7 @@ for i = 1, #protos do
       { "td"; j };
       { "td"; type };
       { "td"; value };
-      make_refs_html({ "td" }, constant.refs)
+      make_ref_html(constant.refs)
     }
   end
   local names = proto.names
@@ -698,8 +699,8 @@ for i = 1, #protos do
       { "td"; i };
       { "td"; j };
       { "td"; name.value };
-      make_refs_html({ "td" }, name.defs);
-      make_refs_html({ "td" }, name.refs);
+      make_ref_html(name.defs);
+      make_ref_html(name.refs);
     }
   end
   local labels = proto.labels
@@ -709,8 +710,8 @@ for i = 1, #protos do
       { "td"; i };
       { "td"; j };
       { "td"; label.value };
-      make_refs_html({ "td" }, label.defs);
-      make_refs_html({ "td" }, label.refs);
+      make_ref_html(label.defs);
+      make_ref_html(label.refs);
     }
   end
   local upvalues = proto.upvalues
@@ -721,8 +722,8 @@ for i = 1, #protos do
       { "td"; i };
       { "td"; j };
       { "td"; name.value };
-      make_refs_html({ "td" }, name.defs);
-      make_refs_html({ "td" }, name.refs);
+      make_ref_html(name.defs);
+      make_ref_html(name.refs);
       { "td"; upvalue.index };
       { "td"; upvalue.stack };
     }
