@@ -44,16 +44,16 @@ local function ref_constant(type, u, value)
     if constant.type == type and constant.value == value then
       local refs = constant.refs
       refs[#refs + 1] = u.id
-      return true
+      return { "K", i }
     end
   end
-  n = n + 1
-  constants[n] = {
+  local index = n + 1
+  constants[index] = {
     type = type;
     value = value;
     refs = { u.id };
   }
-  return true
+  return { "K", index }
 end
 
 local function decl_name(u)
@@ -66,8 +66,9 @@ local function decl_name(u)
   local names = scope.names
   names[#names + 1] = name
   local names = scope.proto.names
-  names[#names + 1] = name
-  return true
+  local index = #names + 1
+  names[index] = name
+  return { "S", index }
 end
 
 local function find_upvalue(upvalues, name)
@@ -82,13 +83,14 @@ end
 local function ref_upvalue(name, proto, decl_proto)
   while true do
     local upvalues = proto.upvalues
-    local upvalue = find_upvalue(upvalues, name)
+    local upvalue, index = find_upvalue(upvalues, name)
     if not upvalue then
       upvalue = { name = name }
-      upvalues[#upvalues + 1] = upvalue
+      index = #upvalues + 1
+      upvalues[index] = upvalue
     end
     if upvalue.index then
-      return
+      return { "U", index }
     end
     local parent_proto = proto.parent
     if parent_proto == decl_proto then
@@ -97,7 +99,7 @@ local function ref_upvalue(name, proto, decl_proto)
         if parent_names[i] == name then
           upvalue.stack = true
           upvalue.index = i
-          return
+          return { "U", index }
         end
       end
     else
@@ -132,10 +134,9 @@ local function ref_name(u, key, value)
         refs[#refs + 1] = u.id
         local decl_proto = scope.proto
         if decl_proto == proto then
-          return true
+          return { "S", i }
         else
-          ref_upvalue(name, proto, decl_proto)
-          return true
+          return ref_upvalue(name, proto, decl_proto)
         end
       end
     end
@@ -168,8 +169,9 @@ local function decl_label(u)
   }
   labels[#labels + 1] = label
   local labels = scope.proto.labels
-  labels[#labels + 1] = label
-  return true
+  local index = #labels + 1
+  labels[index] = label
+  return { "L", index }
 end
 
 local function ref_label(u)
@@ -183,7 +185,7 @@ local function ref_label(u)
       if label.value == value then
         local refs = label.refs
         refs[#refs + 1] = u.id
-        return true
+        return { "L", i }
       end
     end
     scope = scope.parent
@@ -306,6 +308,8 @@ end
 for i = 1, #discover_nodes do
   local u = discover_nodes[i]
   local s = u[0]
+  local operands = {}
+  u.operands = operands
 
   if s == symbol_table.chunk then
     local env_name = {
@@ -355,6 +359,7 @@ for i = 1, #discover_nodes do
       names = {};
       labels = {};
     }
+    operands[#operands + 1] = { "P", 1 }
   else
     if u.proto then
       local proto = {
@@ -365,8 +370,10 @@ for i = 1, #discover_nodes do
         upvalues = {};
         vararg = false;
       }
-      protos[#protos + 1] = proto
+      local index = #protos + 1
+      protos[index] = proto
       u.proto = proto
+      operands[#operands + 1] = { "P", index }
     end
 
     if u.scope then
@@ -379,9 +386,6 @@ for i = 1, #discover_nodes do
     end
   end
 
-  if s > max_terminal_symbol then
-    u.codes = {}
-  end
 end
 
 for i = 1, #discover_nodes do
@@ -394,6 +398,7 @@ for i = 1, #discover_nodes do
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
   local s5 = u5 and u5[0]
+  local operands = u.operands
 
   if s == symbol_table.parlist then
     local proto = find(u, "proto")
@@ -403,7 +408,9 @@ for i = 1, #discover_nodes do
     end
   elseif s == symbol_table.label then
     local result, message = decl_label(u1)
-    if not result then
+    if result then
+      operands[#operands + 1] = result
+    else
       error(error_message(message, source, u1.i, source_file))
     end
   elseif s == symbol_table.var then
@@ -423,14 +430,14 @@ for i = 1, #discover_nodes do
       end
     end
   elseif s == symbol_table.IntegerConstant then
-    ref_constant("integer", u, tonumber(symbol_value(u)))
+    operands[#operands + 1] = ref_constant("integer", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.FloatConstant then
-    ref_constant("float", u, tonumber(symbol_value(u)))
+    operands[#operands + 1] = ref_constant("float", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.LiteralString then
-    ref_constant("string", u, symbol_value(u))
+    operands[#operands + 1] = ref_constant("string", u, symbol_value(u))
   elseif s == symbol_table.Name then
     if u.decl then
-      decl_name(u)
+      operands[#operands + 1] = decl_name(u)
     else
       local ref = u.ref
       if ref then
@@ -440,13 +447,15 @@ for i = 1, #discover_nodes do
         else
           result = ref_name(u)
         end
-        if not result then
-          ref_constant("string", u, symbol_value(u))
-          ref_env(u)
+        if result then
+          operands[#operands + 1] = result
+        else
+          operands[#operands + 1] = ref_env(u)
+          operands[#operands + 1] = ref_constant("string", u, symbol_value(u))
           u.env = true
         end
       else
-        ref_constant("string", u, symbol_value(u))
+        operands[#operands + 1] = ref_constant("string", u, symbol_value(u))
       end
     end
   end
@@ -462,11 +471,14 @@ for i = 1, #discover_nodes do
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
   local s5 = u5 and u5[0]
+  local operands = u.operands
 
   if s == symbol_table.stat then
     if s1 == symbol_table["goto"] then
       local result, message = ref_label(u2)
-      if not result then
+      if result then
+        operands[#operands + 1] = result
+      else
         error(error_message(message, source, u2.i, source_file))
       end
     end
@@ -608,7 +620,7 @@ end
 local tree_width = 640
 local tree_height = 480
 local node_width = 160
-local node_height = 32
+local node_height = 56
 
 tree_layout(root, node_height, node_width, "y", "x")
 
@@ -622,12 +634,13 @@ for i = 1, #discover_nodes do
   local s = u[0]
   local ux = u.x
   local uy = u.y
+  local operands = u.operands
+  local h = 24
+  local r = h * 0.5
 
   if not defs[s] then
     local name = symbol_names[s]
-    local h = 24
     local w = #name * 8 + h
-    local r = h * 0.5
     local class = {}
     defs[s] = true
     defs_html[#defs_html + 1] = { "g";
@@ -644,12 +657,34 @@ for i = 1, #discover_nodes do
     }
   end
 
-  nodes_html[#nodes_html + 1] = { "use";
-    id = "T" .. u.id;
-    class = "T";
-    transform = ("translate(%.17g,%.17g)"):format(ux, uy);
-    ["xlink:href"] = "#D" .. s;
-  }
+  if operands[1] then
+    local text_html = { "text"; y = h }
+    for i = 1, #operands do
+      local operand = operands[i]
+      if i > 1 then
+        text_html[#text_html + 1] = ","
+      end
+      text_html[#text_html + 1] = { "tspan"; operand[1] .. operand[2] }
+    end
+    nodes_html[#nodes_html + 1] = { "g";
+      transform = ("translate(%.17g,%.17g)"):format(ux, uy);
+      { "use";
+        id = "T" .. u.id;
+        class = "T";
+        ["xlink:href"] = "#D" .. s;
+      };
+      text_html;
+    }
+  else
+    nodes_html[#nodes_html + 1] = { "g";
+      transform = ("translate(%.17g,%.17g)"):format(ux, uy);
+      { "use";
+        id = "T" .. u.id;
+        class = "T";
+        ["xlink:href"] = "#D" .. s;
+      };
+    }
+  end
 
   for i = 1, #u do
     local v = u[i]
