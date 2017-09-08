@@ -25,7 +25,7 @@ local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
-local function find(u, key)
+local function attr(u, key)
   while u do
     local value = u[key]
     if value then
@@ -36,7 +36,7 @@ local function find(u, key)
 end
 
 local function ref_constant(type, u, value)
-  local proto = find(u, "proto")
+  local proto = attr(u, "proto")
   local constants = proto.constants
   local n = #constants
   for i = 1, n do
@@ -57,7 +57,7 @@ local function ref_constant(type, u, value)
 end
 
 local function decl_name(u)
-  local scope = find(u, "scope")
+  local scope = attr(u, "scope")
   local name = {
     value = symbol_value(u);
     defs = { u.id };
@@ -123,8 +123,8 @@ local function ref_name(u, key, value)
   if value == nil then
     value = symbol_value(u)
   end
-  local proto = find(u, "proto")
-  local scope = find(u, "scope")
+  local proto = attr(u, "proto")
+  local scope = attr(u, "scope")
   while scope do
     local names = scope.names
     for i = #names, 1, -1 do
@@ -154,7 +154,7 @@ end
 
 local function decl_label(u)
   local value = symbol_value(u)
-  local scope = find(u, "scope")
+  local scope = attr(u, "scope")
   local labels = scope.labels
   for i = 1, #labels do
     local label = labels[i]
@@ -176,8 +176,8 @@ end
 
 local function ref_label(u)
   local value = symbol_value(u)
-  local proto = find(u, "proto")
-  local scope = find(u, "scope")
+  local proto = attr(u, "proto")
+  local scope = attr(u, "scope")
   while scope and scope.proto == proto do
     local labels = scope.labels
     for i = #labels, 1, -1 do
@@ -325,7 +325,6 @@ for i = 1, #discover_nodes do
       upvalues = {};
       vararg = false;
       max_param = 0;
-      max_local = 1;
     }
 
     local external_scope = {
@@ -363,7 +362,7 @@ for i = 1, #discover_nodes do
   else
     if u.proto then
       local proto = {
-        parent = find(u.parent, "proto");
+        parent = attr(u.parent, "proto");
         constants = {};
         names = {};
         labels = {};
@@ -378,8 +377,8 @@ for i = 1, #discover_nodes do
 
     if u.scope then
       u.scope = {
-        proto = find(u, "proto");
-        parent = find(u.parent, "scope");
+        proto = attr(u, "proto");
+        parent = attr(u.parent, "scope");
         names = {};
         labels = {};
       }
@@ -401,7 +400,7 @@ for i = 1, #discover_nodes do
   local operands = u.operands
 
   if s == symbol_table.parlist then
-    local proto = find(u, "proto")
+    local proto = attr(u, "proto")
     proto.max_param = #u1
     if s2 == symbol_table["..."] then
       proto.vararg = true
@@ -424,7 +423,7 @@ for i = 1, #discover_nodes do
     end
   elseif s == symbol_table.exp then
     if s1 == symbol_table["..."] then
-      local proto = find(u, "proto")
+      local proto = attr(u, "proto")
       if not proto.vararg then
         error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
       end
@@ -450,8 +449,8 @@ for i = 1, #discover_nodes do
         if result then
           operands[#operands + 1] = result
         else
-          operands[#operands + 1] = ref_env(u)
           operands[#operands + 1] = ref_constant("string", u, symbol_value(u))
+          operands[#operands + 1] = ref_env(u)
           u.env = true
         end
       else
@@ -483,11 +482,6 @@ for i = 1, #discover_nodes do
       end
     end
   end
-end
-
-for i = 1, #protos do
-  local proto = protos[i]
-  proto.max_local = #proto.names
 end
 
 local next_path = {}
@@ -709,7 +703,6 @@ for i = 1, #protos do
     { "td"; i };
     { "td"; proto.vararg };
     { "td"; proto.max_param };
-    { "td"; proto.max_local };
   }
   local constants = proto.constants
   for j = 1, #constants do
@@ -830,7 +823,6 @@ write_html(out, { "html"; lang = "en";
           { "th"; "#" };
           { "th"; "vararg" };
           { "th"; "max_param" };
-          { "th"; "max_local" };
         };
       }, protos_html);
     };
