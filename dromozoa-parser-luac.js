@@ -38,7 +38,10 @@
 
     $(".panel").each(function () {
       var $this = $(this);
-      $this.draggable({ handle: $this.find(".head") });
+      $this.draggable({
+        scroll: false,
+        handle: $this.find(".head")
+      });
     });
 
     $(".tree").resizable({
@@ -64,7 +67,6 @@
     $(".S").on("click", function () {
       var $S = $(this);
       var $T = $("#T" + $S.attr("id").substr(1));
-
       $(".active").removeClass("active");
       $T.addClass("active");
       $S.addClass("active");
@@ -75,7 +77,6 @@
       var $T = $(this);
       var id = $T.attr("id").substr(1);
       var $S = $(".S" + id);
-
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
@@ -86,11 +87,11 @@
       var id = $(this).data("ref");
       var $S = $(".S" + id);
       var $T = $("#T" + id);
+
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
       move_s($S);
-      move_t($T);
     });
   });
 }(this.self));
