@@ -289,10 +289,10 @@ _"functiondef"
   :_ "function" "funcbody"
 
 _"funcbody"
-  :_ "(" ")" "block" "end" :attr "proto" :attr "scope" :attr(4, "funcbody_end") {"parlist",3}
   :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {2,4}
 
 _"parlist"
+  :_ () {"namelist"}
   :_ "namelist"
   :_ "namelist" "," "..." {1,3}
   :_ "..." {"namelist",1}

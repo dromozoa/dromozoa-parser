@@ -74,7 +74,7 @@ local function ref_upvalue(name, proto, decl_proto, index)
       local parent_names = parent_proto.names
       for i = 1, #parent_names do
         if parent_names[i] == name then
-          upvalue.in_stack = true
+          upvalue.stack = true
           upvalue.index = i
           return
         end
@@ -86,7 +86,7 @@ local function ref_upvalue(name, proto, decl_proto, index)
         parent_index = #parent_upvalues + 1
         parent_upvalues[parent_index] = { name = name }
       end
-      upvalue.in_stack = false
+      upvalue.stack = false
       upvalue.index = parent_index
     end
     proto = parent_proto
@@ -258,6 +258,7 @@ root.path = {}
 
 local discover_nodes = {}
 local finish_nodes = {}
+local protos
 
 local stack1 = { root }
 local stack2 = {}
@@ -304,6 +305,9 @@ for i = 1, #discover_nodes do
       names = { env_name };
       labels = {};
       upvalues = {};
+      vararg = false;
+      max_param = 0;
+      max_local = 1;
     }
 
     local external_scope = {
@@ -320,14 +324,16 @@ for i = 1, #discover_nodes do
       upvalues = {
         {
           name = env_name;
-          in_stack = true;
+          stack = true;
           index = 1;
         }
       };
       vararg = true;
+      max_param = 0;
     }
 
-    u.protos = { proto }
+    protos = { proto }
+
     u.proto = proto
     u.scope = {
       proto = proto;
@@ -337,7 +343,6 @@ for i = 1, #discover_nodes do
     }
   else
     if u.proto then
-      local protos = find(u, "protos")
       local proto = {
         parent = find(u.parent, "proto");
         constants = {};
@@ -377,8 +382,9 @@ for i = 1, #discover_nodes do
   local s5 = u5 and u5[0]
 
   if s == symbol_table.parlist then
+    local proto = find(u, "proto")
+    proto.max_param = #u1
     if s2 == symbol_table["..."] then
-      local proto = find(u, "proto")
       proto.vararg = true
     end
   elseif s == symbol_table.label then
@@ -435,12 +441,13 @@ end
 for i = 1, #discover_nodes do
   local u = discover_nodes[i]
   local s = u[0]
-  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+  local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
   local s = u[0]
   local s1 = u1 and u1[0]
   local s2 = u2 and u2[0]
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
+  local s5 = u5 and u5[0]
 
   if s == symbol_table.stat then
     if s1 == symbol_table["goto"] then
@@ -450,6 +457,11 @@ for i = 1, #discover_nodes do
       end
     end
   end
+end
+
+for i = 1, #protos do
+  local proto = protos[i]
+  proto.max_local = #proto.names
 end
 
 local next_path = {}
@@ -636,14 +648,20 @@ for i = 1, #discover_nodes do
   end
 end
 
+local protos_html = { "tbody" }
 local constants_html = { "tbody" }
 local names_html = { "tbody" }
 local labels_html = { "tbody" }
 local upvalues_html = { "tbody" }
 
-local protos = root.protos
 for i = 1, #protos do
   local proto = protos[i]
+  protos_html[#protos_html + 1] = { "tr";
+    { "td"; i };
+    { "td"; proto.vararg };
+    { "td"; proto.max_param };
+    { "td"; proto.max_local };
+  }
   local constants = proto.constants
   for j = 1, #constants do
     local constant = constants[j]
@@ -693,7 +711,7 @@ for i = 1, #protos do
       make_refs_html({ "td" }, name.defs);
       make_refs_html({ "td" }, name.refs);
       { "td"; upvalue.index };
-      { "td"; upvalue.in_stack };
+      { "td"; upvalue.stack };
     }
   end
 end
@@ -758,6 +776,25 @@ write_html(out, { "html"; lang = "ja";
       };
     };
 
+    { "div"; class = "panel panel-table protos";
+      { "div"; class = "head";
+        { "span"; "Protos" };
+      };
+      { "div"; class = "body";
+        { "table";
+          { "thead";
+            { "tr";
+              { "th"; "#" };
+              { "th"; "vararg" };
+              { "th"; "max_param" };
+              { "th"; "max_local" };
+            };
+          };
+          protos_html;
+        };
+      };
+    };
+
     { "div"; class = "panel panel-table constants";
       { "div"; class = "head";
         { "span"; "Constants" };
@@ -787,7 +824,7 @@ write_html(out, { "html"; lang = "ja";
             { "tr";
               { "th"; colspan = 2; "#" };
               { "th"; "name" };
-              { "th"; "value" };
+              { "th"; "def" };
               { "th"; "ref" };
             };
           };
@@ -828,7 +865,7 @@ write_html(out, { "html"; lang = "ja";
               { "th"; "def" };
               { "th"; "ref" };
               { "th"; "idx" };
-              { "th"; "in_stack" };
+              { "th"; "stack" };
             };
           };
           upvalues_html;
@@ -842,6 +879,7 @@ write_html(out, { "html"; lang = "ja";
       };
       { "div"; class = "body";
         { "div"; class = "toggle"; ["data-toggle"] = ".tree"; "Tree"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".protos"; "Protos"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".names"; "Names"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".labels"; "Labels"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".constants"; "Constants"; };
