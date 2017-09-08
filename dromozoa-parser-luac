@@ -35,6 +35,27 @@ local function find(u, key)
   end
 end
 
+local function ref_constant(type, u, value)
+  local proto = find(u, "proto")
+  local constants = proto.constants
+  local n = #constants
+  for i = 1, n do
+    local constant = constants[i]
+    if constant.type == type and constant.value == value then
+      local refs = constant.refs
+      refs[#refs + 1] = u.id
+      return true
+    end
+  end
+  n = n + 1
+  constants[n] = {
+    type = type;
+    value = value;
+    refs = { u.id };
+  }
+  return true
+end
+
 local function decl_name(u)
   local scope = find(u, "scope")
   local name = {
@@ -168,27 +189,6 @@ local function ref_label(u)
     scope = scope.parent
   end
   return nil, "no visible label '" .. value .. "'"
-end
-
-local function ref_constant(type, u, value)
-  local proto = find(u, "proto")
-  local constants = proto.constants
-  local n = #constants
-  for i = 1, n do
-    local constant = constants[i]
-    if constant.type == type and constant.value == value then
-      local refs = constant.refs
-      refs[#refs + 1] = u.id
-      return true
-    end
-  end
-  n = n + 1
-  constants[n] = {
-    type = type;
-    value = value;
-    refs = { u.id };
-  }
-  return true
 end
 
 local function copy_codes(result, source)
