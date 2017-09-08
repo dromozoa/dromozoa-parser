@@ -79,7 +79,7 @@ local function find_upvalue(upvalues, name)
   end
 end
 
-local function ref_upvalue(name, proto, decl_proto, index)
+local function ref_upvalue(name, proto, decl_proto)
   while true do
     local upvalues = proto.upvalues
     local upvalue = find_upvalue(upvalues, name)
@@ -134,7 +134,7 @@ local function ref_name(u, key, value)
         if decl_proto == proto then
           return true
         else
-          ref_upvalue(name, proto, decl_proto, i)
+          ref_upvalue(name, proto, decl_proto)
           return true
         end
       end
