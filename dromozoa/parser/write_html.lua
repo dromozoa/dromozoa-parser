@@ -18,6 +18,24 @@
 local dumper = require "dromozoa.parser.dumper"
 local escape_html = require "dromozoa.parser.escape_html"
 
+local void_elements = {
+  area = true;
+  base = true;
+  br = true;
+  col = true;
+  embed = true;
+  hr = true;
+  img = true;
+  input = true;
+  keygen = true;
+  link = true;
+  meta = true;
+  param = true;
+  source = true;
+  track = true;
+  wbr = true;
+}
+
 local function write_html(out, node)
   local number_keys, string_keys = dumper.keys(node)
   local name = node[1]
@@ -42,29 +60,31 @@ local function write_html(out, node)
     end
   end
   out:write(">")
-  if name == "script" or name == "style" then
-    local value = table.concat(node, "", 2, number_keys[#number_keys])
-    if value:find("[<&]") then
-      assert(not value:find("%]%]>"))
-      if name == "script" then
-        out:write("//<![CDATA[\n", value, "//]]>")
+  if not void_elements[name] then
+    if name == "script" or name == "style" then
+      local value = table.concat(node, "", 2, number_keys[#number_keys])
+      if value:find("[<&]") then
+        assert(not value:find("%]%]>"))
+        if name == "script" then
+          out:write("//<![CDATA[\n", value, "//]]>")
+        else
+          out:write("/*<![CDATA[*/\n", value, "/*]]>*/")
+        end
       else
-        out:write("/*<![CDATA[*/\n", value, "/*]]>*/")
+        out:write(value)
       end
     else
-      out:write(value)
-    end
-  else
-    for i = 2, number_keys[#number_keys]  do
-      local value = node[i]
-      if type(value) == "table" then
-        write_html(out, value)
-      else
-        out:write(escape_html(tostring(value)))
+      for i = 2, number_keys[#number_keys]  do
+        local value = node[i]
+        if type(value) == "table" then
+          write_html(out, value)
+        else
+          out:write(escape_html(tostring(value)))
+        end
       end
     end
+    out:write("</", name, ">")
   end
-  out:write("</", name, ">")
 end
 
 return write_html

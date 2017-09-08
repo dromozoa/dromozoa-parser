@@ -143,6 +143,7 @@ body {
 
 .panel-table .body {
   background-color: rgba(0, 0, 0, 0.0748);
+  min-height: 1.5rem;
 }
 
 .panel-table .body table {

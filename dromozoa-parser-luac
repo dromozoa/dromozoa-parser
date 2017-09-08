@@ -234,6 +234,19 @@ local function make_refs_html(html, refs)
   return html
 end
 
+local function make_panel_body_html(thead_html, tbody_html)
+  if #tbody_html > 1 then
+    return { "div"; class = "body";
+      { "table";
+        thead_html;
+        tbody_html;
+      };
+    }
+  else
+    return { "div"; class = "body" }
+  end
+end
+
 local source_file, html_file = ...
 local source
 
@@ -742,7 +755,7 @@ local script = ([[
 
 local out = assert(io.open(html_file, "w"))
 out:write("<!DOCTYPE html>")
-write_html(out, { "html"; lang = "ja";
+write_html(out, { "html"; lang = "en";
   { "head";
     { "meta"; charset = "UTF-8" };
     { "meta"; name = "viewport"; content = "width=device-width, initial-scale=1, shrink-to-fit=no" };
@@ -757,9 +770,7 @@ write_html(out, { "html"; lang = "ja";
     source_html;
 
     { "div"; class = "panel panel-svg tree";
-      { "div"; class = "head";
-        { "span"; "Tree" };
-      };
+      { "div"; class = "head"; "Tree" };
       { "div"; class = "body";
         { "svg"; class = "body"; width = tree_width; height = tree_height;
           defs_html;
@@ -777,106 +788,69 @@ write_html(out, { "html"; lang = "ja";
     };
 
     { "div"; class = "panel panel-table protos";
-      { "div"; class = "head";
-        { "span"; "Protos" };
-      };
-      { "div"; class = "body";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; "#" };
-              { "th"; "vararg" };
-              { "th"; "max_param" };
-              { "th"; "max_local" };
-            };
-          };
-          protos_html;
+      { "div"; class = "head"; "Protos" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; "#" };
+          { "th"; "vararg" };
+          { "th"; "max_param" };
+          { "th"; "max_local" };
         };
-      };
+      }, protos_html);
     };
 
     { "div"; class = "panel panel-table constants";
-      { "div"; class = "head";
-        { "span"; "Constants" };
-      };
-      { "div"; class = "body";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; colspan = 2; "#" };
-              { "th"; "type" };
-              { "th"; "value" };
-              { "th"; "ref" };
-            };
-          };
-          constants_html;
+      { "div"; class = "head"; "Constants" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "type" };
+          { "th"; "value" };
+          { "th"; "ref" };
         };
-      };
+      }, constants_html);
     };
 
     { "div"; class = "panel panel-table names";
-      { "div"; class = "head";
-        { "span"; "Names" };
-      };
-      { "div"; class = "body";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; colspan = 2; "#" };
-              { "th"; "name" };
-              { "th"; "def" };
-              { "th"; "ref" };
-            };
-          };
-          names_html;
+      { "div"; class = "head"; "Names" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "name" };
+          { "th"; "def" };
+          { "th"; "ref" };
         };
-      };
+      }, names_html);
     };
 
     { "div"; class = "panel panel-table labels";
-      { "div"; class = "head";
-        { "span"; "Labels" };
-      };
-      { "div"; class = "body";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; colspan = 2; "#" };
-              { "th"; "label" };
-              { "th"; "def" };
-              { "th"; "ref" };
-            };
-          };
-          labels_html;
+      { "div"; class = "head"; "Labels" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "label" };
+          { "th"; "def" };
+          { "th"; "ref" };
         };
-      };
+      }, labels_html);
     };
 
     { "div"; class = "panel panel-table upvalues";
-      { "div"; class = "head";
-        { "span"; "Upvalues" };
-      };
-      { "div"; class = "body";
-        { "table";
-          { "thead";
-            { "tr";
-              { "th"; colspan = 2; "#" };
-              { "th"; "name" };
-              { "th"; "def" };
-              { "th"; "ref" };
-              { "th"; "idx" };
-              { "th"; "stack" };
-            };
-          };
-          upvalues_html;
+      { "div"; class = "head"; "Upvalues" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "name" };
+          { "th"; "def" };
+          { "th"; "ref" };
+          { "th"; "idx" };
+          { "th"; "stack" };
         };
-      };
+      }, upvalues_html);
     };
 
     { "div"; class = "menu";
-      { "div"; class = "head";
-        { "span"; class = "fa fa-bars" };
-      };
+      { "div"; class = "head"; { "span"; class = "fa fa-bars" } };
       { "div"; class = "body";
         { "div"; class = "toggle"; ["data-toggle"] = ".tree"; "Tree"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".protos"; "Protos"; };
