@@ -280,8 +280,8 @@ _"functioncall"
   :_ "functioncall" ":" "Name" "args"
 
 _"args"
-  :_ "(" ")"
-  :_ "(" "explist" ")"
+  :_ "(" ")" {"explist"}
+  :_ "(" "explist" ")" {2}
   :_ "tableconstructor"
   :_ "LiteralString"
 

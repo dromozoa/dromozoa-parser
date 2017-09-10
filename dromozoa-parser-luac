@@ -25,13 +25,23 @@ local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
 
-local function attr(u, key)
-  while u do
-    local value = u[key]
-    if value then
-      return value
+local function attr(u, key, value)
+  if value == nil then
+    while u do
+      local value = u[key]
+      if value ~= nil then
+        return value
+      end
+      u = u.parent
     end
-    u = u.parent
+  else
+    while u do
+      if u[key] ~= nil then
+        u[key] = value
+        return
+      end
+      u = u.parent
+    end
   end
 end
 
@@ -68,7 +78,7 @@ local function decl_name(u)
   local names = scope.proto.names
   local index = #names + 1
   names[index] = name
-  return { "S", index }
+  return { "R", index }
 end
 
 local function find_upvalue(upvalues, name)
@@ -134,7 +144,7 @@ local function ref_name(u, key, value)
         refs[#refs + 1] = u.id
         local decl_proto = scope.proto
         if decl_proto == proto then
-          return { "S", i }
+          return { "R", i }
         else
           return ref_upvalue(name, proto, decl_proto)
         end
@@ -193,19 +203,12 @@ local function ref_label(u)
   return nil, "no visible label '" .. value .. "'"
 end
 
-local function copy_codes(result, source)
-  for i = 1, #source do
-    result[#result + 1] = source[i]
-  end
-  return result
-end
-
-local function copy_path(source, result)
+local function copy(source, result)
   if result == nil then
     result = {}
   end
   for i = 1, #source do
-    result[i] = source[i]
+    result[#result + 1] = source[i]
   end
   return result
 end
@@ -293,7 +296,7 @@ while true do
     local id = #discover_nodes + 1
     u.id = id
     discover_nodes[id] = u
-    local path = copy_path(u.path)
+    local path = copy(u.path)
     path[#path + 1] = id
     for i = #u, 1, -1 do
       local v = u[i]
@@ -399,7 +402,10 @@ for i = 1, #discover_nodes do
   local s5 = u5 and u5[0]
   local operands = u.operands
 
-  if s == symbol_table.parlist then
+  if s == symbol_table.stat then
+    local scope = attr(u, "scope")
+    u.max_slot = #scope.names
+  elseif s == symbol_table.parlist then
     local proto = attr(u, "proto")
     proto.max_param = #u1
     if s2 == symbol_table["..."] then
@@ -481,6 +487,106 @@ for i = 1, #discover_nodes do
         error(error_message(message, source, u2.i, source_file))
       end
     end
+  end
+end
+
+for i = 1, #finish_nodes do
+  local u = finish_nodes[i]
+  local s = u[0]
+  local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
+  local s = u[0]
+  local s1 = u1 and u1[0]
+  local s2 = u2 and u2[0]
+  local s3 = u3 and u3[0]
+  local s4 = u4 and u4[0]
+  local s5 = u5 and u5[0]
+  local operands = u.operands
+
+  if s == symbol_table.stat then
+    if s1 == symbol_table["="] then
+      if s2 == symbol_table.explist then
+        local explist_operands = u2.operands
+        local varlist_operands = u3.operands
+        local n = #varlist_operands
+        if n > 1 then
+          local min_slot = attr(u, "max_slot") + 1
+          local max_slot = min_slot + n - 2
+          for j = min_slot, max_slot do
+            explist_operands[#explist_operands + 1] = { "R", j }
+          end
+          explist_operands[#explist_operands + 1] = varlist_operands[n]
+          attr(u, "max_slot", max_slot)
+        else
+          copy(varlist_operands, explist_operands)
+        end
+      end
+    elseif s1 == symbol_table["local"] then
+      if s2 == symbol_table.explist then
+        copy(u3.operands, u2.operands)
+      end
+    end
+  elseif s == symbol_table.varlist then
+    for j = 1, #u do
+      copy(u[j].operands, operands)
+    end
+  elseif s == symbol_table.var then
+    if s1 == symbol_table.Name then
+      copy(u1.operands, operands)
+    end
+  elseif s == symbol_table.namelist then
+    for j = 1, #u do
+      copy(u[j].operands, operands)
+    end
+  elseif s == symbol_table.prefixexp then
+    if s1 == symbol_table.var then
+      copy(u1.operands, operands)
+    end
+  elseif s == symbol_table.functioncall then
+    if s2 == symbol_table.args then
+      local min_slot = attr(u, "max_slot") + 1
+      local max_slot = min_slot + u2.argc
+      for j = min_slot, max_slot do
+        operands[#operands + 1] = { "R", j }
+      end
+      attr(u, "max_slot", max_slot)
+    end
+  elseif s == symbol_table.args then
+    if s1 == symbol_table.explist then
+      u.argc = #u1
+    else
+      u.argc = 1
+    end
+  end
+end
+
+for i = 1, #discover_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+  local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
+  local s = u[0]
+  local s1 = u1 and u1[0]
+  local s2 = u2 and u2[0]
+  local s3 = u3 and u3[0]
+  local s4 = u4 and u4[0]
+  local s5 = u5 and u5[0]
+  local operands = u.operands
+
+  if s == symbol_table.explist then
+    for j = 1, #u do
+      local exp_operands = u[j].operands
+      exp_operands[#exp_operands + 1] = operands[j]
+    end
+  elseif s == symbol_table.functioncall then
+    if s2 == symbol_table.args then
+      local exp_operands = u1.operands
+      exp_operands[#exp_operands + 1] = operands[1]
+      local args_operands = u2.operands
+      for j = 2, #operands do
+        args_operands[#args_operands + 1] = operands[j]
+      end
+    end
+  elseif s == symbol_table.args then
+    copy(u.operands, u1.operands)
   end
 end
 
@@ -651,8 +757,9 @@ for i = 1, #discover_nodes do
     }
   end
 
+  local text_html
   if operands[1] then
-    local text_html = { "text"; y = h }
+    text_html = { "text"; y = h }
     for i = 1, #operands do
       local operand = operands[i]
       if i > 1 then
@@ -660,25 +767,16 @@ for i = 1, #discover_nodes do
       end
       text_html[#text_html + 1] = { "tspan"; operand[1] .. operand[2] }
     end
-    nodes_html[#nodes_html + 1] = { "g";
-      transform = ("translate(%.17g,%.17g)"):format(ux, uy);
-      { "use";
-        id = "T" .. u.id;
-        class = "T";
-        ["xlink:href"] = "#D" .. s;
-      };
-      text_html;
-    }
-  else
-    nodes_html[#nodes_html + 1] = { "g";
-      transform = ("translate(%.17g,%.17g)"):format(ux, uy);
-      { "use";
-        id = "T" .. u.id;
-        class = "T";
-        ["xlink:href"] = "#D" .. s;
-      };
-    }
   end
+  nodes_html[#nodes_html + 1] = { "g";
+    transform = ("translate(%.17g,%.17g)"):format(ux, uy);
+    { "use";
+      id = "T" .. u.id;
+      class = "T";
+      ["xlink:href"] = "#D" .. s;
+    };
+    text_html;
+  }
 
   for i = 1, #u do
     local v = u[i]
