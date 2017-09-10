@@ -537,10 +537,6 @@ for i = 1, #finish_nodes do
     for j = 1, #u do
       copy(u[j].operands, operands)
     end
-  elseif s == symbol_table.prefixexp then
-    if s1 == symbol_table.var then
-      copy(u1.operands, operands)
-    end
   elseif s == symbol_table.functioncall then
     if s2 == symbol_table.args then
       local min_slot = attr(u, "max_slot") + 1
