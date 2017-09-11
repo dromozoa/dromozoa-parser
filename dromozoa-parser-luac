@@ -367,8 +367,6 @@ local num_nodes = #discover_nodes
 for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
-  local operands = {}
-  u.operands = operands
 
   if s == symbol_table.chunk then
     local env_name = {
