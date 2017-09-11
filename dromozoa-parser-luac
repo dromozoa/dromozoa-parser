@@ -387,7 +387,6 @@ for i = 1, #discover_nodes do
       }
     end
   end
-
 end
 
 for i = 1, #discover_nodes do
