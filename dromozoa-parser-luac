@@ -85,22 +85,26 @@ local function find_upvalue(upvalues, name)
   for i = 1, #upvalues do
     local upvalue = upvalues[i]
     if upvalue.name == name then
-      return upvalue, i
+      return i, upvalue
     end
   end
 end
 
 local function ref_upvalue(name, proto, decl_proto)
+  local start_index
   while true do
     local upvalues = proto.upvalues
-    local upvalue, index = find_upvalue(upvalues, name)
+    local index, upvalue = find_upvalue(upvalues, name)
     if not upvalue then
       upvalue = { name = name }
       index = #upvalues + 1
       upvalues[index] = upvalue
     end
+    if not start_index then
+      start_index = index
+    end
     if upvalue.index then
-      return { "U", index }
+      return { "U", start_index }
     end
     local parent_proto = proto.parent
     if parent_proto == decl_proto then
@@ -109,12 +113,12 @@ local function ref_upvalue(name, proto, decl_proto)
         if parent_names[i] == name then
           upvalue.stack = true
           upvalue.index = i
-          return { "U", index }
+          return { "U", start_index }
         end
       end
     else
       local parent_upvalues = parent_proto.upvalues
-      local _, parent_index = find_upvalue(parent_upvalues, name)
+      local parent_index = find_upvalue(parent_upvalues, name)
       if not parent_index then
         parent_index = #parent_upvalues + 1
         parent_upvalues[parent_index] = { name = name }
@@ -253,6 +257,18 @@ local function make_panel_body_html(thead_html, tbody_html)
   end
 end
 
+local function make_operand_html(operand)
+  if operand then
+    if #operand == 4 then
+      return { "tspan"; operand[1] .. operand[2] .. "[" .. operand[3] .. operand[4] .. "]" }
+    else
+      return { "tspan"; operand[1] .. operand[2] }
+    end
+  else
+    return { "tspan"; "?" }
+  end
+end
+
 local source_file, html_file = ...
 local source
 
@@ -363,7 +379,7 @@ for i = 1, num_nodes do
       names = {};
       labels = {};
     }
-    operands[#operands + 1] = { "P", 1 }
+    u.B = { "P", 1 }
   else
     if u.proto then
       local proto = {
@@ -377,7 +393,7 @@ for i = 1, num_nodes do
       local index = #protos + 1
       protos[index] = proto
       u.proto = proto
-      operands[#operands + 1] = { "P", index }
+      u.B = { "P", index }
     end
 
     if u.scope then
@@ -436,32 +452,40 @@ for i = 1, num_nodes do
       end
     end
   elseif s == symbol_table.IntegerConstant then
-    operands[#operands + 1] = ref_constant("integer", u, tonumber(symbol_value(u)))
+    u.B = ref_constant("integer", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.FloatConstant then
-    operands[#operands + 1] = ref_constant("float", u, tonumber(symbol_value(u)))
+    u.B = ref_constant("float", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.LiteralString then
-    operands[#operands + 1] = ref_constant("string", u, symbol_value(u))
+    u.B = ref_constant("string", u, symbol_value(u))
   elseif s == symbol_table.Name then
     if u.decl then
-      operands[#operands + 1] = decl_name(u)
+      u.A = decl_name(u)
     else
       local ref = u.ref
       if ref then
-        local result
         if ref == "def" then
-          result = def_name(u)
+          local result = def_name(u)
+          if result then
+            u.A = result
+          else
+            local x = ref_env(u)
+            local y = ref_constant("string", u, symbol_value(u))
+            u.A = { x[1], x[2], y[1], y[2] }
+            u.env = true
+          end
         else
-          result = ref_name(u)
-        end
-        if result then
-          operands[#operands + 1] = result
-        else
-          operands[#operands + 1] = ref_constant("string", u, symbol_value(u))
-          operands[#operands + 1] = ref_env(u)
-          u.env = true
+          local result = ref_name(u)
+          if result then
+            u.B = result
+          else
+            local x = ref_env(u)
+            local y = ref_constant("string", u, symbol_value(u))
+            u.B = { x[1], x[2], y[1], y[2] }
+            u.env = true
+          end
         end
       else
-        operands[#operands + 1] = ref_constant("string", u, symbol_value(u))
+        u.B = ref_constant("string", u, symbol_value(u))
       end
     end
   end
@@ -731,7 +755,6 @@ for i = 1, num_nodes do
   local s = u[0]
   local ux = u.x
   local uy = u.y
-  local operands = u.operands
   local h = 24
   local r = h * 0.5
 
@@ -755,16 +778,22 @@ for i = 1, num_nodes do
   end
 
   local text_html
-  if operands[1] then
-    text_html = { "text"; y = h }
-    for i = 1, #operands do
-      local operand = operands[i]
-      if i > 1 then
-        text_html[#text_html + 1] = ","
-      end
-      text_html[#text_html + 1] = { "tspan"; operand[1] .. operand[2] }
+  local A = u.A
+  local B = u.B
+  if A or B then
+    text_html = {
+      "text"; y = h;
+      make_operand_html(A);
+      "=";
+      make_operand_html(B);
+    }
+    local C = u.C
+    if C then
+      text_html[#text_html + 1] = " "
+      text_html[#text_html + 1] = make_operand_html(C)
     end
   end
+
   nodes_html[#nodes_html + 1] = { "g";
     transform = ("translate(%.17g,%.17g)"):format(ux, uy);
     { "use";
