@@ -19,6 +19,7 @@ local a, b = 1, 2
 do
   local a, b = b, a
   a, b = b * 2, a * 3
+  a, b = a * 3
   print(a, b)
 end
 a, b = b * 4, a * 5
