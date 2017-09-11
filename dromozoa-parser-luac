@@ -435,8 +435,8 @@ for i = 1, num_nodes do
   local s5 = u5 and u5[0]
 
   if s == symbol_table.stat then
-    local scope = attr(u, "scope")
-    u.max_slot = #scope.names
+    local proto = attr(u, "proto")
+    u.slot = #proto.names
     if s1 == symbol_table["goto"] then
       u2.label = true
     end
@@ -520,7 +520,29 @@ for i = 1, num_nodes do
   local s5 = u5 and u5[0]
 
   if s == symbol_table.stat then
-    if s1 == symbol_table["goto"] then
+    if s1 == symbol_table["="] then
+      local n = #u3
+      if n > 1 then
+        local slot = attr(u, "slot")
+        for j = 1, n - 1 do
+          local exp = u2[j]
+          local var = u3[j]
+          if exp then
+            slot = slot + 1
+            local operand = { "R", slot }
+            exp.A = operand
+            var.B = operand
+          end
+        end
+        attr(u, "slot", slot)
+      end
+      local exp = u2[n]
+      local var = u3[n]
+      if exp then
+        exp.A = var.A
+        var.A = nil
+      end
+    elseif s1 == symbol_table["goto"] then
       local result, message = ref_label(u2)
       if result then
         u2.B = result
@@ -545,47 +567,54 @@ for i = 1, num_nodes do
 
   if s == symbol_table.stat then
     if s1 == symbol_table["="] then
-      if s2 == symbol_table.explist then
-        local explist_operands = u2.operands
-        local varlist_operands = u3.operands
-        local n = #varlist_operands
-        if n > 1 then
-          local min_slot = attr(u, "max_slot") + 1
-          local max_slot = min_slot + n - 2
-          for j = min_slot, max_slot do
-            explist_operands[#explist_operands + 1] = { "R", j }
+      local n = #u3
+      if n > 1 then
+        local slot = attr(u, "slot")
+        for i = 1, n - 1 do
+          local exp = u2[i]
+          local var = u3[i]
+          if exp then
+            slot = slot + 1
+            local operand = { "R", slot }
+            exp.A = operand
+            var.B = operand
           end
-          explist_operands[#explist_operands + 1] = varlist_operands[n]
-          attr(u, "max_slot", max_slot)
-        else
-          copy(varlist_operands, explist_operands)
         end
+        attr(u, "slot", slot)
+      end
+      local exp = u2[n]
+      local var = u3[n]
+      if exp then
+        exp.A = var.A
+        var.A = nil
       end
     elseif s1 == symbol_table["local"] then
       if s2 == symbol_table.explist then
-        copy(u3.operands, u2.operands)
+        for j = 1, #u3 do
+          local exp = u2[j]
+          local name = u3[j]
+          if exp then
+            exp.A = name.A
+            name.A = nil
+          end
+        end
       end
-    end
-  elseif s == symbol_table.varlist then
-    for j = 1, #u do
-      copy(u[j].operands, operands)
     end
   elseif s == symbol_table.var then
     if s1 == symbol_table.Name then
-      copy(u1.operands, operands)
-    end
-  elseif s == symbol_table.namelist then
-    for j = 1, #u do
-      copy(u[j].operands, operands)
+      u.A = u1.A
+      u1.A = nil
     end
   elseif s == symbol_table.functioncall then
     if s2 == symbol_table.args then
-      local min_slot = attr(u, "max_slot") + 1
-      local max_slot = min_slot + u2.argc
-      for j = min_slot, max_slot do
-        operands[#operands + 1] = { "R", j }
-      end
-      attr(u, "max_slot", max_slot)
+      local slot = attr(u, "slot") + 1
+      u1.A = { "R", slot }
+      -- local min_slot = attr(u, "slot") + 1
+      -- local max_slot = min_slot + u2.argc
+      -- for j = min_slot, max_slot do
+      --   operands[#operands + 1] = { "R", j }
+      -- end
+      attr(u, "slot", slot)
     end
   elseif s == symbol_table.args then
     if s1 == symbol_table.explist then
