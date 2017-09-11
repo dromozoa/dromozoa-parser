@@ -308,7 +308,9 @@ while true do
   end
 end
 
-for i = 1, #discover_nodes do
+local num_nodes = #discover_nodes
+
+for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
   local operands = {}
@@ -389,7 +391,7 @@ for i = 1, #discover_nodes do
   end
 end
 
-for i = 1, #discover_nodes do
+for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
   local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
@@ -465,7 +467,7 @@ for i = 1, #discover_nodes do
   end
 end
 
-for i = 1, #discover_nodes do
+for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
   local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
@@ -489,7 +491,7 @@ for i = 1, #discover_nodes do
   end
 end
 
-for i = 1, #finish_nodes do
+for i = 1, num_nodes do
   local u = finish_nodes[i]
   local s = u[0]
   local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
@@ -554,7 +556,7 @@ for i = 1, #finish_nodes do
   end
 end
 
-for i = 1, #discover_nodes do
+for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
   local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
@@ -724,7 +726,7 @@ local defs_html = { "defs" }
 local edges_html = { "g"; class = "edges" }
 local nodes_html = { "g"; class = "nodes" }
 
-for i = 1, #discover_nodes do
+for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
   local ux = u.x
