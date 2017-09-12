@@ -18,6 +18,7 @@
 local f1 = function (a, ...)
   print(...)
   local f2 = function ()
+    print(a)
     -- print(...)
   end
   f2()

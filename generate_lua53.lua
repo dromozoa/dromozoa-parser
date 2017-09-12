@@ -158,7 +158,7 @@ _"stat"
   :_ "functioncall"
   :_ "label"
   :_ "break"
-  :_ "goto" "Name"
+  :_ "goto" "Name" :attr(2, "label")
   :_ "do" "block" "end" :attr "scope"
   :_ "while" "exp" "do" "block" "end" :attr "scope"
   :_ "repeat" "block" "until" "exp"
@@ -178,7 +178,7 @@ _"retstat"
   :_ "return" "explist" ";"
 
 _"label"
-  :_ "::" "Name" "::" {2}
+  :_ "::" "Name" "::" :attr(2, "label") {2}
 
 _"if_clauses"
   :_"if_clause"

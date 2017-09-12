@@ -54,124 +54,101 @@ local function ref_constant(type, u, value)
     if constant.type == type and constant.value == value then
       local refs = constant.refs
       refs[#refs + 1] = u.id
-      return { "K", i }
+      return constant
     end
   end
-  local index = n + 1
-  constants[index] = {
+  local constant = {
     type = type;
     value = value;
     refs = { u.id };
   }
-  return { "K", index }
+  constants[n + 1] = constant
+  return constant
 end
 
-local function decl_name(u)
+local function decl_name_impl(u, type)
   local scope = attr(u, "scope")
   local names = scope.names
-  local proto_names = scope.proto.names
-  local index = #proto_names + 1
   local name = {
-    index = index;
+    type = type;
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
+    udefs = {};
+    urefs = {};
   }
   names[#names + 1] = name
-  proto_names[index] = name
-  return { "R", index }
+  local names = scope.proto.names
+  names[#names + 1] = name
+  return name
 end
 
-local function find_upvalue(upvalues, name)
+local function param_name(u)
+  return decl_name_impl(u, "param")
+end
+
+local function decl_name(u)
+  return decl_name_impl(u, "local")
+end
+
+local function ref_upvalue(upvalues, name, parent)
   for i = 1, #upvalues do
     local upvalue = upvalues[i]
     if upvalue.name == name then
-      return upvalue, i
+      return upvalue
     end
   end
+  local upvalue = {
+    name = name;
+    parent = parent;
+  }
+  upvalues[#upvalues + 1] = upvalue
+  return upvalue
 end
 
-local function ref_upvalue(name, proto, decl_proto)
-  local upvalues = proto.upvalues
-  local upvalue, index = find_upvalue(upvalues, name)
-  if not upvalue then
-    upvalue = { name = name }
-    index = #upvalues + 1
-    upvalues[index] = upvalue
-  end
-  if upvalue.index then
-    return { "U", index }
-  end
-
-  while true do
-    local parent_proto = proto.parent
-    if parent_proto == decl_proto then
-      local parent_names = parent_proto.names
-      for i = 1, #parent_names do
-        if parent_names[i] == name then
-          upvalue.stack = true
-          upvalue.index = i
-          return { "U", index }
-        end
-      end
-    else
-      local parent_upvalues = parent_proto.upvalues
-      local _, parent_index = find_upvalue(parent_upvalues, name)
-      if not parent_index then
-        parent_index = #parent_upvalues + 1
-        parent_upvalues[parent_index] = { name = name }
-      end
-      upvalue.stack = false
-      upvalue.index = parent_index
-    end
-    proto = parent_proto
-
-    local upvalues = proto.upvalues
-    upvalue = find_upvalue(upvalues, name)
-    if not upvalue then
-      upvalue = { name = name }
-      upvalues[#upvalues + 1] = upvalue
-    end
-    if upvalue.index then
-      return { "U", index }
-    end
-  end
-end
-
-local function ref_name(u, key, value)
-  if key == nil then
-    key = "refs"
-  end
-  if value == nil then
-    value = symbol_value(u)
-  end
-  local proto = attr(u, "proto")
+local function ref_name_impl(u, key, ukey, value)
   local scope = attr(u, "scope")
-  while scope do
+  local proto = scope.proto
+  repeat
     local names = scope.names
     for i = #names, 1, -1 do
       local name = names[i]
       if name.value == value then
-        local refs = name[key]
-        refs[#refs + 1] = u.id
         local decl_proto = scope.proto
         if decl_proto == proto then
-          return { "R", name.index }
+          local refs = name[key]
+          refs[#refs + 1] = u.id
+          return name
         else
-          return ref_upvalue(name, proto, decl_proto)
+          local refs = name[ukey]
+          refs[#refs + 1] = u.id
+          local protos = {}
+          repeat
+            protos[#protos + 1] = proto
+            proto = proto.parent
+          until proto == decl_proto
+          local upvalue
+          for i = #protos, 1, -1 do
+            upvalue = ref_upvalue(protos[i].upvalues, name, upvalue)
+          end
+          return upvalue
         end
       end
     end
     scope = scope.parent
-  end
+  until not scope
+end
+
+local function ref_name(u)
+  return ref_name_impl(u, "refs", "urefs", symbol_value(u))
 end
 
 local function def_name(u)
-  return ref_name(u, "defs")
+  return ref_name_impl(u, "defs", "udefs", symbol_value(u))
 end
 
 local function ref_env(u)
-  return ref_name(u, "refs", "_ENV")
+  return ref_name_impl(u, "refs", "urefs", "_ENV")
 end
 
 local function decl_label(u)
@@ -184,24 +161,22 @@ local function decl_label(u)
       return nil, "label '" .. value ..  "' already defined"
     end
   end
-  local proto_labels = scope.proto.labels
-  local index = #proto_labels + 1
   local label = {
-    index = index;
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
   }
   labels[#labels + 1] = label
-  proto_labels[index] = label
-  return { "L", index }
+  local labels = scope.proto.labels
+  labels[#labels + 1] = label
+  return label
 end
 
 local function ref_label(u)
   local value = symbol_value(u)
-  local proto = attr(u, "proto")
   local scope = attr(u, "scope")
-  while scope and scope.proto == proto do
+  local proto = scope.proto
+  repeat
     local labels = scope.labels
     for i = 1, #labels do
       local label = labels[i]
@@ -212,7 +187,7 @@ local function ref_label(u)
       end
     end
     scope = scope.parent
-  end
+  until not scope or scope.proto ~= proto
   return nil, "no visible label '" .. value .. "'"
 end
 
@@ -251,6 +226,14 @@ local function make_ref_html(refs)
     html[#html + 1] = { "span"; ["data-ref"] = ref; "#" .. ref }
   end
   return html
+end
+
+local function make_var_html(var)
+  if var then
+    return { "td"; var[1] .. var[2] }
+  else
+    return { "td" }
+  end
 end
 
 local function make_panel_body_html(thead_html, tbody_html)
@@ -332,6 +315,8 @@ for i = 1, num_nodes do
       value = "_ENV";
       defs = {};
       refs = {};
+      udefs = {};
+      urefs = {};
     }
 
     local external_proto = {
@@ -339,7 +324,7 @@ for i = 1, num_nodes do
       names = { env_name };
       labels = {};
       upvalues = {};
-      vararg = false;
+      is_vararg = false;
       num_params = 0;
     }
 
@@ -355,14 +340,8 @@ for i = 1, num_nodes do
       constants = {};
       names = {};
       labels = {};
-      upvalues = {
-        {
-          name = env_name;
-          stack = true;
-          index = 1;
-        }
-      };
-      vararg = true;
+      upvalues = { { name = env_name } };
+      is_vararg = true;
       num_params = 0;
     }
 
@@ -385,7 +364,7 @@ for i = 1, num_nodes do
         names = {};
         labels = {};
         upvalues = {};
-        vararg = false;
+        is_vararg = false;
       }
       protos[index] = proto
       u.proto = proto
@@ -402,6 +381,8 @@ for i = 1, num_nodes do
   end
 end
 
+local num_protos = #protos
+
 for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
@@ -412,37 +393,33 @@ for i = 1, num_nodes do
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
 
-  if s == symbol_table.stat then
-    local proto = attr(u, "proto")
-    if s1 == symbol_table["goto"] then
-      u2.label = true
+  if s == symbol_table.parlist then
+    local n = #u1
+    for i = 1, n do
+      u1[i].param = true
     end
-  elseif s == symbol_table.parlist then
     local proto = attr(u, "proto")
-    proto.num_params = #u1
+    proto.num_params = n
     if s2 == symbol_table["..."] then
-      proto.vararg = true
+      proto.is_vararg = true
     end
   elseif s == symbol_table.label then
     local result, message = decl_label(u1)
-    if result then
-      u1.label = true
-    else
+    if not result then
       error(error_message(message, source, u1.i, source_file))
     end
   elseif s == symbol_table.var then
     if s1 == symbol_table.Name then
-      local result
       if u.def then
-        u1.ref = "def"
+        u1.def = true
       else
-        u1.ref = "ref"
+        u1.ref = true
       end
     end
   elseif s == symbol_table.exp then
     if s1 == symbol_table["..."] then
       local proto = attr(u, "proto")
-      if not proto.vararg then
+      if not proto.is_vararg then
         error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
       end
     end
@@ -453,29 +430,26 @@ for i = 1, num_nodes do
   elseif s == symbol_table.LiteralString then
     ref_constant("string", u, symbol_value(u))
   elseif s == symbol_table.Name then
-    if u.decl then
+    if u.param then
+      param_name(u)
+    elseif u.decl then
       decl_name(u)
-    else
-      local ref = u.ref
-      if ref then
-        if ref == "def" then
-          local result = def_name(u)
-          if not result then
-            ref_env(u)
-            ref_constant("string", u, symbol_value(u))
-            u.env = true
-          end
-        else
-          local result = ref_name(u)
-          if not result then
-            ref_env(u)
-            ref_constant("string", u, symbol_value(u))
-            u.env = true
-          end
-        end
-      elseif not u.label then
+    elseif u.def then
+      local result = def_name(u)
+      if not result then
+        ref_env(u)
         ref_constant("string", u, symbol_value(u))
+        u.env = true
       end
+    elseif u.ref then
+      local result = ref_name(u)
+      if not result then
+        ref_env(u)
+        ref_constant("string", u, symbol_value(u))
+        u.env = true
+      end
+    elseif not u.label then
+      ref_constant("string", u, symbol_value(u))
     end
   end
 end
@@ -495,6 +469,29 @@ for i = 1, num_nodes do
       local result, message = ref_label(u2)
       if not result then
         error(error_message(message, source, u2.i, source_file))
+      end
+    end
+  end
+end
+
+for i = 1, num_protos do
+  local proto = protos[i]
+  local names = proto.names
+  local B = 0
+  local T = 0
+  local R = 0
+  for j = 1, #names do
+    local name = names[j]
+    if name.type == "param" then
+      B = B + 1
+      name.var = { "B", B }
+    else
+      if #name.refs + #name.urefs > 0 then
+        T = T + 1
+        name.var = { "T", T }
+      else
+        R = R + 1
+        name.var = { "R", R }
       end
     end
   end
@@ -695,11 +692,11 @@ local names_html = { "tbody" }
 local labels_html = { "tbody" }
 local upvalues_html = { "tbody" }
 
-for i = 1, #protos do
+for i = 1, num_protos do
   local proto = protos[i]
   protos_html[#protos_html + 1] = { "tr";
     { "td"; i };
-    { "td"; proto.vararg };
+    { "td"; proto.is_vararg };
     { "td"; proto.num_params };
   }
   local constants = proto.constants
@@ -724,9 +721,13 @@ for i = 1, #protos do
     names_html[#names_html + 1] = { "tr";
       { "td"; i };
       { "td"; j };
+      { "td"; name.type };
       { "td"; name.value };
       make_ref_html(name.defs);
       make_ref_html(name.refs);
+      make_ref_html(name.udefs);
+      make_ref_html(name.urefs);
+      make_var_html(name.var);
     }
   end
   local labels = proto.labels
@@ -750,8 +751,9 @@ for i = 1, #protos do
       { "td"; name.value };
       make_ref_html(name.defs);
       make_ref_html(name.refs);
-      { "td"; upvalue.index };
-      { "td"; upvalue.stack };
+      make_ref_html(name.udefs);
+      make_ref_html(name.urefs);
+      { "td"; not upvalue.parent };
     }
   end
 end
@@ -819,7 +821,7 @@ write_html(out, { "html"; lang = "en";
       make_panel_body_html({ "thead";
         { "tr";
           { "th"; "#" };
-          { "th"; "vararg" };
+          { "th"; "is_vararg" };
           { "th"; "num_params" };
         };
       }, protos_html);
@@ -842,9 +844,13 @@ write_html(out, { "html"; lang = "en";
       make_panel_body_html({ "thead";
         { "tr";
           { "th"; colspan = 2; "#" };
+          { "th"; "type" };
           { "th"; "name" };
           { "th"; "def" };
           { "th"; "ref" };
+          { "th"; "udef" };
+          { "th"; "uref" };
+          { "th"; "var" };
         };
       }, names_html);
     };
@@ -869,8 +875,9 @@ write_html(out, { "html"; lang = "en";
           { "th"; "name" };
           { "th"; "def" };
           { "th"; "ref" };
-          { "th"; "idx" };
-          { "th"; "stack" };
+          { "th"; "udef" };
+          { "th"; "uref" };
+          { "th"; "in_stack" };
         };
       }, upvalues_html);
     };
