@@ -216,19 +216,6 @@ local function ref_label(u)
   return nil, "no visible label '" .. value .. "'"
 end
 
-local function move_operands(source, result)
-  local A = source.A
-  if A then
-    source.A = nil
-    result.A = A
-  end
-  local B = source.B
-  if B then
-    source.B = nil
-    result.B = B
-  end
-end
-
 local function copy(source, result)
   if result == nil then
     result = {}
@@ -276,34 +263,6 @@ local function make_panel_body_html(thead_html, tbody_html)
     }
   else
     return { "div"; class = "body" }
-  end
-end
-
-local function make_operand_html(operand)
-  if operand then
-    local a = operand[1]
-    if a == "[" then
-      local a = operand[2]
-      local b = operand[3]
-      return { "tspan"; a[1] .. a[2] .. "[" .. b[1] .. b[2] .. "]" }
-    elseif a == "," then
-      local a = operand[2]
-      local html = { "tspan"; a[1] .. a[2] }
-      for i = 3, #operand do
-        local a = operand[i]
-        html[#html + 1] = "," .. a[1] .. a[2]
-      end
-      return html
-    else
-      local b = operand[2]
-      if b then
-        return { "tspan"; a .. b }
-      else
-        return { "tspan"; a }
-      end
-    end
-  else
-    return { "tspan"; "?" }
   end
 end
 
@@ -381,7 +340,7 @@ for i = 1, num_nodes do
       labels = {};
       upvalues = {};
       vararg = false;
-      max_param = 0;
+      num_params = 0;
     }
 
     local external_scope = {
@@ -391,6 +350,7 @@ for i = 1, num_nodes do
     }
 
     local proto = {
+      index = 1;
       parent = external_proto;
       constants = {};
       names = {};
@@ -403,7 +363,7 @@ for i = 1, num_nodes do
         }
       };
       vararg = true;
-      max_param = 0;
+      num_params = 0;
     }
 
     protos = { proto }
@@ -415,10 +375,11 @@ for i = 1, num_nodes do
       names = {};
       labels = {};
     }
-    u.B = { "P", 1 }
   else
     if u.proto then
+      local index = #protos + 1
       local proto = {
+        index = index;
         parent = attr(u.parent, "proto");
         constants = {};
         names = {};
@@ -426,10 +387,8 @@ for i = 1, num_nodes do
         upvalues = {};
         vararg = false;
       }
-      local index = #protos + 1
       protos[index] = proto
       u.proto = proto
-      u.B = { "P", index }
     end
 
     if u.scope then
@@ -455,20 +414,18 @@ for i = 1, num_nodes do
 
   if s == symbol_table.stat then
     local proto = attr(u, "proto")
-    u.slot = #proto.names
     if s1 == symbol_table["goto"] then
       u2.label = true
     end
   elseif s == symbol_table.parlist then
     local proto = attr(u, "proto")
-    proto.max_param = #u1
+    proto.num_params = #u1
     if s2 == symbol_table["..."] then
       proto.vararg = true
     end
   elseif s == symbol_table.label then
     local result, message = decl_label(u1)
     if result then
-      u1.A = result
       u1.label = true
     else
       error(error_message(message, source, u1.i, source_file))
@@ -485,49 +442,39 @@ for i = 1, num_nodes do
   elseif s == symbol_table.exp then
     if s1 == symbol_table["..."] then
       local proto = attr(u, "proto")
-      if proto.vararg then
-        u1.B = { "..." }
-      else
+      if not proto.vararg then
         error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
       end
     end
-  elseif s == symbol_table.args then
-    if s1 == symbol_table.explist then
-      u.count = #u1
-    else
-      u.count = 1
-    end
   elseif s == symbol_table.IntegerConstant then
-    u.B = ref_constant("integer", u, tonumber(symbol_value(u)))
+    ref_constant("integer", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.FloatConstant then
-    u.B = ref_constant("float", u, tonumber(symbol_value(u)))
+    ref_constant("float", u, tonumber(symbol_value(u)))
   elseif s == symbol_table.LiteralString then
-    u.B = ref_constant("string", u, symbol_value(u))
+    ref_constant("string", u, symbol_value(u))
   elseif s == symbol_table.Name then
     if u.decl then
-      u.A = decl_name(u)
+      decl_name(u)
     else
       local ref = u.ref
       if ref then
         if ref == "def" then
           local result = def_name(u)
-          if result then
-            u.A = result
-          else
-            u.A = { "[", ref_env(u), ref_constant("string", u, symbol_value(u)) }
+          if not result then
+            ref_env(u)
+            ref_constant("string", u, symbol_value(u))
             u.env = true
           end
         else
           local result = ref_name(u)
-          if result then
-            u.B = result
-          else
-            u.B = { "[", ref_env(u), ref_constant("string", u, symbol_value(u)) }
+          if not result then
+            ref_env(u)
+            ref_constant("string", u, symbol_value(u))
             u.env = true
           end
         end
       elseif not u.label then
-        u.B = ref_constant("string", u, symbol_value(u))
+        ref_constant("string", u, symbol_value(u))
       end
     end
   end
@@ -546,117 +493,12 @@ for i = 1, num_nodes do
   if s == symbol_table.stat then
     if s1 == symbol_table["goto"] then
       local result, message = ref_label(u2)
-      if result then
-        u2.B = result
-      else
+      if not result then
         error(error_message(message, source, u2.i, source_file))
       end
     end
   end
 end
-
-for i = 1, num_nodes do
-  local u = finish_nodes[i]
-  local s = u[0]
-  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
-  local s = u[0]
-  local s1 = u1 and u1[0]
-  local s2 = u2 and u2[0]
-  local s3 = u3 and u3[0]
-  local s4 = u4 and u4[0]
-
-  if s == symbol_table.stat then
-    if s1 == symbol_table["="] then
-      local n = #u3
-      local A = { "," }
-      if n > 1 then
-        local slot = attr(u, "slot")
-        for j = 1, n - 1 do
-          local var = u3[j]
-          slot = slot + 1
-          local operand = { "R", slot }
-          A[#A + 1] = operand
-          var.B = operand
-        end
-        attr(u, "slot", slot)
-      end
-      local var = u3[n]
-      A[#A + 1] = var.A
-      var.A = nil
-      u2.A = A
-    elseif s1 == symbol_table["local"] then
-      if s2 == symbol_table.explist then
-        local A = { "," }
-        for j = 1, #u3 do
-          local name = u3[j]
-          A[#A + 1] = name.A
-          name.A = nil
-        end
-        u2.A = A
-      end
-    end
-  elseif s == symbol_table.var then
-    if s1 == symbol_table.Name then
-      move_operands(u1, u)
-    end
-  elseif s == symbol_table.prefixexp then
-    if s1 == symbol_table.var then
-      move_operands(u1, u)
-    end
-  elseif s == symbol_table.functioncall then
-    if s2 == symbol_table.args then
-      local slot = attr(u, "slot")
-      u1.A = { "R", slot }
-      local count = u2.count
-      if count > 0 then
-        local A = { "," }
-        for j = 1, count do
-          slot = slot + 1
-          A[#A + 1] = { "R", slot }
-        end
-        u2.A = A
-      end
-      attr(u, "slot", slot)
-    end
-  end
-end
-
---[[
-for i = 1, num_nodes do
-  local u = discover_nodes[i]
-  local s = u[0]
-  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
-  local s = u[0]
-  local s1 = u1 and u1[0]
-  local s2 = u2 and u2[0]
-  local s3 = u3 and u3[0]
-  local s4 = u4 and u4[0]
-
-  if s == symbol_table.stat then
-  elseif s == symbol_table.functioncall then
-    if s2 == symbol_table.args then
-      local slot = attr(u, "slot")
-      u1.A = { "R", slot }
-      local Ax = {}
-      local min_slot = slot + 1
-      local max_slot = slot + u2.count
-      for j = min_slot, max_slot do
-        Ax[#Ax + 1] = { "R", j }
-      end
-      u2.Ax = Ax
-      attr(u, "slot", max_slot)
-    end
-  elseif s == symbol_table.args then
-    if s1 == symbol_table.explist then
-      local Ax = u.Ax
-      for j = 1, #Ax do
-        u1[j].A = Ax[j]
-      end
-      u.Ax = nil
-    end
-  end
-end
-]]
 
 local next_path = {}
 for i = #terminal_nodes, 1, -1 do
@@ -825,21 +667,6 @@ for i = 1, num_nodes do
   end
 
   local text_html
-  local A = u.A
-  local B = u.B
-  if A or B then
-    text_html = {
-      "text"; y = h;
-      make_operand_html(A);
-      "=";
-      make_operand_html(B);
-    }
-    local C = u.C
-    if C then
-      text_html[#text_html + 1] = " "
-      text_html[#text_html + 1] = make_operand_html(C)
-    end
-  end
 
   nodes_html[#nodes_html + 1] = { "g";
     transform = ("translate(%.17g,%.17g)"):format(ux, uy);
@@ -873,7 +700,7 @@ for i = 1, #protos do
   protos_html[#protos_html + 1] = { "tr";
     { "td"; i };
     { "td"; proto.vararg };
-    { "td"; proto.max_param };
+    { "td"; proto.num_params };
   }
   local constants = proto.constants
   for j = 1, #constants do
@@ -993,7 +820,7 @@ write_html(out, { "html"; lang = "en";
         { "tr";
           { "th"; "#" };
           { "th"; "vararg" };
-          { "th"; "max_param" };
+          { "th"; "num_params" };
         };
       }, protos_html);
     };
