@@ -113,3 +113,17 @@ Parser generator toolkit.
 | `.rs`    | `string`  |      yes      | resulting string         |
 | `.ri`    | `integer` |      yes      | resulting start position |
 | `.rj`    | `integer` |      yes      | resulting end position   |
+
+## Virtual Machine
+
+| Name | Description |
+|------|-------------|
+| A    | parameter   |
+| B    | local       |
+| R    | register    |
+| L    | label       |
+| K    | constant    |
+| U    | upvalue     |
+| S    | stack 1     |
+| T    | stack 2     |
+| P    | proto       |
