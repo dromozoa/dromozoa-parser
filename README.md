@@ -116,14 +116,16 @@ Parser generator toolkit.
 
 ## Virtual Machine
 
-| Name | Description |
-|------|-------------|
-| A    | parameter   |
-| B    | local       |
-| R    | register    |
-| L    | label       |
-| K    | constant    |
-| U    | upvalue     |
-| S    | stack 1     |
-| T    | stack 2     |
-| P    | proto       |
+### Operands
+
+| Name | Description      |
+|------|------------------|
+| A    | parameter        |
+| B    | local            |
+| R    | register         |
+| L    | label            |
+| K    | constant         |
+| U    | upvalue          |
+| S    | stack for call   |
+| T    | stack for result |
+| P    | proto            |

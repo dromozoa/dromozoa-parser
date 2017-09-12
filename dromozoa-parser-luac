@@ -323,7 +323,7 @@ for i = 1, num_nodes do
       refs = {};
       udefs = {};
       urefs = {};
-      var = { "T", 1 };
+      var = { "B", 1 };
     }
 
     local external_proto = {
@@ -332,8 +332,8 @@ for i = 1, num_nodes do
       labels = {};
       upvalues = {};
       is_vararg = false;
-      B = 0;
-      T = 1;
+      A = 0;
+      B = 1;
       R = 0;
     }
 
@@ -489,26 +489,21 @@ end
 for i = 1, num_protos do
   local proto = protos[i]
   local names = proto.names
+  local A = 0
   local B = 0
-  local T = 0
   local R = 0
   for j = 1, #names do
     local name = names[j]
     if name.type == "param" then
+      A = A + 1
+      name.var = { "A", A }
+    else
       B = B + 1
       name.var = { "B", B }
-    else
-      if #name.refs + #name.urefs > 0 then
-        T = T + 1
-        name.var = { "T", T }
-      else
-        R = R + 1
-        name.var = { "R", R }
-      end
     end
   end
+  proto.A = A
   proto.B = B
-  proto.T = T
   proto.R = R
   local upvalues = proto.upvalues
   for j = 1, #upvalues do
@@ -722,8 +717,8 @@ for i = 1, num_protos do
   protos_html[#protos_html + 1] = { "tr";
     { "td"; i };
     { "td"; proto.is_vararg };
+    { "td"; proto.A };
     { "td"; proto.B };
-    { "td"; proto.T };
     { "td"; proto.R };
   }
   local constants = proto.constants
@@ -853,8 +848,8 @@ write_html(out, { "html"; lang = "en";
         { "tr";
           { "th"; "#" };
           { "th"; "is_vararg" };
+          { "th"; "A" };
           { "th"; "B" };
-          { "th"; "T" };
           { "th"; "R" };
         };
       }, protos_html);
