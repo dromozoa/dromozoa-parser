@@ -57,12 +57,14 @@ local function ref_constant(type, u, value)
       return constant
     end
   end
+  local index = n + 1
   local constant = {
     type = type;
     value = value;
     refs = { u.id };
+    var = { "K", index };
   }
-  constants[n + 1] = constant
+  constants[index] = constant
   return constant
 end
 
@@ -98,11 +100,13 @@ local function ref_upvalue(upvalues, name, parent)
       return upvalue
     end
   end
+  local index = #upvalues + 1
   local upvalue = {
     name = name;
     parent = parent;
+    var = { "U", index };
   }
-  upvalues[#upvalues + 1] = upvalue
+  upvalues[index] = upvalue
   return upvalue
 end
 
@@ -161,14 +165,16 @@ local function decl_label(u)
       return nil, "label '" .. value ..  "' already defined"
     end
   end
+  local proto_labels = scope.proto.labels
+  local index = #proto_labels + 1
   local label = {
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
+    var = { "L", index };
   }
   labels[#labels + 1] = label
-  local labels = scope.proto.labels
-  labels[#labels + 1] = label
+  proto_labels[index] = label
   return label
 end
 
@@ -183,7 +189,7 @@ local function ref_label(u)
       if label.value == value then
         local refs = label.refs
         refs[#refs + 1] = u.id
-        return { "L", label.index }
+        return label
       end
     end
     scope = scope.parent
@@ -317,6 +323,7 @@ for i = 1, num_nodes do
       refs = {};
       udefs = {};
       urefs = {};
+      var = { "T", 1 };
     }
 
     local external_proto = {
@@ -325,7 +332,9 @@ for i = 1, num_nodes do
       labels = {};
       upvalues = {};
       is_vararg = false;
-      num_params = 0;
+      B = 0;
+      T = 1;
+      R = 0;
     }
 
     local external_scope = {
@@ -340,9 +349,13 @@ for i = 1, num_nodes do
       constants = {};
       names = {};
       labels = {};
-      upvalues = { { name = env_name } };
+      upvalues = {
+        {
+          name = env_name;
+          var = { "U", 1 };
+        };
+      };
       is_vararg = true;
-      num_params = 0;
     }
 
     protos = { proto }
@@ -398,9 +411,8 @@ for i = 1, num_nodes do
     for i = 1, n do
       u1[i].param = true
     end
-    local proto = attr(u, "proto")
-    proto.num_params = n
     if s2 == symbol_table["..."] then
+      local proto = attr(u, "proto")
       proto.is_vararg = true
     end
   elseif s == symbol_table.label then
@@ -493,6 +505,19 @@ for i = 1, num_protos do
         R = R + 1
         name.var = { "R", R }
       end
+    end
+  end
+  proto.B = B
+  proto.T = T
+  proto.R = R
+  local upvalues = proto.upvalues
+  for j = 1, #upvalues do
+    local upvalue = upvalues[j]
+    local parent = upvalue.parent
+    if parent then
+      upvalue.uvar = parent.var
+    else
+      upvalue.uvar = upvalue.name.var
     end
   end
 end
@@ -697,7 +722,9 @@ for i = 1, num_protos do
   protos_html[#protos_html + 1] = { "tr";
     { "td"; i };
     { "td"; proto.is_vararg };
-    { "td"; proto.num_params };
+    { "td"; proto.B };
+    { "td"; proto.T };
+    { "td"; proto.R };
   }
   local constants = proto.constants
   for j = 1, #constants do
@@ -712,7 +739,8 @@ for i = 1, num_protos do
       { "td"; j };
       { "td"; type };
       { "td"; value };
-      make_ref_html(constant.refs)
+      make_ref_html(constant.refs);
+      make_var_html(constant.var);
     }
   end
   local names = proto.names
@@ -739,6 +767,7 @@ for i = 1, num_protos do
       { "td"; label.value };
       make_ref_html(label.defs);
       make_ref_html(label.refs);
+      make_var_html(label.var);
     }
   end
   local upvalues = proto.upvalues
@@ -754,6 +783,8 @@ for i = 1, num_protos do
       make_ref_html(name.udefs);
       make_ref_html(name.urefs);
       { "td"; not upvalue.parent };
+      make_var_html(upvalue.var);
+      make_var_html(upvalue.uvar);
     }
   end
 end
@@ -822,7 +853,9 @@ write_html(out, { "html"; lang = "en";
         { "tr";
           { "th"; "#" };
           { "th"; "is_vararg" };
-          { "th"; "num_params" };
+          { "th"; "B" };
+          { "th"; "T" };
+          { "th"; "R" };
         };
       }, protos_html);
     };
@@ -835,6 +868,7 @@ write_html(out, { "html"; lang = "en";
           { "th"; "type" };
           { "th"; "value" };
           { "th"; "ref" };
+          { "th"; "var" };
         };
       }, constants_html);
     };
@@ -863,6 +897,7 @@ write_html(out, { "html"; lang = "en";
           { "th"; "label" };
           { "th"; "def" };
           { "th"; "ref" };
+          { "th"; "var" };
         };
       }, labels_html);
     };
@@ -878,6 +913,8 @@ write_html(out, { "html"; lang = "en";
           { "th"; "udef" };
           { "th"; "uref" };
           { "th"; "in_stack" };
+          { "th"; "var" };
+          { "th"; "uvar" };
         };
       }, upvalues_html);
     };
