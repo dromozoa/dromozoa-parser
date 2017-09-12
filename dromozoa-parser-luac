@@ -68,9 +68,11 @@ local function ref_constant(type, u, value)
   return constant
 end
 
-local function decl_name_impl(u, type)
+local function decl_name_impl(u, type, key)
   local scope = attr(u, "scope")
-  local names = scope.names
+  local proto = scope.proto
+  local index = proto[key] + 1
+  proto[key] = index
   local name = {
     type = type;
     value = symbol_value(u);
@@ -78,7 +80,9 @@ local function decl_name_impl(u, type)
     refs = {};
     udefs = {};
     urefs = {};
+    var = { key, index };
   }
+  local names = scope.names
   names[#names + 1] = name
   local names = scope.proto.names
   names[#names + 1] = name
@@ -86,11 +90,11 @@ local function decl_name_impl(u, type)
 end
 
 local function param_name(u)
-  return decl_name_impl(u, "param")
+  return decl_name_impl(u, "param", "A")
 end
 
 local function decl_name(u)
-  return decl_name_impl(u, "local")
+  return decl_name_impl(u, "local", "B")
 end
 
 local function ref_upvalue(upvalues, name, parent)
@@ -103,8 +107,8 @@ local function ref_upvalue(upvalues, name, parent)
   local index = #upvalues + 1
   local upvalue = {
     name = name;
-    parent = parent;
     var = { "U", index };
+    uvar = parent and parent.var or name.var;
   }
   upvalues[index] = upvalue
   return upvalue
@@ -353,9 +357,13 @@ for i = 1, num_nodes do
         {
           name = env_name;
           var = { "U", 1 };
+          uvar = { "B", 1 };
         };
       };
       is_vararg = true;
+      A = 0;
+      B = 0;
+      R = 0;
     }
 
     protos = { proto }
@@ -378,6 +386,9 @@ for i = 1, num_nodes do
         labels = {};
         upvalues = {};
         is_vararg = false;
+        A = 0;
+        B = 0;
+        R = 0;
       }
       protos[index] = proto
       u.proto = proto
@@ -482,37 +493,6 @@ for i = 1, num_nodes do
       if not result then
         error(error_message(message, source, u2.i, source_file))
       end
-    end
-  end
-end
-
-for i = 1, num_protos do
-  local proto = protos[i]
-  local names = proto.names
-  local A = 0
-  local B = 0
-  local R = 0
-  for j = 1, #names do
-    local name = names[j]
-    if name.type == "param" then
-      A = A + 1
-      name.var = { "A", A }
-    else
-      B = B + 1
-      name.var = { "B", B }
-    end
-  end
-  proto.A = A
-  proto.B = B
-  proto.R = R
-  local upvalues = proto.upvalues
-  for j = 1, #upvalues do
-    local upvalue = upvalues[j]
-    local parent = upvalue.parent
-    if parent then
-      upvalue.uvar = parent.var
-    else
-      upvalue.uvar = upvalue.name.var
     end
   end
 end
@@ -777,7 +757,6 @@ for i = 1, num_protos do
       make_ref_html(name.refs);
       make_ref_html(name.udefs);
       make_ref_html(name.urefs);
-      { "td"; not upvalue.parent };
       make_var_html(upvalue.var);
       make_var_html(upvalue.uvar);
     }
@@ -907,7 +886,6 @@ write_html(out, { "html"; lang = "en";
           { "th"; "ref" };
           { "th"; "udef" };
           { "th"; "uref" };
-          { "th"; "in_stack" };
           { "th"; "var" };
           { "th"; "uvar" };
         };
