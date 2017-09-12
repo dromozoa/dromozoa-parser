@@ -18,7 +18,7 @@
 local dumper = require "dromozoa.commons.dumper"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
-local value = require "dromozoa.parser.value"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 local file = ...
 local handle = assert(io.open(file))
@@ -77,18 +77,6 @@ while true do
   end
 end
 
---[[
-
-env
-scope
-symbol_table
-
-name { id }
-
-
-
-]]
-
 local scope_stack = {}
 
 local chunk_scope = {
@@ -123,7 +111,7 @@ for i = 1, #dfs_events do
     if symbol == symbol_table.stat then
       if u[2] and u[2][0] == symbol_table.namelist then
         for j = 1, #u[2] do
-          local name = value(u[2][j])
+          local name = symbol_value(u[2][j])
           local n = scope.n + 1
           scope.nodes[n] = u[2][j].id
           local t = scope.table[name]
@@ -154,7 +142,7 @@ for i = 1, #dfs_events do
   end
   -- io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], "\n")
   if event == 1 then
-    local value = value(u)
+    local value = symbol_value(u)
     if value then
       io.write(("  "):rep(depth), u.id, " ", symbol_names[u[0]], (" %q"):format(value), "\n")
     else

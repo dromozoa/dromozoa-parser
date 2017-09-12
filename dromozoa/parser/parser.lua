@@ -100,13 +100,23 @@ function metatable:__call(terminal_nodes, s, file)
                 local indices = semantic_action[3]
                 node = reduced_nodes[semantic_action[2]]
                 for j = 1, #indices do
-                  node[#node + 1] = reduced_nodes[indices[j]]
+                  local index = indices[j]
+                  if index > 0 then
+                    node[#node + 1] = reduced_nodes[index]
+                  else
+                    node[j] = { [0] = -index }
+                  end
                 end
               elseif code == 3 then -- create node
                 local indices = semantic_action[2]
                 node = { [0] = head }
                 for j = 1, #indices do
-                  node[j] = reduced_nodes[indices[j]]
+                  local index = indices[j]
+                  if index > 0 then
+                    node[j] = reduced_nodes[index]
+                  else
+                    node[j] = { [0] = -index }
+                  end
                 end
               end
             else
@@ -124,7 +134,7 @@ function metatable:__call(terminal_nodes, s, file)
                 if code == 1 then -- set attribute
                   node[attribute_action[2]] = attribute_action[3]
                 elseif code == 2 then -- set child attribute
-                  node[attribute_action[2]][attribute_action[3]] = attribute_action[4]
+                  reduced_nodes[attribute_action[2]][attribute_action[3]] = attribute_action[4]
                 end
               end
             end

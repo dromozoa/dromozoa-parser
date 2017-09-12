@@ -15,28 +15,20 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function f()
-  -- goto x
+local v = 0
+
+local f1 = function ()
+  v = v + 1
 end
 
-do
-  local x = 0
-  print("1")
-  goto x
-  print("2")
-  ::x::
-  print("3")
-  -- ::x::
-  -- print("4")
-  -- goto y
+local f2 = function ()
+  v = v + 2
 end
 
-do
-  print("4")
-  goto x
-  print("5")
-end
-
-print("6")
-::x::
-print("7")
+print(v)
+f1()
+print(v)
+f2()
+print(v)
+f1()
+print(v)

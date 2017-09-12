@@ -15,28 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function f()
-  -- goto x
-end
-
-do
-  local x = 0
-  print("1")
-  goto x
-  print("2")
-  ::x::
-  print("3")
-  -- ::x::
-  -- print("4")
-  -- goto y
-end
-
-do
-  print("4")
-  goto x
-  print("5")
-end
-
-print("6")
-::x::
-print("7")
+local a = 0
+local b = nil
+a = 1 + 2 * 3 - 4
+local a = a * 5
+print(a)

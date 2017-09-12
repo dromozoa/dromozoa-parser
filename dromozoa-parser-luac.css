@@ -1,0 +1,176 @@
+@font-face {
+  font-family: 'Noto Sans Mono CJK JP';
+  font-style: normal;
+  font-weight: 400;
+  src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Regular.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'Noto Sans Mono CJK JP';
+  font-style: normal;
+  font-weight: 700;
+  src: url('https://dromozoa.s3.amazonaws.com/mirror/NotoSansCJKjp-2017-04-03/NotoSansMonoCJKjp-Bold.otf') format('opentype');
+}
+
+/*
+ * https://github.com/tbastos/vim-lua
+ * https://github.com/reedes/vim-colors-pencil
+ *
+ * a = (y - x) / y
+ *
+ * x = 198 // ligher_gray
+ * y = 214 // white
+ * a = 0.1682
+ *
+ * x = 178 // light_gray
+ * y = 214 // white
+ * a = 0.0748
+ */
+
+body {
+  margin: 0;
+
+  font-family: 'Noto Sans Mono CJK JP', monospace;
+  white-space: pre;
+  font-weight: 400;
+
+  background-color: #F1F1F1; /* white */
+  color: #212121; /* black */
+}
+
+/*
+ * number, source
+ */
+
+.number {
+  position: absolute;
+  padding: 0 0.5rem;
+  color: #C6C6C6; /* ligher_gray */
+  text-align: right;
+}
+
+.source {
+  position: absolute;
+}
+
+.source span {
+  transition: background-color 400ms;
+}
+
+.source span.active {
+  background-color: #F3E430; /* yellow */
+  transition: background-color 400ms;
+}
+
+.source .highlight-comment {
+  color: #B2B2B2; /* light_gray */
+}
+
+.source .highlight-constant {
+  color: #20A5BA; /* dark_cyan */
+}
+
+.source .highlight-statement {
+  color: #10A778; /* dark_green */
+}
+
+.source .highlight-statement {
+  color: #10A778; /* dark_green */
+}
+
+.source .highlight-structure {
+  color: #C30771; /* dark_red */
+}
+
+.source .highlight-env {
+  font-weight: 700;
+}
+
+/*
+ * panel
+ */
+
+.panel {
+  display: none;
+  position: fixed;
+  left: 40rem;
+}
+
+.panel .head {
+  padding: 0 0.5rem;
+  background-color: rgba(0, 0, 0, 0.1682);
+}
+
+/*
+ * tree
+ */
+
+.tree .body svg {
+  display: block;
+}
+
+.tree .body svg text {
+  fill: #212121; /* black */
+  stroke: none;
+  dominant-baseline: central;
+  text-anchor: middle;
+}
+
+.tree .body svg .viewport > rect {
+  fill: #000000;
+  fill-opacity: 0.0748;
+}
+
+.tree .body svg .edges path {
+  fill: none;
+  stroke: #212121; /* black */
+}
+
+.tree .body svg .nodes use {
+  fill: #FFFFFF; /* actual_white */
+  stroke: #212121; /* black */
+  transition: fill 400ms;
+}
+
+.tree .body svg .nodes use.active {
+  fill: #F3E430; /* yellow */
+  transition: fill 400ms;
+}
+
+/*
+ * panel-table
+ */
+
+.panel-table .body {
+  background-color: rgba(0, 0, 0, 0.0748);
+  min-height: 1.5rem;
+}
+
+.panel-table .body table {
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.panel-table .body table th,
+.panel-table .body table td {
+  border: solid 1px #212121;
+}
+
+/*
+ * menu
+ */
+
+.menu {
+  position: fixed;
+  top: 0;
+  right: 1rem;
+}
+
+.menu .head {
+  text-align: right;
+}
+
+.menu .body {
+  padding: 0 0.5rem;
+  background-color: rgba(0, 0, 0, 0.0748);
+}

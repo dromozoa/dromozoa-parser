@@ -1,0 +1,942 @@
+#! /usr/bin/env lua
+
+-- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+--
+-- This file is part of dromozoa-parser.
+--
+-- dromozoa-parser is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- dromozoa-parser is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
+
+local dumper = require "dromozoa.parser.dumper"
+local error_message = require "dromozoa.parser.error_message"
+local write_html = require "dromozoa.parser.write_html"
+local symbol_value = require "dromozoa.parser.symbol_value"
+local tree_layout = require "dromozoa.parser.tree_layout"
+local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
+local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+
+local function attr(u, key, value)
+  if value == nil then
+    while u do
+      local value = u[key]
+      if value ~= nil then
+        return value
+      end
+      u = u.parent
+    end
+  else
+    while u do
+      if u[key] ~= nil then
+        u[key] = value
+        return
+      end
+      u = u.parent
+    end
+  end
+end
+
+local function ref_constant(type, u, value)
+  local proto = attr(u, "proto")
+  local constants = proto.constants
+  local n = #constants
+  for i = 1, n do
+    local constant = constants[i]
+    if constant.type == type and constant.value == value then
+      local refs = constant.refs
+      refs[#refs + 1] = u.id
+      return constant
+    end
+  end
+  local index = n + 1
+  local constant = {
+    type = type;
+    value = value;
+    refs = { u.id };
+    var = { "K", index };
+  }
+  constants[index] = constant
+  return constant
+end
+
+local function decl_name_impl(u, type)
+  local scope = attr(u, "scope")
+  local names = scope.names
+  local name = {
+    type = type;
+    value = symbol_value(u);
+    defs = { u.id };
+    refs = {};
+    udefs = {};
+    urefs = {};
+  }
+  names[#names + 1] = name
+  local names = scope.proto.names
+  names[#names + 1] = name
+  return name
+end
+
+local function param_name(u)
+  return decl_name_impl(u, "param")
+end
+
+local function decl_name(u)
+  return decl_name_impl(u, "local")
+end
+
+local function ref_upvalue(upvalues, name, parent)
+  for i = 1, #upvalues do
+    local upvalue = upvalues[i]
+    if upvalue.name == name then
+      return upvalue
+    end
+  end
+  local index = #upvalues + 1
+  local upvalue = {
+    name = name;
+    parent = parent;
+    var = { "U", index };
+  }
+  upvalues[index] = upvalue
+  return upvalue
+end
+
+local function ref_name_impl(u, key, ukey, value)
+  local scope = attr(u, "scope")
+  local proto = scope.proto
+  repeat
+    local names = scope.names
+    for i = #names, 1, -1 do
+      local name = names[i]
+      if name.value == value then
+        local decl_proto = scope.proto
+        if decl_proto == proto then
+          local refs = name[key]
+          refs[#refs + 1] = u.id
+          return name
+        else
+          local refs = name[ukey]
+          refs[#refs + 1] = u.id
+          local protos = {}
+          repeat
+            protos[#protos + 1] = proto
+            proto = proto.parent
+          until proto == decl_proto
+          local upvalue
+          for i = #protos, 1, -1 do
+            upvalue = ref_upvalue(protos[i].upvalues, name, upvalue)
+          end
+          return upvalue
+        end
+      end
+    end
+    scope = scope.parent
+  until not scope
+end
+
+local function ref_name(u)
+  return ref_name_impl(u, "refs", "urefs", symbol_value(u))
+end
+
+local function def_name(u)
+  return ref_name_impl(u, "defs", "udefs", symbol_value(u))
+end
+
+local function ref_env(u)
+  return ref_name_impl(u, "refs", "urefs", "_ENV")
+end
+
+local function decl_label(u)
+  local value = symbol_value(u)
+  local scope = attr(u, "scope")
+  local labels = scope.labels
+  for i = 1, #labels do
+    local label = labels[i]
+    if label.value == value then
+      return nil, "label '" .. value ..  "' already defined"
+    end
+  end
+  local proto_labels = scope.proto.labels
+  local index = #proto_labels + 1
+  local label = {
+    value = symbol_value(u);
+    defs = { u.id };
+    refs = {};
+    var = { "L", index };
+  }
+  labels[#labels + 1] = label
+  proto_labels[index] = label
+  return label
+end
+
+local function ref_label(u)
+  local value = symbol_value(u)
+  local scope = attr(u, "scope")
+  local proto = scope.proto
+  repeat
+    local labels = scope.labels
+    for i = 1, #labels do
+      local label = labels[i]
+      if label.value == value then
+        local refs = label.refs
+        refs[#refs + 1] = u.id
+        return label
+      end
+    end
+    scope = scope.parent
+  until not scope or scope.proto ~= proto
+  return nil, "no visible label '" .. value .. "'"
+end
+
+local function copy(source, result)
+  if result == nil then
+    result = {}
+  end
+  for i = 1, #source do
+    result[#result + 1] = source[i]
+  end
+  return result
+end
+
+local function common_path(path1, path2, result)
+  if result == nil then
+    result = {}
+  end
+  for i = 1, #path1 do
+    local v = path1[i]
+    if v == path2[i] then
+      result[i] = v
+    else
+      break
+    end
+  end
+  return result
+end
+
+local function make_ref_html(refs)
+  local html = { "td" }
+  for i = 1, #refs do
+    local ref = refs[i]
+    if i > 1 then
+      html[#html + 1] = ","
+    end
+    html[#html + 1] = { "span"; ["data-ref"] = ref; "#" .. ref }
+  end
+  return html
+end
+
+local function make_var_html(var)
+  if var then
+    return { "td"; var[1] .. var[2] }
+  else
+    return { "td" }
+  end
+end
+
+local function make_panel_body_html(thead_html, tbody_html)
+  if #tbody_html > 1 then
+    return { "div"; class = "body";
+      { "table";
+        thead_html;
+        tbody_html;
+      };
+    }
+  else
+    return { "div"; class = "body" }
+  end
+end
+
+local source_file, html_file = ...
+local source
+
+if source_file then
+  local handle = assert(io.open(source_file))
+  source = handle:read("*a")
+  handle:close()
+else
+  source = io.read("*a")
+end
+
+local lexer = lua53_lexer()
+local parser = lua53_parser()
+
+local symbol_names = parser.symbol_names
+local symbol_table = parser.symbol_table
+local max_terminal_symbol = parser.max_terminal_symbol
+local terminal_nodes = assert(lexer(source, file))
+local root = assert(parser(terminal_nodes, source, file))
+
+root.path = {}
+
+local discover_nodes = {}
+local finish_nodes = {}
+local protos
+
+local stack1 = { root }
+local stack2 = {}
+while true do
+  local n1 = #stack1
+  local u = stack1[n1]
+  if not u then
+    break
+  end
+  local n2 = #stack2
+  if u == stack2[n2] then
+    stack1[n1] = nil
+    stack2[n2] = nil
+    finish_nodes[#finish_nodes + 1] = u
+  else
+    local id = #discover_nodes + 1
+    u.id = id
+    discover_nodes[id] = u
+    local path = copy(u.path)
+    path[#path + 1] = id
+    for i = #u, 1, -1 do
+      local v = u[i]
+      v.parent = u
+      v.path = path
+      stack1[#stack1 + 1] = v
+    end
+    stack2[n2 + 1] = u
+  end
+end
+
+local num_nodes = #discover_nodes
+
+for i = 1, num_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+
+  if s == symbol_table.chunk then
+    local env_name = {
+      value = "_ENV";
+      defs = {};
+      refs = {};
+      udefs = {};
+      urefs = {};
+      var = { "T", 1 };
+    }
+
+    local external_proto = {
+      constants = {};
+      names = { env_name };
+      labels = {};
+      upvalues = {};
+      is_vararg = false;
+      B = 0;
+      T = 1;
+      R = 0;
+    }
+
+    local external_scope = {
+      proto = external_proto;
+      names = { env_name };
+      labels = {};
+    }
+
+    local proto = {
+      index = 1;
+      parent = external_proto;
+      constants = {};
+      names = {};
+      labels = {};
+      upvalues = {
+        {
+          name = env_name;
+          var = { "U", 1 };
+        };
+      };
+      is_vararg = true;
+    }
+
+    protos = { proto }
+
+    u.proto = proto
+    u.scope = {
+      proto = proto;
+      parent = external_scope;
+      names = {};
+      labels = {};
+    }
+  else
+    if u.proto then
+      local index = #protos + 1
+      local proto = {
+        index = index;
+        parent = attr(u.parent, "proto");
+        constants = {};
+        names = {};
+        labels = {};
+        upvalues = {};
+        is_vararg = false;
+      }
+      protos[index] = proto
+      u.proto = proto
+    end
+
+    if u.scope then
+      u.scope = {
+        proto = attr(u, "proto");
+        parent = attr(u.parent, "scope");
+        names = {};
+        labels = {};
+      }
+    end
+  end
+end
+
+local num_protos = #protos
+
+for i = 1, num_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+  local s = u[0]
+  local s1 = u1 and u1[0]
+  local s2 = u2 and u2[0]
+  local s3 = u3 and u3[0]
+  local s4 = u4 and u4[0]
+
+  if s == symbol_table.parlist then
+    local n = #u1
+    for i = 1, n do
+      u1[i].param = true
+    end
+    if s2 == symbol_table["..."] then
+      local proto = attr(u, "proto")
+      proto.is_vararg = true
+    end
+  elseif s == symbol_table.label then
+    local result, message = decl_label(u1)
+    if not result then
+      error(error_message(message, source, u1.i, source_file))
+    end
+  elseif s == symbol_table.var then
+    if s1 == symbol_table.Name then
+      if u.def then
+        u1.def = true
+      else
+        u1.ref = true
+      end
+    end
+  elseif s == symbol_table.exp then
+    if s1 == symbol_table["..."] then
+      local proto = attr(u, "proto")
+      if not proto.is_vararg then
+        error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
+      end
+    end
+  elseif s == symbol_table.IntegerConstant then
+    ref_constant("integer", u, tonumber(symbol_value(u)))
+  elseif s == symbol_table.FloatConstant then
+    ref_constant("float", u, tonumber(symbol_value(u)))
+  elseif s == symbol_table.LiteralString then
+    ref_constant("string", u, symbol_value(u))
+  elseif s == symbol_table.Name then
+    if u.param then
+      param_name(u)
+    elseif u.decl then
+      decl_name(u)
+    elseif u.def then
+      local result = def_name(u)
+      if not result then
+        ref_env(u)
+        ref_constant("string", u, symbol_value(u))
+        u.env = true
+      end
+    elseif u.ref then
+      local result = ref_name(u)
+      if not result then
+        ref_env(u)
+        ref_constant("string", u, symbol_value(u))
+        u.env = true
+      end
+    elseif not u.label then
+      ref_constant("string", u, symbol_value(u))
+    end
+  end
+end
+
+for i = 1, num_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+  local s = u[0]
+  local s1 = u1 and u1[0]
+  local s2 = u2 and u2[0]
+  local s3 = u3 and u3[0]
+  local s4 = u4 and u4[0]
+
+  if s == symbol_table.stat then
+    if s1 == symbol_table["goto"] then
+      local result, message = ref_label(u2)
+      if not result then
+        error(error_message(message, source, u2.i, source_file))
+      end
+    end
+  end
+end
+
+for i = 1, num_protos do
+  local proto = protos[i]
+  local names = proto.names
+  local B = 0
+  local T = 0
+  local R = 0
+  for j = 1, #names do
+    local name = names[j]
+    if name.type == "param" then
+      B = B + 1
+      name.var = { "B", B }
+    else
+      if #name.refs + #name.urefs > 0 then
+        T = T + 1
+        name.var = { "T", T }
+      else
+        R = R + 1
+        name.var = { "R", R }
+      end
+    end
+  end
+  proto.B = B
+  proto.T = T
+  proto.R = R
+  local upvalues = proto.upvalues
+  for j = 1, #upvalues do
+    local upvalue = upvalues[j]
+    local parent = upvalue.parent
+    if parent then
+      upvalue.uvar = parent.var
+    else
+      upvalue.uvar = upvalue.name.var
+    end
+  end
+end
+
+local next_path = {}
+for i = #terminal_nodes, 1, -1 do
+  local u = terminal_nodes[i]
+
+  u.next_path = next_path
+  local path = u.path
+  if path then
+    next_path = path
+  end
+end
+
+local prev_path = {}
+for i = 1, #terminal_nodes do
+  local u = terminal_nodes[i]
+  local s = u[0]
+
+  u.prev_path = prev_path
+  local path = u.path
+  if path then
+    prev_path = path
+  else
+    u.path = common_path(prev_path, u.next_path)
+  end
+
+  local highlight
+  if s == symbol_table["false"] or s == symbol_table["true"] then
+    highlight = { "constant", "boolean" }
+  elseif s == symbol_table["nil"] then
+    highlight = { "constant" }
+  elseif s == symbol_table["and"] or s == symbol_table["not"] or s == symbol_table["or"] or s == symbol_table[".."] then
+    highlight = { "statement", "operator" }
+  elseif s == symbol_table["function"] or s == symbol_table["{"] or s == symbol_table["}"] then
+    highlight = { "type", "structure" }
+  elseif s == symbol_table["end"] then
+    if u.funcbody_end then
+      highlight = { "type", "structure" }
+    else
+      highlight = { "statement" }
+    end
+  elseif s == symbol_table.Name then
+    highlight = { "identifier" }
+  elseif s == symbol_table.LiteralString then
+    highlight = { "constant", "string" }
+  elseif s == symbol_table.IntegerConstant then
+    highlight = { "constant", "number", "integer" }
+  elseif s == symbol_table.FloatConstant then
+    highlight = { "constant", "number", "float" }
+  else
+    local value = symbol_value(u)
+    if value:find("^[a-z]") then
+      highlight = { "statement" }
+    elseif value:find("^[+%-*/%%^#&~|<>=]") then
+      highlight = { "statement", "operator" }
+    end
+  end
+  if u.env then
+    if highlight then
+      highlight[#highlight + 1] = "env"
+    else
+      highlight = { "env" }
+    end
+  end
+  u.highlight = highlight
+end
+
+local line_number = source:find("\n$") and 0 or 1
+for _ in source:gmatch("\n") do
+  line_number = line_number + 1
+end
+
+local number_html = { "div"; class = "number" }
+for i = 1, line_number do
+  number_html[#number_html + 1] = { "span";
+    id = "L" .. i;
+    i .. "\n";
+  }
+end
+
+local source_left = math.ceil(math.log(line_number, 10)) * 0.5 + 1
+
+local source_html = { "div"; class = "source" }
+for i = 1, #terminal_nodes do
+  local u = terminal_nodes[i]
+  local s = u[0]
+  local p = u.p
+  local i = u.i
+  local j = u.j
+  local path = u.path
+
+  if p < i then
+    local class = {}
+    local path = common_path(path, u.prev_path)
+    for i = 1, #path do
+      class[#class + 1] = "S" .. path[i]
+    end
+    class[#class + 1] = "highlight-comment"
+    source_html[#source_html + 1] = { "span";
+      class = class;
+      source:sub(p, i - 1)
+    }
+  end
+
+  if s ~= 1 then
+    local class = {}
+    for i = 1, #path do
+      class[#class + 1] = "S" .. path[i]
+    end
+    local id = u.id
+    if id then
+      id = "S" .. id
+      class[#class + 1] = id
+      class[#class + 1] = "S"
+    end
+    local highlight = u.highlight
+    if highlight then
+      for i = 1, #highlight do
+        class[#class + 1] = "highlight-" .. highlight[i]
+      end
+    end
+    source_html[#source_html + 1] = { "span";
+      id = id;
+      class = class;
+      source:sub(i, j)
+    }
+  end
+end
+
+local tree_width = 640
+local tree_height = 480
+local node_width = 160
+local node_height = 56
+
+tree_layout(root, node_height, node_width, "y", "x")
+
+local defs = {}
+local defs_html = { "defs" }
+local edges_html = { "g"; class = "edges" }
+local nodes_html = { "g"; class = "nodes" }
+
+for i = 1, num_nodes do
+  local u = discover_nodes[i]
+  local s = u[0]
+  local ux = u.x
+  local uy = u.y
+  local h = 24
+  local r = h * 0.5
+
+  if not defs[s] then
+    local name = symbol_names[s]
+    local w = #name * 8 + h
+    local class = {}
+    defs[s] = true
+    defs_html[#defs_html + 1] = { "g";
+      id = "D" .. s;
+      { "rect";
+        x = -w * 0.5;
+        y = -r;
+        width = w;
+        height = h;
+        rx = r;
+        ry = r;
+      };
+      { "text"; name };
+    }
+  end
+
+  local text_html
+
+  nodes_html[#nodes_html + 1] = { "g";
+    transform = ("translate(%.17g,%.17g)"):format(ux, uy);
+    { "use";
+      id = "T" .. u.id;
+      class = "T";
+      ["xlink:href"] = "#D" .. s;
+    };
+    text_html;
+  }
+
+  for i = 1, #u do
+    local v = u[i]
+    local vx = v.x
+    local vy = v.y
+    local mx = (ux + vx) * 0.5
+    edges_html[#edges_html + 1] = { "path";
+      d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
+    };
+  end
+end
+
+local protos_html = { "tbody" }
+local constants_html = { "tbody" }
+local names_html = { "tbody" }
+local labels_html = { "tbody" }
+local upvalues_html = { "tbody" }
+
+for i = 1, num_protos do
+  local proto = protos[i]
+  protos_html[#protos_html + 1] = { "tr";
+    { "td"; i };
+    { "td"; proto.is_vararg };
+    { "td"; proto.B };
+    { "td"; proto.T };
+    { "td"; proto.R };
+  }
+  local constants = proto.constants
+  for j = 1, #constants do
+    local constant = constants[j]
+    local type = constant.type
+    local value = constant.value
+    if type == "string" then
+      value = dumper.encode_string(value)
+    end
+    constants_html[#constants_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; type };
+      { "td"; value };
+      make_ref_html(constant.refs);
+      make_var_html(constant.var);
+    }
+  end
+  local names = proto.names
+  for j = 1, #names do
+    local name = names[j]
+    names_html[#names_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; name.type };
+      { "td"; name.value };
+      make_ref_html(name.defs);
+      make_ref_html(name.refs);
+      make_ref_html(name.udefs);
+      make_ref_html(name.urefs);
+      make_var_html(name.var);
+    }
+  end
+  local labels = proto.labels
+  for j = 1, #labels do
+    local label = labels[j]
+    labels_html[#labels_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; label.value };
+      make_ref_html(label.defs);
+      make_ref_html(label.refs);
+      make_var_html(label.var);
+    }
+  end
+  local upvalues = proto.upvalues
+  for j = 1, #upvalues do
+    local upvalue = upvalues[j]
+    local name = upvalue.name
+    upvalues_html[#upvalues_html + 1] = { "tr";
+      { "td"; i };
+      { "td"; j };
+      { "td"; name.value };
+      make_ref_html(name.defs);
+      make_ref_html(name.refs);
+      make_ref_html(name.udefs);
+      make_ref_html(name.urefs);
+      { "td"; not upvalue.parent };
+      make_var_html(upvalue.var);
+      make_var_html(upvalue.uvar);
+    }
+  end
+end
+
+local style = ([[
+.source {
+  left: %.17grem;
+}
+.tree {
+  width: %.17grem;
+}
+]]):format(source_left, tree_width / 16)
+
+local script = ([[
+/*jslint this,white*/
+"use strict";
+(function (root) {
+  root.dromozoa = {
+    parser: {
+      setting: {
+        node_width: %.17g,
+        node_height: %.17g
+      }
+    }
+  };
+}(this.self));
+]]):format(node_width, node_height)
+
+local out = assert(io.open(html_file, "w"))
+out:write("<!DOCTYPE html>")
+write_html(out, { "html"; lang = "en";
+  { "head";
+    { "meta"; charset = "UTF-8" };
+    { "meta"; name = "viewport"; content = "width=device-width, initial-scale=1, shrink-to-fit=no" };
+    { "title"; source_file };
+    { "link"; rel = "stylesheet"; href = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" };
+    { "link"; rel = "stylesheet"; href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" };
+    { "style"; style };
+    { "link"; rel = "stylesheet"; href = "dromozoa-parser-luac.css" };
+  };
+  { "body";
+    number_html;
+    source_html;
+
+    { "div"; class = "panel panel-svg tree";
+      { "div"; class = "head"; "Tree" };
+      { "div"; class = "body";
+        { "svg"; class = "body"; width = tree_width; height = tree_height;
+          defs_html;
+          { "g"; class = "viewport";
+            { "rect"; width = tree_width; height = tree_height };
+            { "g"; class = "view";
+              { "g"; class = "model";
+                edges_html;
+                nodes_html;
+              };
+            };
+          };
+        };
+      };
+    };
+
+    { "div"; class = "panel panel-table protos";
+      { "div"; class = "head"; "Protos" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; "#" };
+          { "th"; "is_vararg" };
+          { "th"; "B" };
+          { "th"; "T" };
+          { "th"; "R" };
+        };
+      }, protos_html);
+    };
+
+    { "div"; class = "panel panel-table constants";
+      { "div"; class = "head"; "Constants" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "type" };
+          { "th"; "value" };
+          { "th"; "ref" };
+          { "th"; "var" };
+        };
+      }, constants_html);
+    };
+
+    { "div"; class = "panel panel-table names";
+      { "div"; class = "head"; "Names" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "type" };
+          { "th"; "name" };
+          { "th"; "def" };
+          { "th"; "ref" };
+          { "th"; "udef" };
+          { "th"; "uref" };
+          { "th"; "var" };
+        };
+      }, names_html);
+    };
+
+    { "div"; class = "panel panel-table labels";
+      { "div"; class = "head"; "Labels" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "label" };
+          { "th"; "def" };
+          { "th"; "ref" };
+          { "th"; "var" };
+        };
+      }, labels_html);
+    };
+
+    { "div"; class = "panel panel-table upvalues";
+      { "div"; class = "head"; "Upvalues" };
+      make_panel_body_html({ "thead";
+        { "tr";
+          { "th"; colspan = 2; "#" };
+          { "th"; "name" };
+          { "th"; "def" };
+          { "th"; "ref" };
+          { "th"; "udef" };
+          { "th"; "uref" };
+          { "th"; "in_stack" };
+          { "th"; "var" };
+          { "th"; "uvar" };
+        };
+      }, upvalues_html);
+    };
+
+    { "div"; class = "menu";
+      { "div"; class = "head"; { "span"; class = "fa fa-bars" } };
+      { "div"; class = "body";
+        { "div"; class = "toggle"; ["data-toggle"] = ".tree"; "Tree"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".protos"; "Protos"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".names"; "Names"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".labels"; "Labels"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".constants"; "Constants"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".upvalues"; "Upvalues"; };
+      };
+    };
+
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" };
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" };
+    { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
+    { "script"; script };
+    { "script"; src = "dromozoa-parser-luac.js" };
+  };
+})
+out:write("\n")
+out:close()

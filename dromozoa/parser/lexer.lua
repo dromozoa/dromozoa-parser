@@ -17,7 +17,7 @@
 
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
-local value = require "dromozoa.parser.value"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 local function range(ri, rj, i, j)
   if i > 0 then
@@ -295,7 +295,7 @@ function metatable:__call(s, file)
         for i = 1, #attributes, 2 do
           local v = attributes[i + 1]
           if v == value then
-            node[attributes[i]] = value(node)
+            node[attributes[i]] = symbol_value(node)
           else
             node[attributes[i]] = v
           end

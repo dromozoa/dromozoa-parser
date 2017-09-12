@@ -17,13 +17,13 @@
 
 local dumper = require "dromozoa.parser.dumper"
 local escape_html = require "dromozoa.parser.escape_html"
-local value = require "dromozoa.parser.value"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+local symbol_value = require "dromozoa.parser.symbol_value"
+local write_html = require "dromozoa.parser.write_html"
 
 local encode_string = dumper.encode_string
 local keys = dumper.keys
-local symbol_value = value
 
 local function new_register(state)
   local register = state.register
@@ -168,46 +168,6 @@ local function copy_codes(result, source)
     result[#result + 1] = source[i]
   end
   return result
-end
-
-local function write_html(out, node)
-  local number_keys, string_keys = keys(node)
-  local name = assert(node[1])
-  out:write("<", name)
-  for i = 1, #string_keys do
-    local key = string_keys[i]
-    out:write(" ", escape_html(key), "=\"", escape_html(tostring(node[key])), "\"")
-  end
-  local n = #number_keys
-  if name == "script" or name == "style" then
-    out:write(">")
-    local value = table.concat(node, "", 2, number_keys[n])
-    if value:find("[<&]") then
-      assert(not value:find("%]%]>"))
-      if name == "script" then
-        out:write("//<![CDATA[\n", value, "//]]>")
-      else
-        out:write("/*<![CDATA[*/\n", value, "/*]]>*/")
-      end
-    else
-      out:write(value)
-    end
-    out:write("</", name, ">")
-  else
-    out:write(">")
-    for i = 1, #number_keys do
-      local key = number_keys[i]
-      if key ~= 1 then
-        local value = node[key]
-        if type(value) == "table" then
-          write_html(out, value)
-        else
-          out:write(escape_html(tostring(value)))
-        end
-      end
-    end
-    out:write("</", name, ">")
-  end
 end
 
 local function add_state_html(state_html, state)
@@ -451,7 +411,9 @@ local terminal_nodes = assert(lexer(source, file))
 local root = assert(parser(terminal_nodes, source, file))
 
 local id = 0
-local state
+local state = {
+  register = 0;
+}
 local env = {
   names = {};
   labels = {};
@@ -485,29 +447,35 @@ while true do
       loop = loop.parent
     end
 
-    local v1, v2, v3, v4 = u[1], u[2], u[3], u[4]
+    local v1, v2, v3, v4, v5 = u[1], u[2], u[3], u[4], u[5]
     local s = u[0]
     local s1 = v1 and v1[0]
     local s2 = v2 and v2[0]
     local s3 = v3 and v3[0]
     local s4 = v4 and v4[0]
+    local s5 = v5 and v5[0]
     local codes = u.codes
 
     if s == symbol_table.chunk then
       local id = #protos + 1
-      local state = u.state
+      local proto_state = u.state
       protos[id] = {
         nparams = 0;
-        constants = state.constants;
-        locals = state.locals;
-        upvalues = state.upvalues;
+        constants = proto_state.constants;
+        locals = proto_state.locals;
+        upvalues = proto_state.upvalues;
         codes = v1.codes;
       }
-      local r = 1
-      u.r = 1
+      local r = new_register(state)
+      u.r = r
       codes[#codes + 1] = { "CLOSURE", r, id }
     elseif s == symbol_table.block then
-      copy_codes(codes, v1.codes)
+      if v1 then
+        copy_codes(codes, v1.codes)
+      end
+      if v2 then
+        copy_codes(codes, v2.codes)
+      end
     elseif s == symbol_table.stats then
       for i = 1, #u do
         copy_codes(codes, u[i].codes)
@@ -518,10 +486,20 @@ while true do
         for i = 1, #v1, 2 do
           local var = v1[i]
           local exp = v3[i]
-          if exp then
-            codes[#codes + 1] = { "MOVE", var.r, exp.r }
+          if var.in_stack then
+            if exp then
+              codes[#codes + 1] = { "MOVE", var.r, exp.r }
+            else
+              codes[#codes + 1] = { "LOADNIL", var.r }
+            end
           else
-            codes[#codes + 1] = { "LOADNIL", var.r }
+            if exp then
+              codes[#codes + 1] = { "SETUPVAL", var.r, exp.r }
+            else
+              local r = new_register(state)
+              codes[#codes + 1] = { "LOADNIL", r }
+              codes[#codes + 1] = { "SETUPVAL", var.r, r }
+            end
           end
         end
       elseif s1 == symbol_table.functioncall then
@@ -579,6 +557,23 @@ while true do
       codes[#codes + 1] = { "LABEL", m }
     elseif s == symbol_table.else_clause then
       copy_codes(codes, v2.codes)
+    elseif s == symbol_table.retstat then
+      if s2 == symbol_table.explist then
+        copy_codes(codes, v2.codes)
+        local a
+        local n = #v2
+        for i = 1, n, 2 do
+          local exp = v2[i]
+          local r = new_register(state)
+          if not a then
+            a = r
+          end
+          codes[#codes + 1] = { "MOVE", r, exp.r }
+        end
+        codes[#codes + 1] = { "RETURN", a, (n + 1) / 2 }
+      else
+        codes[#codes + 1] = { "RETURN", 0, 0 }
+      end
     elseif s == symbol_table.label then
       def_label(scope, v2, symbol_value(v2))
     elseif s == symbol_table.var then
@@ -588,6 +583,7 @@ while true do
           -- [TODO] impl set global
           -- [TODO] impl set upvalue
           u.r = r
+          u.in_stack = in_stack
         else
           if r then
             if in_stack then
@@ -607,6 +603,24 @@ while true do
             codes[#codes + 1] = { "LOADK", r2, r1 }
             codes[#codes + 1] = { "GETGLOBAL", r3, r2 }
           end
+        end
+      elseif s1 == symbol_table.prefixexp then
+        copy_codes(codes, v1.codes)
+        local r
+        if s3 == symbol_table.exp then
+          r = v3.r
+          copy_codes(codes, v3.codes)
+        else
+          local k = ref_constant(state, v3, "string", symbol_value(v3))
+          r = new_register(state)
+          codes[#codes + 1] = { "LOADK", r, k }
+        end
+        if u.def then
+          -- [TODO] impl set table
+        else
+          local out = new_register(state)
+          u.r = out
+          codes[#codes + 1] = { "GETTABLE", out, v1.r, r }
         end
       end
     elseif s == symbol_table.namelist then
@@ -642,6 +656,12 @@ while true do
         u.r = v1.r
         u.codes = v1.codes
       elseif s1 == symbol_table.prefixexp then
+        u.r = v1.r
+        u.codes = v1.codes
+      elseif s1 == symbol_table.functioncall then
+        u.r = v1.r
+        u.codes = v1.codes
+      elseif s1 == symbol_table.tableconstructor then
         u.r = v1.r
         u.codes = v1.codes
       elseif s2 == symbol_table["+"] then
@@ -697,6 +717,7 @@ while true do
     elseif s == symbol_table.functioncall then
       if s2 == symbol_table.args then
         local r = v2.r
+        u.r = r
         copy_codes(codes, v1.codes)
         codes[#codes + 1] = { "MOVE", r, v1.r }
         copy_codes(codes, v2.codes)
@@ -723,25 +744,25 @@ while true do
       u.codes = v2.codes
     elseif s == symbol_table.funcbody then
       local id = #protos + 1
-      local state = u.state
+      local proto_state = u.state
       if s2 == symbol_table.parlist then
         protos[id] = {
-          nparams = state.nparams;
-          constants = state.constants;
-          locals = state.locals;
-          upvalues = state.upvalues;
+          nparams = proto_state.nparams;
+          constants = proto_state.constants;
+          locals = proto_state.locals;
+          upvalues = proto_state.upvalues;
           codes = v4.codes;
         }
       else
         protos[id] = {
           nparams = 0;
-          constants = state.constants;
-          locals = state.locals;
-          upvalues = state.upvalues;
+          constants = proto_state.constants;
+          locals = proto_state.locals;
+          upvalues = proto_state.upvalues;
           codes = v3.codes;
         }
       end
-      local r = new_register(state.parent)
+      local r = new_register(state)
       u.r = r
       codes[#codes + 1] = { "CLOSURE", r, id }
     elseif s == symbol_table.parlist then
@@ -753,6 +774,40 @@ while true do
       else
         state.nparams = 0
         def_name(scope, v1, "...", symbol_value(v1))
+      end
+    elseif s == symbol_table.tableconstructor then
+      if s2 == symbol_table.fieldlist then
+        local r = v2.r
+        u.r = r
+        codes[#codes + 1] = { "NEWTABLE", r }
+        for i = 1, #v2, 2 do
+          copy_codes(codes, v2[i].codes)
+        end
+      else
+        local r = new_register(state)
+        u.r = r
+        codes[#codes + 1] = { "NEWTABLE", r }
+      end
+    elseif s == symbol_table.field then
+      local p = u.parent
+      if s2 == symbol_table.exp then
+        copy_codes(codes, v2.codes)
+        copy_codes(codes, v5.codes)
+        codes[#codes + 1] = { "SETTABLE", p.r, v2.r, v5.r }
+      elseif s1 == symbol_table.Name then
+        local k = ref_constant(state, v1, "string", symbol_value(v1))
+        local r = new_register(state)
+        codes[#codes + 1] = { "LOADK", r, k }
+        copy_codes(codes, v3.codes)
+        codes[#codes + 1] = { "SETTABLE", p.r, r, v3.r }
+      else
+        local n = p.n + 1
+        p.n = n
+        local k = ref_constant(state, v1, "integer", n)
+        local r = new_register(state)
+        codes[#codes + 1] = { "LOADK", r, k }
+        copy_codes(codes, v1.codes)
+        codes[#codes + 1] = { "SETTABLE", p.r, r, v1.r }
       end
     elseif s == symbol_table.local_name then
       local r = new_register(state)
@@ -804,6 +859,11 @@ while true do
 
     if u[0] > max_terminal_symbol then
       u.codes = {}
+    end
+
+    if u[0] == symbol_table.fieldlist then
+      u.r = new_register(state)
+      u.n = 0
     end
 
     local order = u.order
@@ -1411,6 +1471,8 @@ local L = lua_state()
           else
             out:write("if L:get(", code[3], ") <= L:get(", code[4], ") then goto L", jump[2], " end\n")
           end
+        elseif op == "RETURN" then
+          out:write("return L:RETURN(", code[2], ", ", code[3], ")\n")
         else
           out:write("L:", code[1], "(")
           for i = 2, #code do
