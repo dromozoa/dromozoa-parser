@@ -62,7 +62,7 @@ local function ref_constant(type, u, value)
     type = type;
     value = value;
     refs = { u.id };
-    var = { "K", index };
+    var = "K" .. index;
   }
   constants[index] = constant
   return constant
@@ -80,7 +80,7 @@ local function decl_name_impl(u, type, key)
     refs = {};
     udefs = {};
     urefs = {};
-    var = { key, index };
+    var = key .. index;
   }
   local names = scope.names
   names[#names + 1] = name
@@ -107,7 +107,7 @@ local function ref_upvalue(upvalues, name, parent)
   local index = #upvalues + 1
   local upvalue = {
     name = name;
-    var = { "U", index };
+    var = "U" .. index;
     uvar = parent and parent.var or name.var;
   }
   upvalues[index] = upvalue
@@ -175,7 +175,7 @@ local function decl_label(u)
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
-    var = { "L", index };
+    var = "L" .. index;
   }
   labels[#labels + 1] = label
   proto_labels[index] = label
@@ -205,7 +205,7 @@ local function R(u)
   local proto = attr(u, "proto")
   local index = proto.R + 1
   proto.R = index
-  return { "R", index }
+  return "R" .. index
 end
 
 local function RX(u)
@@ -218,21 +218,19 @@ local function adjust(X, n)
   local m = #X
   for i = 1, m - 1 do
     local x = X[i]
-    local key = x[1]
-    if #key == 1 and not x[2] then
-      X[i] = { key, 1 }
+    if #x == 1 then
+      X[i] = x .. 1
     end
   end
   if n then
     local x = X[m]
-    local key = x[1]
-    if #key == 1 and not x[2] then
+    if #x == 1 then
       for i = m, n do
-        X[i] = { key, i - m + 1 }
+        X[i] = key .. i - m + 1
       end
     else
-      for i = m + 1, n do
-        X[i] = { "NIL" }
+      for i = m, n do
+        X[i] = "NIL"
       end
     end
   end
@@ -282,11 +280,7 @@ local function make_ref_html(refs)
 end
 
 local function make_var_html(var)
-  if var then
-    return { "td"; table.concat(var) }
-  else
-    return { "td" }
-  end
+  return { "td"; var }
 end
 
 local function make_panel_body_html(thead_html, tbody_html)
@@ -370,7 +364,7 @@ for i = 1, num_nodes do
       refs = {};
       udefs = {};
       urefs = {};
-      var = { "B", 1 };
+      var = "B1";
     }
 
     local external_proto = {
@@ -400,8 +394,8 @@ for i = 1, num_nodes do
       upvalues = {
         {
           name = env_name;
-          var = { "U", 1 };
-          uvar = { "B", 1 };
+          var = "U1";
+          uvar = "B1";
         };
       };
       is_vararg = true;
@@ -434,6 +428,7 @@ for i = 1, num_nodes do
         A = 0;
         B = 0;
         R = 0;
+        blocks = {};
       }
       protos[index] = proto
       u.proto = proto
@@ -445,7 +440,6 @@ for i = 1, num_nodes do
         parent = attr(u.parent, "scope");
         names = {};
         labels = {};
-        blocks = {};
       }
     end
   end
@@ -589,11 +583,10 @@ for i = 1, num_nodes do
       for i = 1, n do
         local x = X[i]
         local y = Y[i]
-        local a = x[1]
-        if type(a) == "string" then
+        if type(x) == "string" then
           code(u, "MOVE", x, y)
         else
-          code(u, "SETTABLE", a, x[2], y)
+          code(u, "SETTABLE", x[1], x[2], y)
         end
       end
     elseif s1 == symbol_table.functioncall then
@@ -627,12 +620,11 @@ for i = 1, num_nodes do
       if u.def then
         u.X = u1.X
       else
-        local a = u1.X
-        local b = a[1]
-        if type(b) == "string" then
-          code(u, "MOVE", RX(u), a)
+        local x = u1.X
+        if type(x) == "string" then
+          code(u, "MOVE", RX(u), x)
         else
-          code(u, "GETTABLE", RX(u), b, a[2])
+          code(u, "GETTABLE", RX(u), x[1], x[2])
         end
       end
     elseif s1 == symbol_table.prefixexp then
@@ -689,14 +681,14 @@ for i = 1, num_nodes do
       if s2 == symbol_table.args then
         copy(u1.codes, codes)
         copy(u2.codes, codes)
-        code(u, "NEWSTACK", { "S" })
-        code(u, "PUSH", { "S" }, u1.X)
+        code(u, "NEWSTACK", "S")
+        code(u, "PUSH", "S", u1.X)
         local X = u2.X
         for j = 1, #u2 do
-          code(u, "PUSH", { "S" }, X[j])
+          code(u, "PUSH", "S", X[j])
         end
         code(u, "CALL")
-        u.X = { "T" }
+        u.X = "T"
       end
     end
   elseif s == symbol_table.args then
@@ -905,11 +897,7 @@ for i = 1, num_nodes do
       for k = 2, #code do
         local operand = code[k]
         text_html[#text_html + 1] = " "
-        if type(operand) == "table" then
-          text_html[#text_html + 1] = table.concat(operand)
-        else
-          text_html[#text_html + 1] = tostring(operand)
-        end
+        text_html[#text_html + 1] = tostring(operand)
       end
       text_html[#text_html + 1] = "\n"
     end
