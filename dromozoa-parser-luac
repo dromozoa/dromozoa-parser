@@ -201,15 +201,11 @@ local function ref_label(u)
   return nil, "no visible label '" .. value .. "'"
 end
 
-local function R(u)
+local function RX(u)
   local proto = attr(u, "proto")
   local index = proto.R + 1
   proto.R = index
-  return "R" .. index
-end
-
-local function RX(u)
-  local var = R(u)
+  local var = "R" .. index
   u.X = var
   return var
 end
