@@ -77,10 +77,13 @@
       var $T = $(this);
       var id = $T.attr("id").substr(1);
       var $S = $(".S" + id);
+      var $C = $("#C" + id);
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
       move_s($S);
+      $(".C:visible").toggle(speed);
+      $C.toggle(speed);
     });
 
     $("[data-ref]").on("click", function () {

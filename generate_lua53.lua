@@ -214,8 +214,8 @@ _"varlist"
 
 _"var"
   :_ "Name"
-  :_ "prefixexp" "[" "exp" "]"
-  :_ "prefixexp" "." "Name"
+  :_ "prefixexp" "[" "exp" "]" {1,3}
+  :_ "prefixexp" "." "Name" {1,3}
   :_ "functioncall" "[" "exp" "]"
   :_ "functioncall" "." "Name"
 
@@ -298,7 +298,7 @@ _"parlist"
   :_ "..." {"namelist",1}
 
 _"tableconstructor"
-  :_ "{" "}" {}
+  :_ "{" "}" {"fieldlist"}
   :_ "{" "fieldlist" "}" {2}
   :_ "{" "fieldlist" "fieldsep" "}" {2}
 
