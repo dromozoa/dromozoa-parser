@@ -17,13 +17,30 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
 local error_message = require "dromozoa.parser.error_message"
 local write_html = require "dromozoa.parser.write_html"
 local symbol_value = require "dromozoa.parser.symbol_value"
 local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+
+local char_table = {}
+for byte = 0, 31 do
+  char_table[string.char(byte)] = ([[\u%04x]]):format(byte)
+end
+char_table["\""] = [[\"]]
+char_table["\\"] = [[\\]]
+char_table["\b"] = [[\b]]
+char_table["\f"] = [[\f]]
+char_table["\n"] = [[\n]]
+char_table["\r"] = [[\r]]
+char_table["\t"] = [[\t]]
+char_table[string.char(0xE2, 0x80, 0xA8)] = [[\u2028]] -- LINE SEPARATOR
+char_table[string.char(0xE2, 0x80, 0xA9)] = [[\u2029]] -- PARAGRAPH SEPARATOR
+
+local function encode_string(s)
+  return [["]] .. s:gsub("[%z\1-\31\"\\]", char_table):gsub("\226\128[\168\169]", char_table) .. [["]]
+end
 
 local function attr(u, key, value)
   if value == nil then
@@ -225,12 +242,53 @@ local function adjust(X, n)
         X[i] = key .. i - m + 1
       end
     else
-      for i = m, n do
+      for i = m + 1, n do
         X[i] = "NIL"
       end
     end
   end
   return X
+end
+
+local function decode_var(var)
+  local key, index = var:match("^(%a+)(%d+)$")
+  if key then
+    return key, tonumber(index)
+  else
+    return var
+  end
+end
+
+local function translate_var(var)
+  local key, index = var:match("^(%a+)(%d+)$")
+  if not key then
+    key = var
+  end
+  if key == "A" then
+    return ("L.stack[L.base + %d]"):format(index)
+  elseif key == "B" then
+    return ("L.stack[L.top + %d]"):format(index)
+  elseif key == "R" then
+    return var
+  elseif key == "K" then
+    return ("L.getconst(%d)"):format(index)
+  elseif key == "U" then
+    return ("L.getupval(%d)"):format(index)
+  elseif key == "S" or key == "T" then
+    if index then
+      return ("L.%s[%d]"):format(key, index)
+    else
+      return ("L.%s"):format(key)
+    end
+  elseif key == "V" then
+    return "V"
+  elseif key == "NIL" then
+    return "undefined"
+  elseif key == "TRUE" then
+    return "true"
+  elseif key == "FALSE" then
+    return "false"
+  end
 end
 
 local function code(u, ...)
@@ -292,7 +350,7 @@ local function make_panel_body_html(thead_html, tbody_html)
   end
 end
 
-local source_file, html_file = ...
+local source_file, html_file, chunk_file = ...
 local source
 
 if source_file then
@@ -372,7 +430,6 @@ for i = 1, num_nodes do
       A = 0;
       B = 1;
       R = 0;
-      blocks = {};
     }
 
     local external_scope = {
@@ -398,7 +455,6 @@ for i = 1, num_nodes do
       A = 0;
       B = 0;
       R = 0;
-      blocks = {};
     }
 
     protos = { proto }
@@ -410,6 +466,7 @@ for i = 1, num_nodes do
       names = {};
       labels = {};
     }
+    u.X = "P1"
   else
     if u.proto then
       local index = #protos + 1
@@ -424,10 +481,10 @@ for i = 1, num_nodes do
         A = 0;
         B = 0;
         R = 0;
-        blocks = {};
       }
       protos[index] = proto
       u.proto = proto
+      u.X = "P" .. index
     end
 
     if u.scope then
@@ -552,11 +609,13 @@ for i = 1, num_nodes do
   local s4 = u4 and u4[0]
   local codes = u.codes
 
-  if s == symbol_table.block then
-    copy(u1.codes, codes)
+  if s == symbol_table.chunk then
     local proto = attr(u, "proto")
-    local blocks = proto.blocks
-    blocks[#blocks + 1] = codes
+    proto.codes = u1.codes
+  elseif s == symbol_table.block then
+    if u1 then
+      copy(u1.codes, codes)
+    end
   elseif s == symbol_table.stats then
     for j = 1, #u do
       local stat = u[j]
@@ -587,6 +646,8 @@ for i = 1, num_nodes do
       end
     elseif s1 == symbol_table.functioncall then
       copy(u1.codes, codes)
+    elseif s1 == symbol_table["do"] then
+      copy(u2.codes, codes)
     elseif s1 == symbol_table["local"] then
       if s2 == symbol_table.explist then
         local X = u3.X
@@ -653,6 +714,10 @@ for i = 1, num_nodes do
     local binop = u.binop
     if s1 == symbol_table.IntegerConstant then
       code(u, "MOVE", RX(u), u1.X)
+    elseif s1 == symbol_table["..."] then
+      u.X = "V"
+    elseif s1 == symbol_table.functiondef then
+      code(u, "CLOSURE", RX(u), u1[1].X)
     elseif s1 == symbol_table.prefixexp then
       u.X = u1.X
       copy(u1.codes, codes)
@@ -680,7 +745,7 @@ for i = 1, num_nodes do
         code(u, "NEWSTACK", "S")
         code(u, "PUSH", "S", u1.X)
         local X = u2.X
-        for j = 1, #u2 do
+        for j = 1, #X do
           code(u, "PUSH", "S", X[j])
         end
         code(u, "CALL")
@@ -692,6 +757,9 @@ for i = 1, num_nodes do
       copy(u1.codes, codes)
       u.X = adjust(u1.X)
     end
+  elseif s == symbol_table.funcbody then
+    local proto = attr(u, "proto")
+    proto.codes = u2.codes
   elseif s == symbol_table.tableconstructor then
     code(u, "NEWTABLE", RX(u))
   end
@@ -922,7 +990,7 @@ for i = 1, num_protos do
     local type = constant.type
     local value = constant.value
     if type == "string" then
-      value = dumper.encode_string(value)
+      value = encode_string(value)
     end
     constants_html[#constants_html + 1] = { "tr";
       { "td"; i };
@@ -991,13 +1059,15 @@ local script = ([[
 /*jslint this,white*/
 "use strict";
 (function (root) {
-  root.dromozoa = {
-    parser: {
-      setting: {
-        node_width: %.17g,
-        node_height: %.17g
-      }
-    }
+  if (!root.dromozoa) {
+    root.dromozoa = {};
+  }
+  if (!root.dromozoa.parser) {
+    root.dromozoa.parser = {};
+  }
+  root.dromozoa.parser.setting = {
+    node_width: %.17g,
+    node_height: %.17g
   };
 }(this.self));
 ]]):format(node_width, node_height)
@@ -1130,7 +1200,123 @@ write_html(out, { "html"; lang = "en";
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
     { "script"; script };
     { "script"; src = "dromozoa-parser-luac.js" };
+    { "script"; src = chunk_file };
+    { "script"; src = "dromozoa-parser-lua.js" };
+    { "script"; src = "dromozoa-parser-lua-test.js" };
   };
 })
 out:write("\n")
+out:close()
+
+local out = assert(io.open(chunk_file, "w"))
+out:write([[
+/*jslint this,white*/
+"use strict";
+(function (root) {
+  var A = "A";
+  var B = "B";
+  var U = "U";
+  var protos = [ undefined ];
+  var P;
+]])
+
+for i = 1, #protos do
+  local proto = protos[i]
+  out:write("  P = function (L) {\n")
+  for i = 1, proto.R do
+    out:write(("    var R%d;\n"):format(i))
+  end
+
+  local codes = proto.codes
+  for j = 1, #codes do
+    local code = codes[j]
+    local opcode = code[1]
+    out:write("    ")
+    if opcode == "CLOSURE" then
+      local key, index = decode_var(code[3])
+      out:write(("%s = L.closure(%d)"):format(translate_var(code[2]), index))
+    elseif opcode == "MOVE" then
+      local key, index = decode_var(code[2])
+      if key == "U" then
+        out:write(("L.setupval(%d, %s)"):format(index, translate_var(code[3])))
+      else
+        out:write(("%s = %s"):format(translate_var(code[2]), translate_var(code[3])))
+      end
+    elseif opcode == "NEWTABLE" then
+      out:write(("%s = L.newtable()"):format(translate_var(code[2])))
+    elseif opcode == "GETTABLE" then
+      out:write(("%s = L.gettable(%s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    elseif opcode == "SETTABLE" then
+      out:write(("L.settable(%s, %s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    elseif opcode == "NEWSTACK" then
+      out:write(("%s = L.newstack()"):format(translate_var(code[2])))
+    elseif opcode == "PUSH" then
+      if code[3] == "V" then
+        out:write(("L.push_vararg(%s)"):format(translate_var(code[2])))
+      else
+        out:write(("%s.push(%s)"):format(translate_var(code[2]), translate_var(code[3])))
+      end
+    elseif opcode == "CALL" then
+      out:write("L.call()")
+    elseif opcode == "ADD" then
+      out:write(("%s = %s + %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    elseif opcode == "MUL" then
+      out:write(("%s = %s * %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    end
+    out:write(";\n")
+  end
+
+  out:write("    return L.ret();\n")
+  out:write("  };\n")
+
+  local constants = proto.constants
+  out:write("  P.constants = [\n    undefined")
+  for j = 1, #constants do
+    local constant = constants[j]
+    local type = constant.type
+    local value = constant.value
+    out:write((",\n    /* %s */ "):format(constant.var))
+    if type == "string" then
+      out:write(encode_string(value))
+    else
+      out:write(("%.17g"):format(value))
+    end
+  end
+  out:write("\n  ];\n")
+
+  local upvalues = proto.upvalues
+  out:write("  P.upvalues = [\n    undefined")
+  for j = 1, #upvalues do
+    local upvalue = upvalues[j]
+    local key, index = decode_var(upvalue.uvar)
+    out:write((",\n    /* %s */ [%s,%d]"):format(upvalue.var, key, index))
+  end
+  out:write("\n  ];\n")
+
+  out:write(([[
+  P.A = %d;
+  P.B = %d;
+  P.R = %d;
+  protos[%d] = P;
+]]):format(proto.A, proto.B, proto.R, i))
+end
+
+out:write([[
+  var chunk = function (L) {
+    var R1;
+    var R2;
+    R1 = L.newtable();
+    L.settable(R1, "print", L.print);
+    L.stack[L.top + 1] = R1;
+    R2 = L.closure(1);
+    L.S = L.newstack();
+    L.S.push(R2);
+    L.call();
+  };
+  chunk.protos = protos;
+  root.dromozoa = root.dromozoa || {};
+  root.dromozoa.parser = root.dromozoa.parser || {};
+  root.dromozoa.parser.chunk = chunk;
+}(this.self));
+]])
 out:close()

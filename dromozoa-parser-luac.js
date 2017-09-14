@@ -16,7 +16,9 @@
     var zoom_scale;
 
     var move_s = function ($S) {
-      $("html, body").animate({ scrollTop: $S.offset().top }, speed);
+      if ($S.length > 0) {
+        $("html, body").animate({ scrollTop: $S.offset().top }, speed);
+      }
     };
 
     var move_t = function ($T) {

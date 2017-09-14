@@ -15,9 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local a = {}
-a[1] = 42
-a.a = {}
-a.a.a = 42
-a.a[2] = a[1] + a.a.a
-print(a[1], a.a[2])
+local f = function ()
+  print(42)
+end
+
+f()
+f()

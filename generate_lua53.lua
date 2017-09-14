@@ -159,7 +159,7 @@ _"stat"
   :_ "label"
   :_ "break"
   :_ "goto" "Name" :attr(2, "label")
-  :_ "do" "block" "end" :attr "scope"
+  :_ "do" "block" "end" :attr "scope" {1,2}
   :_ "while" "exp" "do" "block" "end" :attr "scope"
   :_ "repeat" "block" "until" "exp"
   :_ "if_clauses" "end"
@@ -286,7 +286,7 @@ _"args"
   :_ "LiteralString"
 
 _"functiondef"
-  :_ "function" "funcbody"
+  :_ "function" "funcbody" {2}
 
 _"funcbody"
   :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {2,4}

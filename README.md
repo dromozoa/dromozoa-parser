@@ -118,15 +118,18 @@ Parser generator toolkit.
 
 ### Operands
 
-| Name | Description      |
-|------|------------------|
-| A    | parameter        |
-| B    | local            |
-| R    | register         |
-| L    | label            |
-| K    | constant         |
-| U    | upvalue          |
-| S    | stack for call   |
-| T    | stack for result |
-| P    | proto            |
-| C    | code block       |
+| Name  | Description      |
+|-------|------------------|
+| A     | parameter        |
+| B     | local            |
+| R     | register         |
+| L     | label            |
+| K     | constant         |
+| U     | upvalue          |
+| S     | stack for call   |
+| T     | stack for result |
+| P     | proto            |
+| V     | vararg           |
+| NIL   | nil              |
+| FALSE | false            |
+| TRUE  | true             |
