@@ -95,7 +95,7 @@ Parser generator toolkit.
 
 ### Attribute Actions
 
-| Code | Operand                | #Operands | Description         |
+| Code | Operator               | #Operands | Description         |
 |-----:|------------------------|----------:|---------------------|
 |    1 | `:attr(key, value)`    |         2 | set attribute       |
 |    2 | `:attr(i, key, value)` |         3 | set child attribute |
@@ -116,20 +116,35 @@ Parser generator toolkit.
 
 ## Virtual Machine
 
+### Opcodes
+
+| Name     | #Operands | Description          |
+|----------|----------:|----------------------|
+| MOVE     |         2 | `A = B`              |
+| GETTABLE |         3 | `A = B[C]`           |
+| SETTABLE |         3 | `A[B] = C`           |
+| NEWTABLE |         1 | `A = new Table()`    |
+| ADD      |         3 | `A = B + C`          |
+| MUL      |         3 | `A = B * C`          |
+| NEWSTACK |         1 | `S = new Stack()`    |
+| PUSH     |         2 | `S.push(B)`          |
+| CALL     |         0 | `call()`             |
+| CLOSURE  |         1 | `A = new Closure(P)` |
+
 ### Operands
 
-| Name  | Description      |
-|-------|------------------|
-| A     | parameter        |
-| B     | local            |
-| R     | register         |
-| L     | label            |
-| K     | constant         |
-| U     | upvalue          |
-| S     | stack for call   |
-| T     | stack for result |
-| P     | proto            |
-| V     | vararg           |
-| NIL   | nil              |
-| FALSE | false            |
-| TRUE  | true             |
+| Name      | Read Only | Description        |
+|-----------|:---------:|--------------------|
+| `Ai`      |           | parameter          |
+| `Bi`      |           | local              |
+| `Ri`      |           | register           |
+| `Li`      |    yes    | label              |
+| `Ki`      |    yes    | constant           |
+| `Ui`      |           | upvalue            |
+| `S`, `Si` |           | stack for call/ret |
+| `T`, `Ti` |    yes    | stack for result   |
+| `Pi`      |    yes    | proto              |
+| `V`, `Vi` |    yes    | vararg             |
+| `NIL`     |    yes    | nil                |
+| `FALSE`   |    yes    | false              |
+| `TRUE`    |    yes    | true               |
