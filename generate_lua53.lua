@@ -143,10 +143,10 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ ()
-  :_ "retstat"
-  :_ "stats"
-  :_ "stats" "retstat"
+  :_ () {"stats","retstat"}
+  :_ "retstat" {"stats",1}
+  :_ "stats" {1,"retstat"}
+  :_ "stats" "retstat" {1,2}
 
 _"stats"
   :_ "stat"
@@ -159,7 +159,7 @@ _"stat"
   :_ "label"
   :_ "break"
   :_ "goto" "Name" :attr(2, "label")
-  :_ "do" "block" "end" :attr "scope"
+  :_ "do" "block" "end" :attr "scope" {1,2}
   :_ "while" "exp" "do" "block" "end" :attr "scope"
   :_ "repeat" "block" "until" "exp"
   :_ "if_clauses" "end"
@@ -174,8 +174,8 @@ _"stat"
 _"retstat"
   :_ "return"
   :_ "return" ";"
-  :_ "return" "explist"
-  :_ "return" "explist" ";"
+  :_ "return" "explist" {1,2}
+  :_ "return" "explist" ";" {1,2}
 
 _"label"
   :_ "::" "Name" "::" :attr(2, "label") {2}
@@ -214,8 +214,8 @@ _"varlist"
 
 _"var"
   :_ "Name"
-  :_ "prefixexp" "[" "exp" "]"
-  :_ "prefixexp" "." "Name"
+  :_ "prefixexp" "[" "exp" "]" {1,3}
+  :_ "prefixexp" "." "Name" {1,3}
   :_ "functioncall" "[" "exp" "]"
   :_ "functioncall" "." "Name"
 
@@ -286,7 +286,7 @@ _"args"
   :_ "LiteralString"
 
 _"functiondef"
-  :_ "function" "funcbody"
+  :_ "function" "funcbody" {2}
 
 _"funcbody"
   :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {2,4}
@@ -298,7 +298,7 @@ _"parlist"
   :_ "..." {"namelist",1}
 
 _"tableconstructor"
-  :_ "{" "}" {}
+  :_ "{" "}" {"fieldlist"}
   :_ "{" "fieldlist" "}" {2}
   :_ "{" "fieldlist" "fieldsep" "}" {2}
 

@@ -17,13 +17,30 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
 local error_message = require "dromozoa.parser.error_message"
 local write_html = require "dromozoa.parser.write_html"
 local symbol_value = require "dromozoa.parser.symbol_value"
 local tree_layout = require "dromozoa.parser.tree_layout"
 local lua53_lexer = require "dromozoa.parser.lexers.lua53_lexer"
 local lua53_parser = require "dromozoa.parser.parsers.lua53_parser"
+
+local char_table = {}
+for byte = 0, 31 do
+  char_table[string.char(byte)] = ([[\u%04x]]):format(byte)
+end
+char_table["\""] = [[\"]]
+char_table["\\"] = [[\\]]
+char_table["\b"] = [[\b]]
+char_table["\f"] = [[\f]]
+char_table["\n"] = [[\n]]
+char_table["\r"] = [[\r]]
+char_table["\t"] = [[\t]]
+char_table[string.char(0xE2, 0x80, 0xA8)] = [[\u2028]] -- LINE SEPARATOR
+char_table[string.char(0xE2, 0x80, 0xA9)] = [[\u2029]] -- PARAGRAPH SEPARATOR
+
+local function encode_string(s)
+  return [["]] .. s:gsub("[%z\1-\31\"\\]", char_table):gsub("\226\128[\168\169]", char_table) .. [["]]
+end
 
 local function attr(u, key, value)
   if value == nil then
@@ -62,15 +79,17 @@ local function ref_constant(type, u, value)
     type = type;
     value = value;
     refs = { u.id };
-    var = { "K", index };
+    var = "K" .. index;
   }
   constants[index] = constant
   return constant
 end
 
-local function decl_name_impl(u, type)
+local function decl_name_impl(u, type, key)
   local scope = attr(u, "scope")
-  local names = scope.names
+  local proto = scope.proto
+  local index = proto[key] + 1
+  proto[key] = index
   local name = {
     type = type;
     value = symbol_value(u);
@@ -78,7 +97,9 @@ local function decl_name_impl(u, type)
     refs = {};
     udefs = {};
     urefs = {};
+    var = key .. index;
   }
+  local names = scope.names
   names[#names + 1] = name
   local names = scope.proto.names
   names[#names + 1] = name
@@ -86,11 +107,11 @@ local function decl_name_impl(u, type)
 end
 
 local function param_name(u)
-  return decl_name_impl(u, "param")
+  return decl_name_impl(u, "param", "A")
 end
 
 local function decl_name(u)
-  return decl_name_impl(u, "local")
+  return decl_name_impl(u, "local", "B")
 end
 
 local function ref_upvalue(upvalues, name, parent)
@@ -103,8 +124,8 @@ local function ref_upvalue(upvalues, name, parent)
   local index = #upvalues + 1
   local upvalue = {
     name = name;
-    parent = parent;
-    var = { "U", index };
+    var = "U" .. index;
+    uvar = parent and parent.var or name.var;
   }
   upvalues[index] = upvalue
   return upvalue
@@ -171,7 +192,7 @@ local function decl_label(u)
     value = symbol_value(u);
     defs = { u.id };
     refs = {};
-    var = { "L", index };
+    var = "L" .. index;
   }
   labels[#labels + 1] = label
   proto_labels[index] = label
@@ -195,6 +216,84 @@ local function ref_label(u)
     scope = scope.parent
   until not scope or scope.proto ~= proto
   return nil, "no visible label '" .. value .. "'"
+end
+
+local function RX(u)
+  local proto = attr(u, "proto")
+  local index = proto.R + 1
+  proto.R = index
+  local var = "R" .. index
+  u.X = var
+  return var
+end
+
+local function adjust(X, n)
+  local m = #X
+  for i = 1, m - 1 do
+    local x = X[i]
+    if #x == 1 then
+      X[i] = x .. 1
+    end
+  end
+  if n then
+    local x = X[m]
+    if #x == 1 then
+      for i = m, n do
+        X[i] = key .. i - m + 1
+      end
+    else
+      for i = m + 1, n do
+        X[i] = "NIL"
+      end
+    end
+  end
+  return X
+end
+
+local function decode_var(var)
+  local key, index = var:match("^(%a+)(%d+)$")
+  if key then
+    return key, tonumber(index)
+  else
+    return var
+  end
+end
+
+local function translate_var(var)
+  local key, index = var:match("^(%a+)(%d+)$")
+  if not key then
+    key = var
+  end
+  if key == "A" then
+    return ("L.stack[L.base + %d]"):format(index)
+  elseif key == "B" then
+    return ("L.stack[L.top + %d]"):format(index)
+  elseif key == "R" then
+    return var
+  elseif key == "K" then
+    return ("L.getconst(%d)"):format(index)
+  elseif key == "U" then
+    return ("L.getupval(%d)"):format(index)
+  elseif key == "S" or key == "T" then
+    if index then
+      return ("L.%s[%d]"):format(key, index)
+    else
+      return ("L.%s"):format(key)
+    end
+  elseif key == "V" then
+    return "V"
+  elseif key == "NIL" then
+    return "undefined"
+  elseif key == "TRUE" then
+    return "true"
+  elseif key == "FALSE" then
+    return "false"
+  end
+end
+
+local function code(u, ...)
+  local codes = u.codes
+  codes[#codes + 1] = { ... }
 end
 
 local function copy(source, result)
@@ -235,11 +334,7 @@ local function make_ref_html(refs)
 end
 
 local function make_var_html(var)
-  if var then
-    return { "td"; var[1] .. var[2] }
-  else
-    return { "td" }
-  end
+  return { "td"; var }
 end
 
 local function make_panel_body_html(thead_html, tbody_html)
@@ -255,7 +350,7 @@ local function make_panel_body_html(thead_html, tbody_html)
   end
 end
 
-local source_file, html_file = ...
+local source_file, html_file, chunk_file = ...
 local source
 
 if source_file then
@@ -323,7 +418,7 @@ for i = 1, num_nodes do
       refs = {};
       udefs = {};
       urefs = {};
-      var = { "T", 1 };
+      var = "B1";
     }
 
     local external_proto = {
@@ -332,8 +427,8 @@ for i = 1, num_nodes do
       labels = {};
       upvalues = {};
       is_vararg = false;
-      B = 0;
-      T = 1;
+      A = 0;
+      B = 1;
       R = 0;
     }
 
@@ -352,10 +447,14 @@ for i = 1, num_nodes do
       upvalues = {
         {
           name = env_name;
-          var = { "U", 1 };
+          var = "U1";
+          uvar = "B1";
         };
       };
       is_vararg = true;
+      A = 0;
+      B = 0;
+      R = 0;
     }
 
     protos = { proto }
@@ -367,6 +466,7 @@ for i = 1, num_nodes do
       names = {};
       labels = {};
     }
+    u.X = "P1"
   else
     if u.proto then
       local index = #protos + 1
@@ -378,9 +478,13 @@ for i = 1, num_nodes do
         labels = {};
         upvalues = {};
         is_vararg = false;
+        A = 0;
+        B = 0;
+        R = 0;
       }
       protos[index] = proto
       u.proto = proto
+      u.X = "P" .. index
     end
 
     if u.scope then
@@ -392,6 +496,8 @@ for i = 1, num_nodes do
       }
     end
   end
+
+  u.codes = {}
 end
 
 local num_protos = #protos
@@ -417,7 +523,9 @@ for i = 1, num_nodes do
     end
   elseif s == symbol_table.label then
     local result, message = decl_label(u1)
-    if not result then
+    if result then
+      u1.X = result.var
+    else
       error(error_message(message, source, u1.i, source_file))
     end
   elseif s == symbol_table.var then
@@ -436,32 +544,34 @@ for i = 1, num_nodes do
       end
     end
   elseif s == symbol_table.IntegerConstant then
-    ref_constant("integer", u, tonumber(symbol_value(u)))
+    u.X = ref_constant("integer", u, tonumber(symbol_value(u))).var
   elseif s == symbol_table.FloatConstant then
-    ref_constant("float", u, tonumber(symbol_value(u)))
+    u.X = ref_constant("float", u, tonumber(symbol_value(u))).var
   elseif s == symbol_table.LiteralString then
-    ref_constant("string", u, symbol_value(u))
+    u.X = ref_constant("string", u, symbol_value(u)).var
   elseif s == symbol_table.Name then
     if u.param then
-      param_name(u)
+      u.X = param_name(u).var
     elseif u.decl then
-      decl_name(u)
+      u.X = decl_name(u).var
     elseif u.def then
       local result = def_name(u)
-      if not result then
-        ref_env(u)
-        ref_constant("string", u, symbol_value(u))
+      if result then
+        u.X = result.var
+      else
+        u.X = { ref_env(u).var, ref_constant("string", u, symbol_value(u)).var }
         u.env = true
       end
     elseif u.ref then
       local result = ref_name(u)
-      if not result then
-        ref_env(u)
-        ref_constant("string", u, symbol_value(u))
+      if result then
+        u.X = result.var
+      else
+        u.X = { ref_env(u).var, ref_constant("string", u, symbol_value(u)).var }
         u.env = true
       end
     elseif not u.label then
-      ref_constant("string", u, symbol_value(u))
+      u.X = ref_constant("string", u, symbol_value(u)).var
     end
   end
 end
@@ -479,46 +589,179 @@ for i = 1, num_nodes do
   if s == symbol_table.stat then
     if s1 == symbol_table["goto"] then
       local result, message = ref_label(u2)
-      if not result then
+      if result then
+        u2.X = result.var
+      else
         error(error_message(message, source, u2.i, source_file))
       end
     end
   end
 end
 
-for i = 1, num_protos do
-  local proto = protos[i]
-  local names = proto.names
-  local B = 0
-  local T = 0
-  local R = 0
-  for j = 1, #names do
-    local name = names[j]
-    if name.type == "param" then
-      B = B + 1
-      name.var = { "B", B }
-    else
-      if #name.refs + #name.urefs > 0 then
-        T = T + 1
-        name.var = { "T", T }
-      else
-        R = R + 1
-        name.var = { "R", R }
+for i = 1, num_nodes do
+  local u = finish_nodes[i]
+  local s = u[0]
+  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+  local s = u[0]
+  local s1 = u1 and u1[0]
+  local s2 = u2 and u2[0]
+  local s3 = u3 and u3[0]
+  local s4 = u4 and u4[0]
+  local codes = u.codes
+
+  if s == symbol_table.chunk then
+    local proto = attr(u, "proto")
+    proto.codes = u1.codes
+  elseif s == symbol_table.block then
+    if u1 then
+      copy(u1.codes, codes)
+    end
+  elseif s == symbol_table.stats then
+    for j = 1, #u do
+      local stat = u[j]
+      copy(stat.codes, codes)
+    end
+  elseif s == symbol_table.stat then
+    if s1 == symbol_table["="] then
+      local X = u3.X
+      local n = #X
+      local Y = adjust(u2.X, n)
+      for i = 1, #u2 do
+        local exp = u2[i]
+        copy(exp.codes, codes)
+      end
+      for i = 1, #u3 do
+        local var = u3[i]
+        copy(var.codes, codes)
+      end
+      -- copy codes
+      for i = 1, n do
+        local x = X[i]
+        local y = Y[i]
+        if type(x) == "string" then
+          code(u, "MOVE", x, y)
+        else
+          code(u, "SETTABLE", x[1], x[2], y)
+        end
+      end
+    elseif s1 == symbol_table.functioncall then
+      copy(u1.codes, codes)
+    elseif s1 == symbol_table["do"] then
+      copy(u2.codes, codes)
+    elseif s1 == symbol_table["local"] then
+      if s2 == symbol_table.explist then
+        local X = u3.X
+        local n = #X
+        local Y = adjust(u2.X, n)
+        for i = 1, #u2 do
+          local exp = u2[i]
+          copy(exp.codes, codes)
+        end
+        for i = 1, n do
+          local x = X[i]
+          local y = Y[i]
+          code(u, "MOVE", x, y)
+        end
       end
     end
-  end
-  proto.B = B
-  proto.T = T
-  proto.R = R
-  local upvalues = proto.upvalues
-  for j = 1, #upvalues do
-    local upvalue = upvalues[j]
-    local parent = upvalue.parent
-    if parent then
-      upvalue.uvar = parent.var
-    else
-      upvalue.uvar = upvalue.name.var
+  elseif s == symbol_table.varlist then
+    local X = {}
+    u.X = X
+    for i = 1, #u do
+      local var = u[i]
+      X[i] = var.X
+      -- [TODO] copy?
     end
+  elseif s == symbol_table.var then
+    if s1 == symbol_table.Name then
+      if u.def then
+        u.X = u1.X
+      else
+        local x = u1.X
+        if type(x) == "string" then
+          code(u, "MOVE", RX(u), x)
+        else
+          code(u, "GETTABLE", RX(u), x[1], x[2])
+        end
+      end
+    elseif s1 == symbol_table.prefixexp then
+      if u.def then
+        copy(u1.codes, codes)
+        copy(u2.codes, codes)
+        u.X = { u1.X, u2.X }
+      else
+        copy(u1.codes, codes)
+        copy(u2.codes, codes)
+        code(u, "GETTABLE", RX(u), u1.X, u2.X)
+      end
+    end
+  elseif s == symbol_table.namelist then
+    local X = {}
+    u.X = X
+    for i = 1, #u do
+      local name = u[i]
+      X[i] = name.X
+    end
+  elseif s == symbol_table.explist then
+    local X = {}
+    u.X = X
+    for i = 1, #u do
+      local exp = u[i]
+      X[i] = exp.X
+      copy(exp.codes, codes)
+    end
+  elseif s == symbol_table.exp then
+    local binop = u.binop
+    if s1 == symbol_table.IntegerConstant then
+      code(u, "MOVE", RX(u), u1.X)
+    elseif s1 == symbol_table["..."] then
+      u.X = "V"
+    elseif s1 == symbol_table.functiondef then
+      code(u, "CLOSURE", RX(u), u1[1].X)
+    elseif s1 == symbol_table.prefixexp then
+      u.X = u1.X
+      copy(u1.codes, codes)
+    elseif s1 == symbol_table.functioncall then
+      u.X = u1.X
+      copy(u1.codes, codes)
+    elseif s1 == symbol_table.tableconstructor then
+      u.X = u1.X
+      copy(u1.codes, codes)
+    elseif binop then
+      copy(u2.codes, codes)
+      copy(u3.codes, codes)
+      code(u, binop, RX(u), u2.X, u3.X)
+    end
+  elseif s == symbol_table.prefixexp then
+    if s1 == symbol_table.var then
+      u.X = u1.X
+      copy(u1.codes, codes)
+    end
+  elseif s == symbol_table.functioncall then
+    if s1 == symbol_table.prefixexp then
+      if s2 == symbol_table.args then
+        copy(u1.codes, codes)
+        copy(u2.codes, codes)
+        code(u, "NEWSTACK", "S")
+        code(u, "PUSH", "S", u1.X)
+        local X = u2.X
+        for j = 1, #X do
+          code(u, "PUSH", "S", X[j])
+        end
+        code(u, "CALL")
+        u.X = "T"
+      end
+    end
+  elseif s == symbol_table.args then
+    if s1 == symbol_table.explist then
+      copy(u1.codes, codes)
+      u.X = adjust(u1.X)
+    end
+  elseif s == symbol_table.funcbody then
+    local proto = attr(u, "proto")
+    proto.codes = u2.codes
+  elseif s == symbol_table.tableconstructor then
+    code(u, "NEWTABLE", RX(u))
   end
 end
 
@@ -652,7 +895,7 @@ end
 local tree_width = 640
 local tree_height = 480
 local node_width = 160
-local node_height = 56
+local node_height = 32
 
 tree_layout(root, node_height, node_width, "y", "x")
 
@@ -660,6 +903,7 @@ local defs = {}
 local defs_html = { "defs" }
 local edges_html = { "g"; class = "edges" }
 local nodes_html = { "g"; class = "nodes" }
+local codes_html = { "div"; class = "body" }
 
 for i = 1, num_nodes do
   local u = discover_nodes[i]
@@ -688,16 +932,11 @@ for i = 1, num_nodes do
     }
   end
 
-  local text_html
-
-  nodes_html[#nodes_html + 1] = { "g";
+  nodes_html[#nodes_html + 1] = { "use";
     transform = ("translate(%.17g,%.17g)"):format(ux, uy);
-    { "use";
-      id = "T" .. u.id;
-      class = "T";
-      ["xlink:href"] = "#D" .. s;
-    };
-    text_html;
+    id = "T" .. u.id;
+    class = "T";
+    ["xlink:href"] = "#D" .. s;
   }
 
   for i = 1, #u do
@@ -708,6 +947,25 @@ for i = 1, num_nodes do
     edges_html[#edges_html + 1] = { "path";
       d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
     };
+  end
+
+  local codes = u.codes
+  if codes and codes[1] then
+    local text_html = { "div";
+      id = "C" .. u.id;
+      class = "C";
+    }
+    for j = 1, #codes do
+      local code = codes[j]
+      text_html[#text_html + 1] = code[1]
+      for k = 2, #code do
+        local operand = code[k]
+        text_html[#text_html + 1] = " "
+        text_html[#text_html + 1] = tostring(operand)
+      end
+      text_html[#text_html + 1] = "\n"
+    end
+    codes_html[#codes_html + 1] = text_html
   end
 end
 
@@ -722,8 +980,8 @@ for i = 1, num_protos do
   protos_html[#protos_html + 1] = { "tr";
     { "td"; i };
     { "td"; proto.is_vararg };
+    { "td"; proto.A };
     { "td"; proto.B };
-    { "td"; proto.T };
     { "td"; proto.R };
   }
   local constants = proto.constants
@@ -732,7 +990,7 @@ for i = 1, num_protos do
     local type = constant.type
     local value = constant.value
     if type == "string" then
-      value = dumper.encode_string(value)
+      value = encode_string(value)
     end
     constants_html[#constants_html + 1] = { "tr";
       { "td"; i };
@@ -782,7 +1040,6 @@ for i = 1, num_protos do
       make_ref_html(name.refs);
       make_ref_html(name.udefs);
       make_ref_html(name.urefs);
-      { "td"; not upvalue.parent };
       make_var_html(upvalue.var);
       make_var_html(upvalue.uvar);
     }
@@ -802,13 +1059,15 @@ local script = ([[
 /*jslint this,white*/
 "use strict";
 (function (root) {
-  root.dromozoa = {
-    parser: {
-      setting: {
-        node_width: %.17g,
-        node_height: %.17g
-      }
-    }
+  if (!root.dromozoa) {
+    root.dromozoa = {};
+  }
+  if (!root.dromozoa.parser) {
+    root.dromozoa.parser = {};
+  }
+  root.dromozoa.parser.setting = {
+    node_width: %.17g,
+    node_height: %.17g
   };
 }(this.self));
 ]]):format(node_width, node_height)
@@ -853,8 +1112,8 @@ write_html(out, { "html"; lang = "en";
         { "tr";
           { "th"; "#" };
           { "th"; "is_vararg" };
+          { "th"; "A" };
           { "th"; "B" };
-          { "th"; "T" };
           { "th"; "R" };
         };
       }, protos_html);
@@ -912,11 +1171,15 @@ write_html(out, { "html"; lang = "en";
           { "th"; "ref" };
           { "th"; "udef" };
           { "th"; "uref" };
-          { "th"; "in_stack" };
           { "th"; "var" };
           { "th"; "uvar" };
         };
       }, upvalues_html);
+    };
+
+    { "div"; class = "panel panel-text codes";
+      { "div"; class = "head"; "Codes" };
+      codes_html;
     };
 
     { "div"; class = "menu";
@@ -928,6 +1191,7 @@ write_html(out, { "html"; lang = "en";
         { "div"; class = "toggle"; ["data-toggle"] = ".labels"; "Labels"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".constants"; "Constants"; };
         { "div"; class = "toggle"; ["data-toggle"] = ".upvalues"; "Upvalues"; };
+        { "div"; class = "toggle"; ["data-toggle"] = ".codes"; "Codes"; };
       };
     };
 
@@ -936,7 +1200,123 @@ write_html(out, { "html"; lang = "en";
     { "script"; src = "https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.0/d3.min.js" };
     { "script"; script };
     { "script"; src = "dromozoa-parser-luac.js" };
+    { "script"; src = chunk_file };
+    { "script"; src = "dromozoa-parser-lua.js" };
+    { "script"; src = "dromozoa-parser-lua-test.js" };
   };
 })
 out:write("\n")
+out:close()
+
+local out = assert(io.open(chunk_file, "w"))
+out:write([[
+/*jslint this,white*/
+"use strict";
+(function (root) {
+  var A = "A";
+  var B = "B";
+  var U = "U";
+  var protos = [ undefined ];
+  var P;
+]])
+
+for i = 1, #protos do
+  local proto = protos[i]
+  out:write("  P = function (L) {\n")
+  for i = 1, proto.R do
+    out:write(("    var R%d;\n"):format(i))
+  end
+
+  local codes = proto.codes
+  for j = 1, #codes do
+    local code = codes[j]
+    local opcode = code[1]
+    out:write("    ")
+    if opcode == "CLOSURE" then
+      local key, index = decode_var(code[3])
+      out:write(("%s = L.closure(%d)"):format(translate_var(code[2]), index))
+    elseif opcode == "MOVE" then
+      local key, index = decode_var(code[2])
+      if key == "U" then
+        out:write(("L.setupval(%d, %s)"):format(index, translate_var(code[3])))
+      else
+        out:write(("%s = %s"):format(translate_var(code[2]), translate_var(code[3])))
+      end
+    elseif opcode == "NEWTABLE" then
+      out:write(("%s = L.newtable()"):format(translate_var(code[2])))
+    elseif opcode == "GETTABLE" then
+      out:write(("%s = L.gettable(%s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    elseif opcode == "SETTABLE" then
+      out:write(("L.settable(%s, %s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    elseif opcode == "NEWSTACK" then
+      out:write(("%s = L.newstack()"):format(translate_var(code[2])))
+    elseif opcode == "PUSH" then
+      if code[3] == "V" then
+        out:write(("L.push_vararg(%s)"):format(translate_var(code[2])))
+      else
+        out:write(("%s.push(%s)"):format(translate_var(code[2]), translate_var(code[3])))
+      end
+    elseif opcode == "CALL" then
+      out:write("L.call()")
+    elseif opcode == "ADD" then
+      out:write(("%s = %s + %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    elseif opcode == "MUL" then
+      out:write(("%s = %s * %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+    end
+    out:write(";\n")
+  end
+
+  out:write("    return L.ret();\n")
+  out:write("  };\n")
+
+  local constants = proto.constants
+  out:write("  P.constants = [\n    undefined")
+  for j = 1, #constants do
+    local constant = constants[j]
+    local type = constant.type
+    local value = constant.value
+    out:write((",\n    /* %s */ "):format(constant.var))
+    if type == "string" then
+      out:write(encode_string(value))
+    else
+      out:write(("%.17g"):format(value))
+    end
+  end
+  out:write("\n  ];\n")
+
+  local upvalues = proto.upvalues
+  out:write("  P.upvalues = [\n    undefined")
+  for j = 1, #upvalues do
+    local upvalue = upvalues[j]
+    local key, index = decode_var(upvalue.uvar)
+    out:write((",\n    /* %s */ [%s,%d]"):format(upvalue.var, key, index))
+  end
+  out:write("\n  ];\n")
+
+  out:write(([[
+  P.A = %d;
+  P.B = %d;
+  P.R = %d;
+  protos[%d] = P;
+]]):format(proto.A, proto.B, proto.R, i))
+end
+
+out:write([[
+  var chunk = function (L) {
+    var R1;
+    var R2;
+    R1 = L.newtable();
+    L.settable(R1, "print", L.print);
+    L.stack[L.top + 1] = R1;
+    R2 = L.closure(1);
+    L.S = L.newstack();
+    L.S.push(R2);
+    L.call();
+  };
+  chunk.protos = protos;
+  root.dromozoa = root.dromozoa || {};
+  root.dromozoa.parser = root.dromozoa.parser || {};
+  root.dromozoa.parser.chunk = chunk;
+}(this.self));
+]])
 out:close()

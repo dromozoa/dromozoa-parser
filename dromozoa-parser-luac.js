@@ -16,11 +16,13 @@
     var zoom_scale;
 
     var move_s = function ($S) {
-      $("html, body").animate({ scrollTop: $S.offset().top }, speed);
+      if ($S.length > 0) {
+        $("html, body").animate({ scrollTop: $S.offset().top }, speed);
+      }
     };
 
     var move_t = function ($T) {
-      var t = $T.parent().attr("transform").match(/^translate\((.*?),(.*?)\)$/);
+      var t = $T.attr("transform").match(/^translate\((.*?),(.*?)\)$/);
       var zx = svg.attr("width") * 0.5 - parseFloat(t[1]) * zoom_scale;
       var zy = svg.attr("height") * 0.5 - parseFloat(t[2]) * zoom_scale;
       svg.select(".viewport")
@@ -77,10 +79,13 @@
       var $T = $(this);
       var id = $T.attr("id").substr(1);
       var $S = $(".S" + id);
+      var $C = $("#C" + id);
       $(".active").removeClass("active");
       $S.addClass("active");
       $T.addClass("active");
       move_s($S);
+      $(".C:visible").toggle(speed);
+      $C.toggle(speed);
     });
 
     $("[data-ref]").on("click", function () {

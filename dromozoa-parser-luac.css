@@ -157,6 +157,23 @@ body {
 }
 
 /*
+ * codes
+ */
+
+.codes .body {
+  padding: 0 0.5rem;
+  width: 19rem;
+  height: 30rem;
+
+  background-color: rgba(0, 0, 0, 0.0748);
+  overflow: scroll;
+}
+
+.C {
+  display: none;
+}
+
+/*
  * menu
  */
 
@@ -173,4 +190,18 @@ body {
 .menu .body {
   padding: 0 0.5rem;
   background-color: rgba(0, 0, 0, 0.0748);
+}
+
+/*
+ * debug
+ */
+
+.panel.tree {
+  display: block;
+  left: 20rem;
+}
+
+.panel.codes {
+  display: block;
+  left: 60rem;
 }
