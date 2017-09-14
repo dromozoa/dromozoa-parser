@@ -143,10 +143,10 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ ()
-  :_ "retstat"
-  :_ "stats"
-  :_ "stats" "retstat"
+  :_ () {"stats","retstat"}
+  :_ "retstat" {"stats",1}
+  :_ "stats" {1,"retstat"}
+  :_ "stats" "retstat" {1,2}
 
 _"stats"
   :_ "stat"
@@ -174,8 +174,8 @@ _"stat"
 _"retstat"
   :_ "return"
   :_ "return" ";"
-  :_ "return" "explist"
-  :_ "return" "explist" ";"
+  :_ "return" "explist" {1,2}
+  :_ "return" "explist" ";" {1,2}
 
 _"label"
   :_ "::" "Name" "::" :attr(2, "label") {2}
