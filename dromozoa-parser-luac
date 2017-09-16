@@ -297,7 +297,11 @@ local function translate_var(var)
       return ("L.%s"):format(key)
     end
   elseif key == "V" then
-    return "V"
+    if index then
+      return ("L.stack[L.running.proto.A + %d]"):format(index)
+    else
+      return "V"
+    end
   elseif key == "NIL" then
     return "undefined"
   elseif key == "TRUE" then
@@ -556,12 +560,14 @@ for i = 1, num_nodes do
         error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
       end
     end
-  elseif s == symbol_table.IntegerConstant then
-    u.X = ref_constant("integer", u, tonumber(symbol_value(u))).var
-  elseif s == symbol_table.FloatConstant then
-    u.X = ref_constant("float", u, tonumber(symbol_value(u))).var
-  elseif s == symbol_table.LiteralString then
-    u.X = ref_constant("string", u, symbol_value(u)).var
+  elseif s == symbol_table["false"] then
+    u.X = "FALSE"
+  elseif s == symbol_table["nil"] then
+    u.X = "NIL"
+  elseif s == symbol_table["true"] then
+    u.X = "TRUE"
+  elseif s == symbol_table["..."] then
+    u.X = "V"
   elseif s == symbol_table.Name then
     if u.param then
       u.X = param_name(u).var
@@ -586,6 +592,12 @@ for i = 1, num_nodes do
     elseif not u.label then
       u.X = ref_constant("string", u, symbol_value(u)).var
     end
+  elseif s == symbol_table.LiteralString then
+    u.X = ref_constant("string", u, symbol_value(u)).var
+  elseif s == symbol_table.IntegerConstant then
+    u.X = ref_constant("integer", u, tonumber(symbol_value(u))).var
+  elseif s == symbol_table.FloatConstant then
+    u.X = ref_constant("float", u, tonumber(symbol_value(u))).var
   end
 end
 
@@ -725,30 +737,27 @@ for i = 1, num_nodes do
     end
   elseif s == symbol_table.exp then
     local binop = u.binop
-    if s1 == symbol_table.IntegerConstant then
-      code(u, "MOVE", RX(u), u1.X)
-    elseif s1 == symbol_table["..."] then
-      u.X = "V"
-    elseif s1 == symbol_table.functiondef then
+    local unop = u.unop
+    if s1 == symbol_table.functiondef then
       code(u, "CLOSURE", RX(u), u1[1].X)
-    elseif s1 == symbol_table.prefixexp then
-      u.X = u1.X
-      copy(u1.codes, codes)
-    elseif s1 == symbol_table.functioncall then
-      u.X = u1.X
-      copy(u1.codes, codes)
-    elseif s1 == symbol_table.tableconstructor then
-      u.X = u1.X
-      copy(u1.codes, codes)
     elseif binop then
       copy(u2.codes, codes)
       copy(u3.codes, codes)
       code(u, binop, RX(u), u2.X, u3.X)
+    elseif unop then
+      copy(u2.codes, codes)
+      code(u, unop, RX(u), u2.X)
+    else
+      copy(u1.codes, codes)
+      u.X = u1.X
     end
   elseif s == symbol_table.prefixexp then
-    if s1 == symbol_table.var then
-      u.X = u1.X
-      copy(u1.codes, codes)
+    copy(u1.codes, codes)
+    local x = u1.X
+    if #x == 1 then
+      u.X = x .. 1
+    else
+      u.X = x
     end
   elseif s == symbol_table.functioncall then
     if s1 == symbol_table.prefixexp then

@@ -271,7 +271,7 @@ _"exp"
 -- prefixexp without functioncall
 _"prefixexp"
   :_ "var"
-  :_ "(" "exp" ")"
+  :_ "(" "exp" ")" {2}
 
 _"functioncall"
   :_ "prefixexp" "args"
