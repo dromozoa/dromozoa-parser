@@ -118,33 +118,35 @@ Parser generator toolkit.
 
 ### Opcodes
 
-| Name     | #Operands | Description          |
-|----------|----------:|----------------------|
-| MOVE     |         2 | `A = B`              |
-| GETTABLE |         3 | `A = B[C]`           |
-| SETTABLE |         3 | `A[B] = C`           |
-| NEWTABLE |         1 | `A = new Table()`    |
-| ADD      |         3 | `A = B + C`          |
-| MUL      |         3 | `A = B * C`          |
-| NEWSTACK |         1 | `S = new Stack()`    |
-| PUSH     |         2 | `S.push(B)`          |
-| CALL     |         0 | `call()`             |
-| CLOSURE  |         1 | `A = new Closure(P)` |
+| Name     | Example          | Description          |
+|----------|------------------|----------------------|
+| MOVE     | `MOVE A B`       | `A = B`              |
+| GETTABLE | `GETTABLE A B C` | `A = B[C]`           |
+| SETTABLE | `SETTABLE A B C` | `A[B] = C`           |
+| NEWTABLE | `NEWTABLE A`     | `A = new Table()`    |
+| binop    | `binop A B C`    | `A = B op C`         |
+| unop     | `unop A B`       | `A = op B`           |
+| JMP      | `JMP A`          |                      |
+| TEST     | `TEST A B`       |                      |
+| CALL     | `CALL A`         | `A.call(S)`          |
+| RETURN   | `RETURN`         |                      |
+| CLOSURE  | `CLOSURE A B`    | `A = new Closure(B)` |
+| NEWSTACK | `NEWSTACK`       | `S = new Stack()`    |
+| PUSH     | `PUSH A`         | `S.push(A)`          |
 
 ### Operands
 
-| Name      | Read Only | Description        |
-|-----------|:---------:|--------------------|
-| `Ai`      |           | parameter          |
-| `Bi`      |           | local              |
-| `Ri`      |           | register           |
-| `Li`      |    yes    | label              |
-| `Ki`      |    yes    | constant           |
-| `Ui`      |           | upvalue            |
-| `S`, `Si` |           | stack for call/ret |
-| `T`, `Ti` |    yes    | stack for result   |
-| `Pi`      |    yes    | proto              |
-| `V`, `Vi` |    yes    | vararg             |
-| `NIL`     |    yes    | nil                |
-| `FALSE`   |    yes    | false              |
-| `TRUE`    |    yes    | true               |
+| Name      | Read Only | Description      |
+|-----------|:---------:|------------------|
+| `Ai`      |           | parameter        |
+| `Bi`      |           | register         |
+| `Li`      |    yes    | label            |
+| `Ki`      |    yes    | constant         |
+| `Ui`      |           | upvalue          |
+| `S`, `Si` |           | stack            |
+| `T`, `Ti` |    yes    | stack for result |
+| `Pi`      |    yes    | proto            |
+| `V`, `Vi` |    yes    | vararg           |
+| `NIL`     |    yes    | nil              |
+| `FALSE`   |    yes    | false            |
+| `TRUE`    |    yes    | true             |

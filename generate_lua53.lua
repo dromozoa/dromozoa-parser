@@ -245,28 +245,28 @@ _"exp"
   :_ "exp" "-" "exp" {2,1,3} :attr("binop", "SUB")
   :_ "exp" "*" "exp" {2,1,3} :attr("binop", "MUL")
   :_ "exp" "/" "exp" {2,1,3} :attr("binop", "DIV")
-  :_ "exp" "//" "exp"
-  :_ "exp" "^" "exp"
-  :_ "exp" "%" "exp"
-  :_ "exp" "&" "exp"
-  :_ "exp" "~" "exp"
-  :_ "exp" "|" "exp"
-  :_ "exp" ">>" "exp"
-  :_ "exp" "<<" "exp"
-  :_ "exp" ".." "exp"
-  :_ "exp" "<" "exp"
-  :_ "exp" "<=" "exp"
-  :_ "exp" ">" "exp"
-  :_ "exp" ">=" "exp"
-  :_ "exp" "==" "exp"
-  :_ "exp" "~=" "exp"
-  :_ "exp" "and" "exp"
-  :_ "exp" "or" "exp"
+  :_ "exp" "//" "exp" {2,1,3} :attr("binop", "IDIV")
+  :_ "exp" "^" "exp" {2,1,3} :attr("binop", "POW")
+  :_ "exp" "%" "exp" {2,1,3} :attr("binop", "MOD")
+  :_ "exp" "&" "exp" {2,1,3} :attr("binop", "BAND")
+  :_ "exp" "~" "exp" {2,1,3} :attr("binop", "BXOR")
+  :_ "exp" "|" "exp" {2,1,3} :attr("binop", "BOR")
+  :_ "exp" ">>" "exp" {2,1,3} :attr("binop", "SHR")
+  :_ "exp" "<<" "exp" {2,1,3} :attr("binop", "SHL")
+  :_ "exp" ".." "exp" {2,1,3} :attr("binop", "CONCAT")
+  :_ "exp" "<" "exp" {2,1,3}
+  :_ "exp" "<=" "exp" {2,1,3}
+  :_ "exp" ">" "exp" {2,1,3}
+  :_ "exp" ">=" "exp" {2,1,3}
+  :_ "exp" "==" "exp" {2,1,3}
+  :_ "exp" "~=" "exp" {2,1,3}
+  :_ "exp" "and" "exp" {2,1,3}
+  :_ "exp" "or" "exp" {2,1,3}
   -- unop
-  :_ "-" "exp" :prec "UNM"
-  :_ "not" "exp"
-  :_ "#" "exp"
-  :_ "~" "exp" :prec "BNOT"
+  :_ "-" "exp" :prec "UNM" :attr("unop", "UNM")
+  :_ "not" "exp" :attr("unop", "NOT")
+  :_ "#" "exp" :attr("unop", "LEN")
+  :_ "~" "exp" :prec "BNOT" :attr("unop", "BNOT")
 
 -- prefixexp without functioncall
 _"prefixexp"

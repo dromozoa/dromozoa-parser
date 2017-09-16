@@ -188,6 +188,7 @@ local function decl_label(u)
   end
   local proto_labels = scope.proto.labels
   local index = #proto_labels + 1
+  proto.L = index
   local label = {
     value = symbol_value(u);
     defs = { u.id };
@@ -218,11 +219,28 @@ local function ref_label(u)
   return nil, "no visible label '" .. value .. "'"
 end
 
-local function RX(u)
+local function R(u)
   local proto = attr(u, "proto")
-  local index = proto.R + 1
-  proto.R = index
-  local var = "R" .. index
+  local index = proto.B + 1
+  proto.B = index
+  return "B" .. index
+end
+
+local function RX(u)
+  local var = R(u)
+  u.X = var
+  return var
+end
+
+local function L(u)
+  local proto = attr(u, "proto")
+  local index = proto.L + 1
+  proto.L = index
+  return "L" .. index
+end
+
+local function LX(u)
+  local var = L(u)
   u.X = var
   return var
 end
@@ -268,8 +286,6 @@ local function translate_var(var)
     return ("L.stack[L.base + %d]"):format(index)
   elseif key == "B" then
     return ("L.stack[L.top + %d]"):format(index)
-  elseif key == "R" then
-    return var
   elseif key == "K" then
     return ("L.getconst(%d)"):format(index)
   elseif key == "U" then
@@ -429,7 +445,6 @@ for i = 1, num_nodes do
       is_vararg = false;
       A = 0;
       B = 1;
-      R = 0;
     }
 
     local external_scope = {
@@ -454,7 +469,6 @@ for i = 1, num_nodes do
       is_vararg = true;
       A = 0;
       B = 0;
-      R = 0;
     }
 
     protos = { proto }
@@ -480,7 +494,6 @@ for i = 1, num_nodes do
         is_vararg = false;
         A = 0;
         B = 0;
-        R = 0;
       }
       protos[index] = proto
       u.proto = proto
@@ -982,7 +995,6 @@ for i = 1, num_protos do
     { "td"; proto.is_vararg };
     { "td"; proto.A };
     { "td"; proto.B };
-    { "td"; proto.R };
   }
   local constants = proto.constants
   for j = 1, #constants do
@@ -1114,7 +1126,6 @@ write_html(out, { "html"; lang = "en";
           { "th"; "is_vararg" };
           { "th"; "A" };
           { "th"; "B" };
-          { "th"; "R" };
         };
       }, protos_html);
     };
@@ -1223,9 +1234,6 @@ out:write([[
 for i = 1, #protos do
   local proto = protos[i]
   out:write("  P = function (L) {\n")
-  for i = 1, proto.R do
-    out:write(("    var R%d;\n"):format(i))
-  end
 
   local codes = proto.codes
   for j = 1, #codes do
@@ -1296,9 +1304,8 @@ for i = 1, #protos do
   out:write(([[
   P.A = %d;
   P.B = %d;
-  P.R = %d;
   protos[%d] = P;
-]]):format(proto.A, proto.B, proto.R, i))
+]]):format(proto.A, proto.B, i))
 end
 
 out:write([[
