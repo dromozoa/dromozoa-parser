@@ -738,9 +738,7 @@ for i = 1, num_nodes do
   elseif s == symbol_table.exp then
     local binop = u.binop
     local unop = u.unop
-    if s1 == symbol_table.functiondef then
-      code(u, "CLOSURE", RX(u), u1[1].X)
-    elseif binop then
+    if binop then
       copy(u2.codes, codes)
       copy(u3.codes, codes)
       code(u, binop, RX(u), u2.X, u3.X)
@@ -749,6 +747,7 @@ for i = 1, num_nodes do
       code(u, unop, RX(u), u2.X)
     else
       copy(u1.codes, codes)
+      -- code(u, "MOVE", RX(u), u1.X)
       u.X = u1.X
     end
   elseif s == symbol_table.prefixexp then
@@ -764,11 +763,11 @@ for i = 1, num_nodes do
       if s2 == symbol_table.args then
         copy(u1.codes, codes)
         copy(u2.codes, codes)
-        code(u, "NEWSTACK", "S")
-        code(u, "PUSH", "S", u1.X)
+        code(u, "NEWSTACK")
+        code(u, "PUSH", u1.X)
         local X = u2.X
         for j = 1, #X do
-          code(u, "PUSH", "S", X[j])
+          code(u, "PUSH", X[j])
         end
         code(u, "CALL")
         u.X = "T"
@@ -779,11 +778,49 @@ for i = 1, num_nodes do
       copy(u1.codes, codes)
       u.X = adjust(u1.X)
     end
+  elseif s == symbol_table.functiondef then
+    code(u, "CLOSURE", RX(u), u1.X)
   elseif s == symbol_table.funcbody then
     local proto = attr(u, "proto")
     proto.codes = u2.codes
   elseif s == symbol_table.tableconstructor then
-    code(u, "NEWTABLE", RX(u))
+    copy(u1.codes, codes)
+    u.X = u1.X
+  elseif s == symbol_table.fieldlist then
+    local setlist
+    for i = 1, #u do
+      local field = u[i]
+      copy(field.codes, codes)
+      if type(field.X) == "string" then
+        setlist = true
+      end
+    end
+    local X = RX(u)
+    code(u, "NEWTABLE", X)
+    if setlist then
+      code(u, "NEWSTACK")
+    end
+    for i = 1, #u do
+      local field = u[i]
+      local x = field.X
+      if type(x) == "string" then
+        code(u, "PUSH", x)
+      else
+        code(u, "SETTABLE", X, x[2], x[1])
+      end
+    end
+    if setlist then
+      code(u, "SETLIST", X)
+    end
+  elseif s == symbol_table.field then
+    if u2 then
+      copy(u1.codes, codes)
+      copy(u2.codes, codes)
+      u.X = { u1.X, u2.X }
+    else
+      copy(u1.codes, codes)
+      u.X = u1.X
+    end
   end
 end
 
@@ -1266,15 +1303,17 @@ for i = 1, #protos do
     elseif opcode == "SETTABLE" then
       out:write(("L.settable(%s, %s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
     elseif opcode == "NEWSTACK" then
-      out:write(("%s = L.newstack()"):format(translate_var(code[2])))
+      out:write("L.S = L.newstack()")
     elseif opcode == "PUSH" then
-      if code[3] == "V" then
-        out:write(("L.push_vararg(%s)"):format(translate_var(code[2])))
+      if code[2] == "V" then
+        out:write("L.push_vararg(L.S)")
       else
-        out:write(("%s.push(%s)"):format(translate_var(code[2]), translate_var(code[3])))
+        out:write(("L.S.push(%s)"):format(translate_var(code[2])))
       end
     elseif opcode == "CALL" then
       out:write("L.call()")
+    elseif opcode == "SETLIST" then
+      out:write(("L.setlist(%s)"):format(translate_var(code[2])))
     elseif opcode == "ADD" then
       out:write(("%s = %s + %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
     elseif opcode == "MUL" then

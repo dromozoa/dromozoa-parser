@@ -111,6 +111,14 @@
     delete this.S;
   };
 
+  prototype.setlist = function (table) {
+    var i = 1;
+    while (i <= this.S.length) {
+      table.set(i, this.S[i - 1]);
+      i += 1;
+    }
+  }
+
   prototype.getconst = function (index) {
     return this.running.proto.constants[index];
   };
