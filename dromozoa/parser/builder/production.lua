@@ -63,7 +63,6 @@ function class:attr(...)
 end
 
 function metatable:__call(...)
-  local name_or_table = ...
   local items = self.items
   if type(...) == "string" then
     local body = items[#items].body
