@@ -239,7 +239,7 @@ _"exp"
   :_ "functiondef"
   :_ "prefixexp"
   :_ "functioncall"
-  :_ "tableconstructor"
+  :_ "tableconstructor" -- fieldlist
   -- binop
   :_ "exp" "+" "exp" {2,1,3} :attr("binop", "ADD")
   :_ "exp" "-" "exp" {2,1,3} :attr("binop", "SUB")
@@ -298,9 +298,9 @@ _"parlist"
   :_ "..." {"namelist",1}
 
 _"tableconstructor"
-  :_ "{" "}" {"fieldlist"}
-  :_ "{" "fieldlist" "}" {2}
-  :_ "{" "fieldlist" "fieldsep" "}" {2}
+  :_ "{" "}" {["fieldlist"]={}}
+  :_ "{" "fieldlist" "}" {[2]={}}
+  :_ "{" "fieldlist" "fieldsep" "}" {[2]={}}
 
 _"fieldlist"
   :_ "field"

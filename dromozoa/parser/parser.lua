@@ -98,7 +98,12 @@ function metatable:__call(terminal_nodes, s, file)
                 end
               elseif code == 2 then -- collapse node
                 local indices = semantic_action[3]
-                node = reduced_nodes[semantic_action[2]]
+                local index = semantic_action[2]
+                if index > 0 then
+                  node = reduced_nodes[index]
+                else
+                  node = { [0] = -index }
+                end
                 for j = 1, #indices do
                   local index = indices[j]
                   if index > 0 then

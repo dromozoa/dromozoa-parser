@@ -17,6 +17,8 @@
 
 local a = { 1, 2, 3, 4 }
 print(a[2])
+local a = {}
+print(a[2])
 local a = { 1, 2, 3, 4, [2] = 42 }
 print(a[2])
 local a = { [2] = 42, 1, 2, 3, 4 }
