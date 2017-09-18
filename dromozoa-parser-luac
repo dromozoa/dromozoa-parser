@@ -783,9 +783,6 @@ for i = 1, num_nodes do
   elseif s == symbol_table.funcbody then
     local proto = attr(u, "proto")
     proto.codes = u2.codes
-  elseif s == symbol_table.tableconstructor then
-    copy(u1.codes, codes)
-    u.X = u1.X
   elseif s == symbol_table.fieldlist then
     local setlist
     for i = 1, #u do

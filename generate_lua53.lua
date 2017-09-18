@@ -231,9 +231,7 @@ _"exp"
   :_ "nil"
   :_ "false"
   :_ "true"
-  -- Numeral
-  :_ "IntegerConstant"
-  :_ "FloatConstant"
+  :_ "Numeral" -- IntegerConstant, FloatConstant
   :_ "LiteralString"
   :_ "..."
   :_ "functiondef"
@@ -314,6 +312,10 @@ _"field"
 _"fieldsep"
   :_ ","
   :_ ";"
+
+_"Numeral"
+  :_ "IntegerConstant" {[1]={}}
+  :_ "FloatConstant" {[1]={}}
 
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
