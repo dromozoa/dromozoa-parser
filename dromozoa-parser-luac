@@ -542,13 +542,6 @@ for i = 1, num_nodes do
         u1.ref = true
       end
     end
-  elseif s == symbol_table.exp then
-    if s1 == symbol_table["..."] then
-      local proto = attr(u, "proto")
-      if not proto.is_vararg then
-        error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
-      end
-    end
   elseif s == symbol_table.parlist then
     for i = 1, #u1 do
       u1[i].param = true
@@ -556,6 +549,7 @@ for i = 1, num_nodes do
     if u2 then
       local proto = attr(u, "proto")
       proto.is_vararg = true
+      u2.param = true
     end
   elseif s == symbol_table["false"] then
     u.X = "FALSE"
@@ -564,7 +558,14 @@ for i = 1, num_nodes do
   elseif s == symbol_table["true"] then
     u.X = "TRUE"
   elseif s == symbol_table["..."] then
-    u.X = "V"
+    if not u.param then
+      local proto = attr(u, "proto")
+      if proto.is_vararg then
+        u.X = "V"
+      else
+        error(error_message("cannot use '...' outside a vararg function", source, u.i, source_file))
+      end
+    end
   elseif s == symbol_table.Name then
     if u.param then
       u.X = param_name(u).var

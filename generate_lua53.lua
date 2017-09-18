@@ -153,7 +153,7 @@ _"stats"
   :_ "stats" "stat" {[1]={2}}
 
 _"stat"
-  :_ ";"
+  :_ ";" {}
   :_ "varlist" "=" "explist" {2,3,1}
   :_ "functioncall"
   :_ "label"
