@@ -52,7 +52,7 @@
       stack = [ undefined ];
     }
     if (base === undefined) {
-      base = 0;
+      base = -1;
     }
     if (top === undefined) {
       top = 1;
@@ -83,7 +83,7 @@
   };
 
   prototype.newstack = function () {
-    return [true];
+    return [];
   };
 
   prototype.call = function (closure) {
@@ -94,7 +94,7 @@
       running: this.running
     });
     this.stack = this.S;
-    this.base = 0;
+    this.base = -1;
     this.top = this.S.length - 1;
     this.running = closure;
     delete this.T;

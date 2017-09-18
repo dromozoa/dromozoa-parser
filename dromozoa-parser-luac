@@ -787,7 +787,7 @@ for i = 1, num_nodes do
     for i = 1, #u do
       local field = u[i]
       copy(field.codes, codes)
-      if type(field.X) == "string" then
+      if not field.Y then
         setlist = true
       end
     end
@@ -799,10 +799,11 @@ for i = 1, num_nodes do
     for i = 1, #u do
       local field = u[i]
       local x = field.X
-      if type(x) == "string" then
-        code(u, "PUSH", x)
+      local y = field.Y
+      if y then
+        code(u, "SETTABLE", X, y, x)
       else
-        code(u, "SETTABLE", X, x[2], x[1])
+        code(u, "PUSH", x)
       end
     end
     if setlist then
@@ -812,7 +813,8 @@ for i = 1, num_nodes do
     if u2 then
       copy(u1.codes, codes)
       copy(u2.codes, codes)
-      u.X = { u1.X, u2.X }
+      u.X = u1.X
+      u.Y = u2.X
     else
       copy(u1.codes, codes)
       u.X = u1.X
@@ -949,7 +951,7 @@ end
 
 local tree_width = 640
 local tree_height = 480
-local node_width = 160
+local node_width = 144
 local node_height = 32
 
 tree_layout(root, node_height, node_width, "y", "x")
