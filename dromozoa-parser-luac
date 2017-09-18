@@ -257,7 +257,7 @@ local function adjust(X, n)
     local x = X[m]
     if #x == 1 then
       for i = m, n do
-        X[i] = key .. i - m + 1
+        X[i] = x .. i - m + 1
       end
     else
       for i = m + 1, n do
@@ -484,7 +484,6 @@ for i = 1, num_nodes do
       names = {};
       labels = {};
     }
-    u.X = "P1"
   else
     if u.proto then
       local index = #protos + 1
@@ -501,7 +500,6 @@ for i = 1, num_nodes do
       }
       protos[index] = proto
       u.proto = proto
-      u.X = "P" .. index
     end
 
     if u.scope then
@@ -529,16 +527,7 @@ for i = 1, num_nodes do
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
 
-  if s == symbol_table.parlist then
-    local n = #u1
-    for i = 1, n do
-      u1[i].param = true
-    end
-    if s2 == symbol_table["..."] then
-      local proto = attr(u, "proto")
-      proto.is_vararg = true
-    end
-  elseif s == symbol_table.label then
+  if s == symbol_table.label then
     local result, message = decl_label(u1)
     if result then
       u1.X = result.var
@@ -559,6 +548,14 @@ for i = 1, num_nodes do
       if not proto.is_vararg then
         error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
       end
+    end
+  elseif s == symbol_table.parlist then
+    for i = 1, #u1 do
+      u1[i].param = true
+    end
+    if u2 then
+      local proto = attr(u, "proto")
+      proto.is_vararg = true
     end
   elseif s == symbol_table["false"] then
     u.X = "FALSE"
@@ -732,8 +729,8 @@ for i = 1, num_nodes do
     u.X = X
     for i = 1, #u do
       local exp = u[i]
-      X[i] = exp.X
       copy(exp.codes, codes)
+      X[i] = exp.X
     end
   elseif s == symbol_table.exp then
     local binop = u.binop
@@ -777,11 +774,10 @@ for i = 1, num_nodes do
       copy(u1.codes, codes)
       u.X = adjust(u1.X)
     end
-  elseif s == symbol_table.functiondef then
-    code(u, "CLOSURE", RX(u), u1.X)
   elseif s == symbol_table.funcbody then
     local proto = attr(u, "proto")
     proto.codes = u2.codes
+    code(u, "CLOSURE", RX(u), "P" .. proto.index)
   elseif s == symbol_table.fieldlist then
     local setlist
     for i = 1, #u do

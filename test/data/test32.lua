@@ -19,6 +19,10 @@ local f = function (...)
   print((...))
 end
 
+local g = function ()
+  -- local a = ...
+end
+
 local a = nil
 local b = true
 a, b = b, a

@@ -234,7 +234,7 @@ _"exp"
   :_ "Numeral" -- IntegerConstant, FloatConstant
   :_ "LiteralString"
   :_ "..."
-  :_ "functiondef"
+  :_ "functiondef" -- funcbody
   :_ "prefixexp"
   :_ "functioncall"
   :_ "tableconstructor" -- fieldlist
@@ -284,7 +284,7 @@ _"args"
   :_ "LiteralString"
 
 _"functiondef"
-  :_ "function" "funcbody" {2}
+  :_ "function" "funcbody" {[2]={}}
 
 _"funcbody"
   :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {2,4}
