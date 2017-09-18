@@ -226,7 +226,7 @@ local function R(u)
   return "B" .. index
 end
 
-local function RX(u)
+local function RV(u)
   local var = R(u)
   u.X = var
   return var
@@ -239,33 +239,33 @@ local function L(u)
   return "L" .. index
 end
 
-local function LX(u)
+local function LV(u)
   local var = L(u)
   u.X = var
   return var
 end
 
-local function adjust(X, n)
-  local m = #X
+local function adjust(vars, n)
+  local m = #vars
   for i = 1, m - 1 do
-    local x = X[i]
+    local x = vars[i]
     if #x == 1 then
-      X[i] = x .. 1
+      vars[i] = x .. 1
     end
   end
   if n then
-    local x = X[m]
+    local x = vars[m]
     if #x == 1 then
       for i = m, n do
-        X[i] = x .. i - m + 1
+        vars[i] = x .. i - m + 1
       end
     else
       for i = m + 1, n do
-        X[i] = "NIL"
+        vars[i] = "NIL"
       end
     end
   end
-  return X
+  return vars
 end
 
 local function decode_var(var)
@@ -702,9 +702,9 @@ for i = 1, num_nodes do
       else
         local x = u1.X
         if type(x) == "string" then
-          code(u, "MOVE", RX(u), x)
+          code(u, "MOVE", RV(u), x)
         else
-          code(u, "GETTABLE", RX(u), x[1], x[2])
+          code(u, "GETTABLE", RV(u), x[1], x[2])
         end
       end
     elseif s1 == symbol_table.prefixexp then
@@ -715,7 +715,7 @@ for i = 1, num_nodes do
       else
         copy(u1.codes, codes)
         copy(u2.codes, codes)
-        code(u, "GETTABLE", RX(u), u1.X, u2.X)
+        code(u, "GETTABLE", RV(u), u1.X, u2.X)
       end
     end
   elseif s == symbol_table.namelist then
@@ -739,13 +739,13 @@ for i = 1, num_nodes do
     if binop then
       copy(u2.codes, codes)
       copy(u3.codes, codes)
-      code(u, binop, RX(u), u2.X, u3.X)
+      code(u, binop, RV(u), u2.X, u3.X)
     elseif unop then
       copy(u2.codes, codes)
-      code(u, unop, RX(u), u2.X)
+      code(u, unop, RV(u), u2.X)
     else
       copy(u1.codes, codes)
-      -- code(u, "MOVE", RX(u), u1.X)
+      -- code(u, "MOVE", RV(u), u1.X)
       u.X = u1.X
     end
   elseif s == symbol_table.prefixexp then
@@ -778,7 +778,7 @@ for i = 1, num_nodes do
   elseif s == symbol_table.funcbody then
     local proto = attr(u, "proto")
     proto.codes = u2.codes
-    code(u, "CLOSURE", RX(u), "P" .. proto.index)
+    code(u, "CLOSURE", RV(u), "P" .. proto.index)
   elseif s == symbol_table.fieldlist then
     local setlist
     for i = 1, #u do
@@ -788,7 +788,7 @@ for i = 1, num_nodes do
         setlist = true
       end
     end
-    local X = RX(u)
+    local X = RV(u)
     code(u, "NEWTABLE", X)
     if setlist then
       code(u, "NEWSTACK")
