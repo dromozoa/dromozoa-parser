@@ -83,10 +83,10 @@
   };
 
   prototype.newstack = function () {
-    return [];
+    return [true];
   };
 
-  prototype.call = function () {
+  prototype.call = function (closure) {
     this.frames.push({
       stack: this.stack,
       base: this.base,
@@ -96,7 +96,7 @@
     this.stack = this.S;
     this.base = 0;
     this.top = this.S.length - 1;
-    this.running = this.S[0];
+    this.running = closure;
     delete this.T;
     delete this.S;
     this.running.proto(this);

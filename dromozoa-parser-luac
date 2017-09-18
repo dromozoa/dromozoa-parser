@@ -764,12 +764,11 @@ for i = 1, num_nodes do
         copy(u1.codes, codes)
         copy(u2.codes, codes)
         code(u, "NEWSTACK")
-        code(u, "PUSH", u1.X)
         local X = u2.X
         for j = 1, #X do
           code(u, "PUSH", X[j])
         end
-        code(u, "CALL")
+        code(u, "CALL", u1.X)
         u.X = "T"
       end
     end
@@ -1308,7 +1307,7 @@ for i = 1, #protos do
         out:write(("L.S.push(%s)"):format(translate_var(code[2])))
       end
     elseif opcode == "CALL" then
-      out:write("L.call()")
+      out:write(("L.call(%s)"):format(translate_var(code[2])))
     elseif opcode == "SETLIST" then
       out:write(("L.setlist(%s)"):format(translate_var(code[2])))
     elseif opcode == "ADD" then
@@ -1362,8 +1361,7 @@ out:write([[
     L.stack[L.top + 1] = R1;
     R2 = L.closure(1);
     L.S = L.newstack();
-    L.S.push(R2);
-    L.call();
+    L.call(R2);
   };
   chunk.protos = protos;
   root.dromozoa = root.dromozoa || {};
