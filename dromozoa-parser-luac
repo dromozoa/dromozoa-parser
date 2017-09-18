@@ -1003,12 +1003,20 @@ for i = 1, num_nodes do
     };
   end
 
+  local x = u.X
   local codes = u.codes
-  if codes and codes[1] then
+  if x or (codes and codes[1]) then
     local text_html = { "div";
       id = "C" .. u.id;
       class = "C";
     }
+    if x then
+      if type(x) == "string" then
+        text_html[#text_html + 1] = "; " .. x .. "\n"
+      else
+        text_html[#text_html + 1] = "; " .. table.concat(x, ",") .. "\n"
+      end
+    end
     for j = 1, #codes do
       local code = codes[j]
       text_html[#text_html + 1] = code[1]
