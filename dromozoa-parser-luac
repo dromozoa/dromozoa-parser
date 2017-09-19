@@ -248,16 +248,16 @@ end
 local function adjust(vars, n)
   local m = #vars
   for i = 1, m - 1 do
-    local x = vars[i]
-    if #x == 1 then
-      vars[i] = x .. 1
+    local var = vars[i]
+    if #var == 1 then
+      vars[i] = var .. 1
     end
   end
   if n then
-    local x = vars[m]
-    if #x == 1 then
+    local var = vars[m]
+    if #var == 1 then
       for i = m, n do
-        vars[i] = x .. i - m + 1
+        vars[i] = var .. i - m + 1
       end
     else
       for i = m + 1, n do
@@ -530,6 +530,7 @@ for i = 1, num_nodes do
   if s == symbol_table.label then
     local result, message = decl_label(u1)
     if result then
+      u1.X = result.var
       u1.X = result.var
     else
       error(error_message(message, source, u1.i, source_file))
