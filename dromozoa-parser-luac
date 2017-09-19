@@ -530,8 +530,7 @@ for i = 1, num_nodes do
   if s == symbol_table.label then
     local result, message = decl_label(u1)
     if result then
-      u1.X = result.var
-      u1.X = result.var
+      u1.var = result.var
     else
       error(error_message(message, source, u1.i, source_file))
     end
@@ -553,50 +552,50 @@ for i = 1, num_nodes do
       u2.param = true
     end
   elseif s == symbol_table["false"] then
-    u.X = "FALSE"
+    u.var = "FALSE"
   elseif s == symbol_table["nil"] then
-    u.X = "NIL"
+    u.var = "NIL"
   elseif s == symbol_table["true"] then
-    u.X = "TRUE"
+    u.var = "TRUE"
   elseif s == symbol_table["..."] then
     if not u.param then
       local proto = attr(u, "proto")
       if proto.is_vararg then
-        u.X = "V"
+        u.var = "V"
       else
         error(error_message("cannot use '...' outside a vararg function", source, u.i, source_file))
       end
     end
   elseif s == symbol_table.Name then
     if u.param then
-      u.X = param_name(u).var
+      u.var = param_name(u).var
     elseif u.decl then
-      u.X = decl_name(u).var
+      u.var = decl_name(u).var
     elseif u.def then
       local result = def_name(u)
       if result then
-        u.X = result.var
+        u.var = result.var
       else
-        u.X = { ref_env(u).var, ref_constant("string", u, symbol_value(u)).var }
+        u.var = { ref_env(u).var, ref_constant("string", u, symbol_value(u)).var }
         u.env = true
       end
     elseif u.ref then
       local result = ref_name(u)
       if result then
-        u.X = result.var
+        u.var = result.var
       else
-        u.X = { ref_env(u).var, ref_constant("string", u, symbol_value(u)).var }
+        u.var = { ref_env(u).var, ref_constant("string", u, symbol_value(u)).var }
         u.env = true
       end
     elseif not u.label then
-      u.X = ref_constant("string", u, symbol_value(u)).var
+      u.var = ref_constant("string", u, symbol_value(u)).var
     end
   elseif s == symbol_table.LiteralString then
-    u.X = ref_constant("string", u, symbol_value(u)).var
+    u.var = ref_constant("string", u, symbol_value(u)).var
   elseif s == symbol_table.IntegerConstant then
-    u.X = ref_constant("integer", u, tonumber(symbol_value(u))).var
+    u.var = ref_constant("integer", u, tonumber(symbol_value(u))).var
   elseif s == symbol_table.FloatConstant then
-    u.X = ref_constant("float", u, tonumber(symbol_value(u))).var
+    u.var = ref_constant("float", u, tonumber(symbol_value(u))).var
   end
 end
 
@@ -614,12 +613,14 @@ for i = 1, num_nodes do
     if s1 == symbol_table["goto"] then
       local result, message = ref_label(u2)
       if result then
-        u2.X = result.var
+        u2.var = result.var
       else
         error(error_message(message, source, u2.i, source_file))
       end
     end
   end
+
+  u.X = u.var
 end
 
 for i = 1, num_nodes do
