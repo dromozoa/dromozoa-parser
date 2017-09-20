@@ -102,12 +102,15 @@
     this.running.proto(this);
   };
 
-  prototype.ret = function () {
+  prototype.ret = function (n) {
     var frame = this.frames.pop();
     this.stack = frame.stack;
     this.base = frame.base;
     this.top = frame.top;
     this.running = frame.running;
+    if (n > 0) {
+      this.T = this.S;
+    }
     delete this.S;
   };
 
@@ -162,9 +165,17 @@
   };
 
   prototype.push_vararg = function (stack) {
-    var i = this.running.proto.A + 1;
+    var i = this.running.proto.A;
     while (i <= this.top) {
       stack.push(this.stack[i]);
+      i += 1;
+    }
+  };
+
+  prototype.push_result = function (stack) {
+    var i = 0;
+    while (i < this.T.length) {
+      stack.push(this.T[i])
       i += 1;
     }
   };

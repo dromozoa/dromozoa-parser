@@ -143,9 +143,9 @@ _"chunk"
   :_ "block"
 
 _"block"
-  :_ () {"stats","retstat"}
+  :_ () {"stats"}
   :_ "retstat" {"stats",1}
-  :_ "stats" {1,"retstat"}
+  :_ "stats" {1}
   :_ "stats" "retstat" {1,2}
 
 _"stats"
@@ -153,7 +153,7 @@ _"stats"
   :_ "stats" "stat" {[1]={2}}
 
 _"stat"
-  :_ ";" {}
+  :_ ";"
   :_ "varlist" "=" "explist" {2,3,1}
   :_ "functioncall"
   :_ "label"
@@ -162,20 +162,20 @@ _"stat"
   :_ "do" "block" "end" :attr "scope" {1,2}
   :_ "while" "exp" "do" "block" "end" :attr "scope"
   :_ "repeat" "block" "until" "exp"
-  :_ "if_clauses" "end"
+  :_ "if_clauses" "end" {1}
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr(2, "decl") {1,4,6,"exp",2,8}
   :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr(2, "decl") {1,4,6,8,2,10}
   :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" {1,3,2,6}
-  :_ "function" "funcname" "funcbody"
-  :_ "local" "function" "Name" "funcbody" :attr(3, "decl")
+  :_ "function" "funcname" "funcbody" {2,3}
+  :_ "local" "function" "Name" "funcbody" :attr(3, "decl") {1,3,4}
   :_ "local" "namelist"  {1,"explist",2}
   :_ "local" "namelist" "=" "explist" {1,4,2}
 
 _"retstat"
-  :_ "return"
-  :_ "return" ";"
-  :_ "return" "explist" {1,2}
-  :_ "return" "explist" ";" {1,2}
+  :_ "return" {}
+  :_ "return" ";" {}
+  :_ "return" "explist" {2}
+  :_ "return" "explist" ";" {2}
 
 _"label"
   :_ "::" "Name" "::" :attr(2, "label") {2}
@@ -191,22 +191,21 @@ _"elseif_clauses"
   :_ "elseif_clause" "elseif_clauses"
 
 _"if_clause"
-  :_ "if" "exp" "then" "block" :attr "scope"
+  :_ "if" "exp" "then" "block" :attr "scope" {2,4}
 
 _"elseif_clause"
-  :_ "elseif" "exp" "then" "block" :attr "scope"
+  :_ "elseif" "exp" "then" "block" :attr "scope" {2,4}
 
 _"else_clause"
-  :_ "else" "block" :attr "scope"
+  :_ "else" "block" :attr "scope" {2}
 
--- [TODO] rename this
 _"funcname"
   :_ "funcnames"
-  :_ "funcnames" ":" "Name"
+  :_ "funcnames" ":" "Name" :attr "self" {1,3}
 
 _"funcnames"
-  :_ "Name"
-  :_ "funcnames" "." "Name"
+  :_ "Name" :attr(1, "ref")
+  :_ "funcnames" "." "Name" {1,3}
 
 _"varlist"
   :_ "var" :attr(1, "def")
@@ -234,7 +233,7 @@ _"exp"
   :_ "Numeral" -- IntegerConstant, FloatConstant
   :_ "LiteralString"
   :_ "..."
-  :_ "functiondef" -- funcbody
+  :_ "functiondef"
   :_ "prefixexp"
   :_ "functioncall"
   :_ "tableconstructor" -- fieldlist
@@ -284,7 +283,7 @@ _"args"
   :_ "LiteralString"
 
 _"functiondef"
-  :_ "function" "funcbody" {[2]={}}
+  :_ "function" "funcbody" {2}
 
 _"funcbody"
   :_ "(" "parlist" ")" "block" "end" :attr "proto" :attr "scope" :attr(5, "funcbody_end") {2,4}

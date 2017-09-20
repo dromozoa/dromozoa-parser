@@ -85,14 +85,14 @@ local function ref_constant(type, u, value)
   return constant
 end
 
-local function decl_name_impl(u, type, key)
+local function decl_name_impl(u, type, key, value)
   local scope = attr(u, "scope")
   local proto = scope.proto
   local index = proto[key] + 1
   proto[key] = index
   local name = {
     type = type;
-    value = symbol_value(u);
+    value = value;
     defs = { u.id };
     refs = {};
     udefs = {};
@@ -106,12 +106,16 @@ local function decl_name_impl(u, type, key)
   return name
 end
 
+local function param_self(u)
+  return decl_name_impl(u, "param", "A", "self")
+end
+
 local function param_name(u)
-  return decl_name_impl(u, "param", "A")
+  return decl_name_impl(u, "param", "A", symbol_value(u))
 end
 
 local function decl_name(u)
-  return decl_name_impl(u, "local", "B")
+  return decl_name_impl(u, "local", "B", symbol_value(u))
 end
 
 local function ref_upvalue(upvalues, name, parent)
@@ -179,6 +183,7 @@ end
 local function decl_label(u)
   local value = symbol_value(u)
   local scope = attr(u, "scope")
+  local proto = scope.proto
   local labels = scope.labels
   for i = 1, #labels do
     local label = labels[i]
@@ -186,7 +191,7 @@ local function decl_label(u)
       return nil, "label '" .. value ..  "' already defined"
     end
   end
-  local proto_labels = scope.proto.labels
+  local proto_labels = proto.labels
   local index = #proto_labels + 1
   proto.L = index
   local label = {
@@ -228,7 +233,7 @@ end
 
 local function RV(u)
   local var = R(u)
-  u.X = var
+  u.var = var
   return var
 end
 
@@ -241,7 +246,7 @@ end
 
 local function LV(u)
   local var = L(u)
-  u.X = var
+  u.var = var
   return var
 end
 
@@ -298,7 +303,7 @@ local function translate_var(var)
     end
   elseif key == "V" then
     if index then
-      return ("L.stack[L.running.proto.A + %d]"):format(index)
+      return ("L.stack[L.running.proto.A + %d - 1]"):format(index)
     else
       return "V"
     end
@@ -449,6 +454,7 @@ for i = 1, num_nodes do
       is_vararg = false;
       A = 0;
       B = 1;
+      L = 0;
     }
 
     local external_scope = {
@@ -473,6 +479,7 @@ for i = 1, num_nodes do
       is_vararg = true;
       A = 0;
       B = 0;
+      L = 0;
     }
 
     protos = { proto }
@@ -484,6 +491,7 @@ for i = 1, num_nodes do
       names = {};
       labels = {};
     }
+    u.var = "P1"
   else
     if u.proto then
       local index = #protos + 1
@@ -497,9 +505,11 @@ for i = 1, num_nodes do
         is_vararg = false;
         A = 0;
         B = 0;
+        L = 0;
       }
       protos[index] = proto
       u.proto = proto
+      u.var = "P" .. index
     end
 
     if u.scope then
@@ -527,7 +537,13 @@ for i = 1, num_nodes do
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
 
-  if s == symbol_table.label then
+  if s == symbol_table.stat then
+    if s1 == symbol_table.funcname then
+      if u1.self then
+        u2.proto.self = true
+      end
+    end
+  elseif s == symbol_table.label then
     local result, message = decl_label(u1)
     if result then
       u1.var = result.var
@@ -542,14 +558,25 @@ for i = 1, num_nodes do
         u1.ref = true
       end
     end
+  elseif s == symbol_table.exp then
+    if s1 == symbol_table["..."] then
+      local proto = attr(u, "proto")
+      if proto.is_vararg then
+        u1.var = "V"
+      else
+        error(error_message("cannot use '...' outside a vararg function", source, u1.i, source_file))
+      end
+    end
   elseif s == symbol_table.parlist then
+    local proto = attr(u, "proto")
+    if proto.self then
+      param_self(u)
+    end
     for i = 1, #u1 do
       u1[i].param = true
     end
     if u2 then
-      local proto = attr(u, "proto")
       proto.is_vararg = true
-      u2.param = true
     end
   elseif s == symbol_table["false"] then
     u.var = "FALSE"
@@ -557,15 +584,6 @@ for i = 1, num_nodes do
     u.var = "NIL"
   elseif s == symbol_table["true"] then
     u.var = "TRUE"
-  elseif s == symbol_table["..."] then
-    if not u.param then
-      local proto = attr(u, "proto")
-      if proto.is_vararg then
-        u.var = "V"
-      else
-        error(error_message("cannot use '...' outside a vararg function", source, u.i, source_file))
-      end
-    end
   elseif s == symbol_table.Name then
     if u.param then
       u.var = param_name(u).var
@@ -619,8 +637,6 @@ for i = 1, num_nodes do
       end
     end
   end
-
-  u.X = u.var
 end
 
 for i = 1, num_nodes do
@@ -638,8 +654,9 @@ for i = 1, num_nodes do
     local proto = attr(u, "proto")
     proto.codes = u1.codes
   elseif s == symbol_table.block then
-    if u1 then
-      copy(u1.codes, codes)
+    copy(u1.codes, codes)
+    if u2 then
+      copy(u2.codes, codes)
     end
   elseif s == symbol_table.stats then
     for j = 1, #u do
@@ -647,10 +664,14 @@ for i = 1, num_nodes do
       copy(stat.codes, codes)
     end
   elseif s == symbol_table.stat then
-    if s1 == symbol_table["="] then
-      local X = u3.X
-      local n = #X
-      local Y = adjust(u2.X, n)
+    if s1 == symbol_table["label"] then
+      copy(u1.codes, codes)
+    elseif s1 == symbol_table["goto"] then
+      code(u, "GOTO", u2.var)
+    elseif s1 == symbol_table["="] then
+      local varlist_vars = u3.vars
+      local n = #varlist_vars
+      local explist_vars = adjust(u2.vars, n)
       for i = 1, #u2 do
         local exp = u2[i]
         copy(exp.codes, codes)
@@ -659,81 +680,150 @@ for i = 1, num_nodes do
         local var = u3[i]
         copy(var.codes, codes)
       end
-      -- copy codes
       for i = 1, n do
-        local x = X[i]
-        local y = Y[i]
-        if type(x) == "string" then
-          code(u, "MOVE", x, y)
+        local varlist_var = varlist_vars[i]
+        local explist_var = explist_vars[i]
+        if type(varlist_var) == "string" then
+          code(u, "MOVE", varlist_var, explist_var)
         else
-          code(u, "SETTABLE", x[1], x[2], y)
+          code(u, "SETTABLE", varlist_var[1], varlist_var[2], explist_var)
         end
       end
     elseif s1 == symbol_table.functioncall then
       copy(u1.codes, codes)
     elseif s1 == symbol_table["do"] then
       copy(u2.codes, codes)
+    elseif s1 == symbol_table.if_clauses then
+      copy(u1.codes, codes)
     elseif s1 == symbol_table["local"] then
-      if s2 == symbol_table.explist then
-        local X = u3.X
-        local n = #X
-        local Y = adjust(u2.X, n)
+      if s2 == symbol_table.Name then
+        code(u, "CLOSURE", u2.var, u3.var)
+      elseif s2 == symbol_table.explist then
+        local explist_vars = u2.vars
+        local n = #explist_vars
+        local namelist_vars = adjust(u3.vars, n)
         for i = 1, #u2 do
           local exp = u2[i]
           copy(exp.codes, codes)
         end
         for i = 1, n do
-          local x = X[i]
-          local y = Y[i]
-          code(u, "MOVE", x, y)
+          local explist_var = explist_vars[i]
+          local namelist_var = namelist_vars[i]
+          code(u, "MOVE", namelist_var, explist_var)
         end
       end
     end
+  elseif s == symbol_table.retstat then
+    if u1 then
+      copy(u1.codes, codes)
+      code(u, "NEWSTACK")
+      local vars = adjust(u1.vars)
+      local n = #vars
+      for i = 1, n do
+        code(u, "PUSH", vars[i])
+      end
+      code(u, "RETURN", n)
+    else
+      code(u, "RETURN", 0)
+    end
+  elseif s == symbol_table.label then
+    code(u, "LABEL", u1.var)
+  elseif s == symbol_table.if_clauses or s == symbol_table.elseif_clauses then
+    copy(u1.codes, codes)
+    if u2 then
+      copy(u2.codes, codes)
+    end
+    code(u, "LABEL", u1.var)
+  elseif s == symbol_table.if_clause or s == symbol_table.elseif_clause then
+    local label = L(u)
+    copy(u1.codes, codes)
+    code(u, "TEST", u1.var, label)
+    copy(u2.codes, codes)
+    code(u, "GOTO", LV(u))
+    code(u, "LABEL", label)
+  elseif s == symbol_table.else_clause then
+    copy(u1.codes, codes)
+  elseif s == symbol_table.funcname then
+    if u2 then
+      copy(u1.codes, codes)
+      local var = u1.var
+      if type(var) == "string" then
+      else
+        local v = R(u)
+        code(u, "GETTABLE", v, var[1], var[2])
+        var = v
+      end
+      u.var = { var, u2.var }
+    else
+      copy(u1.codes, codes)
+      u.var = u1.var
+      local var = u1.var
+      if type(var) == "string" then
+        u.var = u1.var
+      else
+        u.var = u1.var
+      end
+    end
+  elseif s == symbol_table.funcnames then
+    if u2 then
+      copy(u1.codes, codes)
+      local var = u1.var
+      if type(var) == "string" then
+        u.var = { var, u2.var }
+      else
+        local v = R(u)
+        code(u, "GETTABLE", v, var[1], var[2])
+        u.var = { v, u2.var }
+      end
+    else
+      copy(u1.codes, codes)
+      u.var = u1.var
+    end
   elseif s == symbol_table.varlist then
-    local X = {}
-    u.X = X
+    local vars = {}
+    u.vars = vars
     for i = 1, #u do
       local var = u[i]
-      X[i] = var.X
+      vars[i] = var.var
       -- [TODO] copy?
     end
   elseif s == symbol_table.var then
     if s1 == symbol_table.Name then
       if u.def then
-        u.X = u1.X
+        u.var = u1.var
       else
-        local x = u1.X
-        if type(x) == "string" then
-          code(u, "MOVE", RV(u), x)
+        local var = u1.var
+        if type(var) == "string" then
+          code(u, "MOVE", RV(u), var)
         else
-          code(u, "GETTABLE", RV(u), x[1], x[2])
+          code(u, "GETTABLE", RV(u), var[1], var[2])
         end
       end
     elseif s1 == symbol_table.prefixexp then
       if u.def then
         copy(u1.codes, codes)
         copy(u2.codes, codes)
-        u.X = { u1.X, u2.X }
+        u.var = { u1.var, u2.var }
       else
         copy(u1.codes, codes)
         copy(u2.codes, codes)
-        code(u, "GETTABLE", RV(u), u1.X, u2.X)
+        code(u, "GETTABLE", RV(u), u1.var, u2.var)
       end
     end
   elseif s == symbol_table.namelist then
-    local X = {}
-    u.X = X
+    local vars = {}
+    u.vars = vars
     for i = 1, #u do
       local name = u[i]
-      X[i] = name.X
+      vars[i] = name.var
     end
   elseif s == symbol_table.explist then
-    local X = {}
-    u.X = X
+    local vars = {}
+    u.vars = vars
     for i = 1, #u do
       local exp = u[i]
       copy(exp.codes, codes)
-      X[i] = exp.X
+      vars[i] = exp.var
     end
   elseif s == symbol_table.exp then
     local binop = u.binop
@@ -741,22 +831,22 @@ for i = 1, num_nodes do
     if binop then
       copy(u2.codes, codes)
       copy(u3.codes, codes)
-      code(u, binop, RV(u), u2.X, u3.X)
+      code(u, binop, RV(u), u2.var, u3.var)
     elseif unop then
       copy(u2.codes, codes)
-      code(u, unop, RV(u), u2.X)
+      code(u, unop, RV(u), u2.var)
     else
       copy(u1.codes, codes)
       -- code(u, "MOVE", RV(u), u1.X)
-      u.X = u1.X
+      u.var = u1.var
     end
   elseif s == symbol_table.prefixexp then
     copy(u1.codes, codes)
-    local x = u1.X
-    if #x == 1 then
-      u.X = x .. 1
+    local var = u1.var
+    if #var == 1 then
+      u.var = var .. 1
     else
-      u.X = x
+      u.var = var
     end
   elseif s == symbol_table.functioncall then
     if s1 == symbol_table.prefixexp then
@@ -764,59 +854,61 @@ for i = 1, num_nodes do
         copy(u1.codes, codes)
         copy(u2.codes, codes)
         code(u, "NEWSTACK")
-        local X = u2.X
-        for j = 1, #X do
-          code(u, "PUSH", X[j])
+        local vars = u2.vars
+        for j = 1, #vars do
+          code(u, "PUSH", vars[j])
         end
-        code(u, "CALL", u1.X)
-        u.X = "T"
+        code(u, "CALL", u1.var)
+        u.var = "T"
       end
     end
   elseif s == symbol_table.args then
     if s1 == symbol_table.explist then
       copy(u1.codes, codes)
-      u.X = adjust(u1.X)
+      u.vars = adjust(u1.vars)
     end
+  elseif s == symbol_table.functiondef then
+    code(u, "CLOSURE", RV(u), u1.var)
   elseif s == symbol_table.funcbody then
+    copy(u2.codes, codes)
+    code(u, "RETURN", 0)
     local proto = attr(u, "proto")
-    proto.codes = u2.codes
-    code(u, "CLOSURE", RV(u), "P" .. proto.index)
+    proto.codes = codes
   elseif s == symbol_table.fieldlist then
     local setlist
     for i = 1, #u do
       local field = u[i]
       copy(field.codes, codes)
-      if not field.Y then
+      local var = field.var
+      if type(var) == "string" then
         setlist = true
       end
     end
-    local X = RV(u)
-    code(u, "NEWTABLE", X)
+    local var = RV(u)
+    code(u, "NEWTABLE", var)
     if setlist then
       code(u, "NEWSTACK")
     end
     for i = 1, #u do
       local field = u[i]
-      local x = field.X
-      local y = field.Y
-      if y then
-        code(u, "SETTABLE", X, y, x)
+      local field_var = field.var
+      if type(field_var) == "string" then
+        code(u, "PUSH", field_var)
       else
-        code(u, "PUSH", x)
+        code(u, "SETTABLE", var, field_var[1], field_var[2])
       end
     end
     if setlist then
-      code(u, "SETLIST", X)
+      code(u, "SETLIST", var)
     end
   elseif s == symbol_table.field then
     if u2 then
       copy(u1.codes, codes)
       copy(u2.codes, codes)
-      u.X = u1.X
-      u.Y = u2.X
+      u.var = { u1.var, u2.var }
     else
       copy(u1.codes, codes)
-      u.X = u1.X
+      u.var = u1.var
     end
   end
 end
@@ -1005,18 +1097,18 @@ for i = 1, num_nodes do
     };
   end
 
-  local x = u.X
+  local var = u.var or u.vars
   local codes = u.codes
-  if x or (codes and codes[1]) then
+  if var or (codes and codes[1]) then
     local text_html = { "div";
       id = "C" .. u.id;
       class = "C";
     }
-    if x then
-      if type(x) == "string" then
-        text_html[#text_html + 1] = "; " .. x .. "\n"
+    if var then
+      if type(var) == "string" then
+        text_html[#text_html + 1] = "; " .. var .. "\n"
       else
-        text_html[#text_html + 1] = "; " .. table.concat(x, ",") .. "\n"
+        text_html[#text_html + 1] = "; " .. table.concat(var, ",") .. "\n"
       end
     end
     for j = 1, #codes do
@@ -1312,11 +1404,15 @@ for i = 1, #protos do
     elseif opcode == "PUSH" then
       if code[2] == "V" then
         out:write("L.push_vararg(L.S)")
+      elseif code[2] == "T" then
+        out:write("L.push_result(L.S)")
       else
         out:write(("L.S.push(%s)"):format(translate_var(code[2])))
       end
     elseif opcode == "CALL" then
       out:write(("L.call(%s)"):format(translate_var(code[2])))
+    elseif opcode == "RETURN" then
+      out:write(("return L.ret(%d)"):format(code[2]))
     elseif opcode == "SETLIST" then
       out:write(("L.setlist(%s)"):format(translate_var(code[2])))
     elseif opcode == "ADD" then
@@ -1327,7 +1423,6 @@ for i = 1, #protos do
     out:write(";\n")
   end
 
-  out:write("    return L.ret();\n")
   out:write("  };\n")
 
   local constants = proto.constants
