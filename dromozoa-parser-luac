@@ -287,19 +287,16 @@ end
 local function decode_var(var)
   local key, index = var:match("^(%a+)(%d+)$")
   if key then
-    return key, tonumber(index)
+    return key, tonumber(index) - 1
   else
     return var
   end
 end
 
 local function translate_var(var)
-  local key, index = var:match("^(%a+)(%d+)$")
-  if not key then
-    key = var
-  end
+  local key, index = decode_var(var)
   if key == "A" then
-    return ("L.stack[L.base + %d]"):format(index)
+    return ("L.stack[%d]"):format(index)
   elseif key == "B" then
     return ("L.stack[L.top + %d]"):format(index)
   elseif key == "K" then
@@ -314,7 +311,7 @@ local function translate_var(var)
     end
   elseif key == "V" then
     if index then
-      return ("L.stack[L.running.proto.A + %d - 1]"):format(index)
+      return ("L.stack[L.running.proto.A + %d]"):format(index)
     else
       return "V"
     end
@@ -770,6 +767,33 @@ for i = 1, num_nodes do
         code(u, "TEST", var1, end_label)
         code(u, "LABEL", label3)
         copy(u6.codes, codes)
+        code(u, "GOTO", begin_label)
+        code(u, "LABEL", end_label)
+      else
+        local begin_label = L(u)
+        local end_label = u.loop
+        local vars = adjust(u2.vars, 3)
+        local var_f = R(u)
+        local var_s = R(u)
+        local var_v = R(u)
+        local var1 = R(u)
+        copy(u2.codes, codes)
+        code(u, "MOVE", var_f, vars[1])
+        code(u, "MOVE", var_s, vars[2])
+        code(u, "MOVE", var_v, vars[3])
+        code(u, "LABEL", begin_label)
+        code(u, "NEWSTACK")
+        code(u, "PUSH", var_s)
+        code(u, "PUSH", var_v)
+        code(u, "CALL", var_f)
+        local namelist_vars = u3.vars
+        for i = 1, #namelist_vars do
+          code(u, "MOVE", namelist_vars[i], "T" .. i)
+        end
+        code(u, "NE", var1, namelist_vars[1], "NIL")
+        code(u, "TEST", var1, end_label)
+        code(u, "MOVE", var_v, namelist_vars[1])
+        copy(u4.codes, codes)
         code(u, "GOTO", begin_label)
         code(u, "LABEL", end_label)
       end
@@ -1462,20 +1486,17 @@ out:write([[
 /*jslint this,white*/
 "use strict";
 (function (root) {
-  var A = "A";
-  var B = "B";
-  var U = "U";
-  var protos = [ undefined ];
+  var protos = [];
   var P;
 ]])
 
 for i = 1, #protos do
   local proto = protos[i]
   out:write("  P = function (L) {\n")
-  out:write("    var label = 0;\n")
+  out:write("    var label = -1;\n")
   out:write("    while (true) {\n")
   out:write("      switch (label) {\n")
-  out:write("        case 0:\n")
+  out:write("        case -1:\n")
 
   local codes = proto.codes
   for j = 1, #codes do
@@ -1550,12 +1571,15 @@ for i = 1, #protos do
   out:write("  };\n")
 
   local constants = proto.constants
-  out:write("  P.constants = [\n    undefined")
+  out:write("  P.constants = [")
   for j = 1, #constants do
     local constant = constants[j]
     local type = constant.type
     local value = constant.value
-    out:write((",\n    /* %s */ "):format(constant.var))
+    if j > 1 then
+      out:write(",")
+    end
+    out:write(("\n    /* %s */ "):format(constant.var))
     if type == "string" then
       out:write(encode_string(value))
     else
@@ -1565,11 +1589,14 @@ for i = 1, #protos do
   out:write("\n  ];\n")
 
   local upvalues = proto.upvalues
-  out:write("  P.upvalues = [\n    undefined")
+  out:write("  P.upvalues = [")
   for j = 1, #upvalues do
     local upvalue = upvalues[j]
     local key, index = decode_var(upvalue.uvar)
-    out:write((",\n    /* %s */ [%s,%d]"):format(upvalue.var, key, index))
+    if j > 1 then
+      out:write(",")
+    end
+    out:write(("\n    /* %s */ [\"%s\",%d]"):format(upvalue.var, key, index))
   end
   out:write("\n  ];\n")
 
@@ -1577,19 +1604,19 @@ for i = 1, #protos do
   P.A = %d;
   P.B = %d;
   protos[%d] = P;
-]]):format(proto.A, proto.B, i))
+]]):format(proto.A, proto.B, i - 1))
 end
 
 out:write([[
   var chunk = function (L) {
+    var R0;
     var R1;
-    var R2;
-    R1 = L.newtable();
-    L.settable(R1, "print", L.print);
-    L.stack[L.top + 1] = R1;
-    R2 = L.closure(1);
+    R0 = L.newtable();
+    L.settable(R0, "print", L.print);
+    L.stack[L.top] = R0;
+    R1 = L.closure(0);
     L.S = L.newstack();
-    L.call(R2);
+    L.call(R1);
   };
   chunk.protos = protos;
   root.dromozoa = root.dromozoa || {};

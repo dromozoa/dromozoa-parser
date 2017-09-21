@@ -39,27 +39,65 @@
     return i - 1;
   };
 
-  function Closure(proto, stack, base, top, parent) {
+  function Closure(proto, stack, top, parent) {
     this.proto = proto;
     this.stack = stack;
-    this.base = base;
     this.top = top;
     this.parent = parent;
   }
 
-  function State(chunk, stack, base, top) {
+  prototype = Closure.prototype;
+
+  prototype.getconst = function (index) {
+    return this.proto.constants[index];
+  };
+
+  prototype.getupval = function (index) {
+    var that = this;
+    var upvalue;
+    var key;
+    do {
+      upvalue = that.proto.upvalues[index];
+      key = upvalue[0]
+      index = upvalue[1]
+      if (key === "A") {
+        return that.stack[index];
+      }
+      if (key === "B") {
+        return that.stack[that.top + index];
+      }
+      that = that.parent;
+    } while (that !== undefined);
+  };
+
+  prototype.setupval = function (index, value) {
+    var that = this;
+    var upvalue;
+    var key;
+    do {
+      upvalue = that.proto.upvalues[index];
+      key = upvalue[0]
+      index = upvalue[1]
+      if (key === "A") {
+        that.stack[index] = value;
+        return;
+      }
+      if (key === "B") {
+        that.stack[that.top + index] = value;
+        return;
+      }
+    } while (that !== undefined);
+  };
+
+  function State(chunk, stack, top) {
     if (stack === undefined) {
-      stack = [ undefined ];
-    }
-    if (base === undefined) {
-      base = -1;
+      stack = [];
     }
     if (top === undefined) {
-      top = 1;
+      top = 0;
     }
     this.chunk = chunk;
     this.stack = stack;
-    this.base = base;
     this.top = top;
     this.frames = [];
   }
@@ -79,7 +117,7 @@
   };
 
   prototype.closure = function (index) {
-    return new Closure(this.chunk.protos[index], this.stack, this.base, this.top, this.running);
+    return new Closure(this.chunk.protos[index], this.stack, this.top, this.running);
   };
 
   prototype.newstack = function () {
@@ -89,13 +127,11 @@
   prototype.call = function (closure) {
     this.frames.push({
       stack: this.stack,
-      base: this.base,
       top: this.top,
       running: this.running
     });
     this.stack = this.S;
-    this.base = -1;
-    this.top = this.S.length - 1;
+    this.top = this.S.length;
     this.running = closure;
     delete this.T;
     delete this.S;
@@ -105,11 +141,12 @@
   prototype.ret = function (n) {
     var frame = this.frames.pop();
     this.stack = frame.stack;
-    this.base = frame.base;
     this.top = frame.top;
     this.running = frame.running;
     if (n > 0) {
       this.T = this.S;
+    } else {
+      this.T = [];
     }
     delete this.S;
   };
@@ -123,50 +160,20 @@
   }
 
   prototype.getconst = function (index) {
-    return this.running.proto.constants[index];
+    return this.running.getconst(index);
   };
 
   prototype.getupval = function (index) {
-    var closure = this.running;
-    var upvalue;
-    var key;
-    do {
-      upvalue = closure.proto.upvalues[index];
-      key = upvalue[0];
-      if (key === "A") {
-        return closure.stack[closure.base + upvalue[1]];
-      }
-      if (key === "B") {
-        return closure.stack[closure.top + upvalue[1]];
-      }
-      index = upvalue[1];
-      closure = closure.parent;
-    } while (closure !== undefined);
+    return this.running.getupval(index);
   };
 
   prototype.setupval = function (index, value) {
-    var closure = this.running;
-    var upvalue;
-    var key;
-    do {
-      upvalue = closure.proto.upvalues[index];
-      key = upvalue[0];
-      if (key === "A") {
-        closure.stack[closure.base + upvalue[1]] = value;
-        return;
-      }
-      if (key === "B") {
-        closure.stack[closure.top + upvalue[1]] = value;
-        return;
-      }
-      index = upvalue[1];
-      closure = closure.parent;
-    } while (closure !== undefined);
+    this.running.setupval(index, value);
   };
 
   prototype.push_vararg = function (stack) {
     var i = this.running.proto.A;
-    while (i <= this.top) {
+    while (i < this.top) {
       stack.push(this.stack[i]);
       i += 1;
     }
@@ -182,8 +189,8 @@
 
   prototype.print = new Closure(function (L) {
     var args = [];
-    var i = L.base + 1;
-    while (i <= L.top) {
+    var i = 0;
+    while (i < L.top) {
       args.push(L.stack[i]);
       i += 1;
     }

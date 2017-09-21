@@ -165,7 +165,7 @@ _"stat"
   :_ "if_clauses" "end" {1}
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr "loop" :attr(2, "decl") {1,4,6,"exp",2,8}
   :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr "loop" :attr(2, "decl") {1,4,6,8,2,10}
-  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" :attr "loop" {1,3,2,6}
+  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" :attr "loop" {1,4,2,6}
   :_ "function" "funcname" "funcbody" {2,3}
   :_ "local" "function" "Name" "funcbody" :attr(3, "decl") {1,3,4}
   :_ "local" "namelist"  {1,"explist",2}
