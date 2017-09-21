@@ -1250,7 +1250,7 @@ for i = 1, num_nodes do
     local mx = (ux + vx) * 0.5
     edges_html[#edges_html + 1] = { "path";
       d = ("M%.17g,%.17gC%.17g,%.17g,%.17g,%.17g,%.17g,%.17g"):format(ux, uy, mx, uy, mx, vy, vx, vy);
-    };
+    }
   end
 
   local var = u.var or u.vars
