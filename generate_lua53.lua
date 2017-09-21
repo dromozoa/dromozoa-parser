@@ -160,12 +160,12 @@ _"stat"
   :_ "break"
   :_ "goto" "Name" :attr(2, "label")
   :_ "do" "block" "end" :attr "scope" {1,2}
-  :_ "while" "exp" "do" "block" "end" :attr "scope" {1,2,4}
-  :_ "repeat" "block" "until" "exp"
+  :_ "while" "exp" "do" "block" "end" :attr "scope" :attr "loop" {1,2,4}
+  :_ "repeat" "block" "until" "exp" :attr "scope" :attr "loop"
   :_ "if_clauses" "end" {1}
-  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr(2, "decl") {1,4,6,"exp",2,8}
-  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr(2, "decl") {1,4,6,8,2,10}
-  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" {1,3,2,6}
+  :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr "loop" :attr(2, "decl") {1,4,6,"exp",2,8}
+  :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr "loop" :attr(2, "decl") {1,4,6,8,2,10}
+  :_ "for" "namelist" "in" "explist" "do" "block" "end" :attr "scope" :attr "loop" {1,3,2,6}
   :_ "function" "funcname" "funcbody" {2,3}
   :_ "local" "function" "Name" "funcbody" :attr(3, "decl") {1,3,4}
   :_ "local" "namelist"  {1,"explist",2}
@@ -251,12 +251,12 @@ _"exp"
   :_ "exp" ">>" "exp" {2,1,3} :attr("binop", "SHR")
   :_ "exp" "<<" "exp" {2,1,3} :attr("binop", "SHL")
   :_ "exp" ".." "exp" {2,1,3} :attr("binop", "CONCAT")
-  :_ "exp" "<" "exp" {2,1,3}
-  :_ "exp" "<=" "exp" {2,1,3}
-  :_ "exp" ">" "exp" {2,1,3}
-  :_ "exp" ">=" "exp" {2,1,3}
-  :_ "exp" "==" "exp" {2,1,3}
-  :_ "exp" "~=" "exp" {2,1,3}
+  :_ "exp" "<" "exp" {2,1,3} :attr("binop", "LT")
+  :_ "exp" "<=" "exp" {2,1,3} :attr("binop", "LE")
+  :_ "exp" ">" "exp" {2,3,1} :attr("binop", "LT")
+  :_ "exp" ">=" "exp" {2,3,1} :attr("binop", "LE")
+  :_ "exp" "==" "exp" {2,1,3} :attr("binop", "EQ")
+  :_ "exp" "~=" "exp" {2,1,3} :attr("binop", "NE")
   :_ "exp" "and" "exp" {2,1,3}
   :_ "exp" "or" "exp" {2,1,3}
   -- unop

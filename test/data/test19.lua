@@ -18,6 +18,11 @@
 local a = 1
 local b = 10
 local c = 20
+
+do
+  -- break
+end
+
 while a <= c do
   print(a)
   if a == b then

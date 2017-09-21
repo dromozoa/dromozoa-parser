@@ -62,6 +62,17 @@ local function attr(u, key, value)
   end
 end
 
+local function attr_in_proto(u, key)
+  local proto = attr(u, "proto")
+  while attr(u, "proto") == proto do
+    local value = u[key]
+    if value ~= nil then
+      return value
+    end
+    u = u.parent
+  end
+end
+
 local function ref_constant(type, u, value)
   local proto = attr(u, "proto")
   local constants = proto.constants
@@ -643,6 +654,10 @@ for i = 1, num_nodes do
       end
     end
   end
+
+  if u.loop then
+    u.loop = L(u)
+  end
 end
 
 for i = 1, num_nodes do
@@ -657,8 +672,10 @@ for i = 1, num_nodes do
   local codes = u.codes
 
   if s == symbol_table.chunk then
+    copy(u1.codes, codes)
+    code(u, "RETURN", 0)
     local proto = attr(u, "proto")
-    proto.codes = u1.codes
+    proto.codes = codes
   elseif s == symbol_table.block then
     copy(u1.codes, codes)
     if u2 then
@@ -672,6 +689,13 @@ for i = 1, num_nodes do
   elseif s == symbol_table.stat then
     if s1 == symbol_table["label"] then
       copy(u1.codes, codes)
+    elseif s1 == symbol_table["break"] then
+      local label = attr_in_proto(u, "loop")
+      if label then
+        code(u, "GOTO", label)
+      else
+        error(error_message("'break' not inside a loop", source, u1.i, source_file))
+      end
     elseif s1 == symbol_table["goto"] then
       code(u, "GOTO", u2.var)
     elseif s1 == symbol_table["="] then
@@ -699,9 +723,19 @@ for i = 1, num_nodes do
       copy(u1.codes, codes)
     elseif s1 == symbol_table["do"] then
       copy(u2.codes, codes)
+    elseif s1 == symbol_table["while"] then
+      local begin_label = L(u)
+      local end_label = u.loop
+      code(u, "LABEL", begin_label)
+      copy(u2.codes, codes)
+      code(u, "TEST", u2.var, end_label)
+      copy(u3.codes, codes)
+      code(u, "GOTO", begin_label)
+      code(u, "LABEL", end_label)
     elseif s1 == symbol_table.if_clauses then
       copy(u1.codes, codes)
     elseif s1 == symbol_table.funcname then
+      copy(u1.codes, codes)
       local var = u1.var
       if type(var) == "string" then
         code(u, "CLOSURE", var, u2.var)
@@ -910,7 +944,7 @@ for i = 1, num_nodes do
       if type(field_var) == "string" then
         code(u, "PUSH", field_var)
       else
-        code(u, "SETTABLE", var, field_var[1], field_var[2])
+        code(u, "SETTABLE", var, field_var[2], field_var[1])
       end
     end
     if setlist then
@@ -1392,52 +1426,77 @@ out:write([[
 for i = 1, #protos do
   local proto = protos[i]
   out:write("  P = function (L) {\n")
+  out:write("    var label = 0;\n")
+  out:write("    while (true) {\n")
+  out:write("      switch (label) {\n")
+  out:write("        case 0:\n")
 
   local codes = proto.codes
   for j = 1, #codes do
     local code = codes[j]
     local opcode = code[1]
-    out:write("    ")
-    if opcode == "CLOSURE" then
-      local key, index = decode_var(code[3])
-      out:write(("%s = L.closure(%d)"):format(translate_var(code[2]), index))
-    elseif opcode == "MOVE" then
+    if opcode == "LABEL" then
       local key, index = decode_var(code[2])
-      if key == "U" then
-        out:write(("L.setupval(%d, %s)"):format(index, translate_var(code[3])))
-      else
-        out:write(("%s = %s"):format(translate_var(code[2]), translate_var(code[3])))
+      out:write(("        case %d:\n"):format(index))
+    else
+      out:write("          ")
+      if opcode == "CLOSURE" then
+        local key, index = decode_var(code[3])
+        out:write(("%s = L.closure(%d)"):format(translate_var(code[2]), index))
+      elseif opcode == "MOVE" then
+        local key, index = decode_var(code[2])
+        if key == "U" then
+          out:write(("L.setupval(%d, %s)"):format(index, translate_var(code[3])))
+        else
+          out:write(("%s = %s"):format(translate_var(code[2]), translate_var(code[3])))
+        end
+      elseif opcode == "NEWTABLE" then
+        out:write(("%s = L.newtable()"):format(translate_var(code[2])))
+      elseif opcode == "GETTABLE" then
+        out:write(("%s = L.gettable(%s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "SETTABLE" then
+        out:write(("L.settable(%s, %s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "NEWSTACK" then
+        out:write("L.S = L.newstack()")
+      elseif opcode == "PUSH" then
+        if code[2] == "V" then
+          out:write("L.push_vararg(L.S)")
+        elseif code[2] == "T" then
+          out:write("L.push_result(L.S)")
+        else
+          out:write(("L.S.push(%s)"):format(translate_var(code[2])))
+        end
+      elseif opcode == "CALL" then
+        out:write(("L.call(%s)"):format(translate_var(code[2])))
+      elseif opcode == "RETURN" then
+        out:write(("return L.ret(%d)"):format(code[2]))
+      elseif opcode == "SETLIST" then
+        out:write(("L.setlist(%s)"):format(translate_var(code[2])))
+      elseif opcode == "ADD" then
+        out:write(("%s = %s + %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "MUL" then
+        out:write(("%s = %s * %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "LT" then
+        out:write(("%s = %s < %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "LE" then
+        out:write(("%s = %s <= %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "EQ" then
+        out:write(("%s = %s === %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "NE" then
+        out:write(("%s = %s !== %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "TEST" then
+        local key, index = decode_var(code[3])
+        out:write(("if (!%s) { label = %s; break; }"):format(translate_var(code[2]), index))
+      elseif opcode == "GOTO" then
+        local key, index = decode_var(code[2])
+        out:write(("label = %s; break"):format(index))
       end
-    elseif opcode == "NEWTABLE" then
-      out:write(("%s = L.newtable()"):format(translate_var(code[2])))
-    elseif opcode == "GETTABLE" then
-      out:write(("%s = L.gettable(%s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
-    elseif opcode == "SETTABLE" then
-      out:write(("L.settable(%s, %s, %s)"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
-    elseif opcode == "NEWSTACK" then
-      out:write("L.S = L.newstack()")
-    elseif opcode == "PUSH" then
-      if code[2] == "V" then
-        out:write("L.push_vararg(L.S)")
-      elseif code[2] == "T" then
-        out:write("L.push_result(L.S)")
-      else
-        out:write(("L.S.push(%s)"):format(translate_var(code[2])))
-      end
-    elseif opcode == "CALL" then
-      out:write(("L.call(%s)"):format(translate_var(code[2])))
-    elseif opcode == "RETURN" then
-      out:write(("return L.ret(%d)"):format(code[2]))
-    elseif opcode == "SETLIST" then
-      out:write(("L.setlist(%s)"):format(translate_var(code[2])))
-    elseif opcode == "ADD" then
-      out:write(("%s = %s + %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
-    elseif opcode == "MUL" then
-      out:write(("%s = %s * %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      out:write(";\n")
     end
-    out:write(";\n")
   end
 
+  out:write("      }\n")
+  out:write("    }\n")
   out:write("  };\n")
 
   local constants = proto.constants
