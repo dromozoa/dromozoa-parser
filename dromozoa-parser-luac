@@ -550,6 +550,12 @@ for i = 1, num_nodes do
     else
       error(error_message(message, source, u1.i, source_file))
     end
+  elseif s == symbol_table.funcname then
+    if #u1 == 1 and not u2 then
+      u1[1].def = true
+    else
+      u1[1].ref = true
+    end
   elseif s == symbol_table.var then
     if s1 == symbol_table.Name then
       if u.def then
@@ -695,6 +701,15 @@ for i = 1, num_nodes do
       copy(u2.codes, codes)
     elseif s1 == symbol_table.if_clauses then
       copy(u1.codes, codes)
+    elseif s1 == symbol_table.funcname then
+      local var = u1.var
+      if type(var) == "string" then
+        code(u, "CLOSURE", var, u2.var)
+      else
+        local v = RV(u)
+        code(u, "CLOSURE", v, u2.var)
+        code(u, "SETTABLE", var[1], var[2], v)
+      end
     elseif s1 == symbol_table["local"] then
       if s2 == symbol_table.Name then
         code(u, "CLOSURE", u2.var, u3.var)
@@ -744,41 +759,41 @@ for i = 1, num_nodes do
   elseif s == symbol_table.else_clause then
     copy(u1.codes, codes)
   elseif s == symbol_table.funcname then
+    local vars = u1.vars
+    copy(u1.codes, codes)
     if u2 then
-      copy(u1.codes, codes)
-      local var = u1.var
-      if type(var) == "string" then
-      else
-        local v = R(u)
-        code(u, "GETTABLE", v, var[1], var[2])
-        var = v
-      end
-      u.var = { var, u2.var }
+      vars[#vars + 1] = u2.var
+      copy(u2.codes, codes)
+    end
+    local n = #vars
+    local var
+    for i = 1, n - 2 do
+      local var1 = vars[i]
+      local var2 = vars[i + 1]
+      var = R(u)
+      code(u, "GETTABLE", var, var1, var2)
+    end
+    if var then
+      u.var = { var, vars[n] }
     else
-      copy(u1.codes, codes)
-      u.var = u1.var
-      local var = u1.var
-      if type(var) == "string" then
-        u.var = u1.var
+      if n == 1 then
+        u.var = vars[1]
       else
-        u.var = u1.var
+        u.var = { vars[1], vars[2] }
       end
     end
   elseif s == symbol_table.funcnames then
-    if u2 then
-      copy(u1.codes, codes)
-      local var = u1.var
+    local vars = {}
+    for i = 1, #u do
+      local var = assert(u[i].var)
       if type(var) == "string" then
-        u.var = { var, u2.var }
+        vars[#vars + 1] = var
       else
-        local v = R(u)
-        code(u, "GETTABLE", v, var[1], var[2])
-        u.var = { v, u2.var }
+        vars[#vars + 1] = var[1]
+        vars[#vars + 1] = var[2]
       end
-    else
-      copy(u1.codes, codes)
-      u.var = u1.var
     end
+    u.vars = vars
   elseif s == symbol_table.varlist then
     local vars = {}
     u.vars = vars

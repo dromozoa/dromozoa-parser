@@ -204,8 +204,8 @@ _"funcname"
   :_ "funcnames" ":" "Name" :attr "self" {1,3}
 
 _"funcnames"
-  :_ "Name" :attr(1, "ref")
-  :_ "funcnames" "." "Name" {1,3}
+  :_ "Name"
+  :_ "funcnames" "." "Name" {[1]={3}}
 
 _"varlist"
   :_ "var" :attr(1, "def")
