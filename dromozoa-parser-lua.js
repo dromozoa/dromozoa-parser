@@ -187,6 +187,15 @@
     }
   };
 
+  prototype.len = function (that) {
+    var type = typeof that;
+    if (type === "string") {
+      return that.length;
+    } else {
+      return that.length();
+    }
+  };
+
   prototype.print = new Closure(function (L) {
     var args = [];
     var i = 0;

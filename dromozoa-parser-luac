@@ -947,6 +947,25 @@ for i = 1, num_nodes do
         copy(u2.codes, codes)
         copy(u3.codes, codes)
         code(u, binop, RV(u), u2.var, u3.var)
+      elseif s1 == symbol_table["and"] then
+        local label = L(u)
+        copy(u2.codes, codes)
+        code(u, "MOVE", RV(u), u2.var)
+        code(u, "TEST", u.var, label)
+        copy(u3.codes, codes)
+        code(u, "MOVE", u.var, u3.var)
+        code(u, "LABEL", label)
+      elseif s1 == symbol_table["or"] then
+        local label1 = L(u)
+        local label2 = L(u)
+        copy(u2.codes, codes)
+        code(u, "MOVE", RV(u), u2.var)
+        code(u, "TEST", u.var, label1)
+        code(u, "GOTO", label2)
+        code(u, "LABEL", label1)
+        copy(u3.codes, codes)
+        code(u, "MOVE", u.var, u3.var)
+        code(u, "LABEL", label2)
       elseif unop then
         copy(u2.codes, codes)
         code(u, unop, RV(u), u2.var)
@@ -1227,7 +1246,14 @@ for i = 1, num_nodes do
       if type(var) == "string" then
         text_html[#text_html + 1] = "; " .. var .. "\n"
       else
-        text_html[#text_html + 1] = "; " .. table.concat(var, ",") .. "\n"
+        for j = 1, #var do
+          local v = var[j]
+          if type(v) == "string" then
+            text_html[#text_html + 1] = "; " .. v  .. "\n"
+          else
+            text_html[#text_html + 1] = "; " .. table.concat(v, ",") .. "\n"
+          end
+        end
       end
     end
     for j = 1, #codes do
@@ -1545,8 +1571,12 @@ for i = 1, #protos do
         out:write(("%s = %s - %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
       elseif opcode == "MUL" then
         out:write(("%s = %s * %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "CONCAT" then
+        out:write(("%s = %s.toString() + %s.toString()"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
       elseif opcode == "UNM" then
         out:write(("%s = -%s"):format(translate_var(code[2]), translate_var(code[3])))
+      elseif opcode == "LEN" then
+        out:write(("%s = L.len(%s)"):format(translate_var(code[2]), translate_var(code[3])))
       elseif opcode == "LT" then
         out:write(("%s = %s < %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
       elseif opcode == "LE" then

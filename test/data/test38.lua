@@ -15,13 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-a, b = 0
-local t = { 42, foo = 69 }
-local function f()
-  return t
-end
-function t.bar()
-  return 111
-end
-
-print(a, t[1], t.foo, (t).foo, f(1, 2, 3).foo, t.bar())
+local a = 1
+local b = a and 42
+local a = nil
+local c = a or 42
+print(b, c)
