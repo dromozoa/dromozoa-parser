@@ -637,12 +637,13 @@ end
 for i = 1, num_nodes do
   local u = discover_nodes[i]
   local s = u[0]
-  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+  local u1, u2, u3, u4, u5 = u[1], u[2], u[3], u[4], u[5]
   local s = u[0]
   local s1 = u1 and u1[0]
   local s2 = u2 and u2[0]
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
+  local s5 = u5 and u5[0]
 
   if s == symbol_table.stat then
     if s1 == symbol_table["goto"] then
@@ -663,12 +664,14 @@ end
 for i = 1, num_nodes do
   local u = finish_nodes[i]
   local s = u[0]
-  local u1, u2, u3, u4 = u[1], u[2], u[3], u[4]
+  local u1, u2, u3, u4, u5, u6 = u[1], u[2], u[3], u[4], u[5], u[6]
   local s = u[0]
   local s1 = u1 and u1[0]
   local s2 = u2 and u2[0]
   local s3 = u3 and u3[0]
   local s4 = u4 and u4[0]
+  local s5 = u5 and u5[0]
+  local s6 = u6 and u6[0]
   local codes = u.codes
 
   if s == symbol_table.chunk then
@@ -732,6 +735,44 @@ for i = 1, num_nodes do
       copy(u3.codes, codes)
       code(u, "GOTO", begin_label)
       code(u, "LABEL", end_label)
+    elseif s1 == symbol_table["repeat"] then
+      local begin_label = L(u)
+      local end_label = u.loop
+      code(u, "LABEL", begin_label)
+      copy(u2.codes, codes)
+      copy(u3.codes, codes)
+      code(u, "TEST", u3.var, begin_label)
+      code(u, "LABEL", end_label)
+    elseif s1 == symbol_table["for"] then
+      if s2 == symbol_table.exp then
+        local begin_label = L(u)
+        local end_label = u.loop
+        local label1 = L(u)
+        local label2 = L(u)
+        local label3 = L(u)
+        local var1 = R(u)
+        local var2 = ref_constant("integer", u, 0).var
+        copy(u2.codes, codes)
+        copy(u3.codes, codes)
+        copy(u4.codes, codes)
+        code(u, "MOVE", u5.var, u2.var)
+        code(u, "GOTO", label1)
+        code(u, "LABEL", begin_label)
+        code(u, "ADD", u5.var, u5.var, u4.var)
+        code(u, "LABEL", label1)
+        code(u, "LT", var1, var2, u4.var)
+        code(u, "TEST", var1, label2)
+        code(u, "LE", var1, u5.var, u3.var)
+        code(u, "TEST", var1, end_label)
+        code(u, "GOTO", label3)
+        code(u, "LABEL", label2)
+        code(u, "LE", var1, u3.var, u5.var)
+        code(u, "TEST", var1, end_label)
+        code(u, "LABEL", label3)
+        copy(u6.codes, codes)
+        code(u, "GOTO", begin_label)
+        code(u, "LABEL", end_label)
+      end
     elseif s1 == symbol_table.if_clauses then
       copy(u1.codes, codes)
     elseif s1 == symbol_table.funcname then
@@ -875,19 +916,24 @@ for i = 1, num_nodes do
       vars[i] = exp.var
     end
   elseif s == symbol_table.exp then
-    local binop = u.binop
-    local unop = u.unop
-    if binop then
-      copy(u2.codes, codes)
-      copy(u3.codes, codes)
-      code(u, binop, RV(u), u2.var, u3.var)
-    elseif unop then
-      copy(u2.codes, codes)
-      code(u, unop, RV(u), u2.var)
+    if u1 then
+      local binop = u.binop
+      local unop = u.unop
+      if binop then
+        copy(u2.codes, codes)
+        copy(u3.codes, codes)
+        code(u, binop, RV(u), u2.var, u3.var)
+      elseif unop then
+        copy(u2.codes, codes)
+        code(u, unop, RV(u), u2.var)
+      else
+        copy(u1.codes, codes)
+        -- code(u, "MOVE", RV(u), u1.X)
+        u.var = u1.var
+      end
     else
-      copy(u1.codes, codes)
-      -- code(u, "MOVE", RV(u), u1.X)
-      u.var = u1.var
+      assert(u.parent[1][0] == symbol_table["for"])
+      u.var = ref_constant("integer", u, 1).var
     end
   elseif s == symbol_table.prefixexp then
     copy(u1.codes, codes)
@@ -1474,8 +1520,12 @@ for i = 1, #protos do
         out:write(("L.setlist(%s)"):format(translate_var(code[2])))
       elseif opcode == "ADD" then
         out:write(("%s = %s + %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "SUB" then
+        out:write(("%s = %s - %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
       elseif opcode == "MUL" then
         out:write(("%s = %s * %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
+      elseif opcode == "UNM" then
+        out:write(("%s = -%s"):format(translate_var(code[2]), translate_var(code[3])))
       elseif opcode == "LT" then
         out:write(("%s = %s < %s"):format(translate_var(code[2]), translate_var(code[3]), translate_var(code[4])))
       elseif opcode == "LE" then

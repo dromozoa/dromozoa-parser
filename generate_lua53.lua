@@ -161,7 +161,7 @@ _"stat"
   :_ "goto" "Name" :attr(2, "label")
   :_ "do" "block" "end" :attr "scope" {1,2}
   :_ "while" "exp" "do" "block" "end" :attr "scope" :attr "loop" {1,2,4}
-  :_ "repeat" "block" "until" "exp" :attr "scope" :attr "loop"
+  :_ "repeat" "block" "until" "exp" :attr "scope" :attr "loop" {1,2,4}
   :_ "if_clauses" "end" {1}
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr "loop" :attr(2, "decl") {1,4,6,"exp",2,8}
   :_ "for" "Name" "=" "exp" "," "exp" "," "exp" "do" "block" "end" :attr "scope" :attr "loop" :attr(2, "decl") {1,4,6,8,2,10}
