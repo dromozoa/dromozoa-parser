@@ -160,7 +160,7 @@ _"stat"
   :_ "break"
   :_ "goto" "Name" :attr(2, "label")
   :_ "do" "block" "end" :attr "scope" {1,2}
-  :_ "while" "exp" "do" "block" "end" :attr "scope"
+  :_ "while" "exp" "do" "block" "end" :attr "scope" {1,2,4}
   :_ "repeat" "block" "until" "exp"
   :_ "if_clauses" "end" {1}
   :_ "for" "Name" "=" "exp" "," "exp" "do" "block" "end" :attr "scope" :attr(2, "decl") {1,4,6,"exp",2,8}
