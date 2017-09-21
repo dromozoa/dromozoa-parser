@@ -913,15 +913,19 @@ for i = 1, num_nodes do
           code(u, "GETTABLE", RV(u), var[1], var[2])
         end
       end
-    elseif s1 == symbol_table.prefixexp then
+    else
+      local var = u1.var
+      if #var == 1 then
+        var = var .. 1
+      end
       if u.def then
         copy(u1.codes, codes)
         copy(u2.codes, codes)
-        u.var = { u1.var, u2.var }
+        u.var = { var, u2.var }
       else
         copy(u1.codes, codes)
         copy(u2.codes, codes)
-        code(u, "GETTABLE", RV(u), u1.var, u2.var)
+        code(u, "GETTABLE", RV(u), var, u2.var)
       end
     end
   elseif s == symbol_table.namelist then
@@ -997,6 +1001,20 @@ for i = 1, num_nodes do
           code(u, "PUSH", vars[j])
         end
         code(u, "CALL", u1.var)
+        u.var = "T"
+      else
+        copy(u1.codes, codes)
+        copy(u2.codes, codes)
+        copy(u3.codes, codes)
+        local var = R(u)
+        code(u, "GETTABLE", var, u1.var, u2.var)
+        code(u, "NEWSTACK")
+        code(u, "PUSH", u1.var)
+        local vars = u3.vars
+        for j = 1, #vars do
+          code(u, "PUSH", vars[j])
+        end
+        code(u, "CALL", var)
         u.var = "T"
       end
     end

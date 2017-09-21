@@ -24,4 +24,4 @@ function t.bar()
   return 111
 end
 
-print(a, t[1], t.foo, (t).foo, f(1, 2, 3).foo, t.bar())
+print(a, t[1], t.foo, (t).foo, f(1, 2, 3).foo, t:bar())

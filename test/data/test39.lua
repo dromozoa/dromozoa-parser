@@ -15,51 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local f1 = function (x, ...)
-  print(x, ...)
-  return ...
+local t = { 42, foo = 69 }
+local function f()
+  return t
 end
-
-local function f2(...)
-  print(f2, ...)
-end
-
-function f3_1(...)
-  print(...)
-end
-
-local f3_2
-
-function f3_2(...)
-  print(...)
-end
-
-local a = { b = {} }
-
-function a.f3(...)
-  print(...)
-end
-
-function a:f4(...)
-  print(self, ...)
-end
-
-function a.b.f3(...)
-  print(...)
-end
-
-function a.b:f4(...)
-  print(self, ...)
-end
-
-f1(f1(f1(1, 2, 3)))
-f2(4, 5, 6)
-
-f3_1(7, 8)
-f3_2(9, 10)
-a.f3(10, 11)
-a:f4(12, 13)
-a.b.f3(14, 15)
-a.b:f4(16, 17)
-
--- a.b.c = 42
+print(f(1, 2, 3).foo)
