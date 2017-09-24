@@ -113,38 +113,3 @@ Parser generator toolkit.
 | `.rs`    | `string`  |      yes      | resulting string         |
 | `.ri`    | `integer` |      yes      | resulting start position |
 | `.rj`    | `integer` |      yes      | resulting end position   |
-
-## Virtual Machine
-
-### Opcodes
-
-| Name     | #Operands | Description          |
-|----------|----------:|----------------------|
-| MOVE     |         2 | `A = B`              |
-| GETTABLE |         3 | `A = B[C]`           |
-| SETTABLE |         3 | `A[B] = C`           |
-| NEWTABLE |         1 | `A = new Table()`    |
-| ADD      |         3 | `A = B + C`          |
-| MUL      |         3 | `A = B * C`          |
-| NEWSTACK |         1 | `S = new Stack()`    |
-| PUSH     |         2 | `S.push(B)`          |
-| CALL     |         0 | `call()`             |
-| CLOSURE  |         1 | `A = new Closure(P)` |
-
-### Operands
-
-| Name      | Read Only | Description        |
-|-----------|:---------:|--------------------|
-| `Ai`      |           | parameter          |
-| `Bi`      |           | local              |
-| `Ri`      |           | register           |
-| `Li`      |    yes    | label              |
-| `Ki`      |    yes    | constant           |
-| `Ui`      |           | upvalue            |
-| `S`, `Si` |           | stack for call/ret |
-| `T`, `Ti` |    yes    | stack for result   |
-| `Pi`      |    yes    | proto              |
-| `V`, `Vi` |    yes    | vararg             |
-| `NIL`     |    yes    | nil                |
-| `FALSE`   |    yes    | false              |
-| `TRUE`    |    yes    | true               |

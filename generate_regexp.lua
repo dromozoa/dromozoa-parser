@@ -24,26 +24,26 @@ local _ = builder()
 local function atom_escape(lexer)
   return lexer
     -- DecimalEscape
-    :_ "\\0" "\0" :as "DecimalEscape"
+    :_ [[\0]] "\0" :as "DecimalEscape"
     -- CharacterEscape
-    :_ "\\f" "\f" :as "ControlEscape"
-    :_ "\\n" "\n" :as "ControlEscape"
-    :_ "\\r" "\r" :as "ControlEscape"
-    :_ "\\t" "\t" :as "ControlEscape"
-    :_ "\\v" "\v" :as "ControlEscape"
-    :_ ("\\c" * R"AZaz") :as "ControlLetter" :sub(3) :int(36) :add(-9) :char()
-    :_ ("\\x" * R"09AFaf"^{2}) :as "HexEscapeSequence" :sub(3) :int(16) :char()
-    :_ ("\\u" * S"Dd" * S"89ABab" * R"09AFaf"^{2} * "\\u" * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8(3, 6, 9, 12)
-    :_ ("\\u" * R"09AFaf"^{4}) :as "RegExpUnicodeEscapeSequence" :utf8(3)
-    :_ ("\\u{" * R"09AFaf"^"+" * "}") :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
-    :_ ("\\" * (-(R"09AZaz" + "_"))) :as "IdentityEscape" :sub(2)
+    :_ [[\f]] "\f" :as "ControlEscape"
+    :_ [[\n]] "\n" :as "ControlEscape"
+    :_ [[\r]] "\r" :as "ControlEscape"
+    :_ [[\t]] "\t" :as "ControlEscape"
+    :_ [[\v]] "\v" :as "ControlEscape"
+    :_ ([[\c]] * R"AZaz") :as "ControlLetter" :sub(3) :int(36) :add(-9) :char()
+    :_ ([[\x]] * R"09AFaf"^{2}) :as "HexEscapeSequence" :sub(3) :int(16) :char()
+    :_ ([[\u]] * S"Dd" * S"89ABab" * R"09AFaf"^{2} * [[\u]] * S"Dd" * R"CFcf" * R"09AFaf"^{2}) :as "RegExpUnicodeEscapeSequence" :utf8(3, 6, 9, 12)
+    :_ ([[\u]] * R"09AFaf"^{4}) :as "RegExpUnicodeEscapeSequence" :utf8(3)
+    :_ ([[\u{]] * R"09AFaf"^"+" * "}") :as "RegExpUnicodeEscapeSequence" :utf8(4, -2)
+    :_ ([[\]] * (-(R"09AZaz" + "_"))) :as "IdentityEscape" :sub(2)
     -- CharacterClassEscape
-    :_ "\\d"
-    :_ "\\D"
-    :_ "\\s"
-    :_ "\\S"
-    :_ "\\w"
-    :_ "\\W"
+    :_ [[\d]]
+    :_ [[\D]]
+    :_ [[\s]]
+    :_ [[\S]]
+    :_ [[\w]]
+    :_ [[\W]]
 end
 
 atom_escape(_:lexer())
@@ -52,7 +52,7 @@ atom_escape(_:lexer())
   :_ "+"
   :_ "?"
   :_ "{" :call "repetition"
-  :_ (-S"^$\\.*+?()[]{}|") :as "PatternCharacter"
+  :_ (-S[[^$\.*+?()[]{}|]]) :as "PatternCharacter"
   :_ "."
   :_ "("
   :_ "(?:"
@@ -66,9 +66,9 @@ _:lexer "repetition"
   :_ "}" :ret()
 
 atom_escape(_:lexer "character_class")
-  :_ (-S"\\]-") :as "ClassCharacter"
-  :_ "\\b" "\b"
-  :_ "\\-" "-"
+  :_ (-S[[\]-]]) :as "ClassCharacter"
+  :_ [[\b]] "\b"
+  :_ [[\-]] "-"
   :_ "-"
   :_ "]" :ret()
 
@@ -116,12 +116,12 @@ _"CharacterEscape"
   :_ "IdentityEscape" :collapse()
 
 _"CharacterClassEscape"
-  :_ "\\d"
-  :_ "\\D"
-  :_ "\\s"
-  :_ "\\S"
-  :_ "\\w"
-  :_ "\\W"
+  :_ [[\d]]
+  :_ [[\D]]
+  :_ [[\s]]
+  :_ [[\S]]
+  :_ [[\w]]
+  :_ [[\W]]
 
 _"CharacterClass"
   :_ "[" "NonemptyClassRanges" "]"
@@ -151,13 +151,13 @@ _"ClassAtomNoDash"
 
 _"ClassEscape"
   :_ "DecimalEscape" :collapse()
-  :_ "\\b" :collapse()
-  :_ "\\-" :collapse()
+  :_ [[\b]] :collapse()
+  :_ [[\-]] :collapse()
   :_ "CharacterEscape" :collapse()
   :_ "CharacterClassEscape" :collapse()
 
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
 grammar:write_conflicts(io.stderr, conflicts)
-lexer:compile("dromozoa/parser/lexers/regexp_lexer.lua")
-parser:compile("dromozoa/parser/parsers/regexp_parser.lua")
+lexer:compile("dromozoa/parser/regexp_lexer.lua")
+parser:compile("dromozoa/parser/regexp_parser.lua")
