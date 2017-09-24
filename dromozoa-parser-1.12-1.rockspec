@@ -1,8 +1,8 @@
 package = "dromozoa-parser"
-version = "1.11-1"
+version = "1.12-1"
 source = {
-  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.11.tar.gz";
-  file = "dromozoa-parser-1.11.tar.gz";
+  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.12.tar.gz";
+  file = "dromozoa-parser-1.12.tar.gz";
 }
 description = {
   summary = "Parser generator toolkit";
@@ -25,6 +25,7 @@ build = {
     ["dromozoa.parser.builder.search_lexer"] = "dromozoa/parser/builder/search_lexer.lua";
     ["dromozoa.parser.driver"] = "dromozoa/parser/driver.lua";
     ["dromozoa.parser.dumper"] = "dromozoa/parser/dumper.lua";
+    ["dromozoa.parser.dumper.encode_string"] = "dromozoa/parser/dumper/encode_string.lua";
     ["dromozoa.parser.dumper.reference"] = "dromozoa/parser/dumper/reference.lua";
     ["dromozoa.parser.error_message"] = "dromozoa/parser/error_message.lua";
     ["dromozoa.parser.escape_html"] = "dromozoa/parser/escape_html.lua";
@@ -36,15 +37,15 @@ build = {
     ["dromozoa.parser.grammar.write_table"] = "dromozoa/parser/grammar/write_table.lua";
     ["dromozoa.parser.lexer"] = "dromozoa/parser/lexer.lua";
     ["dromozoa.parser.lexer.compile"] = "dromozoa/parser/lexer/compile.lua";
-    ["dromozoa.parser.lexers.lua53_lexer"] = "dromozoa/parser/lexers/lua53_lexer.lua";
-    ["dromozoa.parser.lexers.regexp_lexer"] = "dromozoa/parser/lexers/regexp_lexer.lua";
     ["dromozoa.parser.parser"] = "dromozoa/parser/parser.lua";
     ["dromozoa.parser.parser.compile"] = "dromozoa/parser/parser/compile.lua";
     ["dromozoa.parser.parser.write_graphviz"] = "dromozoa/parser/parser/write_graphviz.lua";
-    ["dromozoa.parser.parsers.lua53_parser"] = "dromozoa/parser/parsers/lua53_parser.lua";
-    ["dromozoa.parser.parsers.regexp_parser"] = "dromozoa/parser/parsers/regexp_parser.lua";
     ["dromozoa.parser.regexp"] = "dromozoa/parser/regexp.lua";
     ["dromozoa.parser.regexp.write_graphviz"] = "dromozoa/parser/regexp/write_graphviz.lua";
-    ["dromozoa.parser.value"] = "dromozoa/parser/value.lua";
+    ["dromozoa.parser.regexp_lexer"] = "dromozoa/parser/regexp_lexer.lua";
+    ["dromozoa.parser.regexp_parser"] = "dromozoa/parser/regexp_parser.lua";
+    ["dromozoa.parser.symbol_value"] = "dromozoa/parser/symbol_value.lua";
+    ["dromozoa.parser.tree_layout"] = "dromozoa/parser/tree_layout.lua";
+    ["dromozoa.parser.write_html"] = "dromozoa/parser/write_html.lua";
   };
 }

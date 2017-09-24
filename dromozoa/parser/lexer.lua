@@ -17,6 +17,7 @@
 
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 local function range(ri, rj, i, j)
   if i > 0 then
@@ -200,6 +201,7 @@ function metatable:__call(s, file)
     local ri = init
     local rj = position - 1
     local rv
+    local attributes
 
     local actions = lexer.accept_to_actions[accept]
     for i = 1, #actions do
@@ -257,6 +259,22 @@ function metatable:__call(s, file)
         rj = #rs
       elseif code == 17 then -- add integer
         rv = rv + action[2]
+      elseif code == 18 then -- set attribute
+        if attributes then
+          local m = #attributes
+          attributes[m + 1] = action[2]
+          attributes[m + 2] = action[3]
+        else
+          attributes = { action[2], action[3] }
+        end
+      elseif code == 19 then -- set attribute with value
+        if attributes then
+          local m = #attributes
+          attributes[m + 1] = action[2]
+          attributes[m + 2] = value
+        else
+          attributes = { action[2], value }
+        end
       end
     end
 
@@ -264,9 +282,8 @@ function metatable:__call(s, file)
       if not position_mark then
         position_mark = init
       end
-      terminal_nodes[#terminal_nodes + 1] = {
+      local node = {
         [0] = lexer.accept_to_symbol[accept];
-        n = 0;
         p = position_start;
         i = position_mark;
         j = position - 1;
@@ -274,6 +291,17 @@ function metatable:__call(s, file)
         ri = ri;
         rj = rj;
       }
+      if attributes then
+        for i = 1, #attributes, 2 do
+          local v = attributes[i + 1]
+          if v == value then
+            node[attributes[i]] = symbol_value(node)
+          else
+            node[attributes[i]] = v
+          end
+        end
+      end
+      terminal_nodes[#terminal_nodes + 1] = node
       position_start = position
       position_mark = nil
     end
@@ -286,7 +314,6 @@ function metatable:__call(s, file)
     end
     terminal_nodes[#terminal_nodes + 1] = {
       [0] = 1; -- marker end
-      n = 0;
       p = position_start;
       i = position_mark;
       j = n;

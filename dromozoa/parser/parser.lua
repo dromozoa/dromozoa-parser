@@ -49,6 +49,7 @@ function metatable:__call(terminal_nodes, s, file)
   local heads = self.heads
   local sizes = self.sizes
   local reduce_to_semantic_action = self.reduce_to_semantic_action
+  local reduce_to_attribute_actions = self.reduce_to_attribute_actions
   local stack = { 1 } -- start state
   local nodes = {}
 
@@ -92,38 +93,54 @@ function metatable:__call(terminal_nodes, s, file)
               local code = semantic_action[1]
               if code == 1 then -- collapse node
                 node = reduced_nodes[1]
-                local m = node.n
                 for j = 2, n do
-                  m = m + 1
-                  node[m] = reduced_nodes[j]
+                  node[#node + 1] = reduced_nodes[j]
                 end
-                node.n = m
               elseif code == 2 then -- collapse node
                 local indices = semantic_action[3]
-                node = reduced_nodes[semantic_action[2]]
-                local m = node.n
-                for j = 1, #indices do
-                  m = m + 1
-                  node[m] = reduced_nodes[indices[j]]
+                local index = semantic_action[2]
+                if index > 0 then
+                  node = reduced_nodes[index]
+                else
+                  node = { [0] = -index }
                 end
-                node.n = m
+                for j = 1, #indices do
+                  local index = indices[j]
+                  if index > 0 then
+                    node[#node + 1] = reduced_nodes[index]
+                  else
+                    node[j] = { [0] = -index }
+                  end
+                end
               elseif code == 3 then -- create node
                 local indices = semantic_action[2]
-                node = {
-                  [0] = head;
-                  n = #indices;
-                }
+                node = { [0] = head }
                 for j = 1, #indices do
-                  node[j] = reduced_nodes[indices[j]]
+                  local index = indices[j]
+                  if index > 0 then
+                    node[j] = reduced_nodes[index]
+                  else
+                    node[j] = { [0] = -index }
+                  end
                 end
               end
             else
-              node = {
-                [0] = head;
-                n = n;
-              }
+              node = { [0] = head }
               for j = 1, n do
                 node[j] = reduced_nodes[j]
+              end
+            end
+
+            local attribute_actions = reduce_to_attribute_actions[action]
+            if attribute_actions then
+              for i = 1, #attribute_actions do
+                local attribute_action = attribute_actions[i]
+                local code = attribute_action[1]
+                if code == 1 then -- set attribute
+                  node[attribute_action[2]] = attribute_action[3]
+                elseif code == 2 then -- set child attribute
+                  reduced_nodes[attribute_action[2]][attribute_action[3]] = attribute_action[4]
+                end
               end
             end
 
@@ -140,7 +157,6 @@ function metatable:__call(terminal_nodes, s, file)
           end
         end
       else
-        print(("%d"):format(node[0]))
         return nil, error_message("parser error", s, node.i, file)
       end
     end
@@ -159,6 +175,7 @@ return setmetatable(class, {
       heads = data.heads;
       sizes = data.sizes;
       reduce_to_semantic_action = data.reduce_to_semantic_action;
+      reduce_to_attribute_actions = data.reduce_to_attribute_actions;
     }, metatable)
   end
 })

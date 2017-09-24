@@ -56,6 +56,8 @@ Parser generator toolkit.
 |   15 | `:utf8(i, j)`       |         2 |      | encode utf8                  |
 |   16 | `:utf8(i, j, k, l)` |         4 |      | encode utf8 (surrogate pair) |
 |   17 | `:add(x)`           |         1 |      | add integer                  |
+|   18 | `:attr(key, value)` |         2 |      | set attribute                |
+|   19 | `:attr_value "key"` |         1 |      | set attribute with value     |
 
 ## Parser
 
@@ -85,11 +87,18 @@ Parser generator toolkit.
 
 ### Semantic Actions
 
-| Code | Operator      | #Operands | Description   |
-|-----:|---------------|----------:|---------------|
-|    1 | `:collapse()` |         0 | collapse node |
-|    2 | `{[1]={2,3}}  |         2 | collapse node |
-|    3 | `{1,2,3}`     |         1 | create node   |
+| Code | Operator               | #Operands | Description   |
+|-----:|------------------------|----------:|---------------|
+|    1 | `:collapse()`          |         0 | collapse node |
+|    2 | `{[1]={2,3,"symbol"}}` |         2 | collapse node |
+|    3 | `{1,2,3,"symbol"}`     |         1 | create node   |
+
+### Attribute Actions
+
+| Code | Operator               | #Operands | Description         |
+|-----:|------------------------|----------:|---------------------|
+|    1 | `:attr(key, value)`    |         2 | set attribute       |
+|    2 | `:attr(i, key, value)` |         3 | set child attribute |
 
 ### Node
 

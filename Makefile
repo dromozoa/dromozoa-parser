@@ -15,13 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-TARGET_DIR = dromozoa/parser/parsers
-TARGET = $(TARGET_DIR)/regexp_parser.lua $(TARGET_DIR)/lua53_parser.lua
+TARGET_DIR = dromozoa/parser
+TARGET = $(TARGET_DIR)/regexp_parser.lua
 
 all: $(TARGET)
 
 $(TARGET_DIR)/regexp_parser.lua: generate_regexp.lua
-	lua $<
-
-$(TARGET_DIR)/lua53_parser.lua: generate_lua53.lua
 	lua $<

@@ -15,6 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local encode_string = require "dromozoa.parser.dumper.encode_string"
+local reference = require "dromozoa.parser.dumper.reference"
+
 local reserved_words = {
   ["and"] = true;
   ["break"] = true;
@@ -39,8 +42,6 @@ local reserved_words = {
   ["until"] = true;
   ["while"] = true;
 }
-
-local reference = require "dromozoa.parser.dumper.reference"
 
 local function keys(value)
   local number_keys = {}
@@ -67,7 +68,13 @@ local function encode(value)
   if t == "number" then
     return ("%.17g"):format(value)
   elseif t == "string" then
-    return ("%q"):format(value)
+    return encode_string(value)
+  elseif t == "boolean" then
+    if value then
+      return "true"
+    else
+      return "false"
+    end
   elseif t == "table" then
     if getmetatable(value) == reference.metatable then
       return value.name
@@ -105,7 +112,8 @@ local function encode(value)
         if k:match("^[%a_][%w_]*$") and not reserved_words[k] then
           data[#data + 1] = k .. "=" .. encode(value[k])
         else
-          data[#data + 1] = ("[%q]="):format(k) .. encode(value[k])
+          -- data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
+          data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
         end
       end
       return "{" .. table.concat(data, ",") .. "}"
@@ -153,7 +161,9 @@ local function compact(self, out, value)
   end
 end
 
-local class = {}
+local class = {
+  keys = keys;
+}
 local metatable = {
   __index = class;
 }

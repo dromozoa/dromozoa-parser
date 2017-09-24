@@ -150,6 +150,46 @@ return function (self, start_name)
       end
     end
 
+    for i = 2, m do
+      local semantic_action = productions[i].semantic_action
+      if semantic_action then
+        local code = semantic_action[1]
+        if code == 2 then
+          local index = semantic_action[2]
+          if type(index) == "string" then
+            local symbol = symbol_table[index]
+            if not symbol then
+              error(("symbol %q not defined at production %d semantic action"):format(index, i))
+            end
+            semantic_action[2] = -symbol
+          end
+          local indices = semantic_action[3]
+          for i = 1, #indices do
+            local index = indices[i]
+            if type(index) == "string" then
+              local symbol = symbol_table[index]
+              if not symbol then
+                error(("symbol %q not defined at production %d semantic action"):format(index, i))
+              end
+              indices[i] = -symbol
+            end
+          end
+        elseif code == 3 then
+          local indices = semantic_action[2]
+          for i = 1, #indices do
+            local index = indices[i]
+            if type(index) == "string" then
+              local symbol = symbol_table[index]
+              if not symbol then
+                error(("symbol %q not defined at production %d semantic action"):format(index, i))
+              end
+              indices[i] = -symbol
+            end
+          end
+        end
+      end
+    end
+
     local start_symbol = symbol_table[start_name]
     if not start_symbol then
       error(("start symbol %q not defined"):format(start_name))

@@ -465,7 +465,7 @@ while true do
       result[#result + 1] = source:sub(p, j)
     end
   else
-    for i = node.n, 1, -1 do
+    for i = #node, 1, -1 do
       stack1[#stack1 + 1] = node[i]
     end
     stack2[n2 + 1] = node

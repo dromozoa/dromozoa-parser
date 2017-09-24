@@ -26,6 +26,7 @@ function class:_(name)
   items[#items + 1] = {
     head = self.head;
     body = { name };
+    attribute_actions = {};
   }
   return self
 end
@@ -42,18 +43,38 @@ function class:collapse()
   return self
 end
 
-function metatable:__call(name_or_table)
+function class:attr(...)
   local items = self.items
-  if type(name_or_table) == "string" then
-    local body = items[#items].body
-    body[#body + 1] = name_or_table
+  local attribute_actions = items[#items].attribute_actions
+  if type(...) == "number" then
+    local i, key, value = ...
+    if value == nil then
+      value = true
+    end
+    attribute_actions[#attribute_actions + 1] = { 2, i, key, value }
   else
-    local k, v = next(name_or_table)
+    local key, value = ...
+    if value == nil then
+      value = true
+    end
+    attribute_actions[#attribute_actions + 1] = { 1, key, value }
+  end
+  return self
+end
+
+function metatable:__call(...)
+  local items = self.items
+  if type(...) == "string" then
+    local body = items[#items].body
+    body[#body + 1] = ...
+  else
+    local t = ...
+    local k, v = next(t)
     if v then
-      if type(v) == "number" then
-        items[#items].semantic_action = { 3, name_or_table }
-      else
+      if type(v) == "table" then
         items[#items].semantic_action = { 2, k, v }
+      else
+        items[#items].semantic_action = { 3, t }
       end
     else
       items[#items].semantic_action = { 3, {} }

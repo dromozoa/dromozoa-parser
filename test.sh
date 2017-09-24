@@ -26,8 +26,4 @@ for i in test/test*.lua
 do
   "$lua" "$i"
 done
-for i in test/data/test*.lua
-do
-  "$lua" test/lua.lua "$i"
-done
-rm -f test*.dot test*.lua test*.html test*.txt
+rm -f test*.dot test*.html test*.lua test*.txt

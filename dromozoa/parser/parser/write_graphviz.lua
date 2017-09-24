@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local escape_html = require "dromozoa.parser.escape_html"
-local value = require "dromozoa.parser.value"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 return function (self, out, tree)
   local symbol_names = self.symbol_names
@@ -35,7 +35,7 @@ return function (self, out, tree)
       local uid = id_table[u]
       local symbol = u[0]
       local name = symbol_names[symbol]
-      local v = value(u)
+      local v = symbol_value(u)
       if type(v) ~= "string" or v == name then
         v = nil
       end
@@ -48,7 +48,7 @@ return function (self, out, tree)
         out:write('      <tr><td balign="left">', (escape_html(v):gsub("\n", "<br/>")), '</td></tr>\n')
       end
       out:write('    </table>\n  >];\n')
-      local m = u.n
+      local m = #u
       for i = 1, m do
         id = id + 1
         id_table[u[i]] = id

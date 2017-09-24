@@ -17,7 +17,7 @@
 
 local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
-local value = require "dromozoa.parser.value"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 local P = builder.pattern
 local R = builder.range
@@ -63,7 +63,7 @@ for test = 1, 8 do
   local data = {}
   for i = 1, #items do
     local item = items[i]
-    data[#data + 1] = { _.symbol_names[item[0]], value(item) }
+    data[#data + 1] = { _.symbol_names[item[0]], symbol_value(item) }
   end
   assert(equal(data, {
     { "integer", "12" };

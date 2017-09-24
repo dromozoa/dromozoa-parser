@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local builder = require "dromozoa.parser.builder"
-local value = require "dromozoa.parser.value"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 local RE = builder.regexp
 
@@ -42,10 +42,10 @@ local source = [[
 ]]
 
 local result = assert(lexer(source))
-assert(value(result[1]) == "日")
-assert(value(result[2]) == "本")
-assert(value(result[3]) == "語")
-assert(value(result[4]) == string.char(0xf0, 0x90, 0x90, 0xb7))
-assert(value(result[5]) == string.char(0xf0, 0x90, 0x90, 0xb7))
-assert(value(result[6]) == "\r")
-assert(value(result[7]) == "@")
+assert(symbol_value(result[1]) == "日")
+assert(symbol_value(result[2]) == "本")
+assert(symbol_value(result[3]) == "語")
+assert(symbol_value(result[4]) == string.char(0xf0, 0x90, 0x90, 0xb7))
+assert(symbol_value(result[5]) == string.char(0xf0, 0x90, 0x90, 0xb7))
+assert(symbol_value(result[6]) == "\r")
+assert(symbol_value(result[7]) == "@")

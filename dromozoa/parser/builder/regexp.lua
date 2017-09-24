@@ -17,9 +17,9 @@
 
 local driver = require "dromozoa.parser.driver"
 local error_message = require "dromozoa.parser.error_message"
-local regexp_lexer = require "dromozoa.parser.lexers.regexp_lexer"
-local regexp_parser = require "dromozoa.parser.parsers.regexp_parser"
-local value = require "dromozoa.parser.value"
+local regexp_lexer = require "dromozoa.parser.regexp_lexer"
+local regexp_parser = require "dromozoa.parser.regexp_parser"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 local class = {}
 
@@ -67,88 +67,88 @@ function class.parse(s)
       stack2[n2] = nil
       local symbol = node[0]
       if symbol == symbol_table.Pattern then
-        node.value = value(node[1])
+        node.value = symbol_value(node[1])
       elseif symbol == symbol_table.Disjunction then
-        if node.n == 1 then
-          node.value = value(node[1])
+        if #node == 1 then
+          node.value = symbol_value(node[1])
         else
-          node.value = value(node[1]) + value(node[3])
+          node.value = symbol_value(node[1]) + symbol_value(node[3])
         end
       elseif symbol == symbol_table.Alternative then
-        if node.n == 1 then
-          node.value = value(node[1])
+        if #node == 1 then
+          node.value = symbol_value(node[1])
         else
-          node.value = value(node[1]) * value(node[2])
+          node.value = symbol_value(node[1]) * symbol_value(node[2])
         end
       elseif symbol == symbol_table.Term then
-        if node.n == 1 then
-          node.value = value(node[1])
+        if #node == 1 then
+          node.value = symbol_value(node[1])
         else
-          node.value = value(node[1]) ^ value(node[2])
+          node.value = symbol_value(node[1]) ^ symbol_value(node[2])
         end
       elseif symbol == symbol_table.Quantifier then
-        local n = node.n
+        local n = #node
         if n == 3 then
-          node.value = { tonumber(value(node[2]), 10) }
+          node.value = { tonumber(symbol_value(node[2]), 10) }
         elseif n == 4 then
-          node.value = tonumber(value(node[2]), 10)
+          node.value = tonumber(symbol_value(node[2]), 10)
         elseif n == 5 then
-          local m = tonumber(value(node[2]), 10)
-          local n = tonumber(value(node[4]), 10)
+          local m = tonumber(symbol_value(node[2]), 10)
+          local n = tonumber(symbol_value(node[4]), 10)
           if m > n then
             error(error_message("syntax error", source, node[1].i))
           end
           node.value = { m, n }
         else
-          node.value = value(node[1])
+          node.value = symbol_value(node[1])
         end
       elseif symbol == symbol_table.Atom then
-        if node.n == 1 then
+        if #node == 1 then
           local that = node[1]
           if that[0] == symbol_table["."] then
             node.value = P(1)
           else
-            node.value = P(value(that))
+            node.value = P(symbol_value(that))
           end
         else
-          node.value = value(node[2])
+          node.value = symbol_value(node[2])
         end
       elseif symbol == symbol_table.CharacterClassEscape then
-        node.value = character_classes[value(node[1])]:clone()
+        node.value = character_classes[symbol_value(node[1])]:clone()
       elseif symbol == symbol_table.CharacterClass then
         if node[1][0] == symbol_table["[^"] then
-          node.value = -value(node[2])
+          node.value = -symbol_value(node[2])
         else
-          node.value = value(node[2])
+          node.value = symbol_value(node[2])
         end
       elseif symbol == symbol_table.ClassRanges then
-        if node.n == 0 then
+        if #node == 0 then
           node.value = atom({})
         else
-          node.value = value(node[1])
+          node.value = symbol_value(node[1])
         end
       elseif symbol == symbol_table.NonemptyClassRanges or symbol == symbol_table.NonemptyClassRangesNoDash then
-        local n = node.n
+        local n = #node
         if n == 1 then
-          node.value = P(value(node[1]))
+          node.value = P(symbol_value(node[1]))
         elseif n == 2 then
-          node.value = P(value(node[1])) + P(value(node[2]))
+          node.value = P(symbol_value(node[1])) + P(symbol_value(node[2]))
         else
-          local a = value(node[1])
-          local b = value(node[3])
+          local a = symbol_value(node[1])
+          local b = symbol_value(node[3])
           if type(a) == "string" and type(b) == "string" then
             local set = {}
             for byte = a:byte(), b:byte() do
               set[byte] = true
             end
-            node.value = atom(set) + P(value(node[4]))
+            node.value = atom(set) + P(symbol_value(node[4]))
           else
-            node.value = P(a) + P"-" + P(b) + P(value(node[4]))
+            node.value = P(a) + P"-" + P(b) + P(symbol_value(node[4]))
           end
         end
       end
     else
-      for i = node.n, 1, -1 do
+      for i = #node, 1, -1 do
         if node[i][0] > max_terminal_symbol then
           stack1[#stack1 + 1] = node[i]
         end
@@ -157,7 +157,7 @@ function class.parse(s)
     end
   end
 
-  return value(root)
+  return symbol_value(root)
 end
 
 return class

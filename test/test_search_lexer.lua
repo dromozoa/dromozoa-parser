@@ -17,7 +17,7 @@
 
 local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
-local value = require "dromozoa.parser.value"
+local symbol_value = require "dromozoa.parser.symbol_value"
 
 local P = builder.pattern
 local R = builder.range
@@ -43,8 +43,8 @@ foo [===[ bar ]===] baz
 ]]
 
 local result = assert(lexer(source))
-assert(value(result[1]) == "test")
-assert(value(result[2]) == "\nfoo [===[ bar ]===] baz\n")
+assert(symbol_value(result[1]) == "test")
+assert(symbol_value(result[2]) == "\nfoo [===[ bar ]===] baz\n")
 assert(result[3][0] == 1)
 
 local data = {}
