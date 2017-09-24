@@ -17,8 +17,8 @@
 
 local driver = require "dromozoa.parser.driver"
 local error_message = require "dromozoa.parser.error_message"
-local regexp_lexer = require "dromozoa.parser.lexers.regexp_lexer"
-local regexp_parser = require "dromozoa.parser.parsers.regexp_parser"
+local regexp_lexer = require "dromozoa.parser.regexp_lexer"
+local regexp_parser = require "dromozoa.parser.regexp_parser"
 local symbol_value = require "dromozoa.parser.symbol_value"
 
 local class = {}
