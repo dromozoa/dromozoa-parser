@@ -53,4 +53,4 @@ local source = [[
 local result, message = lexer(source, file)
 print(message)
 assert(not result)
-assert(message:match "test%.lua:4:4: lexer error")
+assert(message:find "test%.lua:4:4: lexer error")

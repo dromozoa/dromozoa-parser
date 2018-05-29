@@ -109,7 +109,7 @@ local function encode(value)
       end
       for i = 1, #string_keys do
         local k = string_keys[i]
-        if k:match "^[%a_][%w_]*$" and not reserved_words[k] then
+        if k:find "^[%a_][%w_]*$" and not reserved_words[k] then
           data[#data + 1] = k .. "=" .. encode(value[k])
         else
           -- data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
