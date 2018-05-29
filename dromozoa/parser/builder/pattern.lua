@@ -17,7 +17,6 @@
 
 local class = {}
 local metatable = { __index = class }
-class.metatable = metatable
 
 function class.concat(items)
   local result = items[1]
