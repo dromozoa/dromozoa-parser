@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,6 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local epsilon_closure = require "dromozoa.parser.regexp.epsilon_closure"
 local write_graphviz = require "dromozoa.parser.regexp.write_graphviz"
 
 local function set_to_seq(set)
@@ -58,44 +59,6 @@ local function insert(maps, key, value)
     map = m
   end
   map[key[n]] = value
-end
-
-local function epsilon_closure(this, epsilon_closures, u)
-  local epsilon_closure = epsilon_closures[u]
-  if not epsilon_closure then
-    epsilon_closure = {}
-    epsilon_closures[u] = epsilon_closure
-
-    local epsilons = this.epsilons
-    local epsilons1 = epsilons[1]
-    local epsilons2 = epsilons[2]
-
-    local stack = { u }
-    local color = { [u] = true }
-    while true do
-      local n = #stack
-      local u = stack[n]
-      if not u then
-        break
-      end
-      stack[n] = nil
-      epsilon_closure[u] = true
-      local v = epsilons1[u]
-      if v then
-        if not color[v] then
-          stack[n] = v
-          color[v] = true
-          n = n + 1
-        end
-        local v = epsilons2[u]
-        if v and not color[v] then
-          stack[n] = v
-          color[v] = true
-        end
-      end
-    end
-  end
-  return epsilon_closure
 end
 
 local function merge_accept_state(accept_states, set)
