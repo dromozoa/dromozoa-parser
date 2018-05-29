@@ -86,7 +86,7 @@ return function (self, out, data)
           else
             local reduce = action - max_state
             if reduce == 1 then
-              out:write("acc")
+              out:write "acc"
             else
               out:write("r", reduce - 1)
             end

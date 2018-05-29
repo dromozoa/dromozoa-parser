@@ -127,4 +127,4 @@ write_html(io.stdout, { "html";
     };
   };
 })
-io.write("\n")
+io.write "\n"

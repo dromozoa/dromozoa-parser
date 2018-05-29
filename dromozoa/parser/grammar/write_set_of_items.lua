@@ -43,7 +43,7 @@ return function (self, out, set_of_items)
       if la then
         out:write(", ", symbol_names[la])
       end
-      out:write("\n")
+      out:write "\n"
     end
   end
   return out

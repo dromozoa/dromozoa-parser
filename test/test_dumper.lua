@@ -35,5 +35,5 @@ local root = dumper():dump(out, source)
 out:write("return ", root, "\n")
 out:close()
 
-local result = assert(loadfile("test_dumper.lua"))()
+local result = assert(loadfile "test_dumper.lua")()
 assert(equal(source, result))

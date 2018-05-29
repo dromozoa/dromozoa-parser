@@ -27,7 +27,7 @@ return function (self, out)
     for j = 1, #body do
       out:write(" ", symbol_names[body[j]])
     end
-    out:write("\n")
+    out:write "\n"
   end
   return out
 end

@@ -159,5 +159,5 @@ _"ClassEscape"
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
 grammar:write_conflicts(io.stderr, conflicts)
-lexer:compile("dromozoa/parser/regexp_lexer.lua")
-parser:compile("dromozoa/parser/regexp_parser.lua")
+lexer:compile "dromozoa/parser/regexp_lexer.lua"
+parser:compile "dromozoa/parser/regexp_parser.lua"

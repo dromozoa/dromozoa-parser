@@ -40,9 +40,9 @@ return function (self, out, conflicts, verbose)
             out:write(" == ", precedence, " associativity ", second.associativity)
           else
             if shift_precedence < precedence then
-              out:write(" < ")
+              out:write " < "
             else
-              out:write(" > ")
+              out:write " > "
             end
             out:write(precedence)
           end

@@ -30,7 +30,7 @@ local lexer, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 
-local terminal_nodes = assert(lexer("AAAA"))
+local terminal_nodes = assert(lexer "AAAA")
 local root = assert(parser(terminal_nodes, source))
 parser:write_graphviz("test.dot", root)
 

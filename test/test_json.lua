@@ -33,7 +33,7 @@ local source = [[
 
 if #arg > 0 then
   if arg[1] == "-" then
-    source = io.read("*a")
+    source = io.read "*a"
   else
     source = arg[1]
   end

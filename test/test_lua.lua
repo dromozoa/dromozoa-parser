@@ -336,7 +336,7 @@ local lexer, grammar = _:build()
 timer:stop()
 print("build", timer:elapsed())
 
-grammar:write_productions("test-productions.txt")
+grammar:write_productions "test-productions.txt"
 
 timer:start()
 local set_of_items, transitions = grammar:lr0_items()
@@ -362,23 +362,23 @@ local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 timer:stop()
 print("lr1_construct_table", timer:elapsed())
 
-lexer:compile("test_lexer.lua")
-parser:compile("test_parser.lua")
+lexer:compile "test_lexer.lua"
+parser:compile "test_parser.lua"
 
 do
-  local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
+  local compiled_lexer = assert(loadfile "test_lexer.lua")()()
   collectgarbage()
   collectgarbage()
-  local c1 = collectgarbage("count")
+  local c1 = collectgarbage "count"
   compiled_lexer = nil
   collectgarbage()
   collectgarbage()
-  local c2 = collectgarbage("count")
+  local c2 = collectgarbage "count"
   print("lexer memory", c1 - c2)
 end
 
 -- do
---   local compiled_lexer = assert(loadfile("test_lexer.lua"))()()
+--   local compiled_lexer = assert(loadfile "test_lexer.lua")()()
 --   for i = 1, #lexer.lexers do
 --     lexer.lexers[i].items = nil
 --     lexer.lexers[i].name = nil
@@ -389,19 +389,19 @@ end
 -- end
 
 do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()()
+  local compiled_parser = assert(loadfile "test_parser.lua")()()
   collectgarbage()
   collectgarbage()
-  local c1 = collectgarbage("count")
+  local c1 = collectgarbage "count"
   compiled_parser = nil
   collectgarbage()
   collectgarbage()
-  local c2 = collectgarbage("count")
+  local c2 = collectgarbage "count"
   print("parser memory", c1 - c2)
 end
 
 do
-  local compiled_parser = assert(loadfile("test_parser.lua"))()()
+  local compiled_parser = assert(loadfile "test_parser.lua")()()
   assert(equal(parser, compiled_parser))
   parser = compiled_parser
 end
@@ -416,7 +416,7 @@ f(a, b, c, d)
 -- local a = b + c (f)(1, 2, 3, 4, 5)
 -- local a = 1 + 2 + -3^2
 -- local a = 1 + 2 * 3
--- print("\77\79\0890U\x0A\x41\x42")
+-- print "\77\79\0890U\x0A\x41\x42"
 local a = [==[
 foo
 bar
