@@ -37,23 +37,23 @@ function class:clone()
 end
 
 function metatable:__add(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   return class(3, self, that) -- union
 end
 
 function metatable:__sub(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   return class(6, self, that) -- difference
 end
 
 function metatable:__mul(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   return class(2, self, that) -- concatenation
 end
 
