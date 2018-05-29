@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -25,15 +25,15 @@ local S = builder.set
 
 local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
 local nfa = regexp(p)
-nfa:write_graphviz("test-nfa.dot")
+nfa:write_graphviz "test-nfa.dot"
 
 local dfa1 = nfa:nfa_to_dfa()
-dfa1:write_graphviz("test-dfa1.dot")
+dfa1:write_graphviz "test-dfa1.dot"
 local dfa2 = dfa1:minimize()
-dfa2:write_graphviz("test-dfa2.dot")
+dfa2:write_graphviz "test-dfa2.dot"
 
 local p2 = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
 local dfa3 = regexp(p2):nfa_to_dfa():minimize()
-dfa3:write_graphviz("test-dfa3.dot")
+dfa3:write_graphviz "test-dfa3.dot"
 
 assert(equal(dfa2, dfa3))

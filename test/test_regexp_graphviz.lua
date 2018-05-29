@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -27,5 +27,5 @@ for i = 1, 127 do
   p = p * P(string.char(i))
 end
 local a = regexp(p):nfa_to_dfa():minimize()
-a:write_graphviz("test.dot")
+a:write_graphviz "test.dot"
 

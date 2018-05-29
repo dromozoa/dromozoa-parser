@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -59,12 +59,12 @@ local function write_html(out, node)
       out:write(" ", escape_html(key), "=\"", escape_html(value), "\"")
     end
   end
-  out:write(">")
+  out:write ">"
   if not void_elements[name] then
     if name == "script" or name == "style" then
       local value = table.concat(node, "", 2, number_keys[#number_keys])
-      if value:find("[<&]") then
-        assert(not value:find("%]%]>"))
+      if value:find "[<&]" then
+        assert(not value:find "%]%]>")
         if name == "script" then
           out:write("//<![CDATA[\n", value, "//]]>")
         else

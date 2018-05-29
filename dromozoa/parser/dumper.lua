@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -109,7 +109,7 @@ local function encode(value)
       end
       for i = 1, #string_keys do
         local k = string_keys[i]
-        if k:match("^[%a_][%w_]*$") and not reserved_words[k] then
+        if k:find "^[%a_][%w_]*$" and not reserved_words[k] then
           data[#data + 1] = k .. "=" .. encode(value[k])
         else
           -- data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
@@ -170,7 +170,7 @@ local metatable = {
 class.metatable = metatable
 
 function class:dump(out, value)
-  out:write("local _ = {}\n")
+  out:write "local _ = {}\n"
   return compact(self, out, value).name
 end
 

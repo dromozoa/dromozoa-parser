@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -35,5 +35,5 @@ local root = dumper():dump(out, source)
 out:write("return ", root, "\n")
 out:close()
 
-local result = assert(loadfile("test_dumper.lua"))()
+local result = assert(loadfile "test_dumper.lua")()
 assert(equal(source, result))

@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -23,4 +23,4 @@ local RE = builder.regexp
 local _ = builder()
 
 local p = [[/*]] * (RE[[.*]] - RE[[.*\*\/.*]]) * [[*/]]
-regexp(p):nfa_to_dfa():minimize():write_graphviz("test-dfa.dot")
+regexp(p):nfa_to_dfa():minimize():write_graphviz "test-dfa.dot"

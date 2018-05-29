@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -28,16 +28,16 @@ for k, v in pairs(re.accept_states) do
     re.accept_states[k] = nil
   end
 end
-re:minimize():write_graphviz("test-re.dot")
+re:minimize():write_graphviz "test-re.dot"
 
 local re3 = regexp(RE[[--(([^\n\[][^\n]*|\[([^\n\[=][^\n]*|=*([^\n\[=][^\n]*)?)?)?)?\n]])
-re3:nfa_to_dfa():minimize():write_graphviz("test-re3.dot")
+re3:nfa_to_dfa():minimize():write_graphviz "test-re3.dot"
 
 local re4 = regexp(RE[[--[^\n]*\n]] - RE[=[--\[=*\[[^\n]*\n]=])
-re4:nfa_to_dfa():minimize():write_graphviz("test-re4.dot")
+re4:nfa_to_dfa():minimize():write_graphviz "test-re4.dot"
 
 local re5 = regexp("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n")
-re5:nfa_to_dfa():minimize():write_graphviz("test-re5.dot")
+re5:nfa_to_dfa():minimize():write_graphviz "test-re5.dot"
 
--- re:nfa_to_dfa():minimize():write_graphviz("test-re.dot")
--- re1:nfa_to_dfa() -- :minimize():write_graphviz("test-dfa.dot")
+-- re:nfa_to_dfa():minimize():write_graphviz "test-re.dot"
+-- re1:nfa_to_dfa() -- :minimize():write_graphviz "test-dfa.dot"

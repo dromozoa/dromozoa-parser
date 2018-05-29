@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -31,5 +31,5 @@ local p2 = RE[[\[=*\[\n]]
 local p1 = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
 local p2 = RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]
 
-regexp(p1):nfa_to_dfa():minimize():write_graphviz("test-dfa1.dot")
-regexp(p2):nfa_to_dfa():minimize():write_graphviz("test-dfa2.dot")
+regexp(p1):nfa_to_dfa():minimize():write_graphviz "test-dfa1.dot"
+regexp(p2):nfa_to_dfa():minimize():write_graphviz "test-dfa2.dot"

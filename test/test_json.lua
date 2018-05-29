@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -33,7 +33,7 @@ local source = [[
 
 if #arg > 0 then
   if arg[1] == "-" then
-    source = io.read("*a")
+    source = io.read "*a"
   else
     source = arg[1]
   end

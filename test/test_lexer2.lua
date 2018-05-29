@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -53,4 +53,4 @@ local source = [[
 local result, message = lexer(source, file)
 print(message)
 assert(not result)
-assert(message:match("test%.lua:4:4: lexer error"))
+assert(message:find "test%.lua:4:4: lexer error")
