@@ -15,40 +15,28 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local function visit(epsilons1, epsilons2, epsilon_closure, u)
+  local v = epsilons1[u]
+  if v then
+    if not epsilon_closure[v] then
+      epsilon_closure[v] = true
+      visit(epsilons1, epsilons2, epsilon_closure, v)
+    end
+    local v = epsilons2[u]
+    if v and not epsilon_closure[v] then
+      epsilon_closure[v] = true
+      visit(epsilons1, epsilons2, epsilon_closure, v)
+    end
+  end
+end
+
 return function (this, epsilon_closures, u)
   local epsilon_closure = epsilon_closures[u]
   if not epsilon_closure then
-    epsilon_closure = {}
+    epsilon_closure = { [u] = true }
     epsilon_closures[u] = epsilon_closure
-
     local epsilons = this.epsilons
-    local epsilons1 = epsilons[1]
-    local epsilons2 = epsilons[2]
-
-    local stack = { u }
-    local color = { [u] = true }
-    while true do
-      local n = #stack
-      local u = stack[n]
-      if not u then
-        break
-      end
-      stack[n] = nil
-      epsilon_closure[u] = true
-      local v = epsilons1[u]
-      if v then
-        if not color[v] then
-          stack[n] = v
-          color[v] = true
-          n = n + 1
-        end
-        local v = epsilons2[u]
-        if v and not color[v] then
-          stack[n] = v
-          color[v] = true
-        end
-      end
-    end
+    visit(epsilons[1], epsilons[2], epsilon_closure, u)
   end
   return epsilon_closure
 end
