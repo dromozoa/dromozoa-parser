@@ -94,7 +94,7 @@ function metatable:__sub(that)
     end
     return class(set)
   else
-    return super.metatable.__add(self, that)
+    return super.metatable.__sub(self, that)
   end
 end
 
