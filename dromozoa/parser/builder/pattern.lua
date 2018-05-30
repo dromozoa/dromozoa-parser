@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -16,10 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local metatable = { __index = class }
 
 function class.concat(items)
   local result = items[1]
@@ -39,23 +36,23 @@ function class:clone()
 end
 
 function metatable:__add(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   return class(3, self, that) -- union
 end
 
 function metatable:__sub(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   return class(6, self, that) -- difference
 end
 
 function metatable:__mul(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   return class(2, self, that) -- concatenation
 end
 

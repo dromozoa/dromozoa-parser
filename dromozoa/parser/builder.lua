@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -25,21 +25,7 @@ local regexp = require "dromozoa.parser.builder.regexp"
 local regexp_lexer = require "dromozoa.parser.builder.regexp_lexer"
 local search_lexer = require "dromozoa.parser.builder.search_lexer"
 
-local class = {
-  atom = atom;
-  range = atom.range;
-  set = atom.set;
-}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
-
-lexer.super = class
-pattern.super = class
-regexp.super = class
-
-function class.pattern(that)
+local function construct(that)
   local t = type(that)
   if t == "number" then
     if that == 1 then
@@ -65,6 +51,22 @@ function class.pattern(that)
     return that
   end
 end
+
+local class = {
+  atom = atom;
+  pattern = construct;
+  range = atom.range;
+  set = atom.set;
+}
+local metatable = {
+  __index = class;
+}
+class.metatable = metatable
+
+pattern.construct = construct
+
+lexer.super = class
+regexp.super = class
 
 function class.regexp(that)
   return regexp.parse(that)

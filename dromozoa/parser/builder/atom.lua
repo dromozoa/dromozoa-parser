@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -23,11 +23,13 @@ for byte = 0, 255 do
 end
 
 local super = pattern
+local super_metatable = getmetatable(super())
+
 local class = {}
 local metatable = {
   __index = class;
-  __mul = super.metatable.__mul;
-  __pow = super.metatable.__pow;
+  __mul = super_metatable.__mul;
+  __pow = super_metatable.__pow;
 }
 class.metatable = metatable
 
@@ -63,9 +65,9 @@ function class:clone()
 end
 
 function metatable:__add(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   if getmetatable(that) == metatable then
     local set = {}
     for byte in pairs(self[2]) do
@@ -76,14 +78,14 @@ function metatable:__add(that)
     end
     return class(set)
   else
-    return super.metatable.__add(self, that)
+    return super_metatable.__add(self, that)
   end
 end
 
 function metatable:__sub(that)
-  local pattern = class.super.pattern
-  local self = pattern(self)
-  local that = pattern(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
   if getmetatable(that) == metatable then
     local set = {}
     for byte in pairs(self[2]) do
@@ -94,7 +96,7 @@ function metatable:__sub(that)
     end
     return class(set)
   else
-    return super.metatable.__add(self, that)
+    return super_metatable.__sub(self, that)
   end
 end
 
