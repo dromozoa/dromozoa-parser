@@ -68,7 +68,7 @@ return function (this)
   end
 
   local accept_partitions = {}
-  local partition
+  local nonaccept_partition
   for u = 1, color_max do
     if color[u] then
       local accept = accept_states[u]
@@ -80,22 +80,27 @@ return function (this)
           accept_partitions[accept] = { u }
         end
       else
-        if partition then
-          partition[#partition + 1] = u
+        if nonaccept_partition then
+          nonaccept_partition[#nonaccept_partition + 1] = u
         else
-          partition = { u }
+          nonaccept_partition = { u }
         end
       end
     end
   end
 
   local partitions = {}
+  local partition_table = {}
+  local n = 0
   for _, partition in pairs(accept_partitions) do
-    partitions[#partitions + 1] = partition
+    n = n + 1
+    partitions[n] = partition
   end
-  if partition then
-    partitions[#partitions + 1] = partition
+  if nonaccept_partition then
+    n = n + 1
+    partitions[n] = nonaccept_partition
   end
+
   local partition_table = {}
   for i = 1, #partitions do
     local partition = partitions[i]
