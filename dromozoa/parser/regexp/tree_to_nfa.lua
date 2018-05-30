@@ -104,20 +104,18 @@ return function (root, accept)
     accept = 1
   end
 
-  local max_state = 0
   local epsilons1 = {}
   local epsilons2 = {}
-  local epsilons = { epsilons1, epsilons2 }
   local transitions = {}
   for byte = 0, 255 do
     transitions[byte] = {}
   end
 
-  max_state = visit(epsilons1, epsilons2, transitions, max_state, root, accept)
+  local max_state = visit(epsilons1, epsilons2, transitions, 0, root, accept)
 
   return {
     max_state = max_state;
-    epsilons = epsilons;
+    epsilons = { epsilons1, epsilons2 };
     transitions = transitions;
     start_state = root.u;
     accept_states = { [root.v] = accept };
