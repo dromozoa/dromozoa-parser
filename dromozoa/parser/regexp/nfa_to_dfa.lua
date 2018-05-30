@@ -26,21 +26,6 @@ local function set_to_seq(set)
   return seq
 end
 
-local function find(maps, key)
-  local n = #key
-  local map = maps[n]
-  if not map then
-    return
-  end
-  for i = 1, n - 1 do
-    map = map[key[i]]
-    if not map then
-      return
-    end
-  end
-  return map[key[n]]
-end
-
 local function insert(maps, key, value)
   local n = #key
   local map = maps[n]
@@ -57,7 +42,15 @@ local function insert(maps, key, value)
     end
     map = m
   end
-  map[key[n]] = value
+  local k = key[n]
+  local v = map[k]
+  if v then
+    return v, false
+  else
+    local v = value + 1
+    map[k] = v
+    return v, true
+  end
 end
 
 local function merge_accept_state(accept_states, set)
@@ -94,15 +87,11 @@ local function visit(this, that, epsilon_closures, maps, max_state, useq)
     end
     if vset then
       local vseq = set_to_seq(vset)
-      local v = find(maps, vseq)
-      if v then
-        new_transitions[byte][u] = v
-      else
-        max_state = max_state + 1
-        insert(maps, vseq, max_state)
-        new_accept_states[max_state] = merge_accept_state(accept_states, vset)
-        new_transitions[byte][u] = max_state
-        max_state = visit(this, that, epsilon_closures, maps, max_state, vseq)
+      local v, inserted = insert(maps, vseq, max_state)
+      new_transitions[byte][u] = v
+      if inserted then
+        new_accept_states[v] = merge_accept_state(accept_states, vset)
+        max_state = visit(this, that, epsilon_closures, maps, v, vseq)
       end
     end
   end
@@ -115,7 +104,7 @@ return function (this)
   local maps = {}
   local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
-  insert(maps, useq, 1)
+  insert(maps, useq, 0)
 
   local new_transitions = {}
   for byte = 0, 255 do
