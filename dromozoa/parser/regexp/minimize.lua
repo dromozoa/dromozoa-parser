@@ -33,6 +33,22 @@ local function build_reverse_transitions(transitions, reverse_transitions, color
   end
 end
 
+local function build_reverse_color(reverse_transitions, color, color_max, u)
+  local reverse_transition = reverse_transitions[u]
+  if reverse_transition then
+    for v in pairs(reverse_transition) do
+      if not color[v] then
+        color[v] = true
+        if color_max < v then
+          color_max = v
+        end
+        color_max = build_reverse_color(reverse_transitions, color, color_max, v)
+      end
+    end
+  end
+  return color_max
+end
+
 return function (this)
   local transitions = this.transitions
   local start_state = this.start_state
@@ -41,35 +57,14 @@ return function (this)
   local reverse_transitions = {}
   build_reverse_transitions(transitions, reverse_transitions, { [start_state] = true }, start_state)
 
-  local stack = {}
   local color = {}
   local color_max
   for u in pairs(accept_states) do
-    stack[#stack + 1] = u
     color[u] = true
     if not color_max or color_max < u then
       color_max = u
     end
-  end
-  while true do
-    local n = #stack
-    local u = stack[n]
-    if not u then
-      break
-    end
-    stack[n] = nil
-    local reverse_transition = reverse_transitions[u]
-    if reverse_transition then
-      for v in pairs(reverse_transition) do
-        if not color[v] then
-          stack[#stack + 1] = v
-          color[v] = true
-          if not color_max or color_max < v then
-            color_max = v
-          end
-        end
-      end
-    end
+    color_max = build_reverse_color(reverse_transitions, color, color_max, u)
   end
 
   local accept_partitions = {}
