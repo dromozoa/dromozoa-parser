@@ -71,8 +71,13 @@ local function merge_accept_state(accept_states, set)
   return result
 end
 
-local function visit(this, transitions, accept_states, epsilon_closures, max_state, maps, useq, new_transitions, new_accept_states)
-  local u = find(maps, useq)
+local function visit(this, that, epsilon_closures, maps, max_state, useq)
+  local transitions = this.transitions
+  local accept_states = this.accept_states
+  local new_transitions = that.transitions
+  local new_accept_states = that.accept_states
+  local u = max_state
+
   for byte = 0, 255 do
     local vset
     for i = 1, #useq do
@@ -97,39 +102,34 @@ local function visit(this, transitions, accept_states, epsilon_closures, max_sta
         insert(maps, vseq, max_state)
         new_accept_states[max_state] = merge_accept_state(accept_states, vset)
         new_transitions[byte][u] = max_state
-        max_state = visit(this, transitions, accept_states, epsilon_closures, max_state, maps, vseq, new_transitions, new_accept_states)
+        max_state = visit(this, that, epsilon_closures, maps, max_state, vseq)
       end
     end
   end
+
   return max_state
 end
 
 return function (this)
-  local transitions = this.transitions
-  local accept_states = this.accept_states
-
   local epsilon_closures = {}
   local maps = {}
-  local max_state = 1
-
   local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
-  insert(maps, useq, max_state)
+  insert(maps, useq, 1)
 
   local new_transitions = {}
   for byte = 0, 255 do
     new_transitions[byte] = {}
   end
-  local new_accept_states = {
-    [max_state] = merge_accept_state(accept_states, uset);
-  }
-
-  max_state = visit(this, transitions, accept_states, epsilon_closures, max_state, maps, useq, new_transitions, new_accept_states)
-
-  return {
-    max_state = max_state;
+  local that = {
     transitions = new_transitions;
+    accept_states = {
+      merge_accept_state(this.accept_states, uset);
+    };
     start_state = 1;
-    accept_states = new_accept_states;
   }
+
+  that.max_state = visit(this, that, epsilon_closures, maps, 1, useq)
+
+  return that
 end
