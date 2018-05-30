@@ -25,10 +25,7 @@ local tree_to_nfa = require "dromozoa.parser.regexp.tree_to_nfa"
 local union = require "dromozoa.parser.regexp.union"
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local metatable = { __index = class }
 
 function class:nfa_to_dfa()
   return setmetatable(nfa_to_dfa(self), metatable)
