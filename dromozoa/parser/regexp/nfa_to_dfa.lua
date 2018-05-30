@@ -71,13 +71,46 @@ local function merge_accept_state(accept_states, set)
   return result
 end
 
+local function visit(this, transitions, accept_states, epsilon_closures, max_state, maps, useq, new_transitions, new_accept_states)
+  local u = find(maps, useq)
+  for byte = 0, 255 do
+    local vset
+    for i = 1, #useq do
+      local x = transitions[byte][useq[i]]
+      if x then
+        for y in pairs(epsilon_closure(this, epsilon_closures, x)) do
+          if vset then
+            vset[y] = true
+          else
+            vset = { [y] = true }
+          end
+        end
+      end
+    end
+    if vset then
+      local vseq = set_to_seq(vset)
+      local v = find(maps, vseq)
+      if v then
+        new_transitions[byte][u] = v
+      else
+        max_state = max_state + 1
+        insert(maps, vseq, max_state)
+        new_accept_states[max_state] = merge_accept_state(accept_states, vset)
+        new_transitions[byte][u] = max_state
+        max_state = visit(this, transitions, accept_states, epsilon_closures, max_state, maps, vseq, new_transitions, new_accept_states)
+      end
+    end
+  end
+  return max_state
+end
+
 return function (this)
   local transitions = this.transitions
   local accept_states = this.accept_states
 
-  local max_state = 1
   local epsilon_closures = {}
   local maps = {}
+  local max_state = 1
 
   local uset = epsilon_closure(this, epsilon_closures, this.start_state)
   local useq = set_to_seq(uset)
@@ -91,44 +124,7 @@ return function (this)
     [max_state] = merge_accept_state(accept_states, uset);
   }
 
-  local stack = { useq }
-  while true do
-    local n = #stack
-    local useq = stack[n]
-    if not useq then
-      break
-    end
-    stack[n] = nil
-    local u = find(maps, useq)
-    for byte = 0, 255 do
-      local vset
-      for i = 1, #useq do
-        local x = transitions[byte][useq[i]]
-        if x then
-          for y in pairs(epsilon_closure(this, epsilon_closures, x)) do
-            if vset then
-              vset[y] = true
-            else
-              vset = { [y] = true }
-            end
-          end
-        end
-      end
-      if vset then
-        local vseq = set_to_seq(vset)
-        local v = find(maps, vseq)
-        if v then
-          new_transitions[byte][u] = v
-        else
-          max_state = max_state + 1
-          insert(maps, vseq, max_state)
-          stack[#stack + 1] = vseq
-          new_accept_states[max_state] = merge_accept_state(accept_states, vset)
-          new_transitions[byte][u] = max_state
-        end
-      end
-    end
-  end
+  max_state = visit(this, transitions, accept_states, epsilon_closures, max_state, maps, useq, new_transitions, new_accept_states)
 
   return {
     max_state = max_state;
