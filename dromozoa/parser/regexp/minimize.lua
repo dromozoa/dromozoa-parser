@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local function visit(transitions, reverse_transitions, color, u)
+local function build_reverse_transitions(transitions, reverse_transitions, color, u)
   for byte = 0, 255 do
     local v = transitions[byte][u]
     if v and u ~= v then
@@ -27,7 +27,7 @@ local function visit(transitions, reverse_transitions, color, u)
       end
       if not color[v] then
         color[v] = true
-        visit(transitions, reverse_transitions, color, v)
+        build_reverse_transitions(transitions, reverse_transitions, color, v)
       end
     end
   end
@@ -39,7 +39,7 @@ return function (this)
   local accept_states = this.accept_states
 
   local reverse_transitions = {}
-  visit(transitions, reverse_transitions, { [start_state] = true }, start_state)
+  build_reverse_transitions(transitions, reverse_transitions, { [start_state] = true }, start_state)
 
   local stack = {}
   local color = {}
