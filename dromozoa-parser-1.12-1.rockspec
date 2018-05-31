@@ -10,6 +10,9 @@ description = {
   homepage = "https://github.com/dromozoa/dromozoa-parser/";
   maintainer = "Tomoyuki Fujimori <moyu@dromozoa.com>";
 }
+dependencies = {
+  "dromozoa-graph";
+}
 build = {
   type = "builtin";
   modules = {
