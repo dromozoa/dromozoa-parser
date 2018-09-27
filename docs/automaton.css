@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono');
+
+text {
+  font-family: 'Roboto Mono', monospace;
+}
+
+text {
+  font-size: 16;
+  text-anchor: middle;
+  dominant-baseline: central;
+  fill: #000;
+  stroke: none;
+}
+
+.u_paths path {
+  fill: none;
+  stroke: #000;
+}
+
+.u_paths path.start_state {
+  fill: #000;
+}
+
+.u_texts text.start_state {
+  fill: #FFF;
+}
+
+.e_paths path {
+  fill: none;
+  stroke: #000;
+  marker-end: url('#arrow');
+}
+
+.e_bg_texts text {
+  stroke: #FFF;
+  stroke-width: 4;
+}
