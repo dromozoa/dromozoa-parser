@@ -17,23 +17,44 @@
 
 local graph = require "dromozoa.graph"
 
-local char_table = {}
-for byte = 0, 255 do
-  char_table[byte] = ([[\\x%02x]]):format(byte)
+local char_table = {
+  -- Control Escape
+  [0x0C] = "\\f";
+  [0x0A] = "\\n";
+  [0x0D] = "\\r";
+  [0x09] = "\\t";
+  [0x0B] = "\\v";
+
+  -- Syntax Character
+  [0x5E] = "\\^";
+  [0x24] = "\\$";
+  [0x5C] = "\\\\";
+  [0x2E] = "\\.";
+  [0x2A] = "\\*";
+  [0x2B] = "\\+";
+  [0x3F] = "\\?";
+  [0x28] = "\\(";
+  [0x29] = "\\)";
+  [0x5B] = "\\[";
+  [0x5D] = "\\]";
+  [0x7B] = "\\{";
+  [0x7D] = "\\}";
+  [0x7C] = "\\|";
+}
+
+for byte = 0x00, 0xFF do
+  if not char_table[byte] then
+    if 0x20 <= byte and byte <= 0x7E then
+      char_table[byte] = string.char(byte)
+    else
+      char_table[byte] = ("\\x%02X"):format(byte)
+    end
+  end
 end
-for byte = 32, 126 do
-  char_table[byte] = string.char(byte)
-end
-char_table[0x09] = [=[\\t]=]
-char_table[0x0a] = [=[\\n]=]
-char_table[0x0b] = [=[\\v]=]
-char_table[0x0c] = [=[\\f]=]
-char_table[0x0d] = [=[\\r]=]
-char_table[0x22] = [=[\"]=]
-char_table[0x5b] = [=[\\[]=]
-char_table[0x5c] = [=[\\\\]=]
-char_table[0x5d] = [=[\\]]=]
-char_table[0x5e] = [=[\\^]=]
+
+local range_char_table = setmetatable({
+  [0x2D] = "\\-";
+}, { __index = char_table })
 
 return function (this)
   local max_state = this.max_state
@@ -74,7 +95,14 @@ return function (this)
     for v, item in pairs(map) do
       local n = item.n
       local label
-      if n == 256 then
+      if n == 1 then
+        for k, v in pairs(item) do
+          if k ~= "n" then
+            label = char_table[k]
+            break
+          end
+        end
+      elseif n == 256 then
         label = "."
       else
         local neg = n > 127
@@ -99,9 +127,9 @@ return function (this)
           local range = ranges[i]
           local byte1, byte2 = range[1], range[2]
           if byte1 == byte2 then
-            buffer[#buffer + 1] = char_table[byte1]
+            buffer[#buffer + 1] = range_char_table[byte1]
           else
-            buffer[#buffer + 1] = char_table[byte1] .. "-" .. char_table[byte2]
+            buffer[#buffer + 1] = range_char_table[byte1] .. "-" .. range_char_table[byte2]
           end
         end
         label = "[" .. table.concat(buffer) .. "]"
