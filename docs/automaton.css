@@ -21,6 +21,15 @@ text {
   fill: #000;
 }
 
+.u_paths path.accept_state {
+  stroke-width: 3;
+}
+
+.u_fg_paths path.accept_state {
+  fill: none;
+  stroke: #FFF;
+}
+
 .u_texts text.start_state {
   fill: #FFF;
 }

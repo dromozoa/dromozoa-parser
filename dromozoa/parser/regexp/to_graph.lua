@@ -60,6 +60,7 @@ return function (this)
   local max_state = this.max_state
   local epsilons = this.epsilons
   local transitions = this.transitions
+  local accept_states = this.accept_states
 
   local that = graph()
   local u_labels = {}
@@ -67,6 +68,9 @@ return function (this)
 
   for uid = 1, max_state do
     that:add_vertex()
+  end
+  for uid, accept in pairs(accept_states) do
+    u_labels[uid] = uid .. "/" .. accept
   end
 
   if epsilons then
@@ -139,5 +143,5 @@ return function (this)
     end
   end
 
-  return that, e_labels
+  return that, u_labels, e_labels
 end
