@@ -62,41 +62,41 @@ return function (this)
   local transitions = this.transitions
 
   local that = graph()
+  local u_labels = {}
+  local e_labels = {}
 
-  for u = 1, max_state do
+  for uid = 1, max_state do
     that:add_vertex()
   end
 
   if epsilons then
-    for u, v in pairs(epsilons[1]) do
-      that:add_edge(u, v)
+    for uid, vid in pairs(epsilons[1]) do
+      that:add_edge(uid, vid)
     end
-    for u, v in pairs(epsilons[2]) do
-      that:add_edge(u, v)
+    for uid, vid in pairs(epsilons[2]) do
+      that:add_edge(uid, vid)
     end
   end
 
-  local e_labels = {}
-
-  for u = 1, max_state do
+  for uid = 1, max_state do
     local map = {}
     for byte = 0, 255 do
-      local v = transitions[byte][u]
-      if v then
-        local item = map[v]
+      local vid = transitions[byte][uid]
+      if vid then
+        local item = map[vid]
         if item then
           item.n = item.n + 1
           item[byte] = true
         else
-          map[v] = { n = 1, [byte] = true }
+          map[vid] = { n = 1, [byte] = true }
         end
       end
     end
-    for v, item in pairs(map) do
+    for vid, item in pairs(map) do
       local n = item.n
       local label
       if n == 1 then
-        for k, v in pairs(item) do
+        for k in pairs(item) do
           if k ~= "n" then
             label = char_table[k]
             break
@@ -134,7 +134,7 @@ return function (this)
         end
         label = "[" .. table.concat(buffer) .. "]"
       end
-      local eid = that:add_edge(u, v)
+      local eid = that:add_edge(uid, vid)
       e_labels[eid] = label
     end
   end
