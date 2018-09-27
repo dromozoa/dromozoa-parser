@@ -17,6 +17,24 @@
 
 local graph = require "dromozoa.graph"
 
+local char_table = {}
+for byte = 0, 255 do
+  char_table[byte] = ([[\\x%02x]]):format(byte)
+end
+for byte = 32, 126 do
+  char_table[byte] = string.char(byte)
+end
+char_table[0x09] = [=[\\t]=]
+char_table[0x0a] = [=[\\n]=]
+char_table[0x0b] = [=[\\v]=]
+char_table[0x0c] = [=[\\f]=]
+char_table[0x0d] = [=[\\r]=]
+char_table[0x22] = [=[\"]=]
+char_table[0x5b] = [=[\\[]=]
+char_table[0x5c] = [=[\\\\]=]
+char_table[0x5d] = [=[\\]]=]
+char_table[0x5e] = [=[\\^]=]
+
 return function (this)
   local max_state = this.max_state
   local epsilons = this.epsilons
@@ -37,9 +55,10 @@ return function (this)
     end
   end
 
+  local e_labels = {}
+
   for u = 1, max_state do
     local map = {}
-    -- TODO use <n>
     for byte = 0, 255 do
       local v = transitions[byte][u]
       if v then
@@ -53,9 +72,44 @@ return function (this)
       end
     end
     for v, item in pairs(map) do
-      that:add_edge(u, v)
+      local n = item.n
+      local label
+      if n == 256 then
+        label = "."
+      else
+        local neg = n > 127
+
+        local ranges = {}
+        for byte = 0, 255 do
+          local flag = item[byte]
+          if neg then
+            flag = not flag
+          end
+          if flag then
+            local range = ranges[#ranges]
+            if range and range[2] + 1 == byte then
+              range[2] = byte
+            else
+              ranges[#ranges + 1] = { byte, byte }
+            end
+          end
+        end
+        local buffer = {}
+        for i = 1, #ranges do
+          local range = ranges[i]
+          local byte1, byte2 = range[1], range[2]
+          if byte1 == byte2 then
+            buffer[#buffer + 1] = char_table[byte1]
+          else
+            buffer[#buffer + 1] = char_table[byte1] .. "-" .. char_table[byte2]
+          end
+        end
+        label = "[" .. table.concat(buffer) .. "]"
+      end
+      local eid = that:add_edge(u, v)
+      e_labels[eid] = label
     end
   end
 
-  return that
+  return that, e_labels
 end

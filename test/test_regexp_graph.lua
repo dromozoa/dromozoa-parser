@@ -45,7 +45,7 @@ local last_eid = g.e.last
 local revered_eids = subdivide_special_edges(g, e_labels)
 local x, y, paths = layout(g, last_uid, last_eid, revered_eids)
 
-local matrix = vecmath.matrix3(100, 0, 50, 0, 100, 50, 0, 0, 1)
+local matrix = vecmath.matrix3(0, 100, 50, 100, 0, 50, 0, 0, 1)
 local node = render(g, last_uid, last_eid, x, y, paths, {
   matrix = matrix;
   e_labels = e_labels;
