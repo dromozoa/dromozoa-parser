@@ -32,7 +32,13 @@ local _ = dom.element
 local path_data = svg.path_data
 
 local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
--- local p = S"abcdef"^"*"
+-- local p = R"az"^"*"
+-- local p
+--   = P"あ" + P"い" + P"う" + P"え" + P"お"
+--   + P"わ" + P"を" + P"ん"
+-- local p = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
+local p = (P"if" + P"then" + P"elseif" + P"else" + P"end")^"+"
+
 local nfa = regexp(p)
 local dfa = nfa:nfa_to_dfa():minimize()
 
@@ -42,9 +48,10 @@ local accept_states = dfa.accept_states
 local g, u_labels, e_labels = to_graph(dfa)
 local root = g:render {
   matrix = vecmath.matrix3(0, 100, 50, 50, 0, 25, 0, 0, 1);
-  shape = "ellipse";
   u_labels = u_labels;
   e_labels = e_labels;
+  shape = "ellipse";
+  max_text_length = 128;
 }
 
 local u_paths = root[1]

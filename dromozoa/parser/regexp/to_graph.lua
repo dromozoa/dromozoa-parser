@@ -136,7 +136,11 @@ return function (this)
             buffer[#buffer + 1] = range_char_table[byte1] .. "-" .. range_char_table[byte2]
           end
         end
-        label = "[" .. table.concat(buffer) .. "]"
+        if neg then
+          label = "[^" .. table.concat(buffer) .. "]"
+        else
+          label = "[" .. table.concat(buffer) .. "]"
+        end
       end
       local eid = that:add_edge(uid, vid)
       e_labels[eid] = label
