@@ -28,10 +28,10 @@ local a3 = regexp(P"abba", 3):nfa_to_dfa():minimize()
 local a4 = regexp(P"dddd", 4):nfa_to_dfa():minimize()
 
 a1:union(a2):union(a3):union(a4)
-a1:write_graphviz "test-nfa.dot"
+a1:write_svg "test-nfa.svg"
 
 local dfa = a1:nfa_to_dfa():minimize()
-dfa:write_graphviz "test-dfa.dot"
+dfa:write_svg "test-dfa.svg"
 
 assert(dfa.max_state == 14)
 assert(dfa.start_state == 5)

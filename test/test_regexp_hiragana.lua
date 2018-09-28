@@ -26,5 +26,4 @@ local p
   = P"あ" + P"い" + P"う" + P"え" + P"お"
   + P"わ" + P"を" + P"ん"
 local a = regexp(p^"+"):nfa_to_dfa():minimize()
-a:write_graphviz "test.dot"
-
+a:write_svg "test.svg"

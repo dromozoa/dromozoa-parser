@@ -32,12 +32,12 @@ local _ = dom.element
 local path_data = svg.path_data
 
 local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
-local p = R"az"^"*"
-local p
-  = P"あ" + P"い" + P"う" + P"え" + P"お"
-  + P"わ" + P"を" + P"ん"
-local p = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
-local p = (P"if" + P"then" + P"elseif" + P"else" + P"end")^"+"
+-- local p = R"az"^"*"
+-- local p
+--   = P"あ" + P"い" + P"う" + P"え" + P"お"
+--   + P"わ" + P"を" + P"ん"
+-- local p = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
+-- local p = (P"if" + P"then" + P"elseif" + P"else" + P"end")^"+"
 
 local nfa = regexp(p)
 nfa:write_svg "test-nfa.svg"
