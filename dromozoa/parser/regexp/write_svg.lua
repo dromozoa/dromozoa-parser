@@ -102,20 +102,17 @@ return function (this, out)
     shape = "ellipse";
   }
 
-  local u_paths = root[1]
-  local u_texts = root[2]
-  local e_paths = root[3]
-  local e_texts = root[4]
-
-  u_paths.class = "u_paths z1"
+  local u_paths1 = root[1]
   local u_paths2 = element "g" { class = "u_paths z2" }
-
+  local u_texts = root[2]
+  local e_texts = root[4]
+  u_paths1.class = "u_paths z1"
   e_texts.class = nil
   e_texts.id = "e_texts"
   local defs = element "defs" { style, marker, e_texts }
 
-  for i = 1, #u_paths do
-    local path = u_paths[i]
+  for i = 1, #u_paths1 do
+    local path = u_paths1[i]
     local uid = path["data-uid"]
     if accept_states[uid] then
       local id = "u_path" .. uid
@@ -123,7 +120,7 @@ return function (this, out)
       defs[#defs + 1] = path
 
       local path = element "use" { href = "#" .. id }
-      u_paths[i] = path
+      u_paths1[i] = path
       u_paths2[#u_paths2 + 1] = path
 
       if uid == start_state then
@@ -145,10 +142,10 @@ return function (this, out)
     width = root["data-width"];
     height = root["data-height"];
     defs;
-    u_paths;
+    u_paths1;
     u_paths2;
     u_texts;
-    e_paths;
+    root[3];
     element "use" {
       class = "e_texts z1";
       href = "#e_texts";
