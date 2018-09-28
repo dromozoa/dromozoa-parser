@@ -37,7 +37,7 @@ local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
 --   = P"あ" + P"い" + P"う" + P"え" + P"お"
 --   + P"わ" + P"を" + P"ん"
 -- local p = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
-local p = (P"if" + P"then" + P"elseif" + P"else" + P"end")^"+"
+-- local p = (P"if" + P"then" + P"elseif" + P"else" + P"end")^"+"
 
 local nfa = regexp(p)
 local dfa = nfa:nfa_to_dfa():minimize()
@@ -51,7 +51,6 @@ local root = g:render {
   u_labels = u_labels;
   e_labels = e_labels;
   shape = "ellipse";
-  max_text_length = 128;
 }
 
 local u_paths = root[1]

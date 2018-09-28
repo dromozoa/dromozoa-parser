@@ -56,6 +56,25 @@ local range_char_table = setmetatable({
   [0x2D] = "\\-";
 }, { __index = char_table })
 
+local function ranges_to_string(head, ranges)
+  local buffer = { head }
+  local n = 1
+  for i = 1, #ranges do
+    local range = ranges[i]
+    local byte1, byte2 = range[1], range[2]
+    n = n + 1
+    buffer[n] = range_char_table[byte1]
+    if byte1 < byte2 then
+      n = n + 1
+      buffer[n] = "-"
+      n = n + 1
+      buffer[n] = range_char_table[byte2]
+    end
+  end
+  buffer[n + 1] = "]"
+  return table.concat(buffer)
+end
+
 return function (this)
   local max_state = this.max_state
   local epsilons = this.epsilons
@@ -108,16 +127,10 @@ return function (this)
         end
       elseif n == 256 then
         label = "."
-      else
-        local neg = n > 127
-
+      elseif n < 128 then
         local ranges = {}
         for byte = 0, 255 do
-          local flag = item[byte]
-          if neg then
-            flag = not flag
-          end
-          if flag then
+          if item[byte] then
             local range = ranges[#ranges]
             if range and range[2] + 1 == byte then
               range[2] = byte
@@ -126,21 +139,20 @@ return function (this)
             end
           end
         end
-        local buffer = {}
-        for i = 1, #ranges do
-          local range = ranges[i]
-          local byte1, byte2 = range[1], range[2]
-          if byte1 == byte2 then
-            buffer[#buffer + 1] = range_char_table[byte1]
-          else
-            buffer[#buffer + 1] = range_char_table[byte1] .. "-" .. range_char_table[byte2]
+        label = ranges_to_string("[", ranges)
+      else
+        local ranges = {}
+        for byte = 0, 255 do
+          if not item[byte] then
+            local range = ranges[#ranges]
+            if range and range[2] + 1 == byte then
+              range[2] = byte
+            else
+              ranges[#ranges + 1] = { byte, byte }
+            end
           end
         end
-        if neg then
-          label = "[^" .. table.concat(buffer) .. "]"
-        else
-          label = "[" .. table.concat(buffer) .. "]"
-        end
+        label = ranges_to_string("[^", ranges)
       end
       local eid = that:add_edge(uid, vid)
       e_labels[eid] = label
