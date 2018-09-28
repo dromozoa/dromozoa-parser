@@ -2,45 +2,52 @@
 
 text {
   font-family: 'Roboto Mono', monospace;
-}
-
-text {
   font-size: 16;
   text-anchor: middle;
   dominant-baseline: central;
-  fill: #000;
-  stroke: none;
 }
 
-.u_paths path {
+.u_paths.z1 {
   fill: none;
   stroke: #000;
 }
 
-.u_paths path.start_state {
+.u_paths.z1 .start_state {
   fill: #000;
 }
 
-.u_paths path.accept_state {
+.u_paths.z1 .accept_state {
   stroke-width: 3;
 }
 
-.u_fg_paths path.accept_state {
+.u_paths.z2 {
   fill: none;
   stroke: #FFF;
+  stroke-width: 1;
 }
 
-.u_texts text.start_state {
+.u_texts {
+  fill: #000;
+  stroke: none;
+}
+
+.u_texts .start_state {
   fill: #FFF;
 }
 
-.e_paths path {
+.e_paths {
   fill: none;
   stroke: #000;
   marker-end: url('#arrow');
 }
 
-.e_bg_texts text {
+.e_texts.z1 {
+  fill: #FFF;
   stroke: #FFF;
   stroke-width: 4;
+}
+
+.e_texts.z2 {
+  fill: #000;
+  stroke: none;
 }

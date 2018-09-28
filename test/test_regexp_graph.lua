@@ -53,34 +53,56 @@ local root = g:render {
   shape = "ellipse";
 }
 
+local defs = _"defs" {
+  _"marker" {
+    id = "arrow";
+    viewBox = "0 0 4 4";
+    refX = 4;
+    refY = 2;
+    markerWidth = 8;
+    markerHeight = 8;
+    orient = "auto";
+    _"path" {
+      d = svg.path_data():M(0,0):L(4,2):L(0,4):Z();
+    };
+  };
+}
+
 local u_paths = root[1]
 local u_texts = root[2]
 local e_paths = root[3]
 local e_texts = root[4]
 
-local u_fg_paths = _"g" { class = "u_fg_paths" }
+u_paths.class = "u_paths z1"
+local u_paths2 = _"g" { class = "u_paths z2" }
+
+e_texts.class = nil
+e_texts.id = "e_texts"
+defs[#defs + 1] = e_texts
 
 for i = 1, #u_paths do
   local path = u_paths[i]
   local uid = path["data-uid"]
-  local class = dom.space_separated {}
-  if uid == start_state then
-    class[1] = "start_state"
-  end
   if accept_states[uid] then
-    class[#class + 1] = "accept_state"
-    u_fg_paths[#u_fg_paths + 1] = path
-  end
-  if #class > 0 then
-    local text = u_texts[i]
-    path.class = class
-    text.class = class
-  end
-end
+    local id = "u_path" .. uid
+    path.id = id
+    defs[#defs + 1] = path
 
-local e_bg_texts = _"g" { class = "e_bg_texts" }
-for i = 1, #e_texts do
-  e_bg_texts[i] = e_texts[i]
+    local path = _"use" { href = "#" .. id }
+    u_paths[i] = path
+    u_paths2[#u_paths2 + 1] = path
+
+    if uid == start_state then
+      path.class = "start_state accept_state"
+      u_texts[i].class = "start_state accept_state"
+    else
+      path.class = "accept_state"
+      u_texts[i].class = "accept_state"
+    end
+  elseif uid == start_state then
+    path.class = "start_state"
+    u_texts[i].class = "start_state"
+  end
 end
 
 local doc = dom.xml_document(_"svg" {
@@ -88,26 +110,19 @@ local doc = dom.xml_document(_"svg" {
   xmlns = "http://www.w3.org/2000/svg";
   width = root["data-width"];
   height = root["data-height"];
-  _"defs" {
-    _"marker" {
-      id = "arrow";
-      viewBox = "0 0 4 4";
-      refX = 4;
-      refY = 2;
-      markerWidth = 8;
-      markerHeight = 8;
-      orient = "auto";
-      _"path" {
-        d = svg.path_data():M(0,0):L(4,2):L(0,4):Z();
-      };
-    };
-  };
+  defs;
   u_paths;
-  u_fg_paths;
+  u_paths2;
   u_texts;
   e_paths;
-  e_bg_texts;
-  e_texts;
+  _"use" {
+    class = "e_texts z1";
+    href = "#e_texts";
+  };
+  _"use" {
+    class = "e_texts z2";
+    href = "#e_texts";
+  };
 })
 doc.stylesheets = {
   { href = "docs/automaton.css" }
