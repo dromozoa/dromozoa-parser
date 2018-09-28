@@ -119,7 +119,7 @@ return function (this, out)
       path.id = id
       defs[#defs + 1] = path
 
-      local path = element "use" { href = "#" .. id }
+      local path = element "use" { ["xlink:href"] = "#" .. id }
       u_paths1[i] = path
       u_paths2[#u_paths2 + 1] = path
 
@@ -139,6 +139,7 @@ return function (this, out)
   local doc = xml_document(element "svg" {
     version = "1.1";
     xmlns = "http://www.w3.org/2000/svg";
+    ["xmlns:xlink"] = "http://www.w3.org/1999/xlink";
     width = root["data-width"];
     height = root["data-height"];
     defs;
@@ -148,11 +149,11 @@ return function (this, out)
     root[3];
     element "use" {
       class = "e_texts z1";
-      href = "#e_texts";
+      ["xlink:href"] = "#e_texts";
     };
     element "use" {
       class = "e_texts z2";
-      href = "#e_texts";
+      ["xlink:href"] = "#e_texts";
     };
   })
 
