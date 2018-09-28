@@ -44,7 +44,7 @@ local char_table = {
 
 for byte = 0x00, 0xFF do
   if not char_table[byte] then
-    if 0x20 <= byte and byte <= 0x7E then
+    if 0x21 <= byte and byte <= 0x7E then
       char_table[byte] = string.char(byte)
     else
       char_table[byte] = ("\\x%02X"):format(byte)
