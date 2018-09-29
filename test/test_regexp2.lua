@@ -24,9 +24,9 @@ local S = builder.set
 
 local p = S "abc" + S("def")
 local nfa = regexp(p)
-nfa:write_graphviz "test-nfa.dot"
+nfa:write_svg "test-nfa.svg"
 local dfa = nfa:nfa_to_dfa():minimize()
-dfa:write_graphviz "test-dfa.dot"
+dfa:write_svg "test-dfa.svg"
 
 assert(dfa.max_state == 2)
 assert(dfa.start_state == 2)

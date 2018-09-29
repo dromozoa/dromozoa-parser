@@ -15,14 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local write_graphviz = require "dromozoa.parser.regexp.write_graphviz"
-
 local concat = require "dromozoa.parser.regexp.concat"
 local difference = require "dromozoa.parser.regexp.difference"
 local minimize = require "dromozoa.parser.regexp.minimize"
 local nfa_to_dfa = require "dromozoa.parser.regexp.nfa_to_dfa"
 local tree_to_nfa = require "dromozoa.parser.regexp.tree_to_nfa"
 local union = require "dromozoa.parser.regexp.union"
+local write_svg = require "dromozoa.parser.regexp.write_svg"
 
 local class = {}
 local metatable = { __index = class }
@@ -47,11 +46,11 @@ function class:difference(that)
   return setmetatable(difference(self, that), metatable)
 end
 
-function class:write_graphviz(out)
+function class:write_svg(out)
   if type(out) == "string" then
-    write_graphviz(self, assert(io.open(out, "w"))):close()
+    write_svg(self, assert(io.open(out, "w"))):close()
   else
-    return write_graphviz(self, out)
+    return write_svg(self, out)
   end
 end
 

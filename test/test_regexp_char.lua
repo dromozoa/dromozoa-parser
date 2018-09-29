@@ -1,4 +1,4 @@
--- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -22,21 +22,9 @@ local P = builder.pattern
 local R = builder.range
 local S = builder.set
 
-local a1 = regexp(P"abcd", 1):nfa_to_dfa():minimize()
-local a2 = regexp(P"aaaa", 2):nfa_to_dfa():minimize()
-local a3 = regexp(P"abba", 3):nfa_to_dfa():minimize()
-local a4 = regexp(P"dddd", 4):nfa_to_dfa():minimize()
-
-a1:union(a2):union(a3):union(a4)
-a1:write_svg "test-nfa.svg"
-
-local dfa = a1:nfa_to_dfa():minimize()
-dfa:write_svg "test-dfa.svg"
-
-assert(dfa.max_state == 14)
-assert(dfa.start_state == 5)
-assert(dfa.accept_states[1] == 1)
-assert(dfa.accept_states[2] == 2)
-assert(dfa.accept_states[3] == 3)
-assert(dfa.accept_states[4] == 4)
-assert(dfa.accept_states[5] == nil)
+local p = P"\0"
+for i = 1, 127 do
+  p = p * P(string.char(i))
+end
+local a = regexp(p):nfa_to_dfa():minimize()
+a:write_svg "test.svg"

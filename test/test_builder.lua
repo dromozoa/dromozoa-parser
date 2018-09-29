@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -49,4 +49,4 @@ _"E"
 local lexer, grammar = _:build()
 
 print(dumper.encode(grammar, { pretty = true, stable = true }))
-_.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa.dot", "w"))):close()
+_.lexers[1].automaton:write_svg "test-dfa.svg"

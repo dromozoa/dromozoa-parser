@@ -23,4 +23,4 @@ local RE = builder.regexp
 local _ = builder()
 
 local p = [[/*]] * (RE[[.*]] - RE[[.*\*\/.*]]) * [[*/]]
-regexp(p):nfa_to_dfa():minimize():write_graphviz "test-dfa.dot"
+regexp(p):nfa_to_dfa():minimize():write_svg "test-dfa.svg"
