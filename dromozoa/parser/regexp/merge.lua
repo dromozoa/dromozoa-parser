@@ -33,25 +33,25 @@ return function (this, that)
 
   local that_epsilons = that.epsilons
   if that_epsilons then
-    for u, v in pairs(that_epsilons[1]) do
-      epsilons1[n + u] = n + v
+    for uid, vid in pairs(that_epsilons[1]) do
+      epsilons1[n + uid] = n + vid
     end
-    for u, v in pairs(that_epsilons[2]) do
-      epsilons2[n + u] = n + v
+    for uid, vid in pairs(that_epsilons[2]) do
+      epsilons2[n + uid] = n + vid
     end
   end
 
   local that_transitions = that.transitions
   for byte = 0, 255 do
     local transition = transitions[byte]
-    for u, v in pairs(that_transitions[byte]) do
-      transition[n + u] = n + v
+    for uid, vid in pairs(that_transitions[byte]) do
+      transition[n + uid] = n + vid
     end
   end
 
   local accept_states = {}
-  for u, accept in pairs(that.accept_states) do
-    accept_states[n + u] = accept
+  for uid, accept in pairs(that.accept_states) do
+    accept_states[n + uid] = accept
   end
 
   local max_state = n + that.max_state
