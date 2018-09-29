@@ -154,8 +154,7 @@ return function (this)
         end
         label = ranges_to_string("[^", ranges)
       end
-      local eid = that:add_edge(u, v)
-      e_labels[eid] = label
+      e_labels[that:add_edge(u, v)] = label
     end
   end
 
