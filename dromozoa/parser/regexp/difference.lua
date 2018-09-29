@@ -32,8 +32,8 @@ return function (this, that)
 
   for i = 0, this_max_state do
     for j = 0, that_max_state do
-      local uid = i + n * j
-      if uid ~= 0 then
+      local u = i + n * j
+      if u ~= 0 then
         for byte = 0, 255 do
           local x = this_transitions[byte][i]
           local y = that_transitions[byte][j]
@@ -43,9 +43,9 @@ return function (this, that)
           if not y then
             y = 0
           end
-          local vid = x + n * y
-          if vid ~= 0 then
-            transitions[byte][uid] = vid
+          local v = x + n * y
+          if v ~= 0 then
+            transitions[byte][u] = v
           end
         end
       end
@@ -56,8 +56,8 @@ return function (this, that)
     accept_states[i] = accept
     for j = 1, that_max_state do
       if not that_accept_states[j] then
-        local uid = i + n * j
-        accept_states[uid] = accept
+        local u = i + n * j
+        accept_states[u] = accept
       end
     end
   end

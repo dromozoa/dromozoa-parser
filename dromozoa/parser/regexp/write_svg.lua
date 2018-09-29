@@ -113,9 +113,9 @@ return function (this, out)
 
   for i = 1, #u_paths1 do
     local path = u_paths1[i]
-    local uid = path["data-uid"]
-    if accept_states[uid] then
-      local id = "u_path" .. uid
+    local u = path["data-uid"]
+    if accept_states[u] then
+      local id = "u_path" .. u
       path.id = id
       defs[#defs + 1] = path
 
@@ -123,14 +123,14 @@ return function (this, out)
       u_paths1[i] = path
       u_paths2[#u_paths2 + 1] = path
 
-      if uid == start_state then
+      if u == start_state then
         path.class = "start_state accept_state"
         u_texts[i].class = "start_state accept_state"
       else
         path.class = "accept_state"
         u_texts[i].class = "accept_state"
       end
-    elseif uid == start_state then
+    elseif u == start_state then
       path.class = "start_state"
       u_texts[i].class = "start_state"
     end

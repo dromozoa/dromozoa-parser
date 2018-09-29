@@ -85,37 +85,37 @@ return function (this)
   local u_labels = {}
   local e_labels = {}
 
-  for uid = 1, max_state do
+  for u = 1, max_state do
     that:add_vertex()
   end
-  for uid, accept in pairs(accept_states) do
-    u_labels[uid] = uid .. "/" .. accept
+  for u, accept in pairs(accept_states) do
+    u_labels[u] = u .. "/" .. accept
   end
 
   if epsilons then
-    for uid, vid in pairs(epsilons[1]) do
-      that:add_edge(uid, vid)
+    for u, v in pairs(epsilons[1]) do
+      that:add_edge(u, v)
     end
-    for uid, vid in pairs(epsilons[2]) do
-      that:add_edge(uid, vid)
+    for u, v in pairs(epsilons[2]) do
+      that:add_edge(u, v)
     end
   end
 
-  for uid = 1, max_state do
+  for u = 1, max_state do
     local map = {}
     for byte = 0, 255 do
-      local vid = transitions[byte][uid]
-      if vid then
-        local item = map[vid]
+      local v = transitions[byte][u]
+      if v then
+        local item = map[v]
         if item then
           item.n = item.n + 1
           item[byte] = true
         else
-          map[vid] = { n = 1, [byte] = true }
+          map[v] = { n = 1, [byte] = true }
         end
       end
     end
-    for vid, item in pairs(map) do
+    for v, item in pairs(map) do
       local n = item.n
       local label
       if n == 1 then
@@ -154,7 +154,7 @@ return function (this)
         end
         label = ranges_to_string("[^", ranges)
       end
-      local eid = that:add_edge(uid, vid)
+      local eid = that:add_edge(u, v)
       e_labels[eid] = label
     end
   end
