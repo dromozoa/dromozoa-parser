@@ -23,9 +23,9 @@ return function (this, that)
   local epsilons = this.epsilons
   local epsilons1 = epsilons[1]
 
-  local v = that.start_state
-  for u in pairs(this.accept_states) do
-    epsilons1[u] = v
+  local vid = that.start_state
+  for uid in pairs(this.accept_states) do
+    epsilons1[uid] = vid
   end
 
   this.accept_states = that.accept_states
