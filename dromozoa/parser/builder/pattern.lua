@@ -60,7 +60,7 @@ function metatable:__pow(that)
   if that == 0 or that == "*" then
     return class(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
-    return self * self:clone()^"*"
+    return self * self:clone()^0
   elseif that == -1 or that == "?" then
     return class(5, self) -- optional
   end
@@ -76,7 +76,7 @@ function metatable:__pow(that)
       for i = 2, that do
         items[i] = self:clone()
       end
-      items[that + 1] = self:clone()^"*"
+      items[that + 1] = self:clone()^0
       return class.concat(items)
     end
   else
