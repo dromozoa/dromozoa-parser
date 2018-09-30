@@ -58,9 +58,7 @@ local class = {
   range = atom.range;
   set = atom.set;
 }
-local metatable = {
-  __index = class;
-}
+local metatable = { __index = class }
 class.metatable = metatable
 
 pattern.construct = construct

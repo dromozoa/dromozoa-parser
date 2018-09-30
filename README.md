@@ -56,8 +56,8 @@ Parser generator toolkit.
 |   15 | `:utf8(i, j)`       |         2 |      | encode utf8                  |
 |   16 | `:utf8(i, j, k, l)` |         4 |      | encode utf8 (surrogate pair) |
 |   17 | `:add(x)`           |         1 |      | add integer                  |
-|   18 | `:attr(key, value)` |         2 |      | set attribute                |
-|   19 | `:attr_value "key"` |         1 |      | set attribute with value     |
+|   18 |                     |           |      | N/A                          |
+|   19 |                     |           |      | N/A                          |
 
 ## Parser
 

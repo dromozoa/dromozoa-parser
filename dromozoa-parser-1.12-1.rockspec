@@ -12,6 +12,7 @@ description = {
 }
 dependencies = {
   "dromozoa-graph";
+  "dromozoa-utf8";
 }
 build = {
   type = "builtin";

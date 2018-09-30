@@ -15,17 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local merge = require "dromozoa.parser.regexp.merge"
+local builder = require "dromozoa.parser.builder"
+local regexp = require "dromozoa.parser.regexp"
 
-return function (this, that)
-  local this, that = merge(this, that)
-  local epsilons1 = this.epsilons[1]
-
-  local v = that.start_state
-  for u in pairs(this.accept_states) do
-    epsilons1[u] = v
-  end
-
-  this.accept_states = that.accept_states
-  return this
-end
+local P = builder.pattern
+regexp(P"x"^3 + P"y"^"+"):nfa_to_dfa():minimize():write_svg "test.svg"

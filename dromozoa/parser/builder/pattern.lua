@@ -15,8 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
+local class = { is_pattern = true }
 local metatable = { __index = class }
+class.metatable = metatable
 
 function class.concat(items)
   local result = items[1]
@@ -28,10 +29,10 @@ end
 
 function class:clone()
   local that = self[3]
-  if that == nil then
-    return class(self[1], self[2]:clone())
-  else
+  if that then
     return class(self[1], self[2]:clone(), that:clone())
+  else
+    return class(self[1], self[2]:clone())
   end
 end
 
@@ -60,7 +61,7 @@ function metatable:__pow(that)
   if that == 0 or that == "*" then
     return class(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
-    return self * self:clone()^"*"
+    return self * self:clone()^0
   elseif that == -1 or that == "?" then
     return class(5, self) -- optional
   end
@@ -76,7 +77,7 @@ function metatable:__pow(that)
       for i = 2, that do
         items[i] = self:clone()
       end
-      items[that + 1] = self:clone()^"*"
+      items[that + 1] = self:clone()^0
       return class.concat(items)
     end
   else
@@ -102,11 +103,6 @@ function metatable:__pow(that)
       return class.concat(items)
     end
   end
-end
-
-function metatable:__call(that)
-  self.action = that
-  return self
 end
 
 return setmetatable(class, {

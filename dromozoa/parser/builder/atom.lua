@@ -23,9 +23,9 @@ for byte = 0, 255 do
 end
 
 local super = pattern
-local super_metatable = getmetatable(super())
+local super_metatable = super.metatable
 
-local class = {}
+local class = { is_atom = true }
 local metatable = {
   __index = class;
   __mul = super_metatable.__mul;
@@ -68,7 +68,7 @@ function metatable:__add(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
-  if getmetatable(that) == metatable then
+  if that.is_atom then
     local set = {}
     for byte in pairs(self[2]) do
       set[byte] = true
@@ -86,7 +86,7 @@ function metatable:__sub(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
-  if getmetatable(that) == metatable then
+  if that.is_atom then
     local set = {}
     for byte in pairs(self[2]) do
       set[byte] = true
