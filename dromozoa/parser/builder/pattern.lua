@@ -15,8 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
+local class = { is_pattern = true }
 local metatable = { __index = class }
+class.metatable = metatable
 
 function class.concat(items)
   local result = items[1]
