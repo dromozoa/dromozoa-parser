@@ -19,6 +19,8 @@ local class = {}
 local metatable = { __index = class }
 class.metatable = metatable
 
+-- TODO remove this
+-- TODO [1] = name
 return setmetatable(class, {
   __call = function (_, name)
     return setmetatable({ name = name }, metatable)
