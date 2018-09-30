@@ -28,10 +28,10 @@ end
 
 function class:clone()
   local that = self[3]
-  if that == nil then
-    return class(self[1], self[2]:clone())
-  else
+  if that then
     return class(self[1], self[2]:clone(), that:clone())
+  else
+    return class(self[1], self[2]:clone())
   end
 end
 
