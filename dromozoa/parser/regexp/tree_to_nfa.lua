@@ -62,13 +62,13 @@ local function visit(epsilons1, epsilons2, transitions, max_state, node, accept)
         start_state = a.u;
         accept_states = { [a.v] = accept };
       }))
-      local that = minimize(nfa_to_dfa({
+      local that = minimize(nfa_to_dfa {
         max_state = max_state;
         epsilons = epsilons;
         transitions = transitions;
         start_state = b.u;
         accept_states = { [b.v] = accept };
-      }))
+      })
       local that = minimize(difference(this, that))
 
       local this, that = merge({

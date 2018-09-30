@@ -19,9 +19,7 @@ local merge = require "dromozoa.parser.regexp.merge"
 
 return function (this, that)
   local this, that = merge(this, that)
-
-  local epsilons = this.epsilons
-  local epsilons1 = epsilons[1]
+  local epsilons1 = this.epsilons[1]
 
   local v = that.start_state
   for u in pairs(this.accept_states) do

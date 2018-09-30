@@ -112,7 +112,6 @@ return function (this)
   end
   local that = {
     transitions = transitions;
-    epsilons = { {}, {} };
     start_state = 1;
     accept_states = {
       merge_accept_state(this.accept_states, uset);
