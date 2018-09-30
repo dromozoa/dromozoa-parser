@@ -218,16 +218,12 @@ function metatable:__call(s, file)
         ri = 1
         rj = #rs
       elseif code == 15 then -- encode utf8
-        local i, j = range(ri, rj, action[2], action[3])
-        local code = tonumber(rs:sub(i, j), 16)
-        rs = utf8.char(code)
+        rs = utf8.char(tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16))
         ri = 1
         rj = #rs
       elseif code == 16 then -- encode utf8 (surrogate pair)
-        local i, j = range(ri, rj, action[2], action[3])
-        local code1 = tonumber(rs:sub(i, j), 16)
-        local i, j = range(ri, rj, action[4], action[5])
-        local code2 = tonumber(rs:sub(i, j), 16)
+        local code1 = tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16)
+        local code2 = tonumber(rs:sub(range(ri, rj, action[4], action[5])), 16)
         rs = utf8.char(decode_surrogate_pair(code1, code2))
         ri = 1
         rj = #rs
