@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -17,9 +17,9 @@
 
 local encode_string = require "dromozoa.parser.dumper.encode_string"
 
-local source = "foo\a\b\f\n\r\t\v\\\"\'\000\127\255bar日本語"
+local source = "foo\a\b\f\n\r\t\v\\\"\'\0000\1271\2552bar日本語"
 
--- print(("%q"):format(source))
+print(("%q"):format(source))
 print(encode_string(source))
 
 local loadstring = loadstring or load
