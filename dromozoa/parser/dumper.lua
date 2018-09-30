@@ -112,7 +112,6 @@ local function encode(value)
         if k:find "^[%a_][%w_]*$" and not reserved_words[k] then
           data[#data + 1] = k .. "=" .. encode(value[k])
         else
-          -- data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
           data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
         end
       end
