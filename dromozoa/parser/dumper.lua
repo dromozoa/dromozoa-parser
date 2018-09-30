@@ -172,6 +172,7 @@ function class:dump(out, value)
   return tostring(compact(self, out, value))
 end
 
+-- TODO as function
 return setmetatable(class, {
   __call = function ()
     return setmetatable({ map = {}, n = 0 }, metatable)
