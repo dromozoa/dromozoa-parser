@@ -77,8 +77,9 @@ local function encode(value)
       return "false"
     end
   elseif t == "table" then
-    if getmetatable(value) == reference.metatable then
-      return value.name
+    local metatable = getmetatable(value)
+    if metatable and metatable["dromozoa.parser.is_serializable"] then
+      return tostring(value)
     else
       local number_keys, string_keys, positive_count = keys(value)
       local n = #number_keys
@@ -168,7 +169,7 @@ class.metatable = metatable
 
 function class:dump(out, value)
   out:write "local _ = {}\n"
-  return compact(self, out, value).name
+  return tostring(compact(self, out, value))
 end
 
 return setmetatable(class, {
