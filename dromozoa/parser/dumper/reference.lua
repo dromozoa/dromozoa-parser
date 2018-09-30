@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -16,11 +16,11 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
+local metatable = { __index = class }
 class.metatable = metatable
 
+-- TODO remove this
+-- TODO [1] = name
 return setmetatable(class, {
   __call = function (_, name)
     return setmetatable({ name = name }, metatable)

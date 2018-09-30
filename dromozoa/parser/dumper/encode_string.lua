@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,23 +15,26 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local char_table = {}
-for byte = 0, 255 do
-  char_table[string.char(byte)] = ([[\%03d]]):format(byte)
-end
-char_table["\a"] = [[\a]]
-char_table["\b"] = [[\b]]
-char_table["\f"] = [[\f]]
-char_table["\n"] = [[\n]]
-char_table["\r"] = [[\r]]
-char_table["\t"] = [[\t]]
-char_table["\v"] = [[\v]]
-char_table["\\"] = [[\\]] -- 92
-char_table["\""] = [[\"]] -- 34
-char_table["\'"] = [[\']] -- 39
+local char_table = {
+  ["\a"] = [[\a]];
+  ["\b"] = [[\b]];
+  ["\f"] = [[\f]];
+  ["\n"] = [[\n]];
+  ["\r"] = [[\r]];
+  ["\t"] = [[\t]];
+  ["\v"] = [[\v]];
+  ["\\"] = [[\\]]; -- 92
+  ["\""] = [[\"]]; -- 34
+  ["\'"] = [[\']]; -- 39
+}
 
-local pattern = "[%z\1-\31\34\39\92\127-\255]"
+for byte = 0x00, 0xFF do
+  local char = string.char(byte)
+  if not char_table[char] then
+    char_table[char] = ([[\%03d]]):format(byte)
+  end
+end
 
 return function (s)
-  return [["]] .. s:gsub(pattern, char_table) .. [["]]
+  return "\"" .. s:gsub("[%z\1-\31\34\92\127-\255]", char_table) .. "\""
 end

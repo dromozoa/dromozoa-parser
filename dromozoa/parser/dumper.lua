@@ -50,6 +50,7 @@ local function keys(value)
   for k in pairs(value) do
     local t = type(k)
     if t == "number" then
+      -- TODO check k is integer
       number_keys[#number_keys + 1] = k
       if k > 0 then
         positive_count = positive_count + 1
@@ -112,7 +113,6 @@ local function encode(value)
         if k:find "^[%a_][%w_]*$" and not reserved_words[k] then
           data[#data + 1] = k .. "=" .. encode(value[k])
         else
-          -- data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
           data[#data + 1] = "[" .. encode_string(k) .. "]=" .. encode(value[k])
         end
       end
@@ -161,12 +161,9 @@ local function compact(self, out, value)
   end
 end
 
-local class = {
-  keys = keys;
-}
-local metatable = {
-  __index = class;
-}
+-- TODO remove keys
+local class = { keys = keys }
+local metatable = { __index = class }
 class.metatable = metatable
 
 function class:dump(out, value)
