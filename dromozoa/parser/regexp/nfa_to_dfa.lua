@@ -106,18 +106,18 @@ return function (this)
   local useq = set_to_seq(uset)
   insert(maps, useq, 0)
 
-  local new_transitions = {}
+  local transitions = {}
   for byte = 0, 255 do
-    new_transitions[byte] = {}
+    transitions[byte] = {}
   end
   local that = {
-    transitions = new_transitions;
+    transitions = transitions;
+    epsilons = { {}, {} };
+    start_state = 1;
     accept_states = {
       merge_accept_state(this.accept_states, uset);
     };
-    start_state = 1;
   }
-
   that.max_state = visit(this, that, epsilon_closures, maps, 1, useq)
 
   return that
