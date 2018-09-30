@@ -50,6 +50,7 @@ local function keys(value)
   for k in pairs(value) do
     local t = type(k)
     if t == "number" then
+      -- k is integer
       number_keys[#number_keys + 1] = k
       if k > 0 then
         positive_count = positive_count + 1
