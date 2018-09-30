@@ -20,7 +20,6 @@ local decode_surrogate_pair = require "dromozoa.utf16.decode_surrogate_pair"
 
 local compile = require "dromozoa.parser.lexer.compile"
 local error_message = require "dromozoa.parser.error_message"
-local symbol_value = require "dromozoa.parser.symbol_value"
 
 local function range(ri, rj, i, j)
   if i > 0 then
