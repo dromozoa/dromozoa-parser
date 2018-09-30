@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -22,14 +22,14 @@ return function (self, out)
   local data = {}
   for i = 1, #lexers do
     local lexer = lexers[i]
-    data[#data + 1] = {
+    data[i] = {
       automaton = lexer.automaton;
       accept_states = lexer.accept_states;
       accept_to_actions = lexer.accept_to_actions;
       accept_to_symbol = lexer.accept_to_symbol;
     }
   end
-  out:write("local lexer = require \"dromozoa.parser.lexer\"\n")
+  out:write "local lexer = require \"dromozoa.parser.lexer\"\n"
   local root = dumper():dump(out, data)
   out:write("return function () return lexer(", root, ") end\n")
   return out
