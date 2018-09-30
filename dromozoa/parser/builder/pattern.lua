@@ -105,11 +105,6 @@ function metatable:__pow(that)
   end
 end
 
-function metatable:__call(that)
-  self.action = that
-  return self
-end
-
 return setmetatable(class, {
   __call = function (_, ...)
     return setmetatable({...}, metatable)
