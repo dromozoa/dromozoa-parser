@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -35,7 +35,7 @@ local lexer = _:build()
 
 local source = [[
 \u65e5\u672c\u8a9e -- 日本語
-\U00010437 -- string.char(0xf0, 0x90, 0x90, 0xb7)
+\U00010437 -- string.char(0xF0, 0x90, 0x90, 0xB7)
 \uD801\uDC37
 \cM
 \x40
@@ -45,7 +45,7 @@ local result = assert(lexer(source))
 assert(symbol_value(result[1]) == "日")
 assert(symbol_value(result[2]) == "本")
 assert(symbol_value(result[3]) == "語")
-assert(symbol_value(result[4]) == string.char(0xf0, 0x90, 0x90, 0xb7))
-assert(symbol_value(result[5]) == string.char(0xf0, 0x90, 0x90, 0xb7))
+assert(symbol_value(result[4]) == string.char(0xF0, 0x90, 0x90, 0xB7))
+assert(symbol_value(result[5]) == string.char(0xF0, 0x90, 0x90, 0xB7))
 assert(symbol_value(result[6]) == "\r")
 assert(symbol_value(result[7]) == "@")
