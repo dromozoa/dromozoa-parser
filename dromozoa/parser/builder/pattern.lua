@@ -40,15 +40,15 @@ local function char(that)
   return construct(1, { [that:byte()] = true }) -- character class
 end
 
-local function clone(self)
+function class:clone()
   if self[1] == 1 then
     return construct(1, self[2]) -- character class
   else
     local that = self[3]
     if that then
-      return construct(self[1], clone(self[2]), clone(that))
+      return construct(self[1], self[2]:clone(), that:clone())
     else
-      return construct(self[1], clone(self[2]))
+      return construct(self[1], self[2]:clone())
     end
   end
 end
@@ -99,7 +99,7 @@ function metatable:__pow(that)
   if that == 0 or that == "*" then
     return construct(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
-    return self * clone(self)^0
+    return self * self:clone()^0
   elseif that == -1 or that == "?" then
     return construct(5, self) -- optional
   end
@@ -107,15 +107,15 @@ function metatable:__pow(that)
     if that < 0 then
       local items = { self^-1 }
       for i = 2, -that do
-        items[i] = clone(self)^-1
+        items[i] = self:clone()^-1
       end
       return concat(items)
     else
       local items = { self }
       for i = 2, that do
-        items[i] = clone(self)
+        items[i] = self:clone()
       end
-      items[that + 1] = clone(self)^0
+      items[that + 1] = self:clone()^0
       return concat(items)
     end
   else
@@ -127,16 +127,16 @@ function metatable:__pow(that)
     if m == 0 then
       local items = { self^-1 }
       for i = 2, n do
-        items[i] = clone(self)^-1
+        items[i] = self:clone()^-1
       end
       return concat(items)
     else
       local items = { self }
       for i = 2, m do
-        items[i] = clone(self)
+        items[i] = self:clone()
       end
       for i = m + 1, n do
-        items[i] = clone(self)^-1
+        items[i] = self:clone()^-1
       end
       return concat(items)
     end
