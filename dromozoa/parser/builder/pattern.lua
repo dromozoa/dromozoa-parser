@@ -34,25 +34,18 @@ function class:clone()
   end
 end
 
-function class:union(that)
-  local construct = class.construct
-  local self = construct(self)
-  local that = construct(that)
-  return class(3, self, that) -- union
-end
-
-function class:difference(that)
-  local construct = class.construct
-  local self = construct(self)
-  local that = construct(that)
-  return class(6, self, that) -- difference
-end
-
 function class:concatenation(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
   return class(2, self, that) -- concatenation
+end
+
+function class:union(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
+  return class(3, self, that) -- union
 end
 
 function class:repetition(that)
@@ -103,12 +96,19 @@ function class:repetition(that)
   end
 end
 
+function class:difference(that)
+  local construct = class.construct
+  local self = construct(self)
+  local that = construct(that)
+  return class(6, self, that) -- difference
+end
+
 local metatable = {
   __index = class;
+  __pow = class.repetition;
+  __mul = class.concatenation;
   __add = class.union;
   __sub = class.difference;
-  __mul = class.concatenation;
-  __pow = class.repetition;
 }
 
 return setmetatable(class, {

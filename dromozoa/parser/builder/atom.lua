@@ -105,11 +105,11 @@ end
 
 local metatable = {
   __index = class;
+  __pow = super.repetition;
+  __mul = super.concatenation;
+  __unm = class.negation;
   __add = class.union;
   __sub = class.difference;
-  __unm = class.negation;
-  __mul = super.concatenation;
-  __pow = super.repetition;
 }
 
 return setmetatable(class, {
