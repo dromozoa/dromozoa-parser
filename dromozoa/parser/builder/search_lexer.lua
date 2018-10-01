@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -17,13 +17,12 @@
 
 local lexer = require "dromozoa.parser.builder.lexer"
 
-local class = {}
 local super = lexer
+local class = {}
 local metatable = {
   __index = class;
-  __call = lexer.metatable.__call;
+  __call = super.substitute;
 }
-class.metatable = metatable
 
 function class:when()
   local items = self.items

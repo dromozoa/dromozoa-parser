@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -23,9 +23,10 @@ local symbol_value = require "dromozoa.parser.symbol_value"
 
 local class = {}
 
+-- TODO use visit function
 function class.parse(s)
   local super = class.super
-  local atom = super.atom
+  -- local atom = super.atom
   local P = super.pattern
   local R = super.range
   local S = super.set
@@ -123,7 +124,7 @@ function class.parse(s)
         end
       elseif symbol == symbol_table.ClassRanges then
         if #node == 0 then
-          node.value = atom({})
+          node.value = R "" -- TODO refactor
         else
           node.value = symbol_value(node[1])
         end
@@ -137,11 +138,11 @@ function class.parse(s)
           local a = symbol_value(node[1])
           local b = symbol_value(node[3])
           if type(a) == "string" and type(b) == "string" then
-            local set = {}
-            for byte = a:byte(), b:byte() do
-              set[byte] = true
-            end
-            node.value = atom(set) + P(symbol_value(node[4]))
+            -- local set = {}
+            -- for byte = a:byte(), b:byte() do
+            --   set[byte] = true
+            -- end
+            node.value = R(a .. b) + P(symbol_value(node[4])) -- TODO refactor
           else
             node.value = P(a) + P"-" + P(b) + P(symbol_value(node[4]))
           end

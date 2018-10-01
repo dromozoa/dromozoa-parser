@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -19,7 +19,6 @@ local class = {}
 local metatable = {
   __index = class;
 }
-class.metatable = metatable
 
 function class:left(name)
   return self.builder:left(name)

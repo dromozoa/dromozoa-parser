@@ -16,10 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 function class:as(name)
   local items = self.items
@@ -63,6 +59,18 @@ function class:ret()
   local items = self.items
   local actions = items[#items].actions
   actions[#actions + 1] = { 5 }
+  return self
+end
+
+function class:substitute(repl)
+  local items = self.items
+  local actions = items[#items].actions
+  local t = type(repl)
+  if t == "number" or t == "string" then
+    actions[#actions + 1] = { 8, tostring(repl) }
+  else
+    error(("unsupported repl of type %q"):format(t))
+  end
   return self
 end
 
@@ -132,18 +140,6 @@ function class:add(x)
   local items = self.items
   local actions = items[#items].actions
   actions[#actions + 1] = { 17, x }
-  return self
-end
-
-function metatable:__call(repl)
-  local items = self.items
-  local actions = items[#items].actions
-  local t = type(repl)
-  if t == "number" or t == "string" then
-    actions[#actions + 1] = { 8, tostring(repl) }
-  else
-    error(("unsupported repl of type %q"):format(t))
-  end
   return self
 end
 

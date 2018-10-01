@@ -16,13 +16,17 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = { __index = class }
-class.metatable = metatable
+local metatable = {
+  __index = class;
+  ["dromozoa.parser.is_serializable"] = true;
+}
 
--- TODO remove this
--- TODO [1] = name
+function metatable:__tostring()
+  return self[1]
+end
+
 return setmetatable(class, {
   __call = function (_, name)
-    return setmetatable({ name = name }, metatable)
+    return setmetatable({ name }, metatable)
   end;
 })
