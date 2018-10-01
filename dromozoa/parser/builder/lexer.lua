@@ -112,10 +112,10 @@ function class:char()
   return self
 end
 
-function class:join(x, y)
+function class:join(head, tail)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 14, x, y }
+  actions[#actions + 1] = { 14, head, tail }
   return self
 end
 
@@ -136,10 +136,10 @@ function class:utf8(i, j, k, l)
   return self
 end
 
-function class:add(x)
+function class:add(v)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 17, x }
+  actions[#actions + 1] = { 17, v }
   return self
 end
 
