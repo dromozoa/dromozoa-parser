@@ -19,7 +19,7 @@ local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
 
 local super = lexer
-local class = {}
+local class = { is_regexp_lexer = true }
 local metatable = {
   __index = class;
   __call = super.substitute;
@@ -45,6 +45,6 @@ end
 return setmetatable(class, {
   __index = super;
   __call = function (_, name)
-    return setmetatable({ type = "regexp_lexer", name = name, items = {} }, metatable)
+    return setmetatable({ name = name, items = {} }, metatable)
   end;
 })
