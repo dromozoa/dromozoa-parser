@@ -17,6 +17,7 @@
 
 local atom = require "dromozoa.parser.builder.atom"
 local build = require "dromozoa.parser.builder.build"
+local concat = require "dromozoa.parser.builder.concat"
 local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
 local precedence = require "dromozoa.parser.builder.precedence"
@@ -35,7 +36,7 @@ local function construct(that)
       for i = 1, that do
         items[i] = atom.any()
       end
-      return pattern.concat(items)
+      return concat(items)
     end
   elseif t == "string" then
     if #that == 1 then
@@ -45,7 +46,7 @@ local function construct(that)
       for i = 1, #that do
         items[i] = atom.char(that:sub(i, i))
       end
-      return pattern.concat(items)
+      return concat(items)
     end
   else
     return that

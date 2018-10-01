@@ -15,15 +15,9 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = { is_pattern = true }
+local concat = require "dromozoa.parser.builder.concat"
 
-function class.concat(items)
-  local result = items[1]
-  for i = 2, #items do
-    result = result * items[i]
-  end
-  return result
-end
+local class = { is_pattern = true }
 
 function class:clone()
   local that = self[3]
@@ -62,14 +56,14 @@ function class:repetition(that)
       for i = 2, -that do
         items[i] = self:clone()^-1
       end
-      return class.concat(items)
+      return concat(items)
     else
       local items = { self }
       for i = 2, that do
         items[i] = self:clone()
       end
       items[that + 1] = self:clone()^0
-      return class.concat(items)
+      return concat(items)
     end
   else
     local m = that[1]
@@ -82,7 +76,7 @@ function class:repetition(that)
       for i = 2, n do
         items[i] = self:clone()^-1
       end
-      return class.concat(items)
+      return concat(items)
     else
       local items = { self }
       for i = 2, m do
@@ -91,7 +85,7 @@ function class:repetition(that)
       for i = m + 1, n do
         items[i] = self:clone()^-1
       end
-      return class.concat(items)
+      return concat(items)
     end
   end
 end
