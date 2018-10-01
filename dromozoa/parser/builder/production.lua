@@ -60,12 +60,12 @@ function metatable:__call(a, b, c)
     local k, v = next(a)
     if v then
       if type(v) == "table" then
-        items[#items].semantic_action = { 2, k, v }
+        items[#items].semantic_action = { 1, k, v }
       else
-        items[#items].semantic_action = { 3, a }
+        items[#items].semantic_action = { 2, a }
       end
     else
-      items[#items].semantic_action = { 3, {} }
+      items[#items].semantic_action = { 2, {} }
     end
   end
   return self
