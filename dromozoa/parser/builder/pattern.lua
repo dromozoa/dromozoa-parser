@@ -15,6 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
+local any = {}
+for byte = 0x00, 0xFF do
+  any[byte] = true
+end
+
 local function concat(items)
   local result = items[1]
   for i = 2, #items do
@@ -28,16 +33,6 @@ local metatable = { __index = class }
 
 local function construct(...)
   return setmetatable({...}, metatable)
-end
-
-local set = {}
-for byte = 0x00, 0xFF do
-  set[byte] = true
-end
-local any = construct(1, set) -- character class
-
-local function char(that)
-  return construct(1, { [that:byte()] = true }) -- character class
 end
 
 function class:clone()
@@ -180,21 +175,21 @@ return setmetatable(class, {
     local t = type(that)
     if t == "number" then
       if that == 1 then
-        return any
+        return construct(1, any) -- character class
       else
         local items = {}
         for i = 1, that do
-          items[i] = any
+          items[i] = construct(1, any) -- character class
         end
         return concat(items)
       end
     elseif t == "string" then
       if #that == 1 then
-        return char(that)
+        return construct(1, { [that:byte()] = true }) -- character class
       else
         local items = {}
         for i = 1, #that do
-          items[i] = char(that:sub(i, i))
+          items[i] = construct(1, { [that:sub(i, i):byte()] = true }) -- character class
         end
         return concat(items)
       end
