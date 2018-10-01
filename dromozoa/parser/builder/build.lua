@@ -186,8 +186,6 @@ return function (self, start_name)
               indices[i] = -symbol
             end
           end
-        else
-          -- error(())
         end
       end
     end
