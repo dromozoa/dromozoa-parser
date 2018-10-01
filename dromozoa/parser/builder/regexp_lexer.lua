@@ -22,7 +22,7 @@ local super = lexer
 local class = {}
 local metatable = {
   __index = class;
-  __call = super.replace;
+  __call = super.substitute;
 }
 class.metatable = metatable
 

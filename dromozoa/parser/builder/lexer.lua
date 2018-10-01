@@ -62,6 +62,18 @@ function class:ret()
   return self
 end
 
+function class:substitute(repl)
+  local items = self.items
+  local actions = items[#items].actions
+  local t = type(repl)
+  if t == "number" or t == "string" then
+    actions[#actions + 1] = { 8, tostring(repl) }
+  else
+    error(("unsupported repl of type %q"):format(t))
+  end
+  return self
+end
+
 function class:hold()
   local items = self.items
   local actions = items[#items].actions
@@ -128,18 +140,6 @@ function class:add(x)
   local items = self.items
   local actions = items[#items].actions
   actions[#actions + 1] = { 17, x }
-  return self
-end
-
-function class:replace(repl)
-  local items = self.items
-  local actions = items[#items].actions
-  local t = type(repl)
-  if t == "number" or t == "string" then
-    actions[#actions + 1] = { 8, tostring(repl) }
-  else
-    error(("unsupported repl of type %q"):format(t))
-  end
   return self
 end
 
