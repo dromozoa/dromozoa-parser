@@ -36,28 +36,28 @@ function class:clone()
   end
 end
 
-function metatable:__add(that)
+function class:union(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
   return class(3, self, that) -- union
 end
 
-function metatable:__sub(that)
+function class:difference(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
   return class(6, self, that) -- difference
 end
 
-function metatable:__mul(that)
+function class:concatenation(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
   return class(2, self, that) -- concatenation
 end
 
-function metatable:__pow(that)
+function class:repetition(that)
   if that == 0 or that == "*" then
     return class(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
@@ -104,6 +104,11 @@ function metatable:__pow(that)
     end
   end
 end
+
+metatable.__add = class.union
+metatable.__sub = class.difference
+metatable.__mul = class.concatenation
+metatable.__pow = class.repetition
 
 return setmetatable(class, {
   __call = function (_, ...)

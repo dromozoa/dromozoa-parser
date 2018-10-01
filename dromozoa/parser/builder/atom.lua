@@ -23,15 +23,12 @@ for byte = 0, 255 do
 end
 
 local super = pattern
-local super_metatable = super.metatable
-
 local class = { is_atom = true }
 local metatable = {
   __index = class;
-  __mul = super_metatable.__mul;
-  __pow = super_metatable.__pow;
+  __mul = super.concatenation;
+  __pow = super.repetition;
 }
-class.metatable = metatable
 
 function class.any()
   return class(any)
@@ -78,7 +75,7 @@ function metatable:__add(that)
     end
     return class(set)
   else
-    return super_metatable.__add(self, that)
+    return super.union(self, that)
   end
 end
 
@@ -96,7 +93,7 @@ function metatable:__sub(that)
     end
     return class(set)
   else
-    return super_metatable.__sub(self, that)
+    return super.difference(self, that)
   end
 end
 
