@@ -15,11 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local any = {}
-for byte = 0, 255 do
-  any[byte] = true
-end
-
 local function concat(items)
   local result = items[1]
   for i = 2, #items do
@@ -35,25 +30,27 @@ local function construct(...)
   return setmetatable({...}, metatable)
 end
 
-function class:clone()
+local set = {}
+for byte = 0x00, 0xFF do
+  set[byte] = true
+end
+local any = construct(1, set) -- character class
+
+local function char(that)
+  return construct(1, { [that:byte()] = true }) -- character class
+end
+
+local function clone(self)
   if self[1] == 1 then
     return construct(1, self[2]) -- character class
   else
     local that = self[3]
     if that then
-      return construct(self[1], self[2]:clone(), that:clone())
+      return construct(self[1], clone(self[2]), clone(that))
     else
-      return construct(self[1], self[2]:clone())
+      return construct(self[1], clone(self[2]))
     end
   end
-end
-
-function class.any()
-  return construct(1, any) -- character class
-end
-
-function class.char(that)
-  return construct(1, { [that:byte()] = true }) -- character class
 end
 
 function class.range(that)
@@ -102,7 +99,7 @@ function metatable:__pow(that)
   if that == 0 or that == "*" then
     return construct(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
-    return self * self:clone()^0
+    return self * clone(self)^0
   elseif that == -1 or that == "?" then
     return construct(5, self) -- optional
   end
@@ -110,15 +107,15 @@ function metatable:__pow(that)
     if that < 0 then
       local items = { self^-1 }
       for i = 2, -that do
-        items[i] = self:clone()^-1
+        items[i] = clone(self)^-1
       end
       return concat(items)
     else
       local items = { self }
       for i = 2, that do
-        items[i] = self:clone()
+        items[i] = clone(self)
       end
-      items[that + 1] = self:clone()^0
+      items[that + 1] = clone(self)^0
       return concat(items)
     end
   else
@@ -130,16 +127,16 @@ function metatable:__pow(that)
     if m == 0 then
       local items = { self^-1 }
       for i = 2, n do
-        items[i] = self:clone()^-1
+        items[i] = clone(self)^-1
       end
       return concat(items)
     else
       local items = { self }
       for i = 2, m do
-        items[i] = self:clone()
+        items[i] = clone(self)
       end
       for i = m + 1, n do
-        items[i] = self:clone()^-1
+        items[i] = clone(self)^-1
       end
       return concat(items)
     end
@@ -183,21 +180,21 @@ return setmetatable(class, {
     local t = type(that)
     if t == "number" then
       if that == 1 then
-        return class.any()
+        return any
       else
         local items = {}
         for i = 1, that do
-          items[i] = class.any()
+          items[i] = any
         end
         return concat(items)
       end
     elseif t == "string" then
       if #that == 1 then
-        return class.char(that)
+        return char(that)
       else
         local items = {}
         for i = 1, #that do
-          items[i] = class.char(that:sub(i, i))
+          items[i] = char(that:sub(i, i))
         end
         return concat(items)
       end

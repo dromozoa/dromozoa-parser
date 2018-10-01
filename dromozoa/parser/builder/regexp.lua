@@ -115,7 +115,7 @@ function class.parse(s)
           node.value = symbol_value(node[2])
         end
       elseif symbol == symbol_table.CharacterClassEscape then
-        node.value = character_classes[symbol_value(node[1])]:clone()
+        node.value = character_classes[symbol_value(node[1])]
       elseif symbol == symbol_table.CharacterClass then
         if node[1][0] == symbol_table["[^"] then
           node.value = -symbol_value(node[2])
