@@ -58,27 +58,6 @@ function class:attr(a, b, c)
   return self
 end
 
-function metatable:__call(...)
-  local items = self.items
-  if type(...) == "string" then
-    local body = items[#items].body
-    body[#body + 1] = ...
-  else
-    local t = ...
-    local k, v = next(t)
-    if v then
-      if type(v) == "table" then
-        items[#items].semantic_action = { 2, k, v }
-      else
-        items[#items].semantic_action = { 3, t }
-      end
-    else
-      items[#items].semantic_action = { 3, {} }
-    end
-  end
-  return self
-end
-
 function metatable:__call(a, b, c)
   local items = self.items
   if type(a) == "string" then
