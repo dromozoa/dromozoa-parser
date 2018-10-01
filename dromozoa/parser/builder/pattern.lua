@@ -28,28 +28,32 @@ local function concat(items)
   return result
 end
 
-local class = { is_pattern = true }
+local class = {}
 local metatable = { __index = class }
+
+local function construct(...)
+  return setmetatable({...}, metatable)
+end
 
 function class:clone()
   if self[1] == 1 then
-    return setmetatable({ 1, self[2] }, metatable) -- character class
+    return construct(1, self[2]) -- character class
   else
     local that = self[3]
     if that then
-      return setmetatable({ self[1], self[2]:clone(), that:clone() }, metatable)
+      return construct(self[1], self[2]:clone(), that:clone())
     else
-      return setmetatable({ self[1], self[2]:clone() }, metatable)
+      return construct(self[1], self[2]:clone())
     end
   end
 end
 
 function class.any()
-  return setmetatable({ 1, any }, metatable) -- character class
+  return construct(1, any) -- character class
 end
 
 function class.char(that)
-  return setmetatable({ 1, { [that:byte()] = true } }, metatable) -- character class
+  return construct(1, { [that:byte()] = true }) -- character class
 end
 
 function class.range(that)
@@ -60,7 +64,7 @@ function class.range(that)
       set[j] = true
     end
   end
-  return setmetatable({ 1, set }, metatable) -- character class
+  return construct(1, set) -- character class
 end
 
 function class.set(that)
@@ -68,13 +72,13 @@ function class.set(that)
   for i = 1, #that do
     set[that:byte(i)] = true
   end
-  return setmetatable({ 1, set }, metatable) -- character class
+  return construct(1, set) -- character class
 end
 
 function metatable:__mul(that)
   local self = class(self)
   local that = class(that)
-  return setmetatable({ 2, self, that }, metatable) -- concatenation
+  return construct(2, self, that) -- concatenation
 end
 
 function metatable:__add(that)
@@ -88,19 +92,19 @@ function metatable:__add(that)
     for byte in pairs(that[2]) do
       set[byte] = true
     end
-    return setmetatable({ 1, set }, metatable) -- character class
+    return construct(1, set) -- character class
   else
-    return setmetatable({ 3, self, that }, metatable) -- union
+    return construct(3, self, that) -- union
   end
 end
 
 function metatable:__pow(that)
   if that == 0 or that == "*" then
-    return setmetatable({ 4, self }, metatable) -- 0 or more repetition
+    return construct(4, self) -- 0 or more repetition
   elseif that == 1 or that == "+" then
     return self * self:clone()^0
   elseif that == -1 or that == "?" then
-    return setmetatable({ 5, self }, metatable) -- optional
+    return construct(5, self) -- optional
   end
   if type(that) == "number" then
     if that < 0 then
@@ -153,23 +157,25 @@ function metatable:__sub(that)
     for byte in pairs(that[2]) do
       set[byte] = nil
     end
-    return setmetatable({ 1, set }, metatable) -- character class
+    return construct(1, set) -- character class
   else
-    return setmetatable({ 6, self, that }, metatable) -- difference
+    return construct(6, self, that) -- difference
   end
 end
 
 function metatable:__unm()
-  -- TODO impl non-character level negation
-  assert(self[1] == 1)
-  local set = self[2]
-  local neg = {}
-  for byte = 0, 255 do
-    if not set[byte] then
-      neg[byte] = true
+  if self[1] == 1 then
+    local set = self[2]
+    local neg = {}
+    for byte = 0, 255 do
+      if not set[byte] then
+        neg[byte] = true
+      end
     end
+    return construct(1, neg) -- character class
+  else
+    error "negative lookahead not supported"
   end
-  return setmetatable({ 1, neg }, metatable) -- character class
 end
 
 return setmetatable(class, {
