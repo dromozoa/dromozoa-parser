@@ -136,10 +136,10 @@ function class:utf8(i, j, k, l)
   return self
 end
 
-function class:add(v)
+function class:add(value)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 17, v }
+  actions[#actions + 1] = { 17, value }
   return self
 end
 

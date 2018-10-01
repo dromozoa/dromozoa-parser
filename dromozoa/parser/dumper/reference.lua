@@ -22,11 +22,11 @@ local metatable = {
 }
 
 function metatable:__tostring()
-  return self[1]
+  return self.name
 end
 
 return setmetatable(class, {
   __call = function (_, name)
-    return setmetatable({ name }, metatable)
+    return setmetatable({ name = name }, metatable)
   end;
 })

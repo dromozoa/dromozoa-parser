@@ -55,7 +55,7 @@ Parser generator toolkit.
 |   14 | `:join(head, tail)`       |         2 |      | join                         |
 |   15 | `:utf8(i, j=-1)`          |         2 |      | encode utf8                  |
 |   16 | `:utf8(i, j=-1, k, l=-1)` |         4 |      | encode utf8 (surrogate pair) |
-|   17 | `:add(v)`                 |         1 |      | add integer                  |
+|   17 | `:add(value)`             |         1 |      | add integer                  |
 |   18 |                           |           |      | N/A                          |
 |   19 |                           |           |      | N/A                          |
 
@@ -95,10 +95,10 @@ Parser generator toolkit.
 
 ### Attribute Actions
 
-| Code | Operator               | #Operands | Description         |
-|-----:|------------------------|----------:|---------------------|
-|    1 | `:attr(key, value)`    |         2 | set attribute       |
-|    2 | `:attr(i, key, value)` |         3 | set child attribute |
+| Code | Operator                    | #Operands | Description         |
+|-----:|-----------------------------|----------:|---------------------|
+|    1 | `:attr(key, value=true)`    |         2 | set attribute       |
+|    2 | `:attr(i, key, value=true)` |         3 | set child attribute |
 
 ### Node
 

@@ -16,9 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
+local metatable = { __index = class }
 
 function class:_(name)
   local items = self.items
@@ -36,6 +34,7 @@ function class:prec(name)
   return self
 end
 
+-- TODO deprecate
 function class:collapse()
   local items = self.items
   items[#items].semantic_action = { 1 }
