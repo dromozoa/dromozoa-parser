@@ -12,7 +12,7 @@ Parser generator toolkit.
 | `P(string)`         | `P"abc"`                                             | `abc`                     | literal                  |
 | `S(set)`            | `S"02468"`                                           | `[02468]`                 | set                      |
 | `R(range)`          | `R"09af"`                                            | `[0-9a-f]`                | range                    |
-| `-atom`             | `-R"09af"`                                           | `[^0-9a-f]`               | character level negation |
+| `-pattern`          | `-R"09af"`                                           | `[^0-9a-f]`               | character level negation |
 | `pattern * pattern` | `S"abc" * P"def"`                                    | `[abc]def`                | concatenation            |
 | `pattern + pattern` | `P"abc" + P"def"`                                    | <code>abc&#124;def</code> | union                    |
 | `pattern^"*"`       | `P"abc"^"*"`                                         | `(abc)*`                  | `0` or more repetition   |
