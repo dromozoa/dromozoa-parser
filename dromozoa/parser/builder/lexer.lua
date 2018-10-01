@@ -16,10 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 function class:as(name)
   local items = self.items
@@ -135,7 +131,7 @@ function class:add(x)
   return self
 end
 
-function metatable:__call(repl)
+function class:replace(repl)
   local items = self.items
   local actions = items[#items].actions
   local t = type(repl)
