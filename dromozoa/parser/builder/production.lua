@@ -19,7 +19,6 @@ local class = {}
 local metatable = {
   __index = class;
 }
-class.metatable = metatable
 
 function class:_(name)
   local items = self.items

@@ -23,6 +23,7 @@ local symbol_value = require "dromozoa.parser.symbol_value"
 
 local class = {}
 
+-- TODO use visit function
 function class.parse(s)
   local super = class.super
   local atom = super.atom

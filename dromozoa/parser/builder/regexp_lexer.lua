@@ -18,13 +18,11 @@
 local lexer = require "dromozoa.parser.builder.lexer"
 
 local super = lexer
-
 local class = {}
 local metatable = {
   __index = class;
   __call = super.substitute;
 }
-class.metatable = metatable
 
 function class:_(that)
   local items = self.items
