@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -96,9 +96,10 @@ function metatable:__call(terminal_nodes, s, file)
                 for j = 2, n do
                   node[#node + 1] = reduced_nodes[j]
                 end
+                -- {[1]={...}}
               elseif code == 2 then -- collapse node
-                local indices = semantic_action[3]
                 local index = semantic_action[2]
+                local indices = semantic_action[3]
                 if index > 0 then
                   node = reduced_nodes[index]
                 else
