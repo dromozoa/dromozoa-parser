@@ -99,6 +99,9 @@ function class:sub(i, j)
 end
 
 function class:int(base)
+  if not base then
+    base = 10
+  end
   local items = self.items
   local actions = items[#items].actions
   actions[#actions + 1] = { 12, base }

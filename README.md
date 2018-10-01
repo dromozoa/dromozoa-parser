@@ -50,7 +50,7 @@ Parser generator toolkit.
 |    9 | `:hold()`                 |         0 |      | hold                         |
 |   10 | `:mark()`                 |         0 |      | mark                         |
 |   11 | `:sub(i, j=-1)`           |         2 |      | substring                    |
-|   12 | `:int(base)`              |         1 |      | convert to integer           |
+|   12 | `:int(base=10)`           |         1 |      | convert to integer           |
 |   13 | `:char()`                 |         0 |      | convert to char              |
 |   14 | `:join(head, tail)`       |         2 |      | join                         |
 |   15 | `:utf8(i, j=-1)`          |         2 |      | encode utf8                  |
