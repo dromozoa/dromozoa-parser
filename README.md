@@ -89,7 +89,7 @@ Parser generator toolkit.
 
 | Code | Operator               | #Operands | Description   |
 |-----:|------------------------|----------:|---------------|
-|    1 | `:collapse()`          |         0 | collapse node |
+|    1 |                        |           | N/A           |
 |    2 | `{[1]={2,3,"symbol"}}` |         2 | collapse node |
 |    3 | `{1,2,3,"symbol"}`     |         1 | create node   |
 

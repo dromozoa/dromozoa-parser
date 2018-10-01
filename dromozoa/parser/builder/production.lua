@@ -34,13 +34,6 @@ function class:prec(name)
   return self
 end
 
--- TODO deprecate
-function class:collapse()
-  local items = self.items
-  items[#items].semantic_action = { 1 }
-  return self
-end
-
 function class:attr(a, b, c)
   local items = self.items
   local attribute_actions = items[#items].attribute_actions
