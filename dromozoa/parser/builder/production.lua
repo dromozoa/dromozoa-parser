@@ -16,9 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
+local metatable = { __index = class }
 
 function class:_(name)
   local items = self.items
@@ -36,44 +34,35 @@ function class:prec(name)
   return self
 end
 
-function class:collapse()
-  local items = self.items
-  items[#items].semantic_action = { 1 }
-  return self
-end
-
-function class:attr(...)
+function class:attr(a, b, c)
   local items = self.items
   local attribute_actions = items[#items].attribute_actions
-  if type(...) == "number" then
-    local i, key, value = ...
-    if value == nil then
-      value = true
+  if type(a) == "number" then
+    if c == nil then
+      c = true
     end
-    attribute_actions[#attribute_actions + 1] = { 2, i, key, value }
+    attribute_actions[#attribute_actions + 1] = { 2, a, b, c }
   else
-    local key, value = ...
-    if value == nil then
-      value = true
+    if b == nil then
+      b = true
     end
-    attribute_actions[#attribute_actions + 1] = { 1, key, value }
+    attribute_actions[#attribute_actions + 1] = { 1, a, b }
   end
   return self
 end
 
-function metatable:__call(...)
+function metatable:__call(a, b, c)
   local items = self.items
-  if type(...) == "string" then
+  if type(a) == "string" then
     local body = items[#items].body
-    body[#body + 1] = ...
+    body[#body + 1] = a
   else
-    local t = ...
-    local k, v = next(t)
+    local k, v = next(a)
     if v then
       if type(v) == "table" then
         items[#items].semantic_action = { 2, k, v }
       else
-        items[#items].semantic_action = { 3, t }
+        items[#items].semantic_action = { 3, a }
       end
     else
       items[#items].semantic_action = { 3, {} }

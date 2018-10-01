@@ -72,13 +72,13 @@ _"JSON-text"
   :_ "value"
 
 _"value"
-  :_ "false" :collapse()
-  :_ "null" :collapse()
-  :_ "true" :collapse()
-  :_ "object" :collapse()
-  :_ "array" :collapse()
-  :_ "number" :collapse()
-  :_ "string" :collapse()
+  :_ "false" {[1]={}}
+  :_ "null" {[1]={}}
+  :_ "true" {[1]={}}
+  :_ "object" {[1]={}}
+  :_ "array" {[1]={}}
+  :_ "number" {[1]={}}
+  :_ "string" {[1]={}}
 
 _"object"
   :_ "{" "}"

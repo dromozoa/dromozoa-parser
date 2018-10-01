@@ -16,9 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
+local metatable = { __index = class }
 
 function class:left(name)
   return self.builder:left(name)

@@ -32,7 +32,6 @@ local class = {
 local metatable = { __index = class }
 class.metatable = metatable
 
-lexer.super = class
 regexp.super = class
 
 function class.regexp(that)

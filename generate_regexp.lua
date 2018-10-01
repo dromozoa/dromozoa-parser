@@ -104,16 +104,16 @@ _"Atom"
   :_ "(?:" "Disjunction" ")"
 
 _"AtomEscape"
-  :_ "DecimalEscape" :collapse()
-  :_ "CharacterEscape" :collapse()
-  :_ "CharacterClassEscape" :collapse()
+  :_ "DecimalEscape" {[1]={}}
+  :_ "CharacterEscape" {[1]={}}
+  :_ "CharacterClassEscape" {[1]={}}
 
 _"CharacterEscape"
-  :_ "ControlEscape" :collapse()
-  :_ "ControlLetter" :collapse()
-  :_ "HexEscapeSequence" :collapse()
-  :_ "RegExpUnicodeEscapeSequence" :collapse()
-  :_ "IdentityEscape" :collapse()
+  :_ "ControlEscape" {[1]={}}
+  :_ "ControlLetter" {[1]={}}
+  :_ "HexEscapeSequence" {[1]={}}
+  :_ "RegExpUnicodeEscapeSequence" {[1]={}}
+  :_ "IdentityEscape" {[1]={}}
 
 _"CharacterClassEscape"
   :_ [[\d]]
@@ -142,19 +142,19 @@ _"NonemptyClassRangesNoDash"
   :_ "ClassAtomNoDash" "-" "ClassAtom" "ClassRanges"
 
 _"ClassAtom"
-  :_ "-" :collapse()
-  :_ "ClassAtomNoDash" :collapse()
+  :_ "-" {[1]={}}
+  :_ "ClassAtomNoDash" {[1]={}}
 
 _"ClassAtomNoDash"
-  :_ "ClassCharacter" :collapse()
-  :_ "ClassEscape" :collapse()
+  :_ "ClassCharacter" {[1]={}}
+  :_ "ClassEscape" {[1]={}}
 
 _"ClassEscape"
-  :_ "DecimalEscape" :collapse()
-  :_ [[\b]] :collapse()
-  :_ [[\-]] :collapse()
-  :_ "CharacterEscape" :collapse()
-  :_ "CharacterClassEscape" :collapse()
+  :_ "DecimalEscape" {[1]={}}
+  :_ [[\b]] {[1]={}}
+  :_ [[\-]] {[1]={}}
+  :_ "CharacterEscape" {[1]={}}
+  :_ "CharacterClassEscape" {[1]={}}
 
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())

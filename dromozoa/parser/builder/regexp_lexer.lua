@@ -16,9 +16,10 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local lexer = require "dromozoa.parser.builder.lexer"
+local pattern = require "dromozoa.parser.builder.pattern"
 
 local super = lexer
-local class = {}
+local class = { is_regexp_lexer = true }
 local metatable = {
   __index = class;
   __call = super.substitute;
@@ -29,7 +30,7 @@ function class:_(that)
   if type(that) == "string" then
     items[#items + 1] = {
       name = that;
-      pattern = class.super.pattern(that);
+      pattern = pattern(that);
       actions = {};
     }
   else
@@ -44,6 +45,6 @@ end
 return setmetatable(class, {
   __index = super;
   __call = function (_, name)
-    return setmetatable({ type = "regexp_lexer", name = name, items = {} }, metatable)
+    return setmetatable({ name = name, items = {} }, metatable)
   end;
 })
