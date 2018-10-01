@@ -24,11 +24,6 @@ end
 
 local super = pattern
 local class = { is_atom = true }
-local metatable = {
-  __index = class;
-  __mul = super.concatenation;
-  __pow = super.repetition;
-}
 
 function class.any()
   return class(any)
@@ -61,7 +56,7 @@ function class:clone()
   return class(self[2])
 end
 
-function metatable:__add(that)
+function class:union(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
@@ -79,7 +74,7 @@ function metatable:__add(that)
   end
 end
 
-function metatable:__sub(that)
+function class:difference(that)
   local construct = class.construct
   local self = construct(self)
   local that = construct(that)
@@ -97,7 +92,7 @@ function metatable:__sub(that)
   end
 end
 
-function metatable:__unm()
+function class:negation()
   local set = self[2]
   local neg = {}
   for byte = 0, 255 do
@@ -107,6 +102,15 @@ function metatable:__unm()
   end
   return class(neg)
 end
+
+local metatable = {
+  __index = class;
+  __add = class.union;
+  __sub = class.difference;
+  __unm = class.negation;
+  __mul = super.concatenation;
+  __pow = super.repetition;
+}
 
 return setmetatable(class, {
   __index = super;

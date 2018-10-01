@@ -16,8 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = { is_pattern = true }
-local metatable = { __index = class }
-class.metatable = metatable
 
 function class.concat(items)
   local result = items[1]
@@ -105,10 +103,13 @@ function class:repetition(that)
   end
 end
 
-metatable.__add = class.union
-metatable.__sub = class.difference
-metatable.__mul = class.concatenation
-metatable.__pow = class.repetition
+local metatable = {
+  __index = class;
+  __add = class.union;
+  __sub = class.difference;
+  __mul = class.concatenation;
+  __pow = class.repetition;
+}
 
 return setmetatable(class, {
   __call = function (_, ...)
