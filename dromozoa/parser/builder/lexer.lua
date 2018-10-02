@@ -67,7 +67,7 @@ function class:substitute(repl)
   local actions = items[#items].actions
   local t = type(repl)
   if t == "number" or t == "string" then
-    actions[#actions + 1] = { 8, tostring(repl) }
+    actions[#actions + 1] = { 6, tostring(repl) }
   else
     error(("unsupported repl of type %q"):format(t))
   end
@@ -77,14 +77,14 @@ end
 function class:hold()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 9 }
+  actions[#actions + 1] = { 7 }
   return self
 end
 
 function class:mark()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 10 }
+  actions[#actions + 1] = { 8}
   return self
 end
 
@@ -94,28 +94,31 @@ function class:sub(i, j)
   end
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 11, i, j }
+  actions[#actions + 1] = { 9, i, j }
   return self
 end
 
 function class:int(base)
+  if not base then
+    base = 10
+  end
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 12, base }
+  actions[#actions + 1] = { 10, base }
   return self
 end
 
 function class:char()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 13 }
+  actions[#actions + 1] = { 11 }
   return self
 end
 
 function class:join(head, tail)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 14, head, tail }
+  actions[#actions + 1] = { 12, head, tail }
   return self
 end
 
@@ -129,9 +132,9 @@ function class:utf8(i, j, k, l)
   local items = self.items
   local actions = items[#items].actions
   if k then
-    actions[#actions + 1] = { 16, i, j, k, l }
+    actions[#actions + 1] = { 14, i, j, k, l }
   else
-    actions[#actions + 1] = { 15, i, j }
+    actions[#actions + 1] = { 13, i, j }
   end
   return self
 end
@@ -139,7 +142,7 @@ end
 function class:add(value)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 17, value }
+  actions[#actions + 1] = { 15, value }
   return self
 end
 

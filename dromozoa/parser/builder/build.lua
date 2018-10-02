@@ -154,7 +154,7 @@ return function (self, start_name)
       local semantic_action = productions[i].semantic_action
       if semantic_action then
         local code = semantic_action[1]
-        if code == 2 then
+        if code == 1 then
           local index = semantic_action[2]
           if type(index) == "string" then
             local symbol = symbol_table[index]
@@ -174,7 +174,7 @@ return function (self, start_name)
               indices[i] = -symbol
             end
           end
-        elseif code == 3 then
+        elseif code == 2 then
           local indices = semantic_action[2]
           for i = 1, #indices do
             local index = indices[i]
