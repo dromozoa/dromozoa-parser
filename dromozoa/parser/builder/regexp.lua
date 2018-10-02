@@ -16,7 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local pattern = require "dromozoa.parser.builder.pattern"
-local driver = require "dromozoa.parser.driver"
 local error_message = require "dromozoa.parser.error_message"
 local regexp_lexer = require "dromozoa.parser.regexp_lexer"
 local regexp_parser = require "dromozoa.parser.regexp_parser"
@@ -133,7 +132,14 @@ local function visit(node)
 end
 
 return function (s)
-  local root = assert(driver(lexer, parser)(s))
-  visit(root)
-  return symbol_value(root)
+  local terminal_nodes, message = lexer(s)
+  if not terminal_nodes then
+    error(message)
+  end
+  local accepted_node, message = parser(terminal_nodes, s)
+  if not accepted_node then
+    error(message)
+  end
+  visit(accepted_node)
+  return symbol_value(accepted_node)
 end
