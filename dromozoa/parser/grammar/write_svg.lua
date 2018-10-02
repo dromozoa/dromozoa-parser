@@ -81,10 +81,25 @@ return function (this, out, set_of_items, transitions)
   local u_labels = {}
   local e_labels = {}
 
-  for i = 1, #set_of_items do
+  local accept
+  local n = #set_of_items
+  for i = 1, n do
     that:add_vertex()
     u_labels[i] = "I" .. i - 1
+    local items = set_of_items[i]
+    for j = 1, #items do
+      local item = items[j]
+      if item.id == 1 and item.dot ~= 1 then
+        assert(not accept) -- TODO remove
+        accept = i
+        break
+      end
+    end
   end
+  n = n + 1
+  that:add_vertex()
+  u_labels[n] = "accept"
+  e_labels[that:add_edge(accept, n)] = "$"
 
   for from, transition in pairs(transitions) do
     for symbol, to in pairs(transition) do

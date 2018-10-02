@@ -36,7 +36,6 @@ local scanner, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
 
 grammar:write_set_of_items(io.stdout, set_of_items)
-grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
 grammar:write_svg("test-graph.svg", set_of_items, transitions)
 
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
