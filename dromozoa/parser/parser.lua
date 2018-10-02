@@ -20,10 +20,7 @@ local error_message = require "dromozoa.parser.error_message"
 local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local metatable = { __index = class }
 
 function class:compile(out)
   if type(out) == "string" then
