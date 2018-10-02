@@ -15,8 +15,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local compile = require "dromozoa.parser.parser.compile"
+local dump = require "dromozoa.parser.dump"
 local error_message = require "dromozoa.parser.error_message"
+
+local function compile(self, out)
+  out:write("local parser = require \"dromozoa.parser.parser\"\n")
+  local root = dump(out, self)
+  out:write("return function () return parser(", root, ") end\n")
+  return out
+end
 
 local class = {}
 local metatable = { __index = class }
