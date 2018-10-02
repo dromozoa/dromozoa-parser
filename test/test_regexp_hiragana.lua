@@ -19,11 +19,8 @@ local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
 local P = builder.pattern
-local R = builder.range
-local S = builder.set
 
 local p
   = P"あ" + P"い" + P"う" + P"え" + P"お"
   + P"わ" + P"を" + P"ん"
-local a = regexp(p^"+"):nfa_to_dfa():minimize()
-a:write_graph "test.svg"
+regexp(p^"+"):nfa_to_dfa():minimize():write_graph "test.svg"

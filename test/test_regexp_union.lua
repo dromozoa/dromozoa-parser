@@ -19,8 +19,6 @@ local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
 local P = builder.pattern
-local R = builder.range
-local S = builder.set
 
 local a1 = regexp(P"abcd", 1):nfa_to_dfa():minimize()
 local a2 = regexp(P"aaaa", 2):nfa_to_dfa():minimize()
