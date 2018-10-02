@@ -32,7 +32,6 @@ local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 
 local terminal_nodes = assert(lexer "AAAA")
 local root = assert(parser(terminal_nodes, source))
-parser:write_graphviz("test.dot", root)
 
 assert(root.list)
 assert(not root[1].attr)

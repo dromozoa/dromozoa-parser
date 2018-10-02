@@ -1,4 +1,4 @@
--- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,11 +15,18 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
+local class = {}
+local metatable = {
+  __index = class;
+  ["dromozoa.parser.is_serializable"] = true;
+}
 
-return function (self, out)
-  out:write("local parser = require \"dromozoa.parser.parser\"\n")
-  local root = dumper():dump(out, self)
-  out:write("return function () return parser(", root, ") end\n")
-  return out
+function metatable:__tostring()
+  return self.name
 end
+
+return setmetatable(class, {
+  __call = function (_, name)
+    return setmetatable({ name = name }, metatable)
+  end;
+})

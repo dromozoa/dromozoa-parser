@@ -443,8 +443,6 @@ return {
 local terminal_nodes = assert(lexer(source))
 local root = assert(parser(terminal_nodes, source))
 
-parser:write_graphviz("test.dot", root)
-
 local result = {}
 
 local stack1 = { root }

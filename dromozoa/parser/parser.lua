@@ -15,9 +15,15 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local compile = require "dromozoa.parser.parser.compile"
+local dump = require "dromozoa.parser.dump"
 local error_message = require "dromozoa.parser.error_message"
-local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
+
+local function compile(self, out)
+  out:write("local parser = require \"dromozoa.parser.parser\"\n")
+  local root = dump(out, self)
+  out:write("return function () return parser(", root, ") end\n")
+  return out
+end
 
 local class = {}
 local metatable = { __index = class }
@@ -27,14 +33,6 @@ function class:compile(out)
     compile(self, assert(io.open(out, "w"))):close()
   else
     return compile(self, out)
-  end
-end
-
-function class:write_graphviz(out, tree)
-  if type(out) == "string" then
-    write_graphviz(self, assert(io.open(out, "w")), tree):close()
-  else
-    return write_graphviz(self, out, tree)
   end
 end
 
