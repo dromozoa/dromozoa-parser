@@ -19,12 +19,9 @@ local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
 local P = builder.pattern
-local R = builder.range
-local S = builder.set
 
 local p = P"\0"
 for i = 1, 127 do
   p = p * P(string.char(i))
 end
-local a = regexp(p):nfa_to_dfa():minimize()
-a:write_graph "test.svg"
+regexp(p):nfa_to_dfa():minimize():write_graph "test.svg"
