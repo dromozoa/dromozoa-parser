@@ -39,7 +39,12 @@ local character_classes = {
   ["\\W"] = -word;
 }
 
-local function visit(node, symbol_table, max_terminal_symbol)
+local lexer = regexp_lexer()
+local parser = regexp_parser()
+local symbol_table = parser.symbol_table
+local max_terminal_symbol = parser.max_terminal_symbol
+
+local function visit(node)
   for i = 1, #node do
     local that = node[i]
     if that[0] > max_terminal_symbol then
@@ -128,14 +133,7 @@ local function visit(node, symbol_table, max_terminal_symbol)
 end
 
 return function (s)
-  local lexer = regexp_lexer()
-  local parser = regexp_parser()
   local root = assert(driver(lexer, parser)(s))
-
-  local symbol_table = parser.symbol_table
-  local max_terminal_symbol = parser.max_terminal_symbol
-
-  visit(root, symbol_table, max_terminal_symbol)
-
+  visit(root)
   return symbol_value(root)
 end
