@@ -21,7 +21,7 @@ local R = builder.range
 local S = builder.set
 local _ = builder()
 
-local function atom_escape(lexer)
+local function character_escape(lexer)
   return lexer
     -- DecimalEscape
     :_ [[\0]] "\0" :as "DecimalEscape"
@@ -46,7 +46,7 @@ local function atom_escape(lexer)
     :_ [[\W]]
 end
 
-atom_escape(_:lexer())
+character_escape(_:lexer())
   :_ "|"
   :_ "*"
   :_ "+"
@@ -65,7 +65,7 @@ _:lexer "repetition"
   :_ ","
   :_ "}" :ret()
 
-atom_escape(_:lexer "character_class")
+character_escape(_:lexer "character_class")
   :_ (-S[[\]-]]) :as "ClassCharacter"
   :_ [[\b]] "\b"
   :_ [[\-]] "-"
