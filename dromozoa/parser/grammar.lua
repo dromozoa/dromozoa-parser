@@ -756,7 +756,7 @@ end
 
 function class:write_set_of_items(out, set_of_items)
   if type(out) == "string" then
-    write_set_of_items(self, assert(io.open(out, "w")), set_of_items)
+    write_set_of_items(self, assert(io.open(out, "w")), set_of_items):close()
   else
     return write_set_of_items(self, out, set_of_items)
   end

@@ -85,12 +85,11 @@ return function (this, out, set_of_items, transitions)
   local n = #set_of_items
   for i = 1, n do
     that:add_vertex()
-    u_labels[i] = "I" .. i - 1
+    u_labels[i] = "I" .. i
     local items = set_of_items[i]
     for j = 1, #items do
       local item = items[j]
       if item.id == 1 and item.dot ~= 1 then
-        assert(not accept) -- TODO remove
         accept = i
         break
       end

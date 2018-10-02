@@ -19,8 +19,6 @@ local builder = require "dromozoa.parser.builder"
 
 local _ = builder()
 
-local S = builder.set
-
 _:lexer()
   :_ "=="
   :_ "!="
@@ -43,19 +41,12 @@ _ "E"
   :_ "id"
 
 local lexer, grammar = _:build()
-
 local set_of_items, transitions = grammar:lalr1_items()
-
-grammar:write_set_of_items(io.stdout, set_of_items)
-grammar:write_graph("test-graph.svg", set_of_items, transitions)
-
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-grammar:write_conflicts(io.stdout, conflicts)
-grammar:write_table("test.html", parser)
+grammar:write_conflicts(io.stderr, conflicts)
 
 local source = [[id<id<id<id<id<id<]]
 local terminal_nodes = assert(lexer(source, "test.txt"))
 local accepted_node, message = parser(terminal_nodes, source, "test.txt")
-print(message)
 assert(not accepted_node)
 assert(message == "test.txt:1:6: parser error")

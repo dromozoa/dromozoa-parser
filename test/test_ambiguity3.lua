@@ -17,7 +17,8 @@
 
 local builder = require "dromozoa.parser.builder"
 
--- http://www.gnu.org/software/bison/manual/html_node/Reduce_002fReduce.html
+-- https://www.gnu.org/software/bison/manual/html_node/Reduce_002fReduce.html
+
 local _ = builder()
 
 _:lexer()
@@ -34,10 +35,6 @@ _"maybeword"
 
 local scanner, grammar = _:build()
 local set_of_items, transitions = grammar:lalr1_items()
-
 grammar:write_set_of_items(io.stdout, set_of_items)
-grammar:write_graph("test-graph.svg", set_of_items, transitions)
-
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-grammar:write_table("test.html", parser)
-grammar:write_conflicts(io.stdout, conflicts)
+grammar:write_conflicts(io.stderr, conflicts)

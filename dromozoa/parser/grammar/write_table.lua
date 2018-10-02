@@ -21,12 +21,10 @@ local html5_document = require "dromozoa.dom.html5_document"
 local _ = element
 
 local style = _"style" { [[
-table {
-  border-collapse: collapse;
-}
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono');
 
 td {
-  border: 1px solid #CCC;
+  font-family: 'Roboto Mono', monospace;
   text-align: center;
 }
 ]]}
@@ -37,6 +35,10 @@ local head = _"head" {
   };
   _"title" {
     "table";
+  };
+  _"link" {
+    rel = "stylesheet";
+    href = "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/2.10.0/github-markdown.min.css";
   };
   style;
 }
@@ -71,7 +73,7 @@ return function (self, out, data)
 
   for i = 1, max_state do
     local tr = _"tr" {
-      _"td" { i - 1 };
+      _"td" { i };
     }
 
     local t = actions[i]
@@ -80,13 +82,13 @@ return function (self, out, data)
       local action = j == min_nonterminal_symbol and t[1] or t[j]
       if action then
         if action <= max_state then
-          data = "s" .. action - 1
+          data = "s" .. action
         else
-          local reduce = action - max_state
-          if reduce == 1 then
+          local reduce = action - max_state - 1
+          if reduce == 0 then
             data = "acc"
           else
-            data = "r" .. reduce - 1
+            data = "r" .. reduce
           end
         end
       end
@@ -95,12 +97,7 @@ return function (self, out, data)
 
     local t = gotos[i]
     for j = min_nonterminal_symbol + 1, max_nonterminal_symbol do
-      local data
-      local action = t[j - max_terminal_symbol]
-      if action then
-        data = action - 1
-      end
-      tr[#tr + 1] = _"td" { data }
+      tr[#tr + 1] = _"td" { t[j - max_terminal_symbol] }
     end
 
     table[#table + 1] = tr
@@ -108,7 +105,12 @@ return function (self, out, data)
 
   local doc = html5_document(_"html" {
     head;
-    _"body" { table };
+    _"body" {
+      _"div" {
+        class = "markdown-body";
+        table;
+      };
+    };
   })
 
   doc:serialize(out)
