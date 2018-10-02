@@ -15,11 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
+local dump = require "dromozoa.parser.dump"
 
 return function (self, out)
   out:write("local parser = require \"dromozoa.parser.parser\"\n")
-  local root = dumper():dump(out, self)
+  local root = dump(out, self)
   out:write("return function () return parser(", root, ") end\n")
   return out
 end

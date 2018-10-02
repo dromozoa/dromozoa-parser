@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local equal = require "dromozoa.commons.equal"
-local dumper = require "dromozoa.parser.dumper"
+local dump = require "dromozoa.parser.dump"
 
 local data = {}
 for i = 1, 256 do
@@ -31,7 +31,7 @@ local source = {
   c = {1,2,3};
   d = data;
 }
-local root = dumper():dump(out, source)
+local root = dump(out, source)
 out:write("return ", root, "\n")
 out:close()
 

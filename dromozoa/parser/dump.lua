@@ -185,19 +185,7 @@ local function compact(self, out, value)
   end
 end
 
--- TODO remove keys
-local class = { keys = keys }
-local metatable = { __index = class }
-class.metatable = metatable
-
-function class:dump(out, value)
+return function (out, value)
   out:write "local _ = {}\n"
-  return tostring(compact(self, out, value))
+  return tostring(compact({ map = {}, n = 0 }, out, value))
 end
-
--- TODO as function
-return setmetatable(class, {
-  __call = function ()
-    return setmetatable({ map = {}, n = 0 }, metatable)
-  end;
-})
