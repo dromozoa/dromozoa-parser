@@ -43,11 +43,11 @@ local parser = regexp_parser()
 local symbol_table = parser.symbol_table
 local max_terminal_symbol = parser.max_terminal_symbol
 
-local function visit(node)
+local function visit(node, s)
   for i = 1, #node do
     local that = node[i]
     if that[0] > max_terminal_symbol then
-      visit(that, symbol_table, max_terminal_symbol)
+      visit(that, s)
     end
   end
 
@@ -82,7 +82,7 @@ local function visit(node)
       local m = tonumber(symbol_value(node[2]), 10)
       local n = tonumber(symbol_value(node[4]), 10)
       if m > n then
-        error(error_message("syntax error", source, node[1].i))
+        error(error_message("syntax error", s, node[1].i))
       end
       node.value = { m, n }
     else
@@ -140,6 +140,6 @@ return function (s)
   if not accepted_node then
     error(message)
   end
-  visit(accepted_node)
+  visit(accepted_node, s)
   return symbol_value(accepted_node)
 end
