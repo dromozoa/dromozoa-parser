@@ -55,7 +55,7 @@ local function test(name, data)
   for i = 1, #data do
     local item = data[i]
     if type(item) == "string" then
-      expected[_.symbol_table[item]] = true
+      expected[symbol_table[item]] = true
     else
       expected[item] = true
     end

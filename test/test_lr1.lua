@@ -47,6 +47,6 @@ end
 grammar:write_set_of_items(io.stdout, set_of_items)
 grammar:write_graph("test-graph.svg", set_of_items, transitions)
 
-local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-grammar:write_table("test-table.html", data)
-grammar:write_conflicts(io.stderr, conflicts, true)
+local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
+grammar:write_table("test-table.html", parser)
+grammar:write_conflicts(io.stderr, conflicts)

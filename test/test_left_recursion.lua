@@ -15,16 +15,17 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
+
+-- P.213 Equation 4.18
 
 local _ = builder()
 
 _:lexer()
-  :_"a"
-  :_"b"
-  :_"c"
-  :_"d"
+  :_ "a"
+  :_ "b"
+  :_ "c"
+  :_ "d"
 
 _"S"
   :_ "A" "a"
@@ -35,31 +36,58 @@ _"A"
   :_ "S" "d"
   :_ ()
 
+--[[
+_"S'"
+  :_ "S"
+
+_"S"
+  :_ "A" "a"
+  :_ "b"
+
+_"A"
+  :_ "b" "d" "A'"
+  :_ "A'"
+
+_"A'"
+  :_ "c" "A'"
+  :_ "a" "d" "A'"
+  :_ ()
+]]
+
+
 local lexer, grammar = _:build()
+local grammar = grammar:eliminate_left_recursion()
+local first_table = grammar:first()
+local symbol_names = grammar.symbol_names
 
-local first_table = grammar.first_table
+local symbol_table = {}
+for i = 1, #symbol_names do
+  local name = symbol_names[i]
+  assert(not symbol_table[name])
+  symbol_table[name] = i
+end
 
-assert(equal(first_table[6], { -- first(S') = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
+local function test(name, data)
+  local first = first_table[symbol_table[name]]
+  local expected = {}
+  for i = 1, #data do
+    local item = data[i]
+    if type(item) == "string" then
+      expected[symbol_table[item]] = true
+    else
+      expected[item] = true
+    end
+  end
+  for k, v in pairs(first) do
+    assert(expected[k])
+  end
+  for k, v in pairs(expected) do
+    assert(first[k])
+  end
+end
 
-assert(equal(first_table[7], { -- first(S) = { a, b, c }
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[8], { -- first(A) = { a, b, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [3] = true;
-  [4] = true;
-}))
-
-assert(equal(first_table[9], { -- first(A') = { a, c, epsilon }
-  [0] = true;
-  [2] = true;
-  [4] = true;
-}))
+local epsilon = 0
+test("S'", { "a", "b", "c" })
+test("S",  { "a", "b", "c" })
+test("A",  { "a", "b", "c", epsilon })
+test("A'", { "a", "c", epsilon })
