@@ -17,7 +17,6 @@
 
 local unix = require "dromozoa.unix"
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
 
 local RE = builder.regexp
 local _ = builder()
@@ -102,11 +101,10 @@ _"values"
 local lexer, grammar = _:build()
 local parser, conflicts = grammar:lr1_construct_table(grammar:lalr1_items())
 grammar:write_conflicts(io.stderr, conflicts, true)
-local driver = driver(lexer, parser)
 
 local timer = unix.timer()
 timer:start()
-local root = driver(source)
+local root = assert(parser(assert(lexer(source)), source))
 timer:stop()
 print(timer:elapsed())
 parser:write_graphviz("test.dot", root)

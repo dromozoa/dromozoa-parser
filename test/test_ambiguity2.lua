@@ -16,7 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
 
@@ -55,7 +54,8 @@ grammar:write_conflicts(io.stdout, conflicts)
 grammar:write_table("test.html", parser)
 
 local source = [[id<id<id<id<id<id<]]
-local root, message = driver(lexer, parser)(source, "test.txt")
+local terminal_nodes = assert(lexer(source, "test.txt"))
+local accepted_node, message = parser(terminal_nodes, source, "test.txt")
 print(message)
-assert(not root)
+assert(not accepted_node)
 assert(message == "test.txt:1:6: parser error")
