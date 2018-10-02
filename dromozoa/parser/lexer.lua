@@ -195,37 +195,37 @@ function metatable:__call(s, file)
         stack[#stack + 1] = action[2]
       elseif code == 5 then -- return
         stack[#stack] = nil
-      elseif code == 8 then -- substitute
+      elseif code == 6 then -- substitute
         rs = action[2]
         ri = 1
         rj = #rs
-      elseif code == 9 then -- hold
+      elseif code == 7 then -- hold
         self.hold = rs:sub(ri, rj)
-      elseif code == 10 then -- mark
+      elseif code == 8 then -- mark
         position_mark = init
-      elseif code == 11 then -- substring
+      elseif code == 9 then -- substring
         ri, rj = range(ri, rj, action[2], action[3])
-      elseif code == 12 then -- convert to integer
+      elseif code == 10 then -- convert to integer
         rv = tonumber(rs:sub(ri, rj), action[2])
-      elseif code == 13 then -- convert to char
+      elseif code == 11 then -- convert to char
         rs = string.char(rv)
         ri = 1
         rj = #rs
-      elseif code == 14 then -- join
+      elseif code == 12 then -- join
         rs = action[2] .. rs:sub(ri, rj) .. action[3]
         ri = 1
         rj = #rs
-      elseif code == 15 then -- encode utf8
+      elseif code == 13 then -- encode utf8
         rs = utf8.char(tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16))
         ri = 1
         rj = #rs
-      elseif code == 16 then -- encode utf8 (surrogate pair)
+      elseif code == 14 then -- encode utf8 (surrogate pair)
         local code1 = tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16)
         local code2 = tonumber(rs:sub(range(ri, rj, action[4], action[5])), 16)
         rs = utf8.char(decode_surrogate_pair(code1, code2))
         ri = 1
         rj = #rs
-      elseif code == 17 then -- add integer
+      elseif code == 15 then -- add integer
         rv = rv + action[2]
       end
     end

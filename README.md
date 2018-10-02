@@ -44,20 +44,16 @@ Parser generator toolkit.
 |    3 | `:concat()`               |         0 |      | concat                       |
 |    4 | `:call "label"`           |         1 |      | call                         |
 |    5 | `:ret()`                  |         0 |      | return                       |
-|    6 |                           |           |      | N/A                          |
-|    7 |                           |           |      | N/A                          |
-|    8 | `"string"`                |         1 |      | substitute                   |
-|    9 | `:hold()`                 |         0 |      | hold                         |
-|   10 | `:mark()`                 |         0 |      | mark                         |
-|   11 | `:sub(i, j=-1)`           |         2 |      | substring                    |
-|   12 | `:int(base=10)`           |         1 |      | convert to integer           |
-|   13 | `:char()`                 |         0 |      | convert to char              |
-|   14 | `:join(head, tail)`       |         2 |      | join                         |
-|   15 | `:utf8(i, j=-1)`          |         2 |      | encode utf8                  |
-|   16 | `:utf8(i, j=-1, k, l=-1)` |         4 |      | encode utf8 (surrogate pair) |
-|   17 | `:add(value)`             |         1 |      | add integer                  |
-|   18 |                           |           |      | N/A                          |
-|   19 |                           |           |      | N/A                          |
+|    6 | `"string"`                |         1 |      | substitute                   |
+|    7 | `:hold()`                 |         0 |      | hold                         |
+|    8 | `:mark()`                 |         0 |      | mark                         |
+|    9 | `:sub(i, j=-1)`           |         2 |      | substring                    |
+|   10 | `:int(base=10)`           |         1 |      | convert to integer           |
+|   11 | `:char()`                 |         0 |      | convert to char              |
+|   12 | `:join(head, tail)`       |         2 |      | join                         |
+|   13 | `:utf8(i, j=-1)`          |         2 |      | encode utf8                  |
+|   14 | `:utf8(i, j=-1, k, l=-1)` |         4 |      | encode utf8 (surrogate pair) |
+|   15 | `:add(value)`             |         1 |      | add integer                  |
 
 ## Parser
 
