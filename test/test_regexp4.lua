@@ -23,13 +23,30 @@ local R = builder.range
 local S = builder.set
 local RE = builder.regexp
 
-local _ = builder()
-
 local p1 = P"[" * P"="^"*" * "[\n"
 local p2 = RE[[\[=*\[\n]]
 
-local p1 = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
-local p2 = RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]
+regexp(p1):nfa_to_dfa():minimize():write_graph "test-dfa1.svg"
+regexp(p2):nfa_to_dfa():minimize():write_graph "test-dfa2.svg"
 
-regexp(p1):nfa_to_dfa():minimize():write_svg "test-dfa1.svg"
-regexp(p2):nfa_to_dfa():minimize():write_svg "test-dfa2.svg"
+local handle = assert(io.open "test-dfa1.svg")
+local test1 = handle:read "*a"
+handle:close()
+local handle = assert(io.open "test-dfa2.svg")
+local test2 = handle:read "*a"
+handle:close()
+assert(test1 == test2)
+
+local p3 = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
+local p4 = RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]
+
+regexp(p3):nfa_to_dfa():minimize():write_graph "test-dfa3.svg"
+regexp(p4):nfa_to_dfa():minimize():write_graph "test-dfa4.svg"
+
+local handle = assert(io.open "test-dfa3.svg")
+local test3 = handle:read "*a"
+handle:close()
+local handle = assert(io.open "test-dfa4.svg")
+local test4 = handle:read "*a"
+handle:close()
+assert(test1 == test2)

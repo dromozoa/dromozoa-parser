@@ -21,7 +21,9 @@ local matrix3 = require "dromozoa.vecmath.matrix3"
 local path_data = require "dromozoa.svg.path_data"
 local to_graph = require "dromozoa.parser.regexp.to_graph"
 
-local style = element "style" { [[
+local _ = element
+
+local style = _"style" { [[
 @import url('https://fonts.googleapis.com/css?family=Roboto+Mono');
 
 text {
@@ -77,7 +79,7 @@ text {
 }
 ]] }
 
-local marker = element "marker" {
+local marker = _"marker" {
   id = "arrow";
   viewBox = "0 0 4 4";
   refX = 4;
@@ -85,7 +87,7 @@ local marker = element "marker" {
   markerWidth = 8;
   markerHeight = 8;
   orient = "auto";
-  element "path" {
+  _"path" {
     d = path_data():M(0,0):L(4,2):L(0,4):Z();
   };
 }
@@ -103,13 +105,13 @@ return function (this, out)
   }
 
   local u_paths1 = root[1]
-  local u_paths2 = element "g" { class = "u_paths z2" }
+  local u_paths2 = _"g" { class = "u_paths z2" }
   local u_texts = root[2]
   local e_texts = root[4]
   u_paths1.class = "u_paths z1"
   e_texts.class = nil
   e_texts.id = "e_texts"
-  local defs = element "defs" { style, marker, e_texts }
+  local defs = _"defs" { style, marker, e_texts }
 
   for i = 1, #u_paths1 do
     local path = u_paths1[i]
@@ -119,7 +121,7 @@ return function (this, out)
       path.id = id
       defs[#defs + 1] = path
 
-      local path = element "use" { ["xlink:href"] = "#" .. id }
+      local path = _"use" { ["xlink:href"] = "#" .. id }
       u_paths1[i] = path
       u_paths2[#u_paths2 + 1] = path
 
@@ -136,7 +138,7 @@ return function (this, out)
     end
   end
 
-  local doc = xml_document(element "svg" {
+  local doc = xml_document(_"svg" {
     version = "1.1";
     xmlns = "http://www.w3.org/2000/svg";
     ["xmlns:xlink"] = "http://www.w3.org/1999/xlink";
@@ -147,11 +149,11 @@ return function (this, out)
     u_paths2;
     u_texts;
     root[3];
-    element "use" {
+    _"use" {
       class = "e_texts z1";
       ["xlink:href"] = "#e_texts";
     };
-    element "use" {
+    _"use" {
       class = "e_texts z2";
       ["xlink:href"] = "#e_texts";
     };

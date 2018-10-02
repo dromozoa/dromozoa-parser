@@ -23,7 +23,7 @@ return function (self, out, set_of_items)
   local productions = self.productions
   for i = 1, #set_of_items do
     local items = set_of_items[i]
-    out:write("======== I_", i, " ==========\n")
+    out:write("======== I", i, " ==========\n")
     for j = 1, #items do
       local item = items[j]
       local production = productions[item.id]

@@ -19,7 +19,6 @@ local builder = require "dromozoa.parser.builder"
 local symbol_value = require "dromozoa.parser.symbol_value"
 
 local RE = builder.regexp
-
 local _ = builder()
 
 _:lexer()

@@ -15,16 +15,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
 local P = builder.pattern
-local R = builder.range
 local S = builder.set
 
-local x = P"abc" - S"b"
-print(dumper.encode(x))
-assert(x[1] == 6)
-local x = S"b" - P"abc"
-print(dumper.encode(x))
-assert(x[1] == 6)
+local root = P"abc" - S"xyz"
+assert(root[1] == 6)
+local root = S"abc" - P"xyz"
+assert(root[1] == 6)
+local root = S"abc" - S"xyz"
+assert(root[1] == 1)

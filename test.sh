@@ -28,4 +28,4 @@ do
   esac
 done
 
-rm -f test*.dot test*.html test*.lua test*.svg test*.txt
+rm -f test*.html test*.lua test*.svg test*.txt

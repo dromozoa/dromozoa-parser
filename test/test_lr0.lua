@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,13 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
+-- P.244 Figure 4.31
+
 local _ = builder()
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
 
 _:lexer()
   :_ "+"
@@ -43,5 +41,4 @@ _"F"
 local lexer, grammar = _:build()
 local set_of_items, transitions = grammar:lr0_items()
 grammar:write_set_of_items(io.stdout, set_of_items)
--- P.244 Figure 4.31
-grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
+grammar:write_graph("test-graph.svg", set_of_items, transitions)

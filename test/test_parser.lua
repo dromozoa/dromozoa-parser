@@ -15,18 +15,13 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 local parser = require "dromozoa.parser.parser"
 
 local _ = builder()
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
 
 _:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
-  :_(R"09"^"+") :as "id"
+  :_ "id"
   :_ "+"
   :_ "*"
   :_ "("
@@ -42,16 +37,30 @@ _"E"
   :_ "id"
 
 local scanner, grammar = _:build()
-print(dumper.encode(grammar, { pretty = true, stable = true }))
-
 local parser = grammar:lr1_construct_table(grammar:lalr1_items())
-print(dumper.encode(parser, { stable = true }))
+local symbol_table = _.symbol_table
 
-local tree = assert(parser({
-  { [0] = parser.symbol_table["id"], n = 0 };
-  { [0] = parser.symbol_table["+"], n = 0 };
-  { [0] = parser.symbol_table["id"], n = 0 };
-  { [0] = parser.symbol_table["*"], n = 0 };
-  { [0] = parser.symbol_table["id"], n = 0 };
-  { [0] = 1, n = 0 };
+local root = assert(parser({
+  { [0] = symbol_table["id"] };
+  { [0] = symbol_table["+"] };
+  { [0] = symbol_table["id"] };
+  { [0] = symbol_table["*"] };
+  { [0] = symbol_table["id"] };
+  { [0] = 1 }; -- $
 }))
+
+assert(root[0] == symbol_table.E)
+assert(#root == 3)
+assert(root[1][0] == symbol_table.E)
+assert(root[2][0] == symbol_table["+"])
+assert(root[3][0] == symbol_table.E)
+assert(#root[1] == 1)
+assert(root[1][1][0] == symbol_table.id)
+assert(#root[3] == 3)
+assert(root[3][1][0] == symbol_table.E)
+assert(root[3][2][0] == symbol_table["*"])
+assert(root[3][3][0] == symbol_table.E)
+assert(#root[3][1] == 1)
+assert(root[3][1][1][0] == symbol_table.id)
+assert(#root[3][3] == 1)
+assert(root[3][3][1][0] == symbol_table.id)

@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,14 +15,11 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
 local symbol_value = require "dromozoa.parser.symbol_value"
 
-local P = builder.pattern
 local R = builder.range
 local S = builder.set
-
 local _ = builder()
 
 _:lexer()
@@ -47,6 +44,7 @@ _:lexer "string"
   :_ ((-S'\\"')^"+") :push()
 
 local lexer = _:build()
+local symbol_names = _.symbol_names
 
 local s = [[
 12 + 34 * 56 "test\tabc" "\"foo\""
@@ -57,27 +55,30 @@ abcde
 abcd
 ]]
 
+local expect = {
+  { "integer", "12" };
+  { "+", "+" };
+  { "integer", "34" };
+  { "*", "*" };
+  { "integer", "56" };
+  { "string", "test\tabc" };
+  { "string", "\"foo\"" };
+  { "identifier", "abcdefgh" };
+  { "identifier", "abcdefg" };
+  { "identifier", "abcdef" };
+  { "identifier", "abcde" };
+  { "identifier", "abcd" };
+  { "$", "" };
+}
+
 for test = 1, 8 do
   local source = s .. (" "):rep(test)
   local items = assert(lexer(source))
   local data = {}
+  assert(#items == #expect)
   for i = 1, #items do
     local item = items[i]
-    data[#data + 1] = { _.symbol_names[item[0]], symbol_value(item) }
+    assert(expect[i][1] == symbol_names[item[0]])
+    assert(expect[i][2] == symbol_value(item))
   end
-  assert(equal(data, {
-    { "integer", "12" };
-    { "+", "+" };
-    { "integer", "34" };
-    { "*", "*" };
-    { "integer", "56" };
-    { "string", "test\tabc" };
-    { "string", "\"foo\"" };
-    { "identifier", "abcdefgh" };
-    { "identifier", "abcdefg" };
-    { "identifier", "abcdef" };
-    { "identifier", "abcde" };
-    { "identifier", "abcd" };
-    { "$", "" };
-  }))
 end
