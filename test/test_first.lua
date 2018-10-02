@@ -51,19 +51,19 @@ local symbol_table = _.symbol_table
 
 local function test(name, data)
   local first = grammar:first_symbol(symbol_table[name])
-  local expected = {}
+  local expect = {}
   for i = 1, #data do
     local item = data[i]
     if type(item) == "string" then
-      expected[symbol_table[item]] = true
+      expect[symbol_table[item]] = true
     else
-      expected[item] = true
+      expect[item] = true
     end
   end
   for k, v in pairs(first) do
-    assert(expected[k])
+    assert(expect[k])
   end
-  for k, v in pairs(expected) do
+  for k, v in pairs(expect) do
     assert(first[k])
   end
 end
