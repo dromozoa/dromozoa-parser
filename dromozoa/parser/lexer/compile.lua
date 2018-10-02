@@ -18,19 +18,8 @@
 local dumper = require "dromozoa.parser.dumper"
 
 return function (self, out)
-  local lexers = self.lexers
-  local data = {}
-  for i = 1, #lexers do
-    local lexer = lexers[i]
-    data[i] = {
-      automaton = lexer.automaton;
-      accept_states = lexer.accept_states;
-      accept_to_actions = lexer.accept_to_actions;
-      accept_to_symbol = lexer.accept_to_symbol;
-    }
-  end
   out:write "local lexer = require \"dromozoa.parser.lexer\"\n"
-  local root = dumper():dump(out, data)
+  local root = dumper():dump(out, self)
   out:write("return function () return lexer(", root, ") end\n")
   return out
 end

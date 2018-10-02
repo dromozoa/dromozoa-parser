@@ -17,9 +17,9 @@
 
 local utf8 = require "dromozoa.utf8"
 local decode_surrogate_pair = require "dromozoa.utf16.decode_surrogate_pair"
+local error_message = require "dromozoa.parser.error_message"
 
 local compile = require "dromozoa.parser.lexer.compile"
-local error_message = require "dromozoa.parser.error_message"
 
 local function range(ri, rj, i, j)
   if i > 0 then
@@ -50,8 +50,6 @@ function class:compile(out)
 end
 
 function metatable:__call(s, file)
-  local lexers = self.lexers
-
   local init = 1
   local n = #s
   local terminal_nodes = {}
@@ -62,7 +60,7 @@ function metatable:__call(s, file)
   local buffer = {}
 
   while init <= n do
-    local lexer = lexers[stack[#stack]]
+    local lexer = self[stack[#stack]]
     local automaton = lexer.automaton
     local position
     local accept
@@ -270,7 +268,17 @@ function metatable:__call(s, file)
 end
 
 return setmetatable(class, {
-  __call = function (_, lexers)
-    return setmetatable({ lexers = lexers }, metatable)
+  __call = function (_, data)
+    local self = {}
+    for i = 1, #data do
+      local lexer = data[i]
+      self[i] = {
+        automaton = lexer.automaton;
+        accept_states = lexer.accept_states;
+        accept_to_actions = lexer.accept_to_actions;
+        accept_to_symbol = lexer.accept_to_symbol;
+      }
+    end
+    return setmetatable(self, metatable)
   end;
 })
