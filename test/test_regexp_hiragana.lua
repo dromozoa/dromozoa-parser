@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -19,12 +19,8 @@ local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
 local P = builder.pattern
-local R = builder.range
-local S = builder.set
 
 local p
   = P"あ" + P"い" + P"う" + P"え" + P"お"
   + P"わ" + P"を" + P"ん"
-local a = regexp(p^"+"):nfa_to_dfa():minimize()
-a:write_graphviz("test.dot")
-
+regexp(p^"+"):nfa_to_dfa():minimize():write_graph "test.svg"

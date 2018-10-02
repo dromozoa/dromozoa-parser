@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,29 +15,24 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local compile = require "dromozoa.parser.parser.compile"
+local dump = require "dromozoa.parser.dump"
 local error_message = require "dromozoa.parser.error_message"
-local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
+
+local function compile(self, out)
+  out:write("local parser = require \"dromozoa.parser.parser\"\n")
+  local root = dump(out, self)
+  out:write("return function () return parser(", root, ") end\n")
+  return out
+end
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local metatable = { __index = class }
 
 function class:compile(out)
   if type(out) == "string" then
     compile(self, assert(io.open(out, "w"))):close()
   else
     return compile(self, out)
-  end
-end
-
-function class:write_graphviz(out, tree)
-  if type(out) == "string" then
-    write_graphviz(self, assert(io.open(out, "w")), tree):close()
-  else
-    return write_graphviz(self, out, tree)
   end
 end
 
@@ -92,13 +87,8 @@ function metatable:__call(terminal_nodes, s, file)
             if semantic_action then
               local code = semantic_action[1]
               if code == 1 then -- collapse node
-                node = reduced_nodes[1]
-                for j = 2, n do
-                  node[#node + 1] = reduced_nodes[j]
-                end
-              elseif code == 2 then -- collapse node
-                local indices = semantic_action[3]
                 local index = semantic_action[2]
+                local indices = semantic_action[3]
                 if index > 0 then
                   node = reduced_nodes[index]
                 else
@@ -112,7 +102,7 @@ function metatable:__call(terminal_nodes, s, file)
                     node[j] = { [0] = -index }
                   end
                 end
-              elseif code == 3 then -- create node
+              elseif code == 2 then -- create node
                 local indices = semantic_action[2]
                 node = { [0] = head }
                 for j = 1, #indices do

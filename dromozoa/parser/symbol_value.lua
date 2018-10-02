@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -21,8 +21,6 @@ return function (node)
     local rs = node.rs
     if rs then
       return rs:sub(node.ri, node.rj)
-    else
-      return nil
     end
   else
     return value

@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,13 +15,17 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local encode_string = require "dromozoa.parser.dumper.encode_string"
+local merge = require "dromozoa.parser.regexp.merge"
 
-local source = "foo\a\b\f\n\r\t\v\\\"\'\000\127\255bar日本語"
+return function (this, that)
+  local this, that = merge(this, that)
+  local epsilons1 = this.epsilons[1]
 
--- print(("%q"):format(source))
-print(encode_string(source))
+  local v = that.start_state
+  for u in pairs(this.accept_states) do
+    epsilons1[u] = v
+  end
 
-local loadstring = loadstring or load
-local chunk = assert(loadstring("return " .. encode_string(source)))
-assert(chunk() == source)
+  this.accept_states = that.accept_states
+  return this
+end

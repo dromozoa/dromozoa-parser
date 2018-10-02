@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -16,11 +16,8 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local builder = require "dromozoa.parser.builder"
-local driver = require "dromozoa.parser.driver"
 
 local _ = builder()
-
-local S = builder.set
 
 _:lexer()
   :_ "=="
@@ -44,18 +41,12 @@ _ "E"
   :_ "id"
 
 local lexer, grammar = _:build()
-
 local set_of_items, transitions = grammar:lalr1_items()
-
-grammar:write_set_of_items(io.stdout, set_of_items)
-grammar:write_graphviz("test-graph.dot", set_of_items, transitions)
-
 local parser, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
-grammar:write_conflicts(io.stdout, conflicts)
-grammar:write_table("test.html", parser)
+grammar:write_conflicts(io.stderr, conflicts)
 
 local source = [[id<id<id<id<id<id<]]
-local root, message = driver(lexer, parser)(source, "test.txt")
-print(message)
-assert(not root)
+local terminal_nodes = assert(lexer(source, "test.txt"))
+local accepted_node, message = parser(terminal_nodes, source, "test.txt")
+assert(not accepted_node)
 assert(message == "test.txt:1:6: parser error")

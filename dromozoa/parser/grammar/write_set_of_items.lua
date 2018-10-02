@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -23,7 +23,7 @@ return function (self, out, set_of_items)
   local productions = self.productions
   for i = 1, #set_of_items do
     local items = set_of_items[i]
-    out:write("======== I_", i, " ==========\n")
+    out:write("======== I", i, " ==========\n")
     for j = 1, #items do
       local item = items[j]
       local production = productions[item.id]
@@ -43,7 +43,7 @@ return function (self, out, set_of_items)
       if la then
         out:write(", ", symbol_names[la])
       end
-      out:write("\n")
+      out:write "\n"
     end
   end
   return out

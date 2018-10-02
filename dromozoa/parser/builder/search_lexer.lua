@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -17,35 +17,34 @@
 
 local lexer = require "dromozoa.parser.builder.lexer"
 
-local class = {}
 local super = lexer
+local class = { is_search_lexer = true }
 local metatable = {
   __index = class;
-  __call = lexer.metatable.__call;
+  __call = super.substitute;
 }
-class.metatable = metatable
 
 function class:when()
   local items = self.items
-  items[#items + 1] = {
-    condition = 1;
-    actions = {};
-  }
+  if #items ~= 0 then
+    error "invalid when"
+  end
+  items[1] = { actions = {} }
   return self
 end
 
 function class:otherwise()
   local items = self.items
-  items[#items + 1] = {
-    condition = 2;
-    actions = {};
-  }
+  if #items ~= 1 then
+    error "invalid otherwise"
+  end
+  items[2] = { actions = {} }
   return self
 end
 
 return setmetatable(class, {
   __index = super;
   __call = function(_, name)
-    return setmetatable({ type = "search_lexer", name = name, items = {} }, metatable)
+    return setmetatable({ name = name, items = {} }, metatable)
   end;
 })

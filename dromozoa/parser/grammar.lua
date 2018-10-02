@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2015,2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -17,10 +17,10 @@
 
 local parser = require "dromozoa.parser.parser"
 local write_conflicts = require "dromozoa.parser.grammar.write_conflicts"
-local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_productions = require "dromozoa.parser.grammar.write_productions"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
+local write_graph = require "dromozoa.parser.grammar.write_graph"
 
 local function equal(items1, items2)
   local n = #items1
@@ -756,17 +756,17 @@ end
 
 function class:write_set_of_items(out, set_of_items)
   if type(out) == "string" then
-    write_set_of_items(self, assert(io.open(out, "w")), set_of_items)
+    write_set_of_items(self, assert(io.open(out, "w")), set_of_items):close()
   else
     return write_set_of_items(self, out, set_of_items)
   end
 end
 
-function class:write_graphviz(out, set_of_items, transitions)
+function class:write_graph(out, set_of_items, transitions)
   if type(out) == "string" then
-    write_graphviz(self, assert(io.open(out, "w")), set_of_items, transitions):close()
+    write_graph(self, assert(io.open(out, "w")), set_of_items, transitions):close()
   else
-    return write_graphviz(self, out, set_of_items, transitions)
+    return write_graph(self, out, set_of_items, transitions)
   end
 end
 

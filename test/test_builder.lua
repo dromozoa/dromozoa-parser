@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,23 +15,21 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
-local P = builder.pattern
 local R = builder.range
 local S = builder.set
 local _ = builder()
 
 _:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
-  :_(R"09"^"+") :as "integer"
-  :_"*"
-  :_"/"
-  :_"+"
-  :_"-"
-  :_"("
-  :_")"
+  :_ (S" \t\n\v\f\r"^"+") :skip()
+  :_ (R"09"^"+") :as "integer"
+  :_ "*"
+  :_ "/"
+  :_ "+"
+  :_ "-"
+  :_ "("
+  :_ ")"
 
 _ :left "+" "-"
   :left "*" "/"
@@ -47,6 +45,4 @@ _"E"
   :_ "integer"
 
 local lexer, grammar = _:build()
-
-print(dumper.encode(grammar, { pretty = true, stable = true }))
-_.lexers[1].automaton:write_graphviz(assert(io.open("test-dfa.dot", "w"))):close()
+lexer[1].automaton:write_graph "test.svg"

@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,22 +15,23 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.parser.dumper"
+local merge = require "dromozoa.parser.regexp.merge"
 
-return function (self, out)
-  local lexers = self.lexers
-  local data = {}
-  for i = 1, #lexers do
-    local lexer = lexers[i]
-    data[#data + 1] = {
-      automaton = lexer.automaton;
-      accept_states = lexer.accept_states;
-      accept_to_actions = lexer.accept_to_actions;
-      accept_to_symbol = lexer.accept_to_symbol;
-    }
+return function (this, that)
+  local this, that = merge(this, that)
+
+  local max_state = this.max_state + 1
+  local epsilons = this.epsilons
+  local accept_states = this.accept_states
+
+  epsilons[1][max_state] = this.start_state
+  epsilons[2][max_state] = that.start_state
+
+  for u, accept in pairs(that.accept_states) do
+    accept_states[u] = accept
   end
-  out:write("local lexer = require \"dromozoa.parser.lexer\"\n")
-  local root = dumper():dump(out, data)
-  out:write("return function () return lexer(", root, ") end\n")
-  return out
+
+  this.max_state = max_state
+  this.start_state = max_state
+  return this
 end

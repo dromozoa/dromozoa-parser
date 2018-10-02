@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -16,10 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
 
 function class:as(name)
   local items = self.items
@@ -66,17 +62,29 @@ function class:ret()
   return self
 end
 
+function class:substitute(repl)
+  local items = self.items
+  local actions = items[#items].actions
+  local t = type(repl)
+  if t == "number" or t == "string" then
+    actions[#actions + 1] = { 6, tostring(repl) }
+  else
+    error(("unsupported repl of type %q"):format(t))
+  end
+  return self
+end
+
 function class:hold()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 9 }
+  actions[#actions + 1] = { 7 }
   return self
 end
 
 function class:mark()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 10 }
+  actions[#actions + 1] = { 8}
   return self
 end
 
@@ -86,28 +94,31 @@ function class:sub(i, j)
   end
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 11, i, j }
+  actions[#actions + 1] = { 9, i, j }
   return self
 end
 
 function class:int(base)
+  if not base then
+    base = 10
+  end
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 12, base }
+  actions[#actions + 1] = { 10, base }
   return self
 end
 
 function class:char()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 13 }
+  actions[#actions + 1] = { 11 }
   return self
 end
 
-function class:join(x, y)
+function class:join(head, tail)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 14, x, y }
+  actions[#actions + 1] = { 12, head, tail }
   return self
 end
 
@@ -121,46 +132,17 @@ function class:utf8(i, j, k, l)
   local items = self.items
   local actions = items[#items].actions
   if k then
-    actions[#actions + 1] = { 16, i, j, k, l }
+    actions[#actions + 1] = { 14, i, j, k, l }
   else
-    actions[#actions + 1] = { 15, i, j }
+    actions[#actions + 1] = { 13, i, j }
   end
   return self
 end
 
-function class:add(x)
+function class:add(value)
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 17, x }
-  return self
-end
-
-function class:attr(key, value)
-  if value == nil then
-    value = true
-  end
-  local items = self.items
-  local actions = items[#items].actions
-  actions[#actions + 1] = { 18, key, value }
-  return self
-end
-
-function class:attr_value(key)
-  local items = self.items
-  local actions = items[#items].actions
-  actions[#actions + 1] = { 19, key }
-  return self
-end
-
-function metatable:__call(repl)
-  local items = self.items
-  local actions = items[#items].actions
-  local t = type(repl)
-  if t == "number" or t == "string" then
-    actions[#actions + 1] = { 8, tostring(repl) }
-  else
-    error(("unsupported repl of type %q"):format(t))
-  end
+  actions[#actions + 1] = { 15, value }
   return self
 end
 

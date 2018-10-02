@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -56,7 +56,7 @@ return function (self, start_name)
       end
     end
     lexer.accept_to_symbol = accept_to_symbol
-    if lexer.type == "regexp_lexer" then
+    if lexer.is_regexp_lexer then
       if m == 1 then
         lexer.automaton = regexp(items[1].pattern, 1):nfa_to_dfa():minimize()
       else
@@ -67,7 +67,7 @@ return function (self, start_name)
         lexer.automaton = automaton:nfa_to_dfa():minimize()
       end
     else
-      if m ~= 2 or items[1].condition ~= 1 or items[2].condition ~= 2 then
+      if m ~= 2 then
         error(("invalid when/otherwise at lexer %d"):format(i))
       end
     end
@@ -154,7 +154,7 @@ return function (self, start_name)
       local semantic_action = productions[i].semantic_action
       if semantic_action then
         local code = semantic_action[1]
-        if code == 2 then
+        if code == 1 then
           local index = semantic_action[2]
           if type(index) == "string" then
             local symbol = symbol_table[index]
@@ -174,7 +174,7 @@ return function (self, start_name)
               indices[i] = -symbol
             end
           end
-        elseif code == 3 then
+        elseif code == 2 then
           local indices = semantic_action[2]
           for i = 1, #indices do
             local index = indices[i]

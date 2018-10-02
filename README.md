@@ -6,30 +6,30 @@ Parser generator toolkit.
 
 ### Regular Expression DSL
 
-| Operator          | Example                                        | Regular Expression        | Description              |
-|-------------------|------------------------------------------------|---------------------------|--------------------------|
-| `P(n)`            | `P(1)`                                         | `.`                       | any                      |
-| `P(string)`       | `P"abc"`                                       | `abc`                     | literal                  |
-| `S(set)`          | `S"02468"`                                     | `[02468]`                 | set                      |
-| `R(range)`        | `R"09af"`                                      | `[0-9a-f]`                | range                    |
-| `-atom`           | `-R"09af"`                                     | `[^0-9a-f]`               | character level negation |
-| `pattern*pattern` | `S"abc"*P"def"`                                | `[abc]def`                | concatenation            |
-| `pattern+pattern` | `P"abc"+P"def"`                                | <code>abc&#124;def</code> | union                    |
-| `pattern^"*"`     | `P"abc"^"*"`                                   | `(abc)*`                  | `0` or more repetition   |
-| `pattern^"+"`     | `P"abc"^"+"`                                   | `(abc)+`                  | `1` or more repetition   |
-| `pattern^"?"`     | `P"abc"^"?"`                                   | `(abc)?`                  | optional                 |
-| `pattern^n`       | `P"abc"^3`                                     | `(abc){3,}`               | `n` or more repetition   |
-| `pattern^-n`      | `P"abc"^-3`                                    | `(abc){0,3}`              | `0` to `n` repetition    |
-| `pattern^{n}`     | `P"abc"^{3}`                                   | `(abc){3}`                | `n` repetition           |
-| `pattern^{m,n}`   | `P"abc"^{3,5}`                                 | `(abc){3,5}`              | `m` to `n` repetition    |
-| `pattern-pattern` | `(P(1)^"*"-P(1)^"*"*P"abc"*P(1)^"*") * P"abc"` | `.*?abc`                  | difference               |
+| Operator            | Example                                              | Regular Expression        | Description              |
+|---------------------|------------------------------------------------------|---------------------------|--------------------------|
+| `P(n)`              | `P(1)`                                               | `.`                       | any                      |
+| `P(string)`         | `P"abc"`                                             | `abc`                     | literal                  |
+| `S(set)`            | `S"02468"`                                           | `[02468]`                 | set                      |
+| `R(range)`          | `R"09af"`                                            | `[0-9a-f]`                | range                    |
+| `-pattern`          | `-R"09af"`                                           | `[^0-9a-f]`               | character level negation |
+| `pattern * pattern` | `S"abc" * P"def"`                                    | `[abc]def`                | concatenation            |
+| `pattern + pattern` | `P"abc" + P"def"`                                    | <code>abc&#124;def</code> | union                    |
+| `pattern^"*"`       | `P"abc"^"*"`                                         | `(abc)*`                  | `0` or more repetition   |
+| `pattern^"+"`       | `P"abc"^"+"`                                         | `(abc)+`                  | `1` or more repetition   |
+| `pattern^"?"`       | `P"abc"^"?"`                                         | `(abc)?`                  | optional                 |
+| `pattern^n`         | `P"abc"^3`                                           | `(abc){3,}`               | `n` or more repetition   |
+| `pattern^-n`        | `P"abc"^-3`                                          | `(abc){0,3}`              | `0` to `n` repetition    |
+| `pattern^{n}`       | `P"abc"^{3}`                                         | `(abc){3}`                | `n` repetition           |
+| `pattern^{m,n}`     | `P"abc"^{3,5}`                                       | `(abc){3,5}`              | `m` to `n` repetition    |
+| `pattern - pattern` | `(P(1)^"*" - P(1)^"*" * P"abc" * P(1)^"*") * P"abc"` | `.*?abc`                  | difference               |
 
 ### Regular Expression AST
 
 | Code | Operator            | #Operands | Description            |
 |-----:|---------------------|----------:|------------------------|
 |    1 | `[`                 |         1 | character class        |
-|    2 | `concat`            |         2 | concatenation          |
+|    2 | `.`                 |         2 | concatenation          |
 |    3 | <code>&#124;</code> |         2 | union                  |
 |    4 | `*`                 |         1 | `0` or more repetition |
 |    5 | `?`                 |         1 | optional               |
@@ -37,27 +37,23 @@ Parser generator toolkit.
 
 ### Actions
 
-| Code | Operator            | #Operands | Skip | Description                  |
-|-----:|---------------------|----------:|:----:|------------------------------|
-|    1 | `:skip()`           |         0 | yes  | skip                         |
-|    2 | `:push()`           |         0 | yes  | push                         |
-|    3 | `:concat()`         |         0 |      | concat                       |
-|    4 | `:call "label"`     |         1 |      | call                         |
-|    5 | `:ret()`            |         0 |      | return                       |
-|    6 |                     |           |      | N/A                          |
-|    7 |                     |           |      | N/A                          |
-|    8 | `"string"`          |         1 |      | substitute                   |
-|    9 | `:hold()`           |         0 |      | hold                         |
-|   10 | `:mark()`           |         0 |      | mark                         |
-|   11 | `:sub(i, j)`        |         2 |      | substring                    |
-|   12 | `:int(base)`        |         1 |      | convert to integer           |
-|   13 | `:char()`           |         0 |      | convert to char              |
-|   14 | `:join(x, y)`       |         2 |      | join                         |
-|   15 | `:utf8(i, j)`       |         2 |      | encode utf8                  |
-|   16 | `:utf8(i, j, k, l)` |         4 |      | encode utf8 (surrogate pair) |
-|   17 | `:add(x)`           |         1 |      | add integer                  |
-|   18 | `:attr(key, value)` |         2 |      | set attribute                |
-|   19 | `:attr_value "key"` |         1 |      | set attribute with value     |
+| Code | Operator                  | #Operands | Skip | Description                  |
+|-----:|---------------------------|----------:|:----:|------------------------------|
+|    1 | `:skip()`                 |         0 | yes  | skip                         |
+|    2 | `:push()`                 |         0 | yes  | push                         |
+|    3 | `:concat()`               |         0 |      | concat                       |
+|    4 | `:call "label"`           |         1 |      | call                         |
+|    5 | `:ret()`                  |         0 |      | return                       |
+|    6 | `"string"`                |         1 |      | substitute                   |
+|    7 | `:hold()`                 |         0 |      | hold                         |
+|    8 | `:mark()`                 |         0 |      | mark                         |
+|    9 | `:sub(i, j=-1)`           |         2 |      | substring                    |
+|   10 | `:int(base=10)`           |         1 |      | convert to integer           |
+|   11 | `:char()`                 |         0 |      | convert to char              |
+|   12 | `:join(head, tail)`       |         2 |      | join                         |
+|   13 | `:utf8(i, j=-1)`          |         2 |      | encode utf8                  |
+|   14 | `:utf8(i, j=-1, k, l=-1)` |         4 |      | encode utf8 (surrogate pair) |
+|   15 | `:add(value)`             |         1 |      | add integer                  |
 
 ## Parser
 
@@ -89,16 +85,15 @@ Parser generator toolkit.
 
 | Code | Operator               | #Operands | Description   |
 |-----:|------------------------|----------:|---------------|
-|    1 | `:collapse()`          |         0 | collapse node |
-|    2 | `{[1]={2,3,"symbol"}}` |         2 | collapse node |
-|    3 | `{1,2,3,"symbol"}`     |         1 | create node   |
+|    1 | `{[1]={2,3,"symbol"}}` |         2 | collapse node |
+|    2 | `{1,2,3,"symbol"}`     |         1 | create node   |
 
 ### Attribute Actions
 
-| Code | Operator               | #Operands | Description         |
-|-----:|------------------------|----------:|---------------------|
-|    1 | `:attr(key, value)`    |         2 | set attribute       |
-|    2 | `:attr(i, key, value)` |         3 | set child attribute |
+| Code | Operator                    | #Operands | Description         |
+|-----:|-----------------------------|----------:|---------------------|
+|    1 | `:attr(key, value=true)`    |         2 | set attribute       |
+|    2 | `:attr(i, key, value=true)` |         3 | set child attribute |
 
 ### Node
 

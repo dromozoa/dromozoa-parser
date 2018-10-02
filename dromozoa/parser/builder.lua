@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,7 +15,6 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local atom = require "dromozoa.parser.builder.atom"
 local build = require "dromozoa.parser.builder.build"
 local lexer = require "dromozoa.parser.builder.lexer"
 local pattern = require "dromozoa.parser.builder.pattern"
@@ -26,49 +25,12 @@ local regexp_lexer = require "dromozoa.parser.builder.regexp_lexer"
 local search_lexer = require "dromozoa.parser.builder.search_lexer"
 
 local class = {
-  atom = atom;
-  range = atom.range;
-  set = atom.set;
+  pattern = pattern;
+  range = pattern.range;
+  set = pattern.set;
+  regexp = regexp;
 }
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
-
-lexer.super = class
-pattern.super = class
-regexp.super = class
-
-function class.pattern(that)
-  local t = type(that)
-  if t == "number" then
-    if that == 1 then
-      return atom.any()
-    else
-      local items = {}
-      for i = 1, that do
-        items[i] = atom.any()
-      end
-      return pattern.concat(items)
-    end
-  elseif t == "string" then
-    if #that == 1 then
-      return atom.char(that)
-    else
-      local items = {}
-      for i = 1, #that do
-        items[i] = atom.char(that:sub(i, i))
-      end
-      return pattern.concat(items)
-    end
-  else
-    return that
-  end
-end
-
-function class.regexp(that)
-  return regexp.parse(that)
-end
+local metatable = { __index = class }
 
 function class:lexer(name)
   return self:regexp_lexer(name)

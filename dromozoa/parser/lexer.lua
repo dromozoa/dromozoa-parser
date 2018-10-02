@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,9 +15,17 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local compile = require "dromozoa.parser.lexer.compile"
+local utf8 = require "dromozoa.utf8"
+local decode_surrogate_pair = require "dromozoa.utf16.decode_surrogate_pair"
+local dump = require "dromozoa.parser.dump"
 local error_message = require "dromozoa.parser.error_message"
-local symbol_value = require "dromozoa.parser.symbol_value"
+
+local function compile(self, out)
+  out:write "local lexer = require \"dromozoa.parser.lexer\"\n"
+  local root = dump(out, self)
+  out:write("return function () return lexer(", root, ") end\n")
+  return out
+end
 
 local function range(ri, rj, i, j)
   if i > 0 then
@@ -31,35 +39,6 @@ local function range(ri, rj, i, j)
     j = j + rj + 1
   end
   return i, j
-end
-
-local utf8_char
-if utf8 then
-  utf8_char = utf8.char
-else
-  utf8_char = function (a)
-    if a <= 0x7F then
-      return string.char(a)
-    elseif a <= 0x07FF then
-      local b = a % 0x40
-      local a = (a - b) / 0x40
-      return string.char(a + 0xc0, b + 0x80)
-    elseif a <= 0xFFFF then
-      local c = a % 0x40
-      local a = (a - c) / 0x40
-      local b = a % 0x40
-      local a = (a - b) / 0x40
-      return string.char(a + 0xe0, b + 0x80, c + 0x80)
-    else -- code <= 0x10FFFF
-      local d = a % 0x40
-      local a = (a - d) / 0x40
-      local c = a % 0x40
-      local a = (a - c) / 0x40
-      local b = a % 0x40
-      local a = (a - b) / 0x40
-      return string.char(a + 0xf0, b + 0x80, c + 0x80, d + 0x80)
-    end
-  end
 end
 
 local class = {}
@@ -77,8 +56,6 @@ function class:compile(out)
 end
 
 function metatable:__call(s, file)
-  local lexers = self.lexers
-
   local init = 1
   local n = #s
   local terminal_nodes = {}
@@ -89,7 +66,7 @@ function metatable:__call(s, file)
   local buffer = {}
 
   while init <= n do
-    local lexer = lexers[stack[#stack]]
+    local lexer = self[stack[#stack]]
     local automaton = lexer.automaton
     local position
     local accept
@@ -201,7 +178,6 @@ function metatable:__call(s, file)
     local ri = init
     local rj = position - 1
     local rv
-    local attributes
 
     local actions = lexer.accept_to_actions[accept]
     for i = 1, #actions do
@@ -223,58 +199,38 @@ function metatable:__call(s, file)
         stack[#stack + 1] = action[2]
       elseif code == 5 then -- return
         stack[#stack] = nil
-      elseif code == 8 then -- substitute
+      elseif code == 6 then -- substitute
         rs = action[2]
         ri = 1
         rj = #rs
-      elseif code == 9 then -- hold
+      elseif code == 7 then -- hold
         self.hold = rs:sub(ri, rj)
-      elseif code == 10 then -- mark
+      elseif code == 8 then -- mark
         position_mark = init
-      elseif code == 11 then -- substring
+      elseif code == 9 then -- substring
         ri, rj = range(ri, rj, action[2], action[3])
-      elseif code == 12 then -- convert to integer
+      elseif code == 10 then -- convert to integer
         rv = tonumber(rs:sub(ri, rj), action[2])
-      elseif code == 13 then -- convert to char
+      elseif code == 11 then -- convert to char
         rs = string.char(rv)
         ri = 1
         rj = #rs
-      elseif code == 14 then -- join
+      elseif code == 12 then -- join
         rs = action[2] .. rs:sub(ri, rj) .. action[3]
         ri = 1
         rj = #rs
-      elseif code == 15 then -- encode utf8
-        local i, j = range(ri, rj, action[2], action[3])
-        local code = tonumber(rs:sub(i, j), 16)
-        rs = utf8_char(code)
+      elseif code == 13 then -- encode utf8
+        rs = utf8.char(tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16))
         ri = 1
         rj = #rs
-      elseif code == 16 then -- encode utf8 (surrogate pair)
-        local i, j = range(ri, rj, action[2], action[3])
-        local code1 = tonumber(rs:sub(i, j), 16) % 0x0400 * 0x0400
-        local i, j = range(ri, rj, action[4], action[5])
-        local code2 = tonumber(rs:sub(i, j), 16) % 0x0400
-        rs = utf8_char(code1 + code2 + 0x010000)
+      elseif code == 14 then -- encode utf8 (surrogate pair)
+        local code1 = tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16)
+        local code2 = tonumber(rs:sub(range(ri, rj, action[4], action[5])), 16)
+        rs = utf8.char(decode_surrogate_pair(code1, code2))
         ri = 1
         rj = #rs
-      elseif code == 17 then -- add integer
+      elseif code == 15 then -- add integer
         rv = rv + action[2]
-      elseif code == 18 then -- set attribute
-        if attributes then
-          local m = #attributes
-          attributes[m + 1] = action[2]
-          attributes[m + 2] = action[3]
-        else
-          attributes = { action[2], action[3] }
-        end
-      elseif code == 19 then -- set attribute with value
-        if attributes then
-          local m = #attributes
-          attributes[m + 1] = action[2]
-          attributes[m + 2] = value
-        else
-          attributes = { action[2], value }
-        end
       end
     end
 
@@ -291,16 +247,6 @@ function metatable:__call(s, file)
         ri = ri;
         rj = rj;
       }
-      if attributes then
-        for i = 1, #attributes, 2 do
-          local v = attributes[i + 1]
-          if v == value then
-            node[attributes[i]] = symbol_value(node)
-          else
-            node[attributes[i]] = v
-          end
-        end
-      end
       terminal_nodes[#terminal_nodes + 1] = node
       position_start = position
       position_mark = nil
@@ -328,7 +274,17 @@ function metatable:__call(s, file)
 end
 
 return setmetatable(class, {
-  __call = function (_, lexers)
-    return setmetatable({ lexers = lexers }, metatable)
+  __call = function (_, data)
+    local self = {}
+    for i = 1, #data do
+      local lexer = data[i]
+      self[i] = {
+        automaton = lexer.automaton;
+        accept_states = lexer.accept_states;
+        accept_to_actions = lexer.accept_to_actions;
+        accept_to_symbol = lexer.accept_to_symbol;
+      }
+    end
+    return setmetatable(self, metatable)
   end;
 })

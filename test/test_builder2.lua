@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,18 +15,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local char_table = {}
-for byte = 0, 127 do
-  char_table[string.char(byte)] = ("&#x%x;"):format(byte)
-end
-char_table[string.char(0x26)] = "&amp;"
-char_table[string.char(0x3c)] = "&lt;"
-char_table[string.char(0x3e)] = "&gt;"
-char_table[string.char(0x22)] = "&quot;"
-char_table[string.char(0x27)] = "&apos;"
+local builder = require "dromozoa.parser.builder"
 
-local pattern = "[%z\1-\8\11\12\14-\31%]\127&<>\"']"
+local P = builder.pattern
+local S = builder.set
 
-return function (s)
-  return (s:gsub(pattern, char_table))
-end
+local root = P"abc" - S"xyz"
+assert(root[1] == 6)
+local root = S"abc" - P"xyz"
+assert(root[1] == 6)
+local root = S"abc" - S"xyz"
+assert(root[1] == 1)

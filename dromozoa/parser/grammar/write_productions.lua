@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -27,7 +27,7 @@ return function (self, out)
     for j = 1, #body do
       out:write(" ", symbol_names[body[j]])
     end
-    out:write("\n")
+    out:write "\n"
   end
   return out
 end
