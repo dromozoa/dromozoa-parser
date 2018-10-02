@@ -102,14 +102,14 @@ local function visit(node, s)
   elseif symbol == symbol_table.CharacterClassEscape then
     node.value = character_classes[symbol_value(node[1])]:clone()
   elseif symbol == symbol_table.CharacterClass then
-    if node[1][0] == symbol_table["[^"] then
-      node.value = -symbol_value(node[2])
-    else
+    if node[1][0] == symbol_table["["] then
       node.value = symbol_value(node[2])
+    else
+      node.value = -symbol_value(node[2])
     end
   elseif symbol == symbol_table.ClassRanges then
     if #node == 0 then
-      node.value = R "" -- TODO refactor
+      node.value = S""
     else
       node.value = symbol_value(node[1])
     end
@@ -123,7 +123,7 @@ local function visit(node, s)
       local a = symbol_value(node[1])
       local b = symbol_value(node[3])
       if type(a) == "string" and type(b) == "string" then
-        node.value = R(a .. b) + P(symbol_value(node[4])) -- TODO refactor
+        node.value = R(a .. b) + P(symbol_value(node[4]))
       else
         node.value = P(a) + P"-" + P(b) + P(symbol_value(node[4]))
       end
