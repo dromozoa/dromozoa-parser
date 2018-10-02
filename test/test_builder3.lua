@@ -20,7 +20,7 @@ local builder = require "dromozoa.parser.builder"
 local RE = builder.regexp
 
 local result, message = pcall(function ()
-  RE "a{1,0}"
+  RE "a{0,1}b{1,0}"
 end)
 assert(not result)
-assert(message:find "syntax error")
+assert(message:find "<unknown>:1:8: syntax error")

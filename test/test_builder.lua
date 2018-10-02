@@ -15,10 +15,8 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
 local builder = require "dromozoa.parser.builder"
 
-local P = builder.pattern
 local R = builder.range
 local S = builder.set
 local _ = builder()
@@ -47,6 +45,4 @@ _"E"
   :_ "integer"
 
 local lexer, grammar = _:build()
-
-print(dumper.encode(grammar, { pretty = true, stable = true }))
-_.lexers[1].automaton:write_graph "test-dfa.svg"
+lexer[1].automaton:write_graph "test.svg"
