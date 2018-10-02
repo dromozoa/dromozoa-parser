@@ -17,9 +17,15 @@
 
 local utf8 = require "dromozoa.utf8"
 local decode_surrogate_pair = require "dromozoa.utf16.decode_surrogate_pair"
+local dump = require "dromozoa.parser.dump"
 local error_message = require "dromozoa.parser.error_message"
 
-local compile = require "dromozoa.parser.lexer.compile"
+local function compile(self, out)
+  out:write "local lexer = require \"dromozoa.parser.lexer\"\n"
+  local root = dump(out, self)
+  out:write("return function () return lexer(", root, ") end\n")
+  return out
+end
 
 local function range(ri, rj, i, j)
   if i > 0 then
