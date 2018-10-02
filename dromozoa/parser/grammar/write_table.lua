@@ -18,7 +18,9 @@
 local element = require "dromozoa.dom.element"
 local html5_document = require "dromozoa.dom.html5_document"
 
-local style = element "style" { [[
+local _ = element
+
+local style = _"style" { [[
 table {
   border-collapse: collapse;
 }
@@ -29,11 +31,11 @@ td {
 }
 ]]}
 
-local head = element "head" {
-  element "meta" {
+local head = _"head" {
+  _"meta" {
     charset = "UTF-8";
   };
-  element "title" {
+  _"title" {
     "table";
   };
   style;
@@ -49,70 +51,64 @@ return function (self, out, data)
   local actions = data.actions
   local gotos = data.gotos
 
-  local table = element "table" {
-    element "tr" {
-      element "td" { rowspan = 2, "STATE" };
-      element "td" { colspan = max_terminal_symbol, "ACTION" };
-      element "td" { colspan = max_nonterminal_symbol - min_nonterminal_symbol, "GOTO" };
+  local table = _"table" {
+    _"tr" {
+      _"td" { rowspan = 2, "STATE" };
+      _"td" { colspan = max_terminal_symbol, "ACTION" };
+      _"td" { colspan = max_nonterminal_symbol - min_nonterminal_symbol, "GOTO" };
     }
   }
 
-  local tr = element "tr" {}
-  table[#table + 1] = tr
-  for i = 2, min_nonterminal_symbol do
-    if i == min_nonterminal_symbol then
-      i = 1
-    end
-    tr[#tr + 1] = element "td" { symbol_names[i] }
+  local tr = _"tr" {}
+  for i = 2, min_nonterminal_symbol - 1 do
+    tr[#tr + 1] = _"td" { symbol_names[i] }
   end
+  tr[#tr + 1] = _"td" { symbol_names[1] }
   for i = min_nonterminal_symbol + 1, max_nonterminal_symbol do
-    tr[#tr + 1] = element "td" { symbol_names[i] }
+    tr[#tr + 1] = _"td" { symbol_names[i] }
   end
+  table[#table + 1] = tr
 
   for i = 1, max_state do
-    local tr = element "tr" {
-      element "td" { i - 1 };
+    local tr = _"tr" {
+      _"td" { i - 1 };
     }
-    table[#table + 1] = tr
+
     local t = actions[i]
     for j = 2, min_nonterminal_symbol do
-      if j == min_nonterminal_symbol then
-        j = 1
-      end
-      local td = element "td" {}
-      tr[#tr + 1] = td
-      if t then
-        local action = t[j]
-        if action then
-          if action <= max_state then
-            td[1] = "s" .. (action - 1)
+      local data
+      local action = j == min_nonterminal_symbol and t[1] or t[j]
+      if action then
+        if action <= max_state then
+          data = "s" .. action - 1
+        else
+          local reduce = action - max_state
+          if reduce == 1 then
+            data = "acc"
           else
-            local reduce = action - max_state
-            if reduce == 1 then
-              td[1] = "acc"
-            else
-              td[1] = "r" .. (reduce - 1)
-            end
+            data = "r" .. reduce - 1
           end
         end
       end
+      tr[#tr + 1] = _"td" { data }
     end
+
     local t = gotos[i]
     for j = min_nonterminal_symbol + 1, max_nonterminal_symbol do
-      local td = element "td" {}
-      tr[#tr + 1] = td
-      if t then
-        local action = t[j - max_terminal_symbol]
-        if action then
-          td[1] = action - 1
-        end
+      local data
+      local action = t[j - max_terminal_symbol]
+      if action then
+        data = action - 1
       end
+      tr[#tr + 1] = _"td" { data }
     end
+
+    table[#table + 1] = tr
   end
 
-  local doc = html5_document(element "html" {
+  local doc = html5_document(_"html" {
     head;
-    element "body" { table };
+    _"body" { table };
   })
 
   doc:serialize(out)
