@@ -28,15 +28,9 @@ local class = {
   pattern = pattern;
   range = pattern.range;
   set = pattern.set;
+  regexp = regexp;
 }
 local metatable = { __index = class }
-class.metatable = metatable
-
-regexp.super = class
-
-function class.regexp(that)
-  return regexp.parse(that)
-end
 
 function class:lexer(name)
   return self:regexp_lexer(name)

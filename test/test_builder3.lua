@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,26 +15,12 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local builder = require "dromozoa.parser.builder"
 
-function metatable:__call(s, file)
-  local terminal_nodes, message = self.lexer(s, file)
-  if not terminal_nodes then
-    return nil, message
-  end
-  local accepted_node, message = self.parser(terminal_nodes, s, file)
-  if not accepted_node then
-    return nil, message
-  end
-  return accepted_node
-end
+local RE = builder.regexp
 
-return setmetatable(class, {
-  __call = function (_, lexer, parser)
-    return setmetatable({ lexer = lexer, parser = parser }, metatable)
-  end;
-})
+local result, message = pcall(function ()
+  RE "a{1,0}"
+end)
+assert(not result)
+assert(message:find "syntax error")
