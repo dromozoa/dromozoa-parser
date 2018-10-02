@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local encode_string = require "dromozoa.parser.dumper.encode_string"
-local reference = require "dromozoa.parser.dumper.reference"
+local reference = require "dromozoa.parser.reference"
 
 local reserved_words = {
   ["and"] = true;
