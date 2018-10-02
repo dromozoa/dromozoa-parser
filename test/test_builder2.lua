@@ -28,5 +28,3 @@ assert(x[1] == 6)
 local x = S"b" - P"abc"
 print(dumper.encode(x))
 assert(x[1] == 6)
-
-
