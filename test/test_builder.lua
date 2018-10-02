@@ -22,14 +22,14 @@ local S = builder.set
 local _ = builder()
 
 _:lexer()
-  :_(S" \t\n\v\f\r"^"+") :skip()
-  :_(R"09"^"+") :as "integer"
-  :_"*"
-  :_"/"
-  :_"+"
-  :_"-"
-  :_"("
-  :_")"
+  :_ (S" \t\n\v\f\r"^"+") :skip()
+  :_ (R"09"^"+") :as "integer"
+  :_ "*"
+  :_ "/"
+  :_ "+"
+  :_ "-"
+  :_ "("
+  :_ ")"
 
 _ :left "+" "-"
   :left "*" "/"

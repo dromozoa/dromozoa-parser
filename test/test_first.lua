@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -15,40 +15,42 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local dumper = require "dromozoa.commons.dumper"
-local equal = require "dromozoa.commons.equal"
 local builder = require "dromozoa.parser.builder"
+
+-- P.222 Example 4.30
 
 local _ = builder()
 
 _:lexer()
-  :_"id"
-  :_"+"
-  :_"*"
-  :_"("
-  :_")"
+  :_ "id"
+  :_ "+"
+  :_ "*"
+  :_ "("
+  :_ ")"
 
 _"E"
   :_ "T" "E'"
+
 _"E'"
   :_ "+" "T" "E'"
   :_ ()
+
 _"T"
   :_ "F" "T'"
+
 _"T'"
   :_ "*" "F" "T'"
   :_ ()
+
 _"F"
   :_ "(" "E" ")"
   :_ "id"
 
 local lexer, grammar = _:build()
-
-print(dumper.encode(grammar, { pretty = true, stable = true }))
+local symbol_table = _.symbol_table
 
 local function test(name, data)
-  local first = grammar:first_symbol(_.symbol_table[name])
-  print(dumper.encode(first, { stable = true }))
+  local first = grammar:first_symbol(symbol_table[name])
   local expected = {}
   for i = 1, #data do
     local item = data[i]
@@ -58,7 +60,12 @@ local function test(name, data)
       expected[item] = true
     end
   end
-  assert(equal(first, expected))
+  for k, v in pairs(first) do
+    assert(expected[k])
+  end
+  for k, v in pairs(expected) do
+    assert(first[k])
+  end
 end
 
 local epsilon = 0
