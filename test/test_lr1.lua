@@ -17,10 +17,11 @@
 
 local builder = require "dromozoa.parser.builder"
 
+-- P.262 Figure 4.41
+-- P.266 Figure 4.42
+-- P.269 Figure 4.43
+
 local _ = builder()
-local P = builder.pattern
-local R = builder.range
-local S = builder.set
 
 local mode = ...
 
@@ -44,10 +45,8 @@ else
   set_of_items, transitions = grammar:lr1_items()
 end
 grammar:write_set_of_items(io.stdout, set_of_items)
--- P.262 Figure 4.41
 grammar:write_graph("test-graph.svg", set_of_items, transitions)
 
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
--- P.266 Figure 4.42 or P.269 Figure 4.43
-grammar:write_table("test.html", data)
-grammar:write_conflicts(io.stdout, conflicts, true)
+grammar:write_table("test-table.html", data)
+grammar:write_conflicts(io.stderr, conflicts, true)
