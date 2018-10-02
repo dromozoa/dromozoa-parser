@@ -15,8 +15,27 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local encode_string = require "dromozoa.parser.dumper.encode_string"
 local reference = require "dromozoa.parser.reference"
+
+local char_table = {
+  ["\a"] = [[\a]];
+  ["\b"] = [[\b]];
+  ["\f"] = [[\f]];
+  ["\n"] = [[\n]];
+  ["\r"] = [[\r]];
+  ["\t"] = [[\t]];
+  ["\v"] = [[\v]];
+  ["\\"] = [[\\]]; -- 92
+  ["\""] = [[\"]]; -- 34
+  ["\'"] = [[\']]; -- 39
+}
+
+for byte = 0x00, 0xFF do
+  local char = string.char(byte)
+  if not char_table[char] then
+    char_table[char] = ([[\%03d]]):format(byte)
+  end
+end
 
 local reserved_words = {
   ["and"] = true;
@@ -62,6 +81,10 @@ local function keys(value)
   table.sort(number_keys)
   table.sort(string_keys)
   return number_keys, string_keys, positive_count
+end
+
+local function encode_string(s)
+  return "\"" .. s:gsub("[%z\1-\31\34\92\127-\255]", char_table) .. "\""
 end
 
 local function encode(value)
