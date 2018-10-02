@@ -17,7 +17,6 @@
 
 local compile = require "dromozoa.parser.parser.compile"
 local error_message = require "dromozoa.parser.error_message"
-local write_graphviz = require "dromozoa.parser.parser.write_graphviz"
 
 local class = {}
 local metatable = { __index = class }
@@ -27,14 +26,6 @@ function class:compile(out)
     compile(self, assert(io.open(out, "w"))):close()
   else
     return compile(self, out)
-  end
-end
-
-function class:write_graphviz(out, tree)
-  if type(out) == "string" then
-    write_graphviz(self, assert(io.open(out, "w")), tree):close()
-  else
-    return write_graphviz(self, out, tree)
   end
 end
 
