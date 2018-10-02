@@ -21,6 +21,7 @@ local write_graphviz = require "dromozoa.parser.grammar.write_graphviz"
 local write_productions = require "dromozoa.parser.grammar.write_productions"
 local write_set_of_items = require "dromozoa.parser.grammar.write_set_of_items"
 local write_table = require "dromozoa.parser.grammar.write_table"
+local write_svg = require "dromozoa.parser.grammar.write_svg"
 
 local function equal(items1, items2)
   local n = #items1
@@ -783,6 +784,14 @@ function class:write_conflicts(out, conflicts, verbose)
     return write_conflicts(self, assert(io.open(out, "w")), conflicts, verbose):close()
   else
     return write_conflicts(self, out, conflicts, verbose)
+  end
+end
+
+function class:write_svg(out, set_of_items, transitions)
+  if type(out) == "string" then
+    write_svg(self, assert(io.open(out, "w")), set_of_items, transitions):close()
+  else
+    return write_svg(self, out, set_of_items, transitions)
   end
 end
 
