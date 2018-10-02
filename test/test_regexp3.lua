@@ -20,7 +20,5 @@ local regexp = require "dromozoa.parser.regexp"
 
 local RE = builder.regexp
 
-local _ = builder()
-
 local p = [[/*]] * (RE[[.*]] - RE[[.*\*\/.*]]) * [[*/]]
 regexp(p):nfa_to_dfa():minimize():write_graph "test-dfa.svg"

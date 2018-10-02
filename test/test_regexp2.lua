@@ -18,12 +18,9 @@
 local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
-local P = builder.pattern
-local R = builder.range
 local S = builder.set
 
-local p = S "abc" + S("def")
-local nfa = regexp(p)
+local nfa = regexp(S"abc" + S"def")
 nfa:write_graph "test-nfa.svg"
 local dfa = nfa:nfa_to_dfa():minimize()
 dfa:write_graph "test-dfa.svg"

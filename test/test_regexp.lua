@@ -19,21 +19,20 @@ local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
 local P = builder.pattern
-local R = builder.range
 local S = builder.set
 
 local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
 regexp(p):write_graph "test-nfa.svg"
-regexp(p):nfa_to_dfa():write_graph "test1.svg"
-regexp(p):nfa_to_dfa():minimize():write_graph "test2.svg"
+regexp(p):nfa_to_dfa():write_graph "test-dfa1.svg"
+regexp(p):nfa_to_dfa():minimize():write_graph "test-dfa2.svg"
 
 local p = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
-regexp(p):nfa_to_dfa():minimize():write_graph "test3.svg"
+regexp(p):nfa_to_dfa():minimize():write_graph "test-dfa3.svg"
 
-local handle = assert(io.open "test2.svg")
+local handle = assert(io.open "test-dfa2.svg")
 local test2 = handle:read "*a"
 handle:close()
-local handle = assert(io.open "test3.svg")
+local handle = assert(io.open "test-dfa3.svg")
 local test3 = handle:read "*a"
 handle:close()
 assert(test2 == test3)
