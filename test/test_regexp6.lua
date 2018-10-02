@@ -19,4 +19,4 @@ local builder = require "dromozoa.parser.builder"
 local regexp = require "dromozoa.parser.regexp"
 
 local P = builder.pattern
-regexp(P"x"^3 + P"y"^"+"):nfa_to_dfa():minimize():write_svg "test.svg"
+regexp(P"x"^3 + P"y"^"+"):nfa_to_dfa():minimize():write_graph "test.svg"

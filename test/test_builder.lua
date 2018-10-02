@@ -49,4 +49,4 @@ _"E"
 local lexer, grammar = _:build()
 
 print(dumper.encode(grammar, { pretty = true, stable = true }))
-_.lexers[1].automaton:write_svg "test-dfa.svg"
+_.lexers[1].automaton:write_graph "test-dfa.svg"

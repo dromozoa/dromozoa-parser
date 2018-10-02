@@ -44,4 +44,4 @@ local lexer, grammar = _:build()
 local set_of_items, transitions = grammar:lr0_items()
 grammar:write_set_of_items(io.stdout, set_of_items)
 -- P.244 Figure 4.31
-grammar:write_svg("test-graph.svg", set_of_items, transitions)
+grammar:write_graph("test-graph.svg", set_of_items, transitions)

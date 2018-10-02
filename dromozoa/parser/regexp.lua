@@ -21,7 +21,7 @@ local minimize = require "dromozoa.parser.regexp.minimize"
 local nfa_to_dfa = require "dromozoa.parser.regexp.nfa_to_dfa"
 local tree_to_nfa = require "dromozoa.parser.regexp.tree_to_nfa"
 local union = require "dromozoa.parser.regexp.union"
-local write_svg = require "dromozoa.parser.regexp.write_svg"
+local write_graph = require "dromozoa.parser.regexp.write_graph"
 
 local class = {}
 local metatable = { __index = class }
@@ -46,11 +46,11 @@ function class:difference(that)
   return setmetatable(difference(self, that), metatable)
 end
 
-function class:write_svg(out)
+function class:write_graph(out)
   if type(out) == "string" then
-    write_svg(self, assert(io.open(out, "w"))):close()
+    write_graph(self, assert(io.open(out, "w"))):close()
   else
-    return write_svg(self, out)
+    return write_graph(self, out)
   end
 end
 

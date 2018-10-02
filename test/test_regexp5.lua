@@ -28,13 +28,13 @@ for k, v in pairs(re.accept_states) do
     re.accept_states[k] = nil
   end
 end
-re:minimize():write_svg "test-re.svg"
+re:minimize():write_graph "test-re.svg"
 
 local re3 = regexp(RE[[--(([^\n\[][^\n]*|\[([^\n\[=][^\n]*|=*([^\n\[=][^\n]*)?)?)?)?\n]])
-re3:nfa_to_dfa():minimize():write_svg "test-re3.svg"
+re3:nfa_to_dfa():minimize():write_graph "test-re3.svg"
 
 local re4 = regexp(RE[[--[^\n]*\n]] - RE[=[--\[=*\[[^\n]*\n]=])
-re4:nfa_to_dfa():minimize():write_svg "test-re4.svg"
+re4:nfa_to_dfa():minimize():write_graph "test-re4.svg"
 
 local re5 = regexp("--" * (RE[[[^\n]*]] - RE[[\[=*\[.*]]) * "\n")
-re5:nfa_to_dfa():minimize():write_svg "test-re5.svg"
+re5:nfa_to_dfa():minimize():write_graph "test-re5.svg"

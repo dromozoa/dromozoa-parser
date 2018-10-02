@@ -45,7 +45,7 @@ else
 end
 grammar:write_set_of_items(io.stdout, set_of_items)
 -- P.262 Figure 4.41
-grammar:write_svg("test-graph.svg", set_of_items, transitions)
+grammar:write_graph("test-graph.svg", set_of_items, transitions)
 
 local data, conflicts = grammar:lr1_construct_table(set_of_items, transitions)
 -- P.266 Figure 4.42 or P.269 Figure 4.43

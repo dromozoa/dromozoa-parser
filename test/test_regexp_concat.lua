@@ -25,19 +25,19 @@ local S = builder.set
 
 local a1 = regexp(P"abc"^"+", 1)
 local a2 = regexp(P"def"^"?", 2)
-a1:write_svg "test-a1.svg"
-a2:write_svg "test-a2.svg"
+a1:write_graph "test-a1.svg"
+a2:write_graph "test-a2.svg"
 
 a1:concat(a2)
-a1:write_svg "test-concat.svg"
+a1:write_graph "test-concat.svg"
 
 local dfa1 = a1:nfa_to_dfa()
-dfa1:write_svg "test-dfa1.svg"
+dfa1:write_graph "test-dfa1.svg"
 
 local dfa2 = dfa1:minimize()
-dfa2:write_svg "test-dfa2.svg"
+dfa2:write_graph "test-dfa2.svg"
 
 local dfa3 = regexp(P"abc"^"+" * P"def"^"?", 2):nfa_to_dfa():minimize()
-dfa3:write_svg "test-dfa3.svg"
+dfa3:write_graph "test-dfa3.svg"
 
 assert(equal(dfa2, dfa3))

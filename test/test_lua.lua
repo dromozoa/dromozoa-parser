@@ -407,7 +407,7 @@ do
 end
 
 grammar:write_set_of_items("test-set-of-items.txt", set_of_items)
--- grammar:write_svg("test-graph.svg", set_of_items, transitions)
+-- grammar:write_graph("test-graph.svg", set_of_items, transitions)
 grammar:write_table("test.html", parser)
 grammar:write_conflicts(io.stdout, conflicts)
 

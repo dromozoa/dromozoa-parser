@@ -40,7 +40,7 @@ local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
 -- local p = (P"if" + P"then" + P"elseif" + P"else" + P"end")^"+"
 
 local nfa = regexp(p)
-nfa:write_svg "test-nfa.svg"
+nfa:write_graph "test-nfa.svg"
 
 local dfa = nfa:nfa_to_dfa():minimize()
-dfa:write_svg "test-dfa.svg"
+dfa:write_graph "test-dfa.svg"

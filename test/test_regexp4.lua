@@ -31,5 +31,5 @@ local p2 = RE[[\[=*\[\n]]
 local p1 = (R"09"^"+" * (P"." * R"09"^"*")^"?" + P"." * R"09"^"+") * (S"eE" * S"+-"^"?" * R"09"^"+")^"?"
 local p2 = RE[[(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?]]
 
-regexp(p1):nfa_to_dfa():minimize():write_svg "test-dfa1.svg"
-regexp(p2):nfa_to_dfa():minimize():write_svg "test-dfa2.svg"
+regexp(p1):nfa_to_dfa():minimize():write_graph "test-dfa1.svg"
+regexp(p2):nfa_to_dfa():minimize():write_graph "test-dfa2.svg"

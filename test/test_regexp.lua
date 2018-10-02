@@ -25,15 +25,15 @@ local S = builder.set
 
 local p = P"/*" * (P(1)^"*" - P(1)^"*" * P"*/" * P(1)^"*") * P"*/"
 local nfa = regexp(p)
-nfa:write_svg "test-nfa.svg"
+nfa:write_graph "test-nfa.svg"
 
 local dfa1 = nfa:nfa_to_dfa()
-dfa1:write_svg "test-dfa1.svg"
+dfa1:write_graph "test-dfa1.svg"
 local dfa2 = dfa1:minimize()
-dfa2:write_svg "test-dfa2.svg"
+dfa2:write_graph "test-dfa2.svg"
 
 local p2 = P"/*" * (P(1) - P"*")^"*" * P"*"^"+" * ((P(1) - S"*/") * (P(1) - P"*")^"*" * P"*"^"+")^"*" * P"/"
 local dfa3 = regexp(p2):nfa_to_dfa():minimize()
-dfa3:write_svg "test-dfa3.svg"
+dfa3:write_graph "test-dfa3.svg"
 
 assert(equal(dfa2, dfa3))
