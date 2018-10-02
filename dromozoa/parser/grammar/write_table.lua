@@ -15,7 +15,29 @@
 -- You should have received a copy of the GNU General Public License
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local escape_html = require "dromozoa.parser.escape_html"
+local element = require "dromozoa.dom.element"
+local html5_document = require "dromozoa.dom.html5_document"
+
+local style = element "style" { [[
+table {
+  border-collapse: collapse;
+}
+
+td {
+  border: 1px solid #CCC;
+  text-align: center;
+}
+]]}
+
+local head = element "head" {
+  element "meta" {
+    charset = "UTF-8";
+  };
+  element "title" {
+    "table";
+  };
+  style;
+}
 
 return function (self, out, data)
   local symbol_names = self.symbol_names
@@ -27,92 +49,73 @@ return function (self, out, data)
   local actions = data.actions
   local gotos = data.gotos
 
-  out:write([[
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>table</title>
-    <style>
-      table {
-        border-collapse: collapse;
-      }
-      td {
-        border: 1px solid #ccc;
-        text-align: center;
-      }
-    </style>
-  </head>
-  <body>
-    <table>
-]])
+  local table = element "table" {
+    element "tr" {
+      element "td" { rowspan = 2, "STATE" };
+      element "td" { colspan = max_terminal_symbol, "ACTION" };
+      element "td" { colspan = max_nonterminal_symbol - min_nonterminal_symbol, "GOTO" };
+    }
+  }
 
-  out:write([[
-      <tr>
-        <td rowspan="2">STATE</td>
-        <td colspan="]], max_terminal_symbol, [[">ACTION</td>
-        <td colspan="]], max_nonterminal_symbol - min_nonterminal_symbol, [[">GOTO</td>
-      </tr>
-]])
-
-  out:write('      <tr>\n')
+  local tr = element "tr" {}
+  table[#table + 1] = tr
   for i = 2, min_nonterminal_symbol do
     if i == min_nonterminal_symbol then
       i = 1
     end
-    out:write('        <td>', escape_html(symbol_names[i]), '</td>\n')
+    tr[#tr + 1] = element "td" { symbol_names[i] }
   end
   for i = min_nonterminal_symbol + 1, max_nonterminal_symbol do
-    out:write('        <td>', escape_html(symbol_names[i]), '</td>\n')
+    tr[#tr + 1] = element "td" { symbol_names[i] }
   end
-  out:write('      </tr>\n')
 
   for i = 1, max_state do
-    out:write([[
-      <tr>
-        <td>]], i - 1, [[</td>
-]])
+    local tr = element "tr" {
+      element "td" { i - 1 };
+    }
+    table[#table + 1] = tr
+    local t = actions[i]
     for j = 2, min_nonterminal_symbol do
       if j == min_nonterminal_symbol then
         j = 1
       end
-      out:write('        <td>')
-      local t = actions[i]
+      local td = element "td" {}
+      tr[#tr + 1] = td
       if t then
         local action = t[j]
         if action then
           if action <= max_state then
-            out:write('s', action - 1)
+            td[1] = "s" .. (action - 1)
           else
             local reduce = action - max_state
             if reduce == 1 then
-              out:write "acc"
+              td[1] = "acc"
             else
-              out:write("r", reduce - 1)
+              td[1] = "r" .. (reduce - 1)
             end
           end
         end
       end
-      out:write('</td>\n')
     end
+    local t = gotos[i]
     for j = min_nonterminal_symbol + 1, max_nonterminal_symbol do
-      out:write('        <td>')
-      local t = gotos[i]
+      local td = element "td" {}
+      tr[#tr + 1] = td
       if t then
         local action = t[j - max_terminal_symbol]
         if action then
-          out:write(action - 1)
+          td[1] = action - 1
         end
       end
-      out:write('</td>\n')
     end
-    out:write('      </tr>\n')
   end
 
-  out:write([[
-    </table>
-  </body>
-</html>
-]])
+  local doc = html5_document(element "html" {
+    head;
+    element "body" { table };
+  })
+
+  doc:serialize(out)
+  out:write "\n"
   return out
 end
