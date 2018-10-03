@@ -42,10 +42,7 @@ local function range(ri, rj, i, j)
 end
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local metatable = { __index = class }
 
 function class:compile(out)
   if type(out) == "string" then
