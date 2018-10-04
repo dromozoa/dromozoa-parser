@@ -1,4 +1,144 @@
-local parser = require "dromozoa.parser.parser"
+local execute = (function ()
+-- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
+--
+-- This file is part of dromozoa-parser.
+--
+-- dromozoa-parser is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- dromozoa-parser is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- Under Section 7 of GPL version 3, you are granted additional
+-- permissions described in the GCC Runtime Library Exception, version
+-- 3.1, as published by the Free Software Foundation.
+--
+-- You should have received a copy of the GNU General Public License
+-- and a copy of the GCC Runtime Library Exception along with
+-- dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
+
+return function (self, terminal_nodes)
+  local max_state = self.max_state
+  local max_terminal_symbol = self.max_terminal_symbol
+  local actions = self.actions
+  local gotos = self.gotos
+  local heads = self.heads
+  local sizes = self.sizes
+  local reduce_to_semantic_action = self.reduce_to_semantic_action
+  local reduce_to_attribute_actions = self.reduce_to_attribute_actions
+  local stack = { 1 } -- start state
+  local nodes = {}
+
+  for i = 1, #terminal_nodes do
+    local node = terminal_nodes[i]
+    local symbol = node[0]
+    while true do
+      local n1 = #stack
+      local n2 = #nodes
+      local state = stack[n1]
+
+      local action
+      if symbol <= max_terminal_symbol then
+        action = actions[state][symbol]
+      else
+        action = gotos[state][symbol - max_terminal_symbol]
+      end
+
+      if action then
+        if action <= max_state then -- shift
+          stack[n1 + 1] = action
+          nodes[n2 + 1] = node
+          break
+        else
+          local head = heads[action]
+          if head then -- reduce
+            local n = sizes[action]
+            for j = n1 - n + 1, n1 do
+              stack[j] = nil
+            end
+
+            local reduced_nodes = {}
+            for j = n2 - n + 1, n2 do
+              reduced_nodes[#reduced_nodes + 1] = nodes[j]
+              nodes[j] = nil
+            end
+
+            local node
+            local semantic_action = reduce_to_semantic_action[action]
+            if semantic_action then
+              local code = semantic_action[1]
+              if code == 1 then -- collapse node
+                local index = semantic_action[2]
+                local indices = semantic_action[3]
+                if index > 0 then
+                  node = reduced_nodes[index]
+                else
+                  node = { [0] = -index }
+                end
+                for j = 1, #indices do
+                  local index = indices[j]
+                  if index > 0 then
+                    node[#node + 1] = reduced_nodes[index]
+                  else
+                    node[j] = { [0] = -index }
+                  end
+                end
+              elseif code == 2 then -- create node
+                local indices = semantic_action[2]
+                node = { [0] = head }
+                for j = 1, #indices do
+                  local index = indices[j]
+                  if index > 0 then
+                    node[j] = reduced_nodes[index]
+                  else
+                    node[j] = { [0] = -index }
+                  end
+                end
+              end
+            else
+              node = { [0] = head }
+              for j = 1, n do
+                node[j] = reduced_nodes[j]
+              end
+            end
+
+            local attribute_actions = reduce_to_attribute_actions[action]
+            if attribute_actions then
+              for i = 1, #attribute_actions do
+                local attribute_action = attribute_actions[i]
+                local code = attribute_action[1]
+                if code == 1 then -- set attribute
+                  node[attribute_action[2]] = attribute_action[3]
+                elseif code == 2 then -- set child attribute
+                  reduced_nodes[attribute_action[2]][attribute_action[3]] = attribute_action[4]
+                end
+              end
+            end
+
+            local n1 = #stack
+            local n2 = #nodes
+            local state = stack[n1]
+            stack[n1 + 1] = gotos[state][head - max_terminal_symbol]
+            nodes[n2 + 1] = node
+          else -- accept
+            stack[n1] = nil
+            local accepted_node = nodes[n2]
+            nodes[n2] = nil
+            return accepted_node
+          end
+        end
+      else
+        return nil, "parser error", node.i
+      end
+    end
+  end
+end
+end)()
+local metatable = { __call = execute }
 local _ = {}
 _[1] = {nil,13,18,19,20,21,22,23,24,25,26,27,28,nil,nil,nil,nil,nil,7,8,11,12,nil,16,17}
 _[2] = {72}
@@ -89,4 +229,5 @@ _[86] = {[73]=1,[74]=1,[75]=3,[76]=1,[77]=2,[78]=1,[79]=2,[80]=1,[81]=1,[82]=1,[
 _[87] = {"$","DecimalEscape","ControlEscape","ControlLetter","HexEscapeSequence","RegExpUnicodeEscapeSequence","IdentityEscape","\\d","\\D","\\s","\\S","\\w","\\W","|","*","+","?","{","PatternCharacter",".","(","(?:",")","[","[^","DecimalDigits",",","}","ClassCharacter","\\b","\\-","-","]","Pattern'","Pattern","Disjunction","Alternative","Term","Quantifier","Atom","AtomEscape","CharacterEscape","CharacterClassEscape","CharacterClass","ClassRanges","NonemptyClassRanges","NonemptyClassRangesNoDash","ClassAtom","ClassAtomNoDash","ClassEscape"}
 _[88] = {["("]=21,["(?:"]=22,[")"]=23,["*"]=15,["+"]=16,[","]=27,["-"]=32,["."]=20,["?"]=17,Alternative=37,Atom=40,AtomEscape=41,CharacterClass=44,CharacterClassEscape=43,CharacterEscape=42,ClassAtom=48,ClassAtomNoDash=49,ClassCharacter=29,ClassEscape=50,ClassRanges=45,ControlEscape=3,ControlLetter=4,DecimalDigits=26,DecimalEscape=2,Disjunction=36,HexEscapeSequence=5,IdentityEscape=7,NonemptyClassRanges=46,NonemptyClassRangesNoDash=47,Pattern=35,PatternCharacter=19,Quantifier=39,RegExpUnicodeEscapeSequence=6,Term=38,["["]=24,["[^"]=25,["\\-"]=31,["\\D"]=9,["\\S"]=11,["\\W"]=13,["\\b"]=30,["\\d"]=8,["\\s"]=10,["\\w"]=12,["]"]=33,["{"]=18,["|"]=14,["}"]=28}
 _[89] = {actions=_[66],gotos=_[82],heads=_[83],max_state=71,max_terminal_symbol=33,reduce_to_attribute_actions=_[68],reduce_to_semantic_action=_[85],sizes=_[86],symbol_names=_[87],symbol_table=_[88]}
-return function () return parser(_[89]) end
+local root = setmetatable(_[89], metatable)
+return function() return root end
