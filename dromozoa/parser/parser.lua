@@ -16,7 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dump = require "dromozoa.parser.dump"
-local runtime = require "dromozoa.parser.parser.runtime"
+local execute = require "dromozoa.parser.parser.execute"
 
 local function compile(self, out)
   out:write("local parser = require \"dromozoa.parser.parser\"\n")
@@ -28,7 +28,7 @@ end
 local class = {}
 local metatable = {
   __index = class;
-  __call = runtime;
+  __call = execute;
 }
 
 function class:compile(out)
