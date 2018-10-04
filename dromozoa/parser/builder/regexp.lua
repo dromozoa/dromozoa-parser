@@ -132,9 +132,9 @@ local function visit(node, s)
 end
 
 return function (s)
-  local terminal_nodes, message = lexer(s)
+  local terminal_nodes, message, i = lexer(s)
   if not terminal_nodes then
-    error(message)
+    error(error_message(message, s, i))
   end
   local accepted_node, message, i = parser(terminal_nodes, s)
   if not accepted_node then

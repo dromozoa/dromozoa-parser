@@ -16,7 +16,6 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local dump = require "dromozoa.parser.dump"
-local error_message = require "dromozoa.parser.error_message"
 
 local function compile(self, out)
   out:write("local parser = require \"dromozoa.parser.parser\"\n")

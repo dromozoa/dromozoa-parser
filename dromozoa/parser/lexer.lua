@@ -18,7 +18,6 @@
 local utf8 = require "dromozoa.utf8"
 local decode_surrogate_pair = require "dromozoa.utf16.decode_surrogate_pair"
 local dump = require "dromozoa.parser.dump"
-local error_message = require "dromozoa.parser.error_message"
 
 local function compile(self, out)
   out:write "local lexer = require \"dromozoa.parser.lexer\"\n"
@@ -52,7 +51,7 @@ function class:compile(out)
   end
 end
 
-function metatable:__call(s, file)
+function metatable:__call(s)
   local init = 1
   local n = #s
   local terminal_nodes = {}
@@ -154,12 +153,12 @@ function metatable:__call(s, file)
 
       accept = automaton.accept_states[state]
       if not accept then
-        return nil, error_message("lexer error", s, init, file)
+        return nil, "lexer error", init
       end
     else -- search lexer
       local i, j = s:find(self.hold, init, true)
       if not i then
-        return nil, error_message("lexer error", s, init, file)
+        return nil, "lexer error", init
       end
       if init == i then
         position = j + 1
@@ -266,7 +265,7 @@ function metatable:__call(s, file)
     }
     return terminal_nodes
   else
-    return nil, error_message("lexer error", s, init, file)
+    return nil, "lexer error", init
   end
 end
 
