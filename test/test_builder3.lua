@@ -23,4 +23,19 @@ local result, message = pcall(function ()
   RE "a{0,1}b{1,0}"
 end)
 assert(not result)
+print(message)
 assert(message:find "<unknown>:1:8: syntax error")
+
+local result, message = pcall(function ()
+  RE "aaaa["
+end)
+assert(not result)
+print(message)
+assert(message:find "<unknown>:eof: lexer error")
+
+local result, message = pcall(function ()
+  RE "aaaa("
+end)
+assert(not result)
+print(message)
+assert(message:find "<unknown>:eof: parser error")

@@ -36,7 +36,7 @@ function class:compile(out)
   end
 end
 
-function metatable:__call(terminal_nodes, s, file)
+function metatable:__call(terminal_nodes)
   local max_state = self.max_state
   local max_terminal_symbol = self.max_terminal_symbol
   local actions = self.actions
@@ -147,7 +147,7 @@ function metatable:__call(terminal_nodes, s, file)
           end
         end
       else
-        return nil, error_message("parser error", s, node.i, file)
+        return nil, "parser error", node.i
       end
     end
   end

@@ -136,9 +136,9 @@ return function (s)
   if not terminal_nodes then
     error(message)
   end
-  local accepted_node, message = parser(terminal_nodes, s)
+  local accepted_node, message, i = parser(terminal_nodes, s)
   if not accepted_node then
-    error(message)
+    error(error_message(message, s, i))
   end
   visit(accepted_node, s)
   return symbol_value(accepted_node)
