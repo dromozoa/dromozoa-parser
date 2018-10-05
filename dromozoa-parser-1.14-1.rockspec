@@ -1,9 +1,9 @@
 rockspec_format = "3.0"
 package = "dromozoa-parser"
-version = "1.13-1"
+version = "1.14-1"
 source = {
-  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.13.tar.gz";
-  file = "dromozoa-parser-1.13.tar.gz";
+  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.14.tar.gz";
+  file = "dromozoa-parser-1.14.tar.gz";
 }
 description = {
   summary = "Parser generator toolkit";
@@ -39,7 +39,13 @@ build = {
     ["dromozoa.parser.grammar.write_set_of_items"] = "dromozoa/parser/grammar/write_set_of_items.lua";
     ["dromozoa.parser.grammar.write_table"] = "dromozoa/parser/grammar/write_table.lua";
     ["dromozoa.parser.lexer"] = "dromozoa/parser/lexer.lua";
+    ["dromozoa.parser.lexer.compile"] = "dromozoa/parser/lexer/compile.lua";
+    ["dromozoa.parser.lexer.execute"] = "dromozoa/parser/lexer/execute.lua";
+    ["dromozoa.parser.lexer.runtime"] = "dromozoa/parser/lexer/runtime.lua";
     ["dromozoa.parser.parser"] = "dromozoa/parser/parser.lua";
+    ["dromozoa.parser.parser.compile"] = "dromozoa/parser/parser/compile.lua";
+    ["dromozoa.parser.parser.execute"] = "dromozoa/parser/parser/execute.lua";
+    ["dromozoa.parser.parser.runtime"] = "dromozoa/parser/parser/runtime.lua";
     ["dromozoa.parser.reference"] = "dromozoa/parser/reference.lua";
     ["dromozoa.parser.regexp"] = "dromozoa/parser/regexp.lua";
     ["dromozoa.parser.regexp.concat"] = "dromozoa/parser/regexp/concat.lua";
