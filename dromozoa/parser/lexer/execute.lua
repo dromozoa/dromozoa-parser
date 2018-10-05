@@ -20,8 +20,60 @@
 -- and a copy of the GCC Runtime Library Exception along with
 -- dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
-local utf8 = require "dromozoa.utf8"
-local decode_surrogate_pair = require "dromozoa.utf16.decode_surrogate_pair"
+local tonumber = tonumber
+local concat = table.concat
+
+local string_char = string.char
+local string_byte = string.byte
+local string_find = string.find
+local string_sub = string.sub
+
+local encode_utf8
+local decode_surrogate_pair
+
+local utf8 = utf8
+if utf8 then
+  encode_utf8 = utf8.char
+else
+  local result, module = pcall(require, "dromozoa.utf8.encode")
+  if result then
+    encode_utf8 = module
+  end
+end
+if not encode_utf8 then
+  encode_utf8 = function (a)
+    if a <= 0x7F then
+      return string_char(a)
+    elseif a <= 0x07FF then
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string_char(a + 0xC0, b + 0x80)
+    elseif a <= 0xFFFF then
+      local c = a % 0x40
+      local a = (a - c) / 0x40
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string_char(a + 0xE0, b + 0x80, c + 0x80)
+    else
+      local d = a % 0x40
+      local a = (a - d) / 0x40
+      local c = a % 0x40
+      local a = (a - c) / 0x40
+      local b = a % 0x40
+      local a = (a - b) / 0x40
+      return string_char(a + 0xF0, b + 0x80, c + 0x80, d + 0x80)
+    end
+  end
+end
+
+local result, module = pcall(require, "dromozoa.utf16.decode_surrogate_pair")
+if result then
+  decode_surrogate_pair = module
+else
+  decode_surrogate_pair = function (a, b)
+    return (a - 0xD800) * 0x0400 + (b - 0xDC00) + 0x010000
+  end
+end
 
 local function range(ri, rj, i, j)
   if i > 0 then
@@ -58,7 +110,7 @@ return function (self, s)
       local state = automaton.start_state
 
       for i = init + 3, n, 4 do
-        local a, b, c, d = s:byte(i - 3, i)
+        local a, b, c, d = string_byte(s, i - 3, i)
         local state1 = transitions[a][state]
         if not state1 then
           position = i - 3
@@ -93,7 +145,7 @@ return function (self, s)
         position = n + 1
         local m = position - (position - init) % 4
         if m < position then
-          local a, b, c = s:byte(m, n)
+          local a, b, c = string_byte(s, m, n)
           if c then
             local state1 = transitions[a][state]
             if not state1 then
@@ -142,7 +194,7 @@ return function (self, s)
         return nil, "lexer error", init
       end
     else -- search lexer
-      local i, j = s:find(self.hold, init, true)
+      local i, j = string_find(s, self.hold, init, true)
       if not i then
         return nil, "lexer error", init
       end
@@ -168,10 +220,10 @@ return function (self, s)
       if code == 1 then -- skip
         skip = true
       elseif code == 2 then -- push
-        buffer[#buffer + 1] = rs:sub(ri, rj)
+        buffer[#buffer + 1] = string_sub(rs, ri, rj)
         skip = true
       elseif code == 3 then -- concat
-        rs = table.concat(buffer)
+        rs = concat(buffer)
         ri = 1
         rj = #rs
         for j = 1, #buffer do
@@ -186,29 +238,29 @@ return function (self, s)
         ri = 1
         rj = #rs
       elseif code == 7 then -- hold
-        self.hold = rs:sub(ri, rj)
+        self.hold = string_sub(rs, ri, rj)
       elseif code == 8 then -- mark
         position_mark = init
       elseif code == 9 then -- substring
         ri, rj = range(ri, rj, action[2], action[3])
       elseif code == 10 then -- convert to integer
-        rv = tonumber(rs:sub(ri, rj), action[2])
+        rv = tonumber(string_sub(rs, ri, rj), action[2])
       elseif code == 11 then -- convert to char
-        rs = string.char(rv)
+        rs = string_char(rv)
         ri = 1
         rj = #rs
       elseif code == 12 then -- join
-        rs = action[2] .. rs:sub(ri, rj) .. action[3]
+        rs = action[2] .. string_sub(rs, ri, rj) .. action[3]
         ri = 1
         rj = #rs
       elseif code == 13 then -- encode utf8
-        rs = utf8.char(tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16))
+        rs = encode_utf8(tonumber(string_sub(rs, range(ri, rj, action[2], action[3])), 16))
         ri = 1
         rj = #rs
       elseif code == 14 then -- encode utf8 (surrogate pair)
-        local code1 = tonumber(rs:sub(range(ri, rj, action[2], action[3])), 16)
-        local code2 = tonumber(rs:sub(range(ri, rj, action[4], action[5])), 16)
-        rs = utf8.char(decode_surrogate_pair(code1, code2))
+        local code1 = tonumber(string_sub(rs, range(ri, rj, action[2], action[3])), 16)
+        local code2 = tonumber(string_sub(rs, range(ri, rj, action[4], action[5])), 16)
+        rs = encode_utf8(decode_surrogate_pair(code1, code2))
         ri = 1
         rj = #rs
       elseif code == 15 then -- add integer
