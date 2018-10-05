@@ -17,9 +17,25 @@
 
 local function build(source, result)
   local handle = assert(io.open(source))
-  local content = handle:read "*a"
-  handle:close()
+  local lines = {}
 
+  local state = 1
+  for line in io.lines(source) do
+    if state == 1 then
+      if line ~= "--" and not line:find "^%-%-[^%]]" then
+        state = 2
+      end
+    elseif state == 2 then
+      if line ~= "" then
+        state = 3
+      end
+    end
+    if state == 3 then
+      lines[#lines + 1] = line
+    end
+  end
+
+  local content = table.concat(lines, "\n")
   local s = ""
   while true do
     if not content:find("]" .. s .. "]", 1, true) then
@@ -30,7 +46,9 @@ local function build(source, result)
 
   local out = assert(io.open(result, "w"))
   out:write("return [", s, "[\n")
-  out:write(content)
+  for i = 1, #lines do
+    out:write(lines[i], "\n")
+  end
   out:write("]", s, "]\n")
   out:close()
 end
