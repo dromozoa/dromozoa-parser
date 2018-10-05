@@ -16,6 +16,7 @@
 -- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local builder = require "dromozoa.parser.builder"
+local error_message = require "dromozoa.parser.error_message"
 
 local P = builder.pattern
 local R = builder.range
@@ -50,6 +51,7 @@ local source = [[
 ]
 ]]
 
-local result, message = lexer(source, file)
+local result, message, i = lexer(source)
 assert(not result)
-assert(message:find "test%.lua:4:4: lexer error")
+print(error_message(message, source, i, "test.txt"))
+assert(error_message(message, source, i, "test.txt") == "test.txt:4:4: lexer error")

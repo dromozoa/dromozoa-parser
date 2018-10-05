@@ -59,10 +59,7 @@ local function construct_map_of_production_ids(productions)
 end
 
 local class = {}
-local metatable = {
-  __index = class;
-}
-class.metatable = metatable
+local metatable = { __index = class }
 
 function class:eliminate_left_recursion()
   local symbol_names = self.symbol_names
