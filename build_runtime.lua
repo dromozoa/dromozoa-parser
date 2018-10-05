@@ -35,4 +35,5 @@ local function build(source, result)
   out:close()
 end
 
+build("dromozoa/parser/lexer/execute.lua", "dromozoa/parser/lexer/runtime.lua")
 build("dromozoa/parser/parser/execute.lua", "dromozoa/parser/parser/runtime.lua")
