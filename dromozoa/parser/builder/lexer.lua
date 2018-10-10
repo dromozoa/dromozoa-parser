@@ -146,4 +146,11 @@ function class:add(value)
   return self
 end
 
+function class:normalize_eol()
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 16 }
+  return self
+end
+
 return class
