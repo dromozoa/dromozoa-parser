@@ -284,7 +284,7 @@ return function (self, s)
       if not position_mark then
         position_mark = init
       end
-      local node = {
+      terminal_nodes[#terminal_nodes + 1] = {
         [0] = lexer.accept_to_symbol[accept];
         p = position_start;
         i = position_mark;
@@ -293,7 +293,6 @@ return function (self, s)
         ri = ri;
         rj = rj;
       }
-      terminal_nodes[#terminal_nodes + 1] = node
       position_start = position
       position_mark = nil
     end
