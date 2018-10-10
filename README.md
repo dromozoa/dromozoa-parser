@@ -54,6 +54,7 @@ Parser generator toolkit.
 |   13 | `:utf8(i, j=-1)`          |         2 |      | encode utf8                  |
 |   14 | `:utf8(i, j=-1, k, l=-1)` |         4 |      | encode utf8 (surrogate pair) |
 |   15 | `:add(value)`             |         1 |      | add integer                  |
+|   16 | `:normalize_eol()`        |         0 |      | normalize end-of-line        |
 
 ## Parser
 

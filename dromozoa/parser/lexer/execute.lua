@@ -23,9 +23,10 @@
 local tonumber = tonumber
 local concat = table.concat
 
-local string_char = string.char
 local string_byte = string.byte
+local string_char = string.char
 local string_find = string.find
+local string_gsub = string.gsub
 local string_sub = string.sub
 
 local encode_utf8
@@ -88,6 +89,13 @@ local function range(ri, rj, i, j)
   end
   return i, j
 end
+
+local eol_table = {
+  ["\r"] = "\n";
+  ["\r\n"] = "\n";
+  ["\n\r"] = "\n";
+  ["\r\r"] = "\n\n";
+}
 
 return function (self, s)
   local init = 1
@@ -265,6 +273,10 @@ return function (self, s)
         rj = #rs
       elseif code == 15 then -- add integer
         rv = rv + action[2]
+      elseif code == 16 then -- normalize end-of-line
+        rs = string_gsub(string_gsub(string_sub(rs, ri, rj), "[\n\r][\n\r]?", eol_table), "^\n", "")
+        ri = 1
+        rj = #rs
       end
     end
 
