@@ -92,29 +92,29 @@ Parser generator toolkit.
 ```
 _"X" :_ "A" "GT" "B"
 _"X" :_ "A" "GT" "B" {1,2,3}
-<node name="X">
-  <node name="A"/>
-  <node name="GT"/>
-  <node name="B"/>
+<node symbol="X">
+  <node symbol="A"/>
+  <node symbol="GT"/>
+  <node symbol="B"/>
 </node>
 
 _"X" :_ "A" "GT" "B" {3,"LT",1}
-<node name="X">
-  <node name="B"/>
-  <node name="LT"/>
-  <node name="A"/>
+<node symbol="X">
+  <node symbol="B"/>
+  <node symbol="LT"/>
+  <node symbol="A"/>
 </node>
 
 _"X" :_ "A" "GT" "B" {[2]={1,3}}
-<node name="GT">
-  <node name="A"/>
-  <node name="B"/>
+<node symbol="GT">
+  <node symbol="A"/>
+  <node symbol="B"/>
 </node>
 
 _"X" :_ "A" "GT" "B" {["LT"]={3,1}}
-<node name="LT">
-  <node name="B"/>
-  <node name="A"/>
+<node symbol="LT">
+  <node symbol="B"/>
+  <node symbol="A"/>
 </node>
 ```
 
