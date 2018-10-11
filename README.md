@@ -89,6 +89,29 @@ Parser generator toolkit.
 |    1 | `{[1]={2,3,"symbol"}}` |         2 | collapse node |
 |    2 | `{1,2,3,"symbol"}`     |         1 | create node   |
 
+```
+_"X" :_ "A" "gt" "B"
+_"X" :_ "A" "gt" "B" {1,2,3}
+<node name="X">
+  <node name="A"/>
+  <node name="gt"/>
+  <node name="B"/>
+</node>
+
+_"X" :_ "A" "gt" "B" {3,"lt",1}
+<node name="X">
+  <node name="B"/>
+  <node name="lt"/>
+  <node name="A"/>
+</node>
+
+_"X" :_ "A" "gt" "B" {[2]={1,3}}
+<node name="gt">
+  <node name="A"/>
+  <node name="B"/>
+</node>
+```
+
 ### Attribute Actions
 
 | Code | Operator                    | #Operands | Description         |
