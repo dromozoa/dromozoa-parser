@@ -1,4 +1,4 @@
--- Copyright (C) 2017 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -21,19 +21,29 @@ return function (message, s, position, file)
   end
   local n = 1
   local i = 1
-  while true do
-    local j = s:find("\n", i, true)
-    if j then
+  local j, m, eol = s:find "([\n\r][\n\r]?)"
+  if j then
+    if eol == "\n\n" then
+      eol = "\n"
+      m = 1
+    elseif eol == "\r\r" then
+      eol = "\r"
+      m = 1
+    else
+      m = m - j + 1
+    end
+    repeat
       if position <= j then
         return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
       end
       n = n + 1
-      i = j + 1
-    else
-      if position <= #s then
-        return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
-      end
-      return file .. ":eof: " .. message
-    end
+      i = j + m
+      j = s:find(eol, i, true)
+    until not j
+  end
+  if position <= #s then
+    return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
+  else
+    return file .. ":eof: " .. message
   end
 end
