@@ -56,3 +56,30 @@ test_eof(source, 32)
 test("test", 1, 1, 1)
 test("test", 4, 1, 4)
 test_eof("test", 5)
+
+--[[
+abc | 1234 | 12345
+    | 5    | 67
+    | 6    | 89
+    | 7    | 01
+    | 8    | 23
+def | 9012 | 45678
+]]
+local eols = { "\r", "\n", "\r\n", "\n\r" }
+for i = 1, #eols do
+  local eol = eols[i]
+  local source = "abc" .. eol .. eol .. eol .. eol .. eol .. "def" .. eol
+  if #eol == 1 then
+    test(source,  5, 2, 1)
+    test(source,  8, 5, 1)
+    test(source, 11, 6, 3)
+    test_eof(source, 13)
+  else
+    test(source,  6, 2, 1)
+    test(source, 12, 5, 1)
+    test(source, 16, 6, 3)
+    test_eof(source, 19)
+  end
+end
+
+

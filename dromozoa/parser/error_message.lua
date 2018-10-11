@@ -21,19 +21,32 @@ return function (message, s, position, file)
   end
   local n = 1
   local i = 1
-  while true do
-    local j = s:find("\n", i, true)
-    if j then
-      if position <= j then
-        return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
-      end
-      n = n + 1
-      i = j + 1
-    else
-      if position <= #s then
-        return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
-      end
-      return file .. ":eof: " .. message
+  local eol = s:match "([\n\r][\n\r]?)"
+  if eol then
+    if eol == "\n\n" then
+      eol = "\n"
+    elseif eol == "\r\r" then
+      eol = "\r"
     end
+    while true do
+      local j = s:find(eol, i, true)
+      if j then
+        if position <= j then
+          return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
+        end
+        n = n + 1
+        i = j + #eol
+      else
+        if position <= #s then
+          return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
+        end
+        return file .. ":eof: " .. message
+      end
+    end
+  else
+    if position <= #s then
+      return file .. ":" .. n .. ":" .. position - i + 1 .. ": " .. message
+    end
+    return file .. ":eof: " .. message
   end
 end
