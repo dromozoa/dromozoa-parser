@@ -90,25 +90,31 @@ Parser generator toolkit.
 |    2 | `{1,2,3,"symbol"}`     |         1 | create node   |
 
 ```
-_"X" :_ "A" "gt" "B"
-_"X" :_ "A" "gt" "B" {1,2,3}
+_"X" :_ "A" "GT" "B"
+_"X" :_ "A" "GT" "B" {1,2,3}
 <node name="X">
   <node name="A"/>
-  <node name="gt"/>
+  <node name="GT"/>
   <node name="B"/>
 </node>
 
-_"X" :_ "A" "gt" "B" {3,"lt",1}
+_"X" :_ "A" "GT" "B" {3,"LT",1}
 <node name="X">
   <node name="B"/>
-  <node name="lt"/>
+  <node name="LT"/>
   <node name="A"/>
 </node>
 
-_"X" :_ "A" "gt" "B" {[2]={1,3}}
-<node name="gt">
+_"X" :_ "A" "GT" "B" {[2]={1,3}}
+<node name="GT">
   <node name="A"/>
   <node name="B"/>
+</node>
+
+_"X" :_ "A" "GT" "B" {["LT"]={3,1}}
+<node name="LT">
+  <node name="B"/>
+  <node name="A"/>
 </node>
 ```
 
