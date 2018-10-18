@@ -131,7 +131,6 @@ _"X" :_ "A" "GT" "B" {["LT"]={3,1}}
 |----------|-----------|:-------------:|--------------------------|
 | `[0]`    | `integer` |               | head symbol              |
 | `[i]`    | `integer` |               | body symbols             |
-| `.n`     | `integer` |               | length of body symbols   |
 | `.p`     | `integer` |      yes      | skipped position         |
 | `.i`     | `integer` |      yes      | start position           |
 | `.j`     | `integer` |      yes      | end position             |
