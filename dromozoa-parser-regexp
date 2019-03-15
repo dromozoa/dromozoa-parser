@@ -1,0 +1,71 @@
+#! /usr/bin/env lua
+
+-- Copyright (C) 2019 Tomoyuki Fujimori <moyu@dromozoa.com>
+--
+-- This file is part of dromozoa-parser.
+--
+-- dromozoa-parser is free software: you can redistribute it and/or modify
+-- it under the terms of the GNU General Public License as published by
+-- the Free Software Foundation, either version 3 of the License, or
+-- (at your option) any later version.
+--
+-- dromozoa-parser is distributed in the hope that it will be useful,
+-- but WITHOUT ANY WARRANTY; without even the implied warranty of
+-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-- GNU General Public License for more details.
+--
+-- You should have received a copy of the GNU General Public License
+-- along with dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
+
+local builder = require "dromozoa.parser.builder"
+local regexp = require "dromozoa.parser.regexp"
+
+local RE = builder.regexp
+
+local help = [====[
+Usage: %s [options] pattern [opeation pattern]...
+Avairable options are:
+  -h       --help
+  -o FILE  --output=FILE
+Avairable operations are:
+  -u       --union
+  -d       --difference
+]====]
+
+local dfa
+local output
+
+local a = 1
+local i = 1
+local n = #arg
+while i <= n do
+  local item = arg[i]
+  i = i + 1
+  if item == "-h" or item == "--help" then
+    io.write(help:format(arg[0]))
+    return
+  elseif item == "-o" then
+    output = assert(arg[i])
+    i = i + 1
+  elseif item:find "^%-%-output=.+" then
+    output = assert(item:match "^%-%-output=(.+)")
+  elseif item == "-u" or item == "--union" then
+    local item = assert(arg[i])
+    i = i + 1
+    dfa = dfa:union(regexp(RE(item), a):nfa_to_dfa()):nfa_to_dfa():minimize()
+    a = a + 1
+  elseif item == "-d" or item == "--difference" then
+    local item = assert(arg[i])
+    i = i + 1
+    dfa = dfa:difference(regexp(RE(item), a):nfa_to_dfa():minimize()):minimize()
+    a = a + 1
+  else
+    assert(not dfa)
+    dfa = regexp(RE(item), a):nfa_to_dfa():minimize()
+    a = a + 1
+  end
+end
+assert(dfa)
+assert(output)
+
+dfa:write_graph(output)
