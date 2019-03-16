@@ -57,7 +57,7 @@ while i <= n do
   elseif item == "-d" or item == "--difference" then
     local item = assert(arg[i])
     i = i + 1
-    dfa = dfa:difference(regexp(RE(item), a):nfa_to_dfa():minimize()):minimize()
+    dfa = dfa:difference(regexp(RE(item), a):nfa_to_dfa()):minimize()
     a = a + 1
   else
     assert(not dfa)
