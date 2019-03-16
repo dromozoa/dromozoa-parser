@@ -54,6 +54,7 @@ build = {
     ["dromozoa.parser.regexp.merge"] = "dromozoa/parser/regexp/merge.lua";
     ["dromozoa.parser.regexp.minimize"] = "dromozoa/parser/regexp/minimize.lua";
     ["dromozoa.parser.regexp.nfa_to_dfa"] = "dromozoa/parser/regexp/nfa_to_dfa.lua";
+    ["dromozoa.parser.regexp.remove_unreachable_states"] = "dromozoa/parser/regexp/remove_unreachable_states.lua";
     ["dromozoa.parser.regexp.to_graph"] = "dromozoa/parser/regexp/to_graph.lua";
     ["dromozoa.parser.regexp.tree_to_nfa"] = "dromozoa/parser/regexp/tree_to_nfa.lua";
     ["dromozoa.parser.regexp.union"] = "dromozoa/parser/regexp/union.lua";
