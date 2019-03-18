@@ -1,9 +1,9 @@
 rockspec_format = "3.0"
 package = "dromozoa-parser"
-version = "1.17-1"
+version = "1.18-1"
 source = {
-  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.17.tar.gz";
-  file = "dromozoa-parser-1.17.tar.gz";
+  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.18.tar.gz";
+  file = "dromozoa-parser-1.18.tar.gz";
 }
 description = {
   summary = "Parser generator toolkit";
@@ -62,5 +62,10 @@ build = {
     ["dromozoa.parser.regexp_lexer"] = "dromozoa/parser/regexp_lexer.lua";
     ["dromozoa.parser.regexp_parser"] = "dromozoa/parser/regexp_parser.lua";
     ["dromozoa.parser.symbol_value"] = "dromozoa/parser/symbol_value.lua";
+  };
+  install = {
+    bin = {
+      ["dromozoa-parser-regexp"] = "dromozoa-parser-regexp";
+    };
   };
 }
