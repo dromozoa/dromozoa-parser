@@ -22,7 +22,7 @@ local function build(source, result)
   local state = 1
   for line in io.lines(source) do
     if state == 1 then
-      if line ~= "--" and not line:find "^%-%-[^%]]" then
+      if not line:find "^%-%-" then
         state = 2
       end
     elseif state == 2 then
