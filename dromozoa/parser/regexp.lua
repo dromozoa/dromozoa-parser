@@ -1,4 +1,4 @@
--- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017-2019 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -19,6 +19,7 @@ local concat = require "dromozoa.parser.regexp.concat"
 local difference = require "dromozoa.parser.regexp.difference"
 local minimize = require "dromozoa.parser.regexp.minimize"
 local nfa_to_dfa = require "dromozoa.parser.regexp.nfa_to_dfa"
+local remove_unreachable_states = require "dromozoa.parser.regexp.remove_unreachable_states"
 local tree_to_nfa = require "dromozoa.parser.regexp.tree_to_nfa"
 local union = require "dromozoa.parser.regexp.union"
 local write_graph = require "dromozoa.parser.regexp.write_graph"
@@ -28,6 +29,10 @@ local metatable = { __index = class }
 
 function class:nfa_to_dfa()
   return setmetatable(nfa_to_dfa(self), metatable)
+end
+
+function class:remove_unreachable_states()
+  return setmetatable(remove_unreachable_states(self), metatable)
 end
 
 function class:minimize()
