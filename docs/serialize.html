@@ -28,18 +28,53 @@
 <h2>シリアライズ</h2>
 
 <ul>
-  <li><code>nil</code></li>
-  <li><code>false</code></li>
-  <li><code>true</code></li>
-  <li><code>number</code>
-    <ul>
-      <li><code>double</code></li>
-      <li><code>int64_t</code></li>
-    </ul>
-  </li>
-  <li><code>string</code></li>
-  <li><code>table</code></li>
+  <li><a href="https://cr.yp.to/proto/netstrings.txt">netstrings</a></li>
 </ul>
+
+<h3>値</h3>
+
+<table>
+  <tr>
+    <th>code</th>
+    <th>value</th>
+  </tr>
+  <tr>
+    <td></td>
+    <td><code>nil</code></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><code>false</code></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><code>true</code></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><code>number</code></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><code>string</code></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><code>table</code></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td><code>reference</code></td>
+  </tr>
+</table>
+
+<pre>
+[0] = u
+[1] = table(n)
+  k,v
+   :
+  k,v
+</pre>
 
 </div>
 </body>
