@@ -20,6 +20,7 @@ local difference = require "dromozoa.parser.regexp.difference"
 local minimize = require "dromozoa.parser.regexp.minimize"
 local nfa_to_dfa = require "dromozoa.parser.regexp.nfa_to_dfa"
 local remove_unreachable_states = require "dromozoa.parser.regexp.remove_unreachable_states"
+local to_graph = require "dromozoa.parser.regexp.to_graph"
 local tree_to_nfa = require "dromozoa.parser.regexp.tree_to_nfa"
 local union = require "dromozoa.parser.regexp.union"
 local write_graph = require "dromozoa.parser.regexp.write_graph"
@@ -49,6 +50,10 @@ end
 
 function class:difference(that)
   return setmetatable(difference(self, that), metatable)
+end
+
+function class:to_graph()
+  return to_graph(self)
 end
 
 function class:write_graph(out)

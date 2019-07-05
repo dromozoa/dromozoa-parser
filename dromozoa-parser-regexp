@@ -27,6 +27,7 @@ Usage: %s [options] pattern [opeation pattern]...
 Avairable options are:
   -h       --help
   -o FILE  --output=FILE
+  -D       --dump
 Avairable operations are:
   -u       --union
   -d       --difference
@@ -34,6 +35,7 @@ Avairable operations are:
 
 local dfa
 local output
+local dump
 
 local a = 1
 local i = 1
@@ -49,6 +51,8 @@ while i <= n do
     i = i + 1
   elseif item:find "^%-%-output=.+" then
     output = assert(item:match "^%-%-output=(.+)")
+  elseif item == "-D" or item == "--dump" then
+    dump = true
   elseif item == "-u" or item == "--union" then
     local item = assert(arg[i])
     i = i + 1
@@ -68,4 +72,67 @@ end
 assert(dfa)
 assert(output)
 
-dfa:remove_unreachable_states():write_graph(output)
+if dump then
+  local g, u_labels, e_labels = dfa:remove_unreachable_states():to_graph()
+
+  local out = assert(io.open(output, "wb"))
+
+  local function dump_data(key, data)
+    out:write(("%s="):format(key))
+    local t = type(data)
+    if t == "number" then
+      out:write(("%d"):format(data))
+    elseif t == "table" then
+      out:write "{"
+      for k, v in pairs(data) do
+        local t = type(v)
+        if t == "number" then
+          out:write(("[%d]=%d;"):format(k, v))
+        elseif t == "string" then
+          out:write(("[%d]=%q;"):format(k,v))
+        else
+          error("invalid type " .. t)
+        end
+      end
+      out:write "}"
+    else
+      error("invalid type " .. t)
+    end
+    out:write ";\n"
+  end
+
+  for i = 1, #arg do
+    out:write(("-- arg[%d] %s\n"):format(i, arg[i]))
+  end
+
+  out:write "return {\n"
+  dump_data("u_id", g.u.id)
+  dump_data("u_n", g.u.n)
+  dump_data("u_before", g.u.before)
+  dump_data("u_after", g.u.after)
+  dump_data("u_labels", u_labels)
+
+  dump_data("e_id", g.e.id)
+  dump_data("e_n", g.e.n)
+  dump_data("e_before", g.e.before)
+  dump_data("e_after", g.e.after)
+  dump_data("e_labels", e_labels)
+
+  dump_data("uv_first", g.uv.first)
+  dump_data("uv_last", g.uv.last)
+  dump_data("uv_before", g.uv.before)
+  dump_data("uv_after", g.uv.after)
+  dump_data("uv_target", g.uv.target)
+
+  dump_data("vu_first", g.vu.first)
+  dump_data("vu_last", g.vu.last)
+  dump_data("vu_before", g.vu.before)
+  dump_data("vu_after", g.vu.after)
+  dump_data("vu_target", g.vu.target)
+
+  out:write "}\n"
+
+  out:close()
+else
+  dfa:remove_unreachable_states():write_graph(output)
+end
