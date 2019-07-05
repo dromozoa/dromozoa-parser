@@ -101,8 +101,11 @@ if dump then
     out:write ";\n"
   end
 
-  out:write "return {\n"
+  for i = 1, #arg do
+    out:write(("-- arg[%d] %s\n"):format(i, arg[i]))
+  end
 
+  out:write "return {\n"
   dump_data("u_id", g.u.id)
   dump_data("u_n", g.u.n)
   dump_data("u_before", g.u.before)
