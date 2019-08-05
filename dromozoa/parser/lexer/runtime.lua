@@ -1,12 +1,11 @@
 return [=[
 local tonumber = tonumber
-local concat = table.concat
-
 local string_byte = string.byte
 local string_char = string.char
 local string_find = string.find
 local string_gsub = string.gsub
 local string_sub = string.sub
+local table_concat = table.concat
 
 local encode_utf8
 local decode_surrogate_pair
@@ -210,7 +209,7 @@ return function (self, s)
         buffer[#buffer + 1] = string_sub(rs, ri, rj)
         skip = true
       elseif code == 3 then -- concat
-        rs = concat(buffer)
+        rs = table_concat(buffer)
         ri = 1
         rj = #rs
         for j = 1, #buffer do
