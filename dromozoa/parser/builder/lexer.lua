@@ -84,7 +84,7 @@ end
 function class:mark()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 8}
+  actions[#actions + 1] = { 8 }
   return self
 end
 
