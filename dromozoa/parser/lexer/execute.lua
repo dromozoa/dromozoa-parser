@@ -106,6 +106,7 @@ return function (self, s)
   local position_mark
   local buffer = {}
 
+  local use_line_number = self.use_line_number
   local line_count = 1
   local line_start = 0
 
@@ -282,7 +283,7 @@ return function (self, s)
         rs = string_gsub(string_gsub(string_sub(rs, ri, rj), "[\n\r][\n\r]?", eol_table), "^\n", "")
         ri = 1
         rj = #rs
-      elseif code == 17 then -- increment end-of-line
+      elseif code == 17 then -- update line number
         rn = rn + 1
         rc = position - 1
       end
@@ -292,7 +293,7 @@ return function (self, s)
       if not position_mark then
         position_mark = init
       end
-      terminal_nodes[#terminal_nodes + 1] = {
+      local node = {
         [0] = lexer.accept_to_symbol[accept];
         p = position_start;
         i = position_mark;
@@ -300,9 +301,12 @@ return function (self, s)
         rs = rs;
         ri = ri;
         rj = rj;
-        n = line_count;
-        c = position_mark - line_start;
       }
+      if use_line_number then
+        node.n = line_count
+        node.c = position_mark - line_start
+      end
+      terminal_nodes[#terminal_nodes + 1] = node
       position_start = position
       position_mark = nil
     end
@@ -315,7 +319,7 @@ return function (self, s)
     if not position_mark then
       position_mark = init
     end
-    terminal_nodes[#terminal_nodes + 1] = {
+    local node = {
       [0] = 1; -- marker end
       p = position_start;
       i = position_mark;
@@ -323,9 +327,12 @@ return function (self, s)
       rs = s;
       ri = init;
       rj = n;
-      n = line_count;
-      c = position_mark - line_start;
     }
+    if use_line_number then
+      node.n = line_count
+      node.c = position_mark - line_start
+    end
+    terminal_nodes[#terminal_nodes + 1] = node
     return terminal_nodes
   else
     return nil, "lexer error", init

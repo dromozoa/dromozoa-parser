@@ -24,25 +24,50 @@ local RE = builder.regexp
 local _ = builder()
 
 _:lexer()
-  :_(RE[[(\r|\n|\r\n|\n\r)]]) :skip() :increment_eol()
-  :_(RE[[ +]]) :skip()
+  :_(RE[[(\r|\n|\r\n|\n\r)]]) :skip() :update_line_number()
+  :_(RE[[[ \f\t\v]+]]) :skip()
+  :_(RE[[\[=*\[]]) :sub(2, -2) :join("]", "]") :hold() :skip() :call "name" :mark()
   :_(RE[[\S+]]) :as "token"
+
+_:search_lexer "name"
+  :when() :as "name" :concat() :normalize_eol() :ret()
+  :otherwise() :push()
 
 local lexer = _:build()
 
+--[[
+ 1: a b
+ 2: c d
+ 3: e f
+ 4: g h
+ 5:  j k 
+ 6:  [==[
+ 7: l
+ 8: m
+ 9: n
+10: o]==]p
+]]
+-- local source = "a b\rc d\ne f\r\ng h\n\r j k \n [==[\rl\nm\r\nn\n\ro]==]p\n"
+
 local source = "a b\rc d\ne f\r\ng h\n\r j k \n"
 local expect = {
-  { 1, 1 };
-  { 1, 3 };
-  { 2, 1 };
-  { 2, 3 };
-  { 3, 1 };
-  { 3, 3 };
-  { 4, 1 };
-  { 4, 3 };
-  { 5, 2 };
-  { 5, 4 };
-  { 6, 1 };
+  {  1, 1 };
+  {  1, 3 };
+  {  2, 1 };
+  {  2, 3 };
+  {  3, 1 };
+  {  3, 3 };
+  {  4, 1 };
+  {  4, 3 };
+  {  5, 2 };
+  {  5, 4 };
+  {  6, 1 };
+
+--[[
+  {  6, 2 };
+  { 10, 5 };
+  { 11, 1 };
+]]
 }
 
 local items = assert(lexer(source))
@@ -50,7 +75,7 @@ for i = 1, #items do
   local item = items[i]
   local value = symbol_value(item)
   if verbose then
-    print(item.i, item.n, item.c, value)
+    print(("%d\t%d\t%d\t%q"):format(item.i, item.n, item.c, value))
   end
   assert(item.n == expect[i][1])
   assert(item.c == expect[i][2])
