@@ -106,6 +106,9 @@ return function (self, s)
   local position_mark
   local buffer = {}
 
+  local line_count = 1
+  local line_start = 0
+
   while init <= n do
     local lexer = self[stack[#stack]]
     local automaton = lexer.automaton
@@ -220,6 +223,9 @@ return function (self, s)
     local rj = position - 1
     local rv
 
+    local rn = line_count
+    local rc = line_start
+
     local actions = lexer.accept_to_actions[accept]
     for i = 1, #actions do
       local action = actions[i]
@@ -276,6 +282,9 @@ return function (self, s)
         rs = string_gsub(string_gsub(string_sub(rs, ri, rj), "[\n\r][\n\r]?", eol_table), "^\n", "")
         ri = 1
         rj = #rs
+      elseif code == 17 then -- increment end-of-line
+        rn = rn + 1
+        rc = position - 1
       end
     end
 
@@ -291,11 +300,15 @@ return function (self, s)
         rs = rs;
         ri = ri;
         rj = rj;
+        n = line_count;
+        c = position_mark - line_start;
       }
       position_start = position
       position_mark = nil
     end
     init = position
+    line_count = rn
+    line_start = rc
   end
 
   if #stack == 1 then
@@ -310,6 +323,8 @@ return function (self, s)
       rs = s;
       ri = init;
       rj = n;
+      n = line_count;
+      c = position_mark - line_start;
     }
     return terminal_nodes
   else
