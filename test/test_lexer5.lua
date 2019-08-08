@@ -35,20 +35,6 @@ _:search_lexer "name"
 
 local lexer = _:build()
 
---[[
- 1: a b
- 2: c d
- 3: e f
- 4: g h
- 5:  j k 
- 6:  [==[
- 7: l
- 8: m
- 9: n
-10: o]==]p
-]]
--- local source = "a b\rc d\ne f\r\ng h\n\r j k \n [==[\rl\nm\r\nn\n\ro]==]p\n"
-
 local source = "a b\rc d\ne f\r\ng h\n\r j k \n"
 local expect = {
   {  1, 1 };
@@ -62,12 +48,6 @@ local expect = {
   {  5, 2 };
   {  5, 4 };
   {  6, 1 };
-
---[[
-  {  6, 2 };
-  { 10, 5 };
-  { 11, 1 };
-]]
 }
 
 local items = assert(lexer(source))
