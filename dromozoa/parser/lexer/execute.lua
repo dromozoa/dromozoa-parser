@@ -1,4 +1,4 @@
--- Copyright (C) 2018 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2018,2019 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -21,13 +21,12 @@
 -- dromozoa-parser.  If not, see <http://www.gnu.org/licenses/>.
 
 local tonumber = tonumber
-local concat = table.concat
-
 local string_byte = string.byte
 local string_char = string.char
 local string_find = string.find
 local string_gsub = string.gsub
 local string_sub = string.sub
+local table_concat = table.concat
 
 local encode_utf8
 local decode_surrogate_pair
@@ -106,6 +105,10 @@ return function (self, s)
   local position_start = init
   local position_mark
   local buffer = {}
+
+  local use_line_number = self.use_line_number
+  local line_count = 1
+  local line_start = 0
 
   while init <= n do
     local lexer = self[stack[#stack]]
@@ -221,6 +224,9 @@ return function (self, s)
     local rj = position - 1
     local rv
 
+    local rn = line_count
+    local rc = line_start
+
     local actions = lexer.accept_to_actions[accept]
     for i = 1, #actions do
       local action = actions[i]
@@ -231,7 +237,7 @@ return function (self, s)
         buffer[#buffer + 1] = string_sub(rs, ri, rj)
         skip = true
       elseif code == 3 then -- concat
-        rs = concat(buffer)
+        rs = table_concat(buffer)
         ri = 1
         rj = #rs
         for j = 1, #buffer do
@@ -277,6 +283,9 @@ return function (self, s)
         rs = string_gsub(string_gsub(string_sub(rs, ri, rj), "[\n\r][\n\r]?", eol_table), "^\n", "")
         ri = 1
         rj = #rs
+      elseif code == 17 then -- update line number
+        rn = rn + 1
+        rc = position - 1
       end
     end
 
@@ -284,7 +293,7 @@ return function (self, s)
       if not position_mark then
         position_mark = init
       end
-      terminal_nodes[#terminal_nodes + 1] = {
+      local node = {
         [0] = lexer.accept_to_symbol[accept];
         p = position_start;
         i = position_mark;
@@ -293,17 +302,24 @@ return function (self, s)
         ri = ri;
         rj = rj;
       }
+      if use_line_number then
+        node.n = line_count
+        node.c = position_mark - line_start
+      end
+      terminal_nodes[#terminal_nodes + 1] = node
       position_start = position
       position_mark = nil
     end
     init = position
+    line_count = rn
+    line_start = rc
   end
 
   if #stack == 1 then
     if not position_mark then
       position_mark = init
     end
-    terminal_nodes[#terminal_nodes + 1] = {
+    local node = {
       [0] = 1; -- marker end
       p = position_start;
       i = position_mark;
@@ -312,6 +328,11 @@ return function (self, s)
       ri = init;
       rj = n;
     }
+    if use_line_number then
+      node.n = line_count
+      node.c = position_mark - line_start
+    end
+    terminal_nodes[#terminal_nodes + 1] = node
     return terminal_nodes
   else
     return nil, "lexer error", init

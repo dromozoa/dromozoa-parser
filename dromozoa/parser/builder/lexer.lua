@@ -1,4 +1,4 @@
--- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017-2019 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -84,7 +84,7 @@ end
 function class:mark()
   local items = self.items
   local actions = items[#items].actions
-  actions[#actions + 1] = { 8}
+  actions[#actions + 1] = { 8 }
   return self
 end
 
@@ -150,6 +150,13 @@ function class:normalize_eol()
   local items = self.items
   local actions = items[#items].actions
   actions[#actions + 1] = { 16 }
+  return self
+end
+
+function class:update_line_number()
+  local items = self.items
+  local actions = items[#items].actions
+  actions[#actions + 1] = { 17 }
   return self
 end
 

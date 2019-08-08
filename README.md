@@ -55,6 +55,7 @@ Parser generator toolkit.
 |   14 | `:utf8(i, j=-1, k, l=-1)` |         4 |      | encode utf8 (surrogate pair) |
 |   15 | `:add(value)`             |         1 |      | add integer                  |
 |   16 | `:normalize_eol()`        |         0 |      | normalize end-of-line        |
+|   17 | `:update_line_number()`   |         0 |      | update line number           |
 
 ## Parser
 
@@ -127,13 +128,15 @@ _"X" :_ "A" "GT" "B" {["LT"]={3,1}}
 
 ### Node
 
-| Name     | Type      | Terminal Only | Description              |
-|----------|-----------|:-------------:|--------------------------|
-| `[0]`    | `integer` |               | head symbol              |
-| `[i]`    | `integer` |               | body symbols             |
-| `.p`     | `integer` |      yes      | skipped position         |
-| `.i`     | `integer` |      yes      | start position           |
-| `.j`     | `integer` |      yes      | end position             |
-| `.rs`    | `string`  |      yes      | resulting string         |
-| `.ri`    | `integer` |      yes      | resulting start position |
-| `.rj`    | `integer` |      yes      | resulting end position   |
+| Name  | Type      | Terminal Only | Description              |
+|-------|-----------|:-------------:|--------------------------|
+| `[0]` | `integer` |               | head symbol              |
+| `[i]` | `integer` |               | body symbols             |
+| `.p`  | `integer` |      yes      | skipped position         |
+| `.i`  | `integer` |      yes      | start position           |
+| `.j`  | `integer` |      yes      | end position             |
+| `.rs` | `string`  |      yes      | resulting string         |
+| `.ri` | `integer` |      yes      | resulting start position |
+| `.rj` | `integer` |      yes      | resulting end position   |
+| `.n`  | `integer` |      yes      | line number              |
+| `.c`  | `integer` |      yes      | column number            |
