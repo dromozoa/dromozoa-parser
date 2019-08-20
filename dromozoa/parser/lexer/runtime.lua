@@ -75,7 +75,7 @@ local eol_table = {
   ["\r\r"] = "\n\n";
 }
 
-return function (self, s)
+return function (self, s, use_line_number)
   local init = 1
   local n = #s
   local terminal_nodes = {}
@@ -85,7 +85,6 @@ return function (self, s)
   local position_mark
   local buffer = {}
 
-  local use_line_number = self.use_line_number
   local line_count = 1
   local line_start = 0
 
