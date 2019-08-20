@@ -33,8 +33,8 @@ function class:compile(out)
 end
 
 return setmetatable(class, {
-  __call = function (_, data, use_line_number)
-    local self = { use_line_number = use_line_number }
+  __call = function (_, data)
+    local self = {}
     for i = 1, #data do
       local lexer = data[i]
       self[i] = {

@@ -73,8 +73,6 @@ return function (self, start_name)
     end
   end
 
-  local use_line_number
-
   for i = 1, #lexers do
     local lexer = lexers[i]
     local items = lexer.items
@@ -91,8 +89,6 @@ return function (self, start_name)
             error(("lexer %q not defined at lexer %d pattern %d action %d"):format(name, i, j, k))
           end
           action[2] = lexer
-        elseif code == 17 then -- update line number
-          use_line_number = true
         end
       end
       accept_to_actions[j] = actions
@@ -111,7 +107,7 @@ return function (self, start_name)
   local productions = self.productions
   local m = #productions
   if m == 1 then
-    return lexer(lexers, use_line_number)
+    return lexer(lexers)
   else
     local precedences = self.precedences
 
@@ -265,6 +261,6 @@ return function (self, start_name)
 
     local grammar = grammar(self)
     grammar.first_table = grammar:eliminate_left_recursion():first()
-    return lexer(lexers, use_line_number), grammar
+    return lexer(lexers), grammar
   end
 end

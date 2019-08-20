@@ -37,25 +37,24 @@ Parser generator toolkit.
 
 ### Actions
 
-| Code | Operator                  | #Operands | Skip | Description                  |
-|-----:|---------------------------|----------:|:----:|------------------------------|
-|    1 | `:skip()`                 |         0 | yes  | skip                         |
-|    2 | `:push()`                 |         0 | yes  | push                         |
-|    3 | `:concat()`               |         0 |      | concat                       |
-|    4 | `:call "label"`           |         1 |      | call                         |
-|    5 | `:ret()`                  |         0 |      | return                       |
-|    6 | `"string"`                |         1 |      | substitute                   |
-|    7 | `:hold()`                 |         0 |      | hold                         |
-|    8 | `:mark()`                 |         0 |      | mark                         |
-|    9 | `:sub(i, j=-1)`           |         2 |      | substring                    |
-|   10 | `:int(base=10)`           |         1 |      | convert to integer           |
-|   11 | `:char()`                 |         0 |      | convert to char              |
-|   12 | `:join(head, tail)`       |         2 |      | join                         |
-|   13 | `:utf8(i, j=-1)`          |         2 |      | encode utf8                  |
-|   14 | `:utf8(i, j=-1, k, l=-1)` |         4 |      | encode utf8 (surrogate pair) |
-|   15 | `:add(value)`             |         1 |      | add integer                  |
-|   16 | `:normalize_eol()`        |         0 |      | normalize end-of-line        |
-|   17 | `:update_line_number()`   |         0 |      | update line number           |
+| Code | Operator                   | #Operands | Skip | Description                  |
+|-----:|----------------------------|----------:|:----:|------------------------------|
+|    1 | `:skip()`                  |         0 | yes  | skip                         |
+|    2 | `:push()`                  |         0 | yes  | push                         |
+|    3 | `:concat()`                |         0 |      | concat                       |
+|    4 | `:call "label"`            |         1 |      | call                         |
+|    5 | `:ret()`                   |         0 |      | return                       |
+|    6 | `"string"`                 |         1 |      | substitute                   |
+|    7 | `:hold()`                  |         0 |      | hold                         |
+|    8 | `:mark()`                  |         0 |      | mark                         |
+|    9 | `:sub(i, j=-1)`            |         2 |      | substring                    |
+|   10 | `:int(base=10)`            |         1 |      | convert to integer           |
+|   11 | `:char()`                  |         0 |      | convert to char              |
+|   12 | `:join(head, tail)`        |         2 |      | join                         |
+|   13 | `:utf8(i, j=-1)`           |         2 |      | encode utf8                  |
+|   14 | `:utf8(i, j=-1, k, l=-1)`  |         4 |      | encode utf8 (surrogate pair) |
+|   15 | `:add(value)`              |         1 |      | add integer                  |
+|   16 | `:normalize_eol()`         |         0 |      | normalize end-of-line        |
 
 ## Parser
 
