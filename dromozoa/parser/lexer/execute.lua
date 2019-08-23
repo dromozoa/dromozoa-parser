@@ -96,7 +96,7 @@ local eol_table = {
   ["\r\r"] = "\n\n";
 }
 
-local function scan(s, init, n, automaton)
+local function execute_regexp(s, init, n, automaton)
   local transitions = automaton.transitions
   local state = automaton.start_state
   local accept_states = automaton.accept_states
@@ -167,9 +167,9 @@ local function scan(s, init, n, automaton)
         return i, accept_states[state1]
       end
     end
+  else
+    return i, accept_states[state]
   end
-
-  return i, accept_states[state]
 end
 
 return function (self, s, use_line_number)
@@ -192,7 +192,7 @@ return function (self, s, use_line_number)
     local accept
 
     if automaton then -- regexp_lexer
-      position, accept = scan(s, init, n, automaton)
+      position, accept = execute_regexp(s, init, n, automaton)
       if not accept then
         return nil, "lexer error", init
       end
