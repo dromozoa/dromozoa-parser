@@ -99,34 +99,25 @@ local eol_table = {
 local function scan(s, init, n, automaton)
   local transitions = automaton.transitions
   local state = automaton.start_state
-
-  local position
-  local accept
+  local accept_states = automaton.accept_states
 
   for i = init + 3, n, 4 do
     local a, b, c, d = string_byte(s, i - 3, i)
     local state1 = transitions[a][state]
     if not state1 then
-      position = i - 3
-      break
+      return i - 3, accept_states[state]
     else
       local state2 = transitions[b][state1]
       if not state2 then
-        state = state1
-        position = i - 2
-        break
+        return i - 2, accept_states[state1]
       else
         local state3 = transitions[c][state2]
         if not state3 then
-          state = state2
-          position = i - 1
-          break
+          return i - 1, accept_states[state2]
         else
           local state4 = transitions[d][state3]
           if not state4 then
-            state = state3
-            position = i
-            break
+            return i, accept_states[state3]
           else
             state = state4
           end
@@ -135,56 +126,50 @@ local function scan(s, init, n, automaton)
     end
   end
 
-  if not position then
-    position = n + 1
-    local m = position - (position - init) % 4
-    if m < position then
-      local a, b, c = string_byte(s, m, n)
-      if c then
-        local state1 = transitions[a][state]
-        if not state1 then
-          position = m
-        else
-          local state2 = transitions[b][state1]
-          if not state2 then
-            state = state1
-            position = m + 1
-          else
-            local state3 = transitions[c][state2]
-            if not state3 then
-              state = state2
-              position = n
-            else
-              state = state3
-            end
-          end
-        end
-      elseif b then
-        local state1 = transitions[a][state]
-        if not state1 then
-          position = m
-        else
-          local state2 = transitions[b][state1]
-          if not state2 then
-            state = state1
-            position = m + 1
-          else
-            state = state2
-          end
-        end
+  local i = n + 1
+  local m = i - (i - init) % 4
+  if m < i then
+    local a, b, c = string_byte(s, m, n)
+    if c then
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
       else
-        local state1 = transitions[a][state]
-        if not state1 then
-          position = m
+        local state2 = transitions[b][state1]
+        if not state2 then
+          return m + 1, accept_states[state1]
         else
-          state = state1
+          local state3 = transitions[c][state2]
+          if not state3 then
+            return n, accept_states[state2]
+          else
+            return i, accept_states[state3]
+          end
         end
+      end
+    elseif b then
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        local state2 = transitions[b][state1]
+        if not state2 then
+          return m + 1, accept_states[state1]
+        else
+          return i, accept_states[state2]
+        end
+      end
+    else
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        return i, accept_states[state1]
       end
     end
   end
 
-  accept = automaton.accept_states[state]
-  return position, accept
+  return i, accept_states[state]
 end
 
 return function (self, s, use_line_number)
