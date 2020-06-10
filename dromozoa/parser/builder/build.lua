@@ -1,4 +1,4 @@
--- Copyright (C) 2017,2018 Tomoyuki Fujimori <moyu@dromozoa.com>
+-- Copyright (C) 2017-2019 Tomoyuki Fujimori <moyu@dromozoa.com>
 --
 -- This file is part of dromozoa-parser.
 --
@@ -81,7 +81,8 @@ return function (self, start_name)
       local actions = items[j].actions
       for k = 1, #actions do
         local action = actions[k]
-        if action[1] == 4 then -- call
+        local code = action[1]
+        if code == 4 then -- call
           local name = action[2]
           local lexer = lexer_table[name]
           if not lexer then

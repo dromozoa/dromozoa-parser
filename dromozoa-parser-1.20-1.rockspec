@@ -1,9 +1,9 @@
 rockspec_format = "3.0"
 package = "dromozoa-parser"
-version = "1.19-1"
+version = "1.20-1"
 source = {
-  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.19.tar.gz";
-  file = "dromozoa-parser-1.19.tar.gz";
+  url = "https://github.com/dromozoa/dromozoa-parser/archive/v1.20.tar.gz";
+  file = "dromozoa-parser-1.20.tar.gz";
 }
 description = {
   summary = "Parser generator toolkit";

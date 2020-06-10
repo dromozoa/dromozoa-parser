@@ -127,13 +127,15 @@ _"X" :_ "A" "GT" "B" {["LT"]={3,1}}
 
 ### Node
 
-| Name     | Type      | Terminal Only | Description              |
-|----------|-----------|:-------------:|--------------------------|
-| `[0]`    | `integer` |               | head symbol              |
-| `[i]`    | `integer` |               | body symbols             |
-| `.p`     | `integer` |      yes      | skipped position         |
-| `.i`     | `integer` |      yes      | start position           |
-| `.j`     | `integer` |      yes      | end position             |
-| `.rs`    | `string`  |      yes      | resulting string         |
-| `.ri`    | `integer` |      yes      | resulting start position |
-| `.rj`    | `integer` |      yes      | resulting end position   |
+| Name  | Type      | Terminal Only | Description              |
+|-------|-----------|:-------------:|--------------------------|
+| `[0]` | `integer` |               | head symbol              |
+| `[i]` | `integer` |               | body symbols             |
+| `.p`  | `integer` |      yes      | skipped position         |
+| `.i`  | `integer` |      yes      | start position           |
+| `.j`  | `integer` |      yes      | end position             |
+| `.rs` | `string`  |      yes      | resulting string         |
+| `.ri` | `integer` |      yes      | resulting start position |
+| `.rj` | `integer` |      yes      | resulting end position   |
+| `.n`  | `integer` |      yes      | line number              |
+| `.c`  | `integer` |      yes      | column number            |
