@@ -20,6 +20,8 @@ local symbol_value = require "dromozoa.parser.symbol_value"
 
 local verbose = os.getenv "VERBOSE" == "1"
 
+os.exit()
+
 local RE = builder.regexp
 local _ = builder()
 

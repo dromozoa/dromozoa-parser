@@ -1,12 +1,11 @@
 local execute = (function ()
 local tonumber = tonumber
-local concat = table.concat
-
 local string_byte = string.byte
 local string_char = string.char
 local string_find = string.find
 local string_gsub = string.gsub
 local string_sub = string.sub
+local table_concat = table.concat
 
 local encode_utf8
 local decode_surrogate_pair
@@ -76,7 +75,83 @@ local eol_table = {
   ["\r\r"] = "\n\n";
 }
 
-return function (self, s)
+local function execute_regexp(s, init, n, automaton)
+  local transitions = automaton.transitions
+  local state = automaton.start_state
+  local accept_states = automaton.accept_states
+
+  for i = init + 3, n, 4 do
+    local a, b, c, d = string_byte(s, i - 3, i)
+    local state1 = transitions[a][state]
+    if not state1 then
+      return i - 3, accept_states[state]
+    else
+      local state2 = transitions[b][state1]
+      if not state2 then
+        return i - 2, accept_states[state1]
+      else
+        local state3 = transitions[c][state2]
+        if not state3 then
+          return i - 1, accept_states[state2]
+        else
+          local state4 = transitions[d][state3]
+          if not state4 then
+            return i, accept_states[state3]
+          else
+            state = state4
+          end
+        end
+      end
+    end
+  end
+
+  local i = n + 1
+  local m = i - (i - init) % 4
+  if m < i then
+    local a, b, c = string_byte(s, m, n)
+    if c then
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        local state2 = transitions[b][state1]
+        if not state2 then
+          return m + 1, accept_states[state1]
+        else
+          local state3 = transitions[c][state2]
+          if not state3 then
+            return n, accept_states[state2]
+          else
+            return i, accept_states[state3]
+          end
+        end
+      end
+    elseif b then
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        local state2 = transitions[b][state1]
+        if not state2 then
+          return m + 1, accept_states[state1]
+        else
+          return i, accept_states[state2]
+        end
+      end
+    else
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        return i, accept_states[state1]
+      end
+    end
+  else
+    return i, accept_states[state]
+  end
+end
+
+return function (self, s, use_line_number)
   local init = 1
   local n = #s
   local terminal_nodes = {}
@@ -86,6 +161,9 @@ return function (self, s)
   local position_mark
   local buffer = {}
 
+  local line_count = 1
+  local line_start = 0
+
   while init <= n do
     local lexer = self[stack[#stack]]
     local automaton = lexer.automaton
@@ -93,90 +171,7 @@ return function (self, s)
     local accept
 
     if automaton then -- regexp_lexer
-      local transitions = automaton.transitions
-      local state = automaton.start_state
-
-      for i = init + 3, n, 4 do
-        local a, b, c, d = string_byte(s, i - 3, i)
-        local state1 = transitions[a][state]
-        if not state1 then
-          position = i - 3
-          break
-        else
-          local state2 = transitions[b][state1]
-          if not state2 then
-            state = state1
-            position = i - 2
-            break
-          else
-            local state3 = transitions[c][state2]
-            if not state3 then
-              state = state2
-              position = i - 1
-              break
-            else
-              local state4 = transitions[d][state3]
-              if not state4 then
-                state = state3
-                position = i
-                break
-              else
-                state = state4
-              end
-            end
-          end
-        end
-      end
-
-      if not position then
-        position = n + 1
-        local m = position - (position - init) % 4
-        if m < position then
-          local a, b, c = string_byte(s, m, n)
-          if c then
-            local state1 = transitions[a][state]
-            if not state1 then
-              position = m
-            else
-              local state2 = transitions[b][state1]
-              if not state2 then
-                state = state1
-                position = m + 1
-              else
-                local state3 = transitions[c][state2]
-                if not state3 then
-                  state = state2
-                  position = n
-                else
-                  state = state3
-                end
-              end
-            end
-          elseif b then
-            local state1 = transitions[a][state]
-            if not state1 then
-              position = m
-            else
-              local state2 = transitions[b][state1]
-              if not state2 then
-                state = state1
-                position = m + 1
-              else
-                state = state2
-              end
-            end
-          else
-            local state1 = transitions[a][state]
-            if not state1 then
-              position = m
-            else
-              state = state1
-            end
-          end
-        end
-      end
-
-      accept = automaton.accept_states[state]
+      position, accept = execute_regexp(s, init, n, automaton)
       if not accept then
         return nil, "lexer error", init
       end
@@ -200,6 +195,9 @@ return function (self, s)
     local rj = position - 1
     local rv
 
+    local rn = line_count
+    local rc = line_start
+
     local actions = lexer.accept_to_actions[accept]
     for i = 1, #actions do
       local action = actions[i]
@@ -210,7 +208,7 @@ return function (self, s)
         buffer[#buffer + 1] = string_sub(rs, ri, rj)
         skip = true
       elseif code == 3 then -- concat
-        rs = concat(buffer)
+        rs = table_concat(buffer)
         ri = 1
         rj = #rs
         for j = 1, #buffer do
@@ -256,6 +254,9 @@ return function (self, s)
         rs = string_gsub(string_gsub(string_sub(rs, ri, rj), "[\n\r][\n\r]?", eol_table), "^\n", "")
         ri = 1
         rj = #rs
+      elseif code == 17 then -- update line number
+        rn = rn + 1
+        rc = position - 1
       end
     end
 
@@ -263,7 +264,7 @@ return function (self, s)
       if not position_mark then
         position_mark = init
       end
-      terminal_nodes[#terminal_nodes + 1] = {
+      local node = {
         [0] = lexer.accept_to_symbol[accept];
         p = position_start;
         i = position_mark;
@@ -272,17 +273,24 @@ return function (self, s)
         ri = ri;
         rj = rj;
       }
+      if use_line_number then
+        node.n = line_count
+        node.c = position_mark - line_start
+      end
+      terminal_nodes[#terminal_nodes + 1] = node
       position_start = position
       position_mark = nil
     end
     init = position
+    line_count = rn
+    line_start = rc
   end
 
   if #stack == 1 then
     if not position_mark then
       position_mark = init
     end
-    terminal_nodes[#terminal_nodes + 1] = {
+    local node = {
       [0] = 1; -- marker end
       p = position_start;
       i = position_mark;
@@ -291,6 +299,11 @@ return function (self, s)
       ri = init;
       rj = n;
     }
+    if use_line_number then
+      node.n = line_count
+      node.c = position_mark - line_start
+    end
+    terminal_nodes[#terminal_nodes + 1] = node
     return terminal_nodes
   else
     return nil, "lexer error", init

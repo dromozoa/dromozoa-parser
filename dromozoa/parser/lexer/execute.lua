@@ -96,7 +96,83 @@ local eol_table = {
   ["\r\r"] = "\n\n";
 }
 
-return function (self, s)
+local function execute_regexp(s, init, n, automaton)
+  local transitions = automaton.transitions
+  local state = automaton.start_state
+  local accept_states = automaton.accept_states
+
+  for i = init + 3, n, 4 do
+    local a, b, c, d = string_byte(s, i - 3, i)
+    local state1 = transitions[a][state]
+    if not state1 then
+      return i - 3, accept_states[state]
+    else
+      local state2 = transitions[b][state1]
+      if not state2 then
+        return i - 2, accept_states[state1]
+      else
+        local state3 = transitions[c][state2]
+        if not state3 then
+          return i - 1, accept_states[state2]
+        else
+          local state4 = transitions[d][state3]
+          if not state4 then
+            return i, accept_states[state3]
+          else
+            state = state4
+          end
+        end
+      end
+    end
+  end
+
+  local i = n + 1
+  local m = i - (i - init) % 4
+  if m < i then
+    local a, b, c = string_byte(s, m, n)
+    if c then
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        local state2 = transitions[b][state1]
+        if not state2 then
+          return m + 1, accept_states[state1]
+        else
+          local state3 = transitions[c][state2]
+          if not state3 then
+            return n, accept_states[state2]
+          else
+            return i, accept_states[state3]
+          end
+        end
+      end
+    elseif b then
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        local state2 = transitions[b][state1]
+        if not state2 then
+          return m + 1, accept_states[state1]
+        else
+          return i, accept_states[state2]
+        end
+      end
+    else
+      local state1 = transitions[a][state]
+      if not state1 then
+        return m, accept_states[state]
+      else
+        return i, accept_states[state1]
+      end
+    end
+  else
+    return i, accept_states[state]
+  end
+end
+
+return function (self, s, use_line_number)
   local init = 1
   local n = #s
   local terminal_nodes = {}
@@ -106,7 +182,6 @@ return function (self, s)
   local position_mark
   local buffer = {}
 
-  local use_line_number = self.use_line_number
   local line_count = 1
   local line_start = 0
 
@@ -117,90 +192,7 @@ return function (self, s)
     local accept
 
     if automaton then -- regexp_lexer
-      local transitions = automaton.transitions
-      local state = automaton.start_state
-
-      for i = init + 3, n, 4 do
-        local a, b, c, d = string_byte(s, i - 3, i)
-        local state1 = transitions[a][state]
-        if not state1 then
-          position = i - 3
-          break
-        else
-          local state2 = transitions[b][state1]
-          if not state2 then
-            state = state1
-            position = i - 2
-            break
-          else
-            local state3 = transitions[c][state2]
-            if not state3 then
-              state = state2
-              position = i - 1
-              break
-            else
-              local state4 = transitions[d][state3]
-              if not state4 then
-                state = state3
-                position = i
-                break
-              else
-                state = state4
-              end
-            end
-          end
-        end
-      end
-
-      if not position then
-        position = n + 1
-        local m = position - (position - init) % 4
-        if m < position then
-          local a, b, c = string_byte(s, m, n)
-          if c then
-            local state1 = transitions[a][state]
-            if not state1 then
-              position = m
-            else
-              local state2 = transitions[b][state1]
-              if not state2 then
-                state = state1
-                position = m + 1
-              else
-                local state3 = transitions[c][state2]
-                if not state3 then
-                  state = state2
-                  position = n
-                else
-                  state = state3
-                end
-              end
-            end
-          elseif b then
-            local state1 = transitions[a][state]
-            if not state1 then
-              position = m
-            else
-              local state2 = transitions[b][state1]
-              if not state2 then
-                state = state1
-                position = m + 1
-              else
-                state = state2
-              end
-            end
-          else
-            local state1 = transitions[a][state]
-            if not state1 then
-              position = m
-            else
-              state = state1
-            end
-          end
-        end
-      end
-
-      accept = automaton.accept_states[state]
+      position, accept = execute_regexp(s, init, n, automaton)
       if not accept then
         return nil, "lexer error", init
       end
